@@ -14,7 +14,7 @@ static const char *spacer_glyph(PrimitiveKind kind) {
 
 static bool is_text_like(PrimitiveKind kind) {
   return kind == PRIMITIVE_KIND_TEXT || kind == PRIMITIVE_KIND_SPACE
-      || kind == PRIMITIVE_KIND_SLASH || kind == PRIMITIVE_KIND_DASH;
+      || kind == PRIMITIVE_KIND_SLASH || kind == PRIMITIVE_KIND_DASH || kind == PRIMITIVE_KIND_PUNCT;
 }
 
 static GRect text_box_for(const PrimitiveInstance *p, int16_t box_x, int16_t box_y,
@@ -36,7 +36,7 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
   for (int i = 0; i < feature->count; i++) {
     const PrimitiveInstance *p = &feature->items[i];
     if (!is_text_like(p->kind)) continue;
-    const char *text = (p->kind == PRIMITIVE_KIND_TEXT) ? p->text : spacer_glyph(p->kind);
+    const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
     GRect box = text_box_for(p, box_x, box_y, row_height, font_h, font_offset);
     feature_render_draw_text_outline_only(ctx, text, font, box, GTextOverflowModeTrailingEllipsis,
                                           GTextAlignmentLeft, p->color, effective_outline_style);
@@ -51,7 +51,7 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
                                      seg_x, box_y, row_height, effective_outline_style, icon_style, draw_debug);
       continue;
     }
-    const char *text = (p->kind == PRIMITIVE_KIND_TEXT) ? p->text : spacer_glyph(p->kind);
+    const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
     GRect box = text_box_for(p, box_x, box_y, row_height, font_h, font_offset);
     feature_render_draw_text_content_only(ctx, text, font, box, GTextOverflowModeTrailingEllipsis,
                                           GTextAlignmentLeft, p->color);

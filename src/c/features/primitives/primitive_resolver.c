@@ -25,10 +25,120 @@ static void resolve_icon(PrimitiveResolved *out, uint8_t icon_kind, int16_t aux,
   out->dynamic_color = color;
 }
 
+static void resolve_punct(PrimitiveResolved *out, const char *text, GColor color) {
+  out->kind = PRIMITIVE_KIND_PUNCT;
+  snprintf(out->text, sizeof(out->text), "%s", text);
+  out->dynamic_color = color;
+}
+
+// Removes `prefix` from the start and `suffix` from the end of the resolved
+// text when present. Used to turn a legacy "legend + value + unit" primitive
+// into the bare value ("UV6" -> "6", "1013 hPa" -> "1013"); fallbacks that do
+// not carry the legend ("N/A", "ERR 2") are left alone.
+static void strip_text(PrimitiveResolved *out, const char *prefix, const char *suffix) {
+  size_t len = strlen(out->text);
+  size_t pl = prefix ? strlen(prefix) : 0;
+  if (pl && len >= pl && strncmp(out->text, prefix, pl) == 0) {
+    memmove(out->text, out->text + pl, len - pl + 1);
+    len -= pl;
+  }
+  size_t sl = suffix ? strlen(suffix) : 0;
+  if (sl && len >= sl && strcmp(out->text + len - sl, suffix) == 0) out->text[len - sl] = '\0';
+}
+
+// Custom-feature builder additions: punctuation, bare values, unit symbols.
+// Returns true when `id` is one of them (and *ok says whether it resolved).
+static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchData *data, time_t now,
+                                  struct tm *t, PrimitiveResolved *out, bool *ok) {
+  *ok = true;
+  switch (id) {
+    case PRIM_PAREN_OPEN: resolve_punct(out, "(", feature_colors_date_year_progress_gradient(t)); return true;
+    case PRIM_PAREN_CLOSE: resolve_punct(out, ")", feature_colors_date_year_progress_gradient(t)); return true;
+    case PRIM_DOT: resolve_punct(out, ".", feature_colors_date_year_progress_gradient(t)); return true;
+    case PRIM_COMMA: resolve_punct(out, ",", feature_colors_date_year_progress_gradient(t)); return true;
+
+    case PRIM_FEELS_LIKE_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_FEELS_LIKE_TEXT, 0, data, now, t, out);
+      if (*ok) strip_text(out, "FL ", NULL);
+      return true;
+    case PRIM_UV_DAILY_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_UV_DAILY_TEXT, 0, data, now, t, out);
+      if (*ok) strip_text(out, "UV", NULL);
+      return true;
+    case PRIM_UV_CURRENT_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_UV_CURRENT_TEXT, 0, data, now, t, out);
+      if (*ok) strip_text(out, "UV", NULL);
+      return true;
+    case PRIM_PRESSURE_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_PRESSURE_TEXT, 0, data, now, t, out);
+      if (*ok) strip_text(out, NULL, " hPa");
+      return true;
+    case PRIM_AQI_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_AQI_TEXT, 0, data, now, t, out);
+      if (*ok) strip_text(out, "AQI ", NULL);
+      return true;
+    case PRIM_ALTITUDE_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_ALTITUDE_TEXT, 0, data, now, t, out);
+      if (*ok) { strip_text(out, NULL, "ft"); strip_text(out, NULL, "m"); }
+      return true;
+    case PRIM_PLANETS_VISIBLE_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_PLANETS_VISIBLE_COUNT, 0, data, now, t, out);
+      if (*ok) { strip_text(out, NULL, " planets"); strip_text(out, NULL, " planet"); }
+      return true;
+    case PRIM_SATURN_RINGS_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_SATURN_RINGS_PCT, 0, data, now, t, out);
+      if (*ok) strip_text(out, "Rings ", NULL);
+      return true;
+    case PRIM_AURORA_KP_VALUE:
+      *ok = primitive_resolver_resolve(PRIM_AURORA_KP, 0, data, now, t, out);
+      if (*ok) strip_text(out, "Kp ", NULL);
+      return true;
+    case PRIM_NEXT_PLANET_NAME:
+    case PRIM_NEXT_PLANET_TIME: {
+      *ok = primitive_resolver_resolve(PRIM_NEXT_PLANET_RISE, 0, data, now, t, out);
+      if (!*ok) return true;
+      char *space = strchr(out->text, ' '); // "VEN 18:32" -> name / time; "N/A", "ERR n" keep as they are
+      if (space && strncmp(out->text, "ERR", 3) != 0) {
+        if (id == PRIM_NEXT_PLANET_NAME) *space = '\0';
+        else memmove(out->text, space + 1, strlen(space + 1) + 1);
+      }
+      return true;
+    }
+
+    case PRIM_TEMP_UNIT_TEXT: {
+      static const char *const UNITS[3] = { "C", "F", "K" };
+      resolve_punct(out, UNITS[data->temp_unit < 3 ? data->temp_unit : 0], GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    }
+    case PRIM_WIND_UNIT_TEXT: {
+      static const char *const UNITS[4] = { "km/h", "mph", "m/s", "kn" };
+      resolve_punct(out, UNITS[data->wind_speed_unit < 4 ? data->wind_speed_unit : 0], GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    }
+    case PRIM_PRESSURE_UNIT_TEXT:
+      resolve_punct(out, "hPa", GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    case PRIM_ALTITUDE_UNIT_TEXT:
+      resolve_punct(out, data->altitude_unit == 1 ? "ft" : "m", GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    default:
+      (void)aux_in;
+      return false;
+  }
+}
+
 bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData *data, time_t now, struct tm *t, PrimitiveResolved *out) {
   // `now` is used by PRIM_WEATHER_CONDITION_ICON's day/night check below;
   // every other case only needs `t` (already-broken-down local time).
   memset(out, 0, sizeof(*out));
+  {
+    bool extra_ok = false;
+    if (resolve_builder_extra(id, aux_in, data, now, t, out, &extra_ok)) return extra_ok;
+  }
   // Every currently-covered date/time primitive shares this one gradient
   // (the same one feature_value_date_compute() uses for every content id
   // enabled for transport so far -- see primitive_transport.h) -- computed
@@ -469,8 +579,8 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       // index rather than a timezone slot. A custom sequence can therefore
       // pick any of the 9 forecast slots via the composer's zone-style aux
       // picker (labelled "Forecast slot" there, not "Zone").
-      if (aux_in > 8) return false;
-      bool is_hour = aux_in <= 5;
+      if (aux_in >= FORECAST_SLOT_COUNT) return false;
+      bool is_hour = aux_in <= 5 || aux_in >= 9;
       if (data->forecast_temp_c[aux_in] <= -128) {
         if (id == PRIM_FORECAST_OFFSET_ICON) { resolve_icon(out, 30, aux_in, false, GColorLightGray); }
         else { resolve_text(out, "N/A", GColorLightGray); }

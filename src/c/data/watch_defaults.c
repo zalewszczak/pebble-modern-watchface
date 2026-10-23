@@ -82,7 +82,7 @@ void watch_defaults_apply(WatchData *d) {
   d->custom_second_marker_inner_thickness = 1;
 
   d->altitude_m = -32000; // unavailable until the phone reports one
-  for (int i = 0; i < 9; i++) d->forecast_temp_c[i] = -128; // unavailable
+  for (int i = 0; i < FORECAST_SLOT_COUNT; i++) d->forecast_temp_c[i] = -128; // unavailable
 
   d->hourly_vibe_interval_min = 30;
   d->hourly_vibe_days_mask = 127;

@@ -47,7 +47,8 @@ function composerClientBody() {
   function composerParamShortLabel(param, aux) {
     if (param === "timezone") return composerZoneShortLabel(aux);
     var opts = PARAM_OPTIONS[param] || [];
-    var o = opts[aux];
+    var o = null;
+    for (var i = 0; i < opts.length; i++) { if (opts[i].index === aux) { o = opts[i]; break; } }
     return o ? o.label : (param + " " + aux);
   }
 
@@ -153,14 +154,9 @@ function composerClientBody() {
     } else {
       zoneRow.style.display = "none";
     }
-    // Live preview of the whole sequence, chip-styled like the read-only strip.
-    document.getElementById("composerPreview").innerHTML = COMPOSER.items.map(function (it) {
-      var pal = composerFindPaletteItem(it.id);
-      var kind = !pal ? "icon" : (pal.label.indexOf("Space") === 0 ? "space" :
-        (pal.label.indexOf("Slash") === 0 ? "slash" : (pal.label.indexOf("Dash") === 0 ? "slash" : "value")));
-      var text = kind === "space" ? "\u2423" : (kind === "slash" ? (pal.label.indexOf("Dash") === 0 ? "-" : "/") : composerItemLabel(it));
-      return "<span class=\"primitive-chip primitive-chip-" + kind + "\">" + esc(text) + "</span>";
-    }).join("");
+    // The result is drawn as it would look on the watch by renderSlotEditPreview()
+    // (top of the popup), not as chips.
+    renderSlotEditPreview();
     composerUpdateAddZoneVisibility();
   }
 
@@ -288,20 +284,6 @@ function composerClientBody() {
     composerRender();
   }
 
-  // Appends every primitive of the Content dropdown's current choice
-  // (report Section 19's "Prebuilt features"): same append-not-replace rule.
-  function composerAppendPrebuilt() {
-    var items = composerItemsForContent(document.getElementById("slotEditContent").value);
-    if (!items.length) {
-      composerSetError("The selected Content has no primitive form to append.");
-      return;
-    }
-    items.forEach(function (it) { COMPOSER.items.push(it); });
-    COMPOSER.selected = COMPOSER.items.length - 1;
-    composerSetError("");
-    composerRender();
-  }
-
   // ---- lifecycle hooks called from the slot editor ----------------------
   function composerOpen(def) {
     var section = document.getElementById("slotEditCustomPrimsSection");
@@ -314,6 +296,9 @@ function composerClientBody() {
     COMPOSER.dragFrom = -1;
     document.getElementById("slotEditCustomPrimsToggle").checked = (COMPOSER.items.length > 0);
     document.getElementById("slotEditCustomPrimsBody").style.display = COMPOSER.items.length ? "" : "none";
+    // Building from elements replaces the Category/Content pickers.
+    document.getElementById("slotEditPrebuiltBlock").style.display = COMPOSER.items.length ? "none" : "";
+    setSlotEditorColorGroupVisibility(document.getElementById("slotEditContent").value);
     composerSetError("");
     composerRender();
   }
@@ -325,12 +310,128 @@ function composerClientBody() {
   function composerOnToggle() {
     var on = document.getElementById("slotEditCustomPrimsToggle").checked;
     document.getElementById("slotEditCustomPrimsBody").style.display = on ? "" : "none";
+    // Category and Content (with their labels) are hidden while building from
+    // elements; the style buttons stay, and the preview follows them.
+    document.getElementById("slotEditPrebuiltBlock").style.display = on ? "none" : "";
+    setSlotEditorColorGroupVisibility(document.getElementById("slotEditContent").value);
     if (on && !COMPOSER.items.length) {
       COMPOSER.items = composerItemsForContent(document.getElementById("slotEditContent").value);
       COMPOSER.selected = -1;
     }
     composerSetError("");
     composerRender();
+  }
+
+  // ---- live preview at the top of the popup ------------------------------
+  // Draws the feature the way the watch shows it: the feature font, the
+  // current background colour, the selected style (MONO / ACC / PILL / COLOR)
+  // and the outline setting. Icons are the real icon art (same helpers as the
+  // main preview). Called whenever anything that affects it changes.
+  function slotEditPreviewLabel() {
+    var customOn = document.getElementById("slotEditCustomPrimsToggle").checked;
+    if (customOn) return composerPreviewLabel(composerSerialize(COMPOSER.items));
+    var contentVal = document.getElementById("slotEditContent").value;
+    return parseInt(contentVal, 10) ? primitiveDecompositionText(contentVal) : "";
+  }
+
+  function renderSlotEditPreview() {
+    var canvas = document.getElementById("slotEditPreviewCanvas");
+    if (!canvas || !canvas.getContext || !document.getElementById("slotEditCustomPrimsToggle")) return;
+    var cssW = canvas.clientWidth || 368, cssH = 64;
+    var dpr = window.devicePixelRatio || 1;
+    if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+    }
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+
+    var nightActive = document.getElementById("nightEnabled").checked && isNightNowApprox();
+    var colors = nightActive ? nightColors() : dayColors();
+    var mode = SLOT_EDITOR_DRAFT_COLOR;
+
+    // Background: the watch's background colour. With PILL a faint pattern sits
+    // behind the capsule, since a pill in the background colour is otherwise
+    // invisible on a plain background.
+    ctx.fillStyle = colors.bg;
+    ctx.fillRect(0, 0, cssW, cssH);
+    if (mode === 2) {
+      ctx.save();
+      ctx.globalAlpha = 0.22;
+      ctx.strokeStyle = colors.text;
+      ctx.lineWidth = 3;
+      for (var sx = -cssH; sx < cssW; sx += 10) {
+        ctx.beginPath(); ctx.moveTo(sx, cssH); ctx.lineTo(sx + cssH, 0); ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    var fontSel = document.getElementById("cornerFont");
+    var fontOpt = fontSel.options[fontSel.selectedIndex];
+    var entry = fontLookupEntry(fontSel.value);
+    var px = Math.max(12, Math.min(30, Math.round(entry.height * 1.6)));
+    var scale = px / Math.max(1, entry.height);
+    var fontCss = canvasFontFor(fontOpt.getAttribute("data-preview") || "", px, fontSel.value);
+
+    var color = colors.text;
+    if (mode === 1) color = colors.accent;
+    else if (mode === 3) color = "#4caf50";
+    var outHex = previewHexLuma(color) >= 9 ? "#000000" : "#ffffff";
+    var oEl = document.getElementById("outlineStyle");
+    var outline = oEl ? (parseInt(oEl.value, 10) || 0) : 0;
+
+    var label = slotEditPreviewLabel();
+    ctx.font = fontCss;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    var cy = cssH / 2;
+    if (!label) {
+      ctx.fillStyle = colors.text;
+      ctx.globalAlpha = 0.45;
+      ctx.fillText("Nothing to show", 12, cy);
+      ctx.globalAlpha = 1;
+    } else {
+      var segs = previewLabelSegments(label, px);
+      var total = 0, i;
+      for (i = 0; i < segs.length; i++) {
+        segs[i].width = segs[i].icon ? segs[i].icon.width : ctx.measureText(segs[i].text).width;
+        total += segs[i].width;
+      }
+      var x0 = Math.max(6, (cssW - total) / 2);
+      if (mode === 2) {
+        var pw = Math.min(cssW - 8, total + px * 1.6), ph = Math.round(px * 1.9);
+        ctx.fillStyle = colors.bg;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect((cssW - pw) / 2, cy - ph / 2, pw, ph, ph / 2);
+        else ctx.rect((cssW - pw) / 2, cy - ph / 2, pw, ph);
+        ctx.fill();
+      }
+      var offs = outline >= 2 ? [[-1,0],[1,0],[0,-1],[0,1],[-2,0],[2,0],[0,-2],[0,2],[1,1],[-1,1],[-1,-1],[1,-1]]
+                 : (outline === 1 ? [[-1,0],[1,0],[0,-1],[0,1]] : []);
+      var cx = x0;
+      for (i = 0; i < segs.length; i++) {
+        if (segs[i].icon) {
+          var ic = segs[i].icon;
+          drawPreviewIcon(ctx, ic, cx, cy - ic.height / 2, color);
+        } else {
+          ctx.font = fontCss;
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = outHex;
+          for (var o = 0; o < offs.length; o++) ctx.fillText(segs[i].text, cx + offs[o][0] * scale, cy + offs[o][1] * scale);
+          ctx.fillStyle = color;
+          ctx.fillText(segs[i].text, cx, cy);
+        }
+        cx += segs[i].width;
+      }
+    }
+
+    var info = document.getElementById("slotEditPreviewInfo");
+    if (info) {
+      var outlineName = ["no outline", "thin outline", "thick outline"][Math.min(2, outline)];
+      info.innerHTML = "<span><span class=\"slot-preview-swatch\" style=\"background:" + colors.bg + "\"></span>Background</span>" +
+        "<span>" + (outline ? "<span class=\"slot-preview-swatch\" style=\"background:" + outHex + "\"></span>" : "") + outlineName + "</span>";
+    }
   }
 
   // Returns the string to store in the slot's hidden input, or null if the

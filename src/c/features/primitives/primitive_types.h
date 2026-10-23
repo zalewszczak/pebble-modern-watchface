@@ -21,6 +21,10 @@ typedef enum {
   PRIMITIVE_KIND_SLASH,     // universal "/" glyph (Section 4)
   PRIMITIVE_KIND_DASH,      // universal "-" glyph (Section 4)
   PRIMITIVE_KIND_ICON,      // static icon, payload is an icon ID (Section 4)
+  // Punctuation and unit text: drawn from `text`, but laid out tightly -- no
+  // gap before it (it attaches to the element in front), and no gap after an
+  // opening parenthesis. See primitive_layout.c.
+  PRIMITIVE_KIND_PUNCT,
 } PrimitiveKind;
 
 typedef enum {

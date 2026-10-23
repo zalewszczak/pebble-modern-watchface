@@ -905,6 +905,9 @@ module.exports =
 '  return img;' +
 '}' +
 'function updatePreview() {' +
+// A font or icon image that finishes loading lands here: keep the slot
+// editor's own preview (if it is open) in step with the main one.
+'  if (typeof CURRENT_SLOT_KEY !== "undefined" && CURRENT_SLOT_KEY && typeof renderSlotEditPreview === "function") { try { renderSlotEditPreview(); } catch (e) {} }' +
 '  var canvas = document.getElementById("previewCanvas");' +
 '  if (!canvas || !canvas.getContext) return;' +
 '  var ctx = canvas.getContext("2d");' +

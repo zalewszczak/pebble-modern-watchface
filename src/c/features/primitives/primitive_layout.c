@@ -28,15 +28,19 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
       p->width = FEATURE_ICON_WIDTH;
       advance[i] = feature_icons_plus_gap_width(p->icon_kind);
     } else {
-      const char *text = (p->kind == PRIMITIVE_KIND_TEXT) ? p->text : spacer_glyph(p->kind);
+      const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
       GSize sz = graphics_text_layout_get_content_size(
           text, font, GRect(0, 0, 200, font_h + 10),
           GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
       p->width = sz.w + 2;
       advance[i] = p->width + 5;
     }
-    total_w += advance[i];
+    // Punctuation and units sit tight: nothing between an element and a
+    // following closer/unit/dot/comma, nothing after an opening parenthesis.
+    if (p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] == '(') advance[i] -= 5;
+    if (i > 0 && p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] != '(') advance[i - 1] = (advance[i - 1] >= 5) ? advance[i - 1] - 5 : 0;
   }
+  for (int i = 0; i < feature->count; i++) total_w += advance[i];
 
   if (total_w > box_w) {
     if (slot->is_middle) {

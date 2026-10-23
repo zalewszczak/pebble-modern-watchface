@@ -332,7 +332,11 @@ var PRIMITIVE_PALETTE = [
   { group: 'Spacers', items: [
     { id: PRIM.PRIM_SPACE, label: 'Space' },
     { id: PRIM.PRIM_SLASH, label: 'Slash (/)' },
-    { id: PRIM.PRIM_DASH, label: 'Dash (-)' }
+    { id: PRIM.PRIM_DASH, label: 'Dash (-)' },
+    { id: PRIM.PRIM_PAREN_OPEN, label: 'Parenthesis open "("' },
+    { id: PRIM.PRIM_PAREN_CLOSE, label: 'Parenthesis close ")"' },
+    { id: PRIM.PRIM_DOT, label: 'Dot (.)' },
+    { id: PRIM.PRIM_COMMA, label: 'Comma (,)' }
   ]},
   { group: 'Date & time', items: [
     { id: PRIM.PRIM_WEEKDAY_SHORT_MIXED, label: 'Weekday (Mon)' },
@@ -371,41 +375,47 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_SECOND_ONES, label: 'Second, ones digit' },
     { id: PRIM.PRIM_AMPM, label: 'AM/PM' }
   ]},
+  // Every element here is ONE value (or one icon / one label / one unit):
+  // nothing bundles a legend, unit or prefix with its number. Units and
+  // legends are separate elements ("Temp unit", "Wind unit", "H" label, ...)
+  // so a feature shows exactly what the person put in it. The bundled legacy
+  // primitives ("H 28", "UV6", "1013 hPa", "AQI 42", ...) still exist for the
+  // prebuilt features, they are just not offered for building.
   { group: 'Weather', items: [
     { id: PRIM.PRIM_WEATHER_CONDITION_ICON, label: 'Weather icon' },
-    { id: PRIM.PRIM_CURRENT_TEMP_TEXT, label: 'Current temp (bare)' },
+    { id: PRIM.PRIM_CURRENT_TEMP_TEXT, label: 'Current temp' },
+    { id: PRIM.PRIM_TEMP_HIGH_TEXT, label: 'Daily high temp' },
+    { id: PRIM.PRIM_TEMP_LOW_TEXT, label: 'Daily low temp' },
+    { id: PRIM.PRIM_FEELS_LIKE_VALUE, label: 'Feels-like temp' },
+    { id: PRIM.PRIM_DEW_POINT_TEXT, label: 'Dew point' },
+    { id: PRIM.PRIM_TEMP_UNIT_TEXT, label: 'Temp unit (C/F/K)' },
     { id: PRIM.PRIM_LABEL_HIGH_PREFIX, label: '"H" label' },
-    { id: PRIM.PRIM_TEMP_HIGH_TEXT, label: 'High temp' },
     { id: PRIM.PRIM_LABEL_LOW_PREFIX, label: '"L" label' },
-    { id: PRIM.PRIM_TEMP_LOW_TEXT, label: 'Low temp' },
-    { id: PRIM.PRIM_CURRENT_TEMP_ONLY_TEXT, label: 'Current temp' },
-    { id: PRIM.PRIM_TEMP_HIGH_ONLY_TEXT, label: 'High temp ("H 72")' },
-    { id: PRIM.PRIM_TEMP_LOW_ONLY_TEXT, label: 'Low temp ("L 58")' },
-    { id: PRIM.PRIM_FEELS_LIKE_TEXT, label: 'Feels-like temp' },
     { id: PRIM.PRIM_CURRENT_CONDITIONS_TEXT, label: 'Condition text' },
-    { id: PRIM.PRIM_UV_DAILY_TEXT, label: 'UV index (daily max)' },
-    { id: PRIM.PRIM_UV_CURRENT_TEXT, label: 'UV index (current)' },
+    { id: PRIM.PRIM_UV_DAILY_VALUE, label: 'UV index (daily max)' },
+    { id: PRIM.PRIM_UV_CURRENT_VALUE, label: 'UV index (current)' },
     { id: PRIM.PRIM_RAIN_CHANCE_ICON, label: 'Rain chance icon' },
     { id: PRIM.PRIM_RAIN_CHANCE_TEXT, label: 'Rain chance %' },
     { id: PRIM.PRIM_HUMIDITY_ICON, label: 'Humidity icon' },
     { id: PRIM.PRIM_HUMIDITY_TEXT, label: 'Humidity %' },
     { id: PRIM.PRIM_WIND_SPEED_ICON, label: 'Wind speed icon' },
     { id: PRIM.PRIM_WIND_SPEED_TEXT, label: 'Wind speed' },
+    { id: PRIM.PRIM_WIND_UNIT_TEXT, label: 'Wind unit (km/h, mph...)' },
+    { id: PRIM.PRIM_WIND_DIRECTION_ICON, label: 'Wind direction icon' },
+    { id: PRIM.PRIM_WIND_DIRECTION_TEXT, label: 'Wind direction' },
     { id: PRIM.PRIM_VISIBILITY_ICON, label: 'Visibility icon' },
     { id: PRIM.PRIM_VISIBILITY_TEXT, label: 'Visibility %' },
     { id: PRIM.PRIM_CLOUD_COVER_ICON, label: 'Cloud cover icon' },
     { id: PRIM.PRIM_CLOUD_COVER_TEXT, label: 'Cloud cover %' },
     { id: PRIM.PRIM_PRESSURE_TREND_ICON, label: 'Pressure trend icon' },
-    { id: PRIM.PRIM_PRESSURE_TEXT, label: 'Pressure' },
-    { id: PRIM.PRIM_WIND_DIRECTION_ICON, label: 'Wind direction icon' },
-    { id: PRIM.PRIM_WIND_DIRECTION_TEXT, label: 'Wind direction' },
-    { id: PRIM.PRIM_AQI_TEXT, label: 'Air quality index' },
-    { id: PRIM.PRIM_DEW_POINT_TEXT, label: 'Dew point' },
+    { id: PRIM.PRIM_PRESSURE_VALUE, label: 'Pressure' },
+    { id: PRIM.PRIM_PRESSURE_UNIT_TEXT, label: 'Pressure unit (hPa)' },
+    { id: PRIM.PRIM_AQI_VALUE, label: 'Air quality index' },
     { id: PRIM.PRIM_ALTITUDE_ICON, label: 'Altitude icon' },
-    { id: PRIM.PRIM_ALTITUDE_TEXT, label: 'Altitude' },
+    { id: PRIM.PRIM_ALTITUDE_VALUE, label: 'Altitude' },
+    { id: PRIM.PRIM_ALTITUDE_UNIT_TEXT, label: 'Altitude unit (m/ft)' },
     { id: PRIM.PRIM_WEATHER_REFRESH_ICON, label: 'Weather refresh icon' },
-    { id: PRIM.PRIM_WEATHER_LAST_UPDATE_LONG_TEXT, label: 'Weather updated (long)' },
-    { id: PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT, label: 'Weather updated (short)' }
+    { id: PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT, label: 'Weather updated (time)' }
   ]},
   { group: 'Forecast', items: [
     { id: PRIM.PRIM_FORECAST_OFFSET_ICON, label: 'Forecast offset icon', param: 'forecast' },
@@ -443,15 +453,16 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_SUN_EVENT_ICON, label: 'Sunrise/sunset icon' },
     { id: PRIM.PRIM_SUN_EVENT_TIME, label: 'Next sunrise/sunset time' },
     { id: PRIM.PRIM_PLANETS_VISIBLE_ICON, label: 'Planets icon' },
-    { id: PRIM.PRIM_PLANETS_VISIBLE_COUNT, label: 'Planets visible' },
-    { id: PRIM.PRIM_NEXT_PLANET_RISE, label: 'Next planet rise' },
+    { id: PRIM.PRIM_PLANETS_VISIBLE_VALUE, label: 'Planets visible (count)' },
+    { id: PRIM.PRIM_NEXT_PLANET_NAME, label: 'Next planet rising (name)' },
+    { id: PRIM.PRIM_NEXT_PLANET_TIME, label: 'Next planet rising (time)' },
     { id: PRIM.PRIM_METEOR_SHOWER_NAME, label: 'Meteor shower' },
     { id: PRIM.PRIM_SATURN_RINGS_ICON, label: 'Saturn icon' },
-    { id: PRIM.PRIM_SATURN_RINGS_PCT, label: 'Saturn ring angle' },
+    { id: PRIM.PRIM_SATURN_RINGS_VALUE, label: 'Saturn ring angle %' },
     { id: PRIM.PRIM_ISS_ICON, label: 'ISS icon' },
     { id: PRIM.PRIM_ISS_NEXT_PASS, label: 'Next ISS pass' },
     { id: PRIM.PRIM_AURORA_ICON, label: 'Aurora icon' },
-    { id: PRIM.PRIM_AURORA_KP, label: 'Aurora Kp index' },
+    { id: PRIM.PRIM_AURORA_KP_VALUE, label: 'Aurora Kp index' },
     { id: PRIM.PRIM_COMPASS_ICON, label: 'Compass icon' },
     { id: PRIM.PRIM_COMPASS_DIR_TEXT, label: 'Compass direction' },
     { id: PRIM.PRIM_LOCATION_ICON, label: 'Location icon' },
@@ -620,16 +631,40 @@ var PRIMITIVE_PREVIEW_TEXT = {};
   t[PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT] = '09:30';
   t[PRIM.PRIM_FORECAST_OFFSET_ICON] = '(+Nh)';
   t[PRIM.PRIM_FORECAST_TEMP_TEXT] = '19';
+  t[PRIM.PRIM_PAREN_OPEN] = '(';
+  t[PRIM.PRIM_PAREN_CLOSE] = ')';
+  t[PRIM.PRIM_DOT] = '.';
+  t[PRIM.PRIM_COMMA] = ',';
+  t[PRIM.PRIM_FEELS_LIKE_VALUE] = '20';
+  t[PRIM.PRIM_UV_DAILY_VALUE] = '6';
+  t[PRIM.PRIM_UV_CURRENT_VALUE] = '4';
+  t[PRIM.PRIM_PRESSURE_VALUE] = '1013';
+  t[PRIM.PRIM_AQI_VALUE] = '42';
+  t[PRIM.PRIM_ALTITUDE_VALUE] = '120';
+  t[PRIM.PRIM_PLANETS_VISIBLE_VALUE] = '3';
+  t[PRIM.PRIM_SATURN_RINGS_VALUE] = '12%';
+  t[PRIM.PRIM_AURORA_KP_VALUE] = '4.3';
+  t[PRIM.PRIM_NEXT_PLANET_NAME] = 'VEN';
+  t[PRIM.PRIM_NEXT_PLANET_TIME] = '18:32';
+  t[PRIM.PRIM_TEMP_UNIT_TEXT] = 'C';
+  t[PRIM.PRIM_WIND_UNIT_TEXT] = 'km/h';
+  t[PRIM.PRIM_PRESSURE_UNIT_TEXT] = 'hPa';
+  t[PRIM.PRIM_ALTITUDE_UNIT_TEXT] = 'm';
 })();
 
 // Forecast slot options for PRIM_FORECAST_OFFSET_ICON/PRIM_FORECAST_TEMP_TEXT
 // (param: 'forecast'): index matches forecast_temp_c[]'s own space, same
 // idea as TIMEZONE_ZONES above -- 0-5 are 1-6 hours ahead, 6-8 are 1-3 days
-// ahead (content 87-95's own order).
+// ahead (content 87-95's own order), 9-14 are 7-12 hours ahead (added later,
+// so they come after the day slots to keep saved indices valid). The list is
+// ordered for the picker, NOT by index: always look a slot up by .index.
 var FORECAST_SLOTS = [
   { index: 0, label: '1 hour ahead' }, { index: 1, label: '2 hours ahead' },
   { index: 2, label: '3 hours ahead' }, { index: 3, label: '4 hours ahead' },
   { index: 4, label: '5 hours ahead' }, { index: 5, label: '6 hours ahead' },
+  { index: 9, label: '7 hours ahead' }, { index: 10, label: '8 hours ahead' },
+  { index: 11, label: '9 hours ahead' }, { index: 12, label: '10 hours ahead' },
+  { index: 13, label: '11 hours ahead' }, { index: 14, label: '12 hours ahead' },
   { index: 6, label: '1 day ahead' }, { index: 7, label: '2 days ahead' },
   { index: 8, label: '3 days ahead' }
 ];

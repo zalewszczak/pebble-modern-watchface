@@ -185,5 +185,31 @@ typedef enum {
   PRIM_QUIET_TIME_PLAIN_ICON,
   PRIM_BLUETOOTH_ONOFF_TEXT,    // "ON"/"OFF" (content 113); PRIM_BLUETOOTH_STATUS_TEXT stays "Connected"/"No phone"
 
+  // ---- Custom-feature builder additions (single-value elements) ----------
+  // Punctuation spacers (PRIMITIVE_KIND_PUNCT: laid out tightly).
+  PRIM_PAREN_OPEN,              // "("
+  PRIM_PAREN_CLOSE,             // ")"
+  PRIM_DOT,                     // "."
+  PRIM_COMMA,                   // ","
+  // Bare values: the legacy *_TEXT primitives above bundle a legend or unit
+  // ("UV6", "1013 hPa", "AQI 42", "FL 20"...). These resolve the same value
+  // without it, so the unit/legend can be added (or left out) on purpose.
+  PRIM_FEELS_LIKE_VALUE,
+  PRIM_UV_DAILY_VALUE,
+  PRIM_UV_CURRENT_VALUE,
+  PRIM_PRESSURE_VALUE,
+  PRIM_AQI_VALUE,
+  PRIM_ALTITUDE_VALUE,
+  PRIM_PLANETS_VISIBLE_VALUE,
+  PRIM_SATURN_RINGS_VALUE,
+  PRIM_AURORA_KP_VALUE,
+  PRIM_NEXT_PLANET_NAME,
+  PRIM_NEXT_PLANET_TIME,
+  // Unit symbols following the user's unit settings (PRIMITIVE_KIND_PUNCT).
+  PRIM_TEMP_UNIT_TEXT,          // "C" / "F" / "K"
+  PRIM_WIND_UNIT_TEXT,          // "km/h" / "mph" / "m/s" / "kn"
+  PRIM_PRESSURE_UNIT_TEXT,      // "hPa"
+  PRIM_ALTITUDE_UNIT_TEXT,      // "m" / "ft"
+
   PRIM_ID_COUNT,
 } PrimitiveId;

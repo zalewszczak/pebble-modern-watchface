@@ -259,6 +259,20 @@ PrimitiveSource primitive_catalogue_source_for(PrimitiveId id) {
   // constant watch-side glyphs, not a PKJS-supplied value, even though they
   // live in the weather ID range next to the values they label.
   if (id == PRIM_LABEL_HIGH_PREFIX || id == PRIM_LABEL_LOW_PREFIX) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
+  // Builder additions (appended after the original catalogue): bare values
+  // and unit symbols derived from PKJS-supplied data change only when PKJS
+  // pushes; the planet-based ones depend on the watch's own clock.
+  switch (id) {
+    case PRIM_FEELS_LIKE_VALUE: case PRIM_UV_DAILY_VALUE: case PRIM_UV_CURRENT_VALUE:
+    case PRIM_PRESSURE_VALUE: case PRIM_AQI_VALUE: case PRIM_ALTITUDE_VALUE:
+    case PRIM_SATURN_RINGS_VALUE: case PRIM_AURORA_KP_VALUE:
+    case PRIM_TEMP_UNIT_TEXT: case PRIM_WIND_UNIT_TEXT: case PRIM_PRESSURE_UNIT_TEXT:
+    case PRIM_ALTITUDE_UNIT_TEXT:
+      return PRIMITIVE_SOURCE_PKJS_VALUE;
+    case PRIM_PLANETS_VISIBLE_VALUE: case PRIM_NEXT_PLANET_NAME: case PRIM_NEXT_PLANET_TIME:
+      return PRIMITIVE_SOURCE_WATCH_RUNTIME;
+    default: break;
+  }
   // Time-dependent selections over PKJS data (Update 6): which sun event /
   // planet is "next" changes with the watch's own clock, so the watch owns
   // them even though they sit in the astronomy ID range.

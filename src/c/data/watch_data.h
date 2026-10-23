@@ -28,6 +28,10 @@ typedef enum {
 #define APPMSG_INBOX_SIZE 1200
 #define APPMSG_OUTBOX_SIZE 64
 
+// Forecast slots: 0-5 = 1-6 hours ahead, 6-8 = 1-3 days ahead (the original
+// layout, kept so saved settings keep their meaning), 9-14 = 7-12 hours ahead.
+#define FORECAST_SLOT_COUNT 15
+
 typedef struct {
   // Payload/status state.
   bool valid;              // true after a valid payload has been received.
@@ -248,8 +252,8 @@ typedef struct {
   // already uses). Same empty-string fallback signal as everywhere else,
   // but the N/A sentinel on forecast_temp_c[idx] itself is still checked
   // FIRST on the watch regardless -- see feature_value_weather.c.
-  char forecast_temp_display[9][6];
-  uint8_t forecast_temp_color[9];
+  char forecast_temp_display[FORECAST_SLOT_COUNT][6];
+  uint8_t forecast_temp_color[FORECAST_SLOT_COUNT];
 
   // Weather fetch status and freshness.
   uint8_t weather_error_code;
@@ -261,12 +265,12 @@ typedef struct {
   // 6-8) -- one shared pair of arrays for both (content id - 87 indexes
   // straight into them), rather than a second wire format for what's
   // structurally the same data.
-  int16_t forecast_temp_c[9];
-  uint8_t forecast_condition[9];
+  int16_t forecast_temp_c[FORECAST_SLOT_COUNT];
+  uint8_t forecast_condition[FORECAST_SLOT_COUNT];
   // Phase 7: PKJS-computed icon categories, same as weather_icon_category
   // above but one per forecast index, gated on forecast_temp_display[idx]
   // (see feature_value_weather.c's case 87-95).
-  uint8_t forecast_icon_category[9];
+  uint8_t forecast_icon_category[FORECAST_SLOT_COUNT];
   char location_name[32];  // reverse-geocoded place name.
 
   // Additional weather data.

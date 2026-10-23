@@ -134,7 +134,13 @@
       "BG_IMG_DATA",
       "BG_IMG_END",
       "BG_IMG_STAMP",
-      "SHAKE_ONLY_MASK"
+      "SHAKE_ONLY_MASK",
+      "FORECAST_TEMP_DISPLAY_9",
+      "FORECAST_TEMP_DISPLAY_10",
+      "FORECAST_TEMP_DISPLAY_11",
+      "FORECAST_TEMP_DISPLAY_12",
+      "FORECAST_TEMP_DISPLAY_13",
+      "FORECAST_TEMP_DISPLAY_14"
     ],
     "resources": {
       "media": [
@@ -182,6 +188,36 @@
           "type": "bitmap",
           "name": "ICON_FORECAST_8",
           "file": "images/forecast_8.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_9",
+          "file": "images/forecast_9.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_10",
+          "file": "images/forecast_10.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_11",
+          "file": "images/forecast_11.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_12",
+          "file": "images/forecast_12.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_13",
+          "file": "images/forecast_13.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_14",
+          "file": "images/forecast_14.png"
         },
         {
           "type": "font",

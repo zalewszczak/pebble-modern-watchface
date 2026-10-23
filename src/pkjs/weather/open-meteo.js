@@ -63,8 +63,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
     sunrise: null, sunset: null, condition: 0, tempC: null, tempHighC: null, tempLowC: null,
     cloudAltitudePct: 50, uvIndexMax: null, uvIndexCurrent: null, rainChancePct: null, humidityPct: null, windSpeedKmh: null,
     currentCloudPct: null, windDirDeg: null, dewPointC: null, pressureHpa: null, pressureTrend: 0,
-    forecastTempC: [null, null, null, null, null, null, null, null, null],
-    forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    forecastTempC: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
+    forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   };
   xhrGetJSON(url, 8000, function (err, json) {
     if (err) return cb(err, emptyExtras);
@@ -149,20 +149,24 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       }
 
       // "Weather in 1-6 hours" content (features_layer.c ids 87-92) --
-      // temperature_2m/weathercode at nowIdx+1..nowIdx+6, indices 0-5.
+      // temperature_2m/weathercode at nowIdx+1..nowIdx+12 (indices 0-5 and 9-14).
       // forecast_days=4 gives 96 hourly points starting at hour 0 of
       // today, comfortably covering nowIdx+6 even late in the day --
       // guarded per-index below anyway rather than assumed safe.
-      var forecastTempC = [null, null, null, null, null, null, null, null, null];
-      var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0];
+      // Slots: 0-5 = 1-6 h ahead, 6-8 = 1-3 days ahead, 9-14 = 7-12 h ahead
+      // (the hour slots past six were added later, so they come after the
+      // day slots to keep the original indices stable).
+      var forecastTempC = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
+      var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var hourlyTemps = json.hourly.temperature_2m;
-      for (var fh = 0; fh < 6; fh++) {
+      for (var fh = 0; fh < 12; fh++) {
         var fIdx = nowIdx + 1 + fh;
+        var slot = fh < 6 ? fh : 9 + (fh - 6);
         if (hourlyTemps && typeof hourlyTemps[fIdx] === 'number') {
-          forecastTempC[fh] = Math.round(hourlyTemps[fIdx]);
+          forecastTempC[slot] = Math.round(hourlyTemps[fIdx]);
         }
         if (hourlyCodes && hourlyCodes.length > fIdx) {
-          forecastCondition[fh] = conditionFromWmoCode(hourlyCodes[fIdx]);
+          forecastCondition[slot] = conditionFromWmoCode(hourlyCodes[fIdx]);
         }
       }
 

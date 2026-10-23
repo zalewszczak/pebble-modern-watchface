@@ -137,9 +137,9 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
 
 // Applied only for valid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP_VALID[] = {
-  { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), 9 },
-  { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), 9 },
-  { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), 9 },
+  { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), FORECAST_SLOT_COUNT },
+  { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), FORECAST_SLOT_COUNT },
+  { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), FORECAST_SLOT_COUNT },
   { MK_PLANET_RISE, 4, offsetof(WatchData, planet_rise), PLANET_COUNT * 4 },
   { MK_PLANET_SET, 4, offsetof(WatchData, planet_set), PLANET_COUNT * 4 },
 };
@@ -249,10 +249,12 @@ static void apply_cstring(DictionaryIterator *iter, uint8_t key_index, char *dst
 
 // One MK_* per forecast-temp index (see watch_data.h's forecast_temp_display
 // comment for why 9 discrete keys rather than one delimited string).
-static const uint8_t FORECAST_TEMP_DISPLAY_KEYS[9] = {
+static const uint8_t FORECAST_TEMP_DISPLAY_KEYS[FORECAST_SLOT_COUNT] = {
   MK_FORECAST_TEMP_DISPLAY_0, MK_FORECAST_TEMP_DISPLAY_1, MK_FORECAST_TEMP_DISPLAY_2,
   MK_FORECAST_TEMP_DISPLAY_3, MK_FORECAST_TEMP_DISPLAY_4, MK_FORECAST_TEMP_DISPLAY_5,
   MK_FORECAST_TEMP_DISPLAY_6, MK_FORECAST_TEMP_DISPLAY_7, MK_FORECAST_TEMP_DISPLAY_8,
+  MK_FORECAST_TEMP_DISPLAY_9, MK_FORECAST_TEMP_DISPLAY_10, MK_FORECAST_TEMP_DISPLAY_11,
+  MK_FORECAST_TEMP_DISPLAY_12, MK_FORECAST_TEMP_DISPLAY_13, MK_FORECAST_TEMP_DISPLAY_14,
 };
 
 // Consolidated settings fields use fixed wire layouts.
@@ -335,11 +337,12 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
   }
 
   // Forecast temperatures use a +50 byte offset; 255 means unavailable.
-  // 9 entries: 0-5 are the next 1-6 hours, 6-8 the next 1-3 days.
+  // 15 entries: 0-5 are the next 1-6 hours, 6-8 the next 1-3 days, 9-14 the
+  // hours 7-12 ahead (see FORECAST_SLOT_COUNT in watch_data.h).
   if ((t = dict_find(iter, base + MK_FORECAST_TEMP_C))) {
     uint8_t *raw = t->value->data;
     int n = t->length;
-    if (n > 9) n = 9;
+    if (n > FORECAST_SLOT_COUNT) n = FORECAST_SLOT_COUNT;
     for (int i = 0; i < n; i++) {
       d->forecast_temp_c[i] = (raw[i] == 255) ? -128 : ((int16_t)raw[i] - 50);
     }
@@ -367,7 +370,7 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
   apply_cstring(iter, MK_DEW_POINT_DISPLAY, d->dew_point_display, sizeof(d->dew_point_display));
   apply_cstring(iter, MK_PRESSURE_DISPLAY, d->pressure_display, sizeof(d->pressure_display));
   apply_cstring(iter, MK_AQI_DISPLAY, d->aqi_display, sizeof(d->aqi_display));
-  for (int i = 0; i < 9; i++) {
+  for (int i = 0; i < FORECAST_SLOT_COUNT; i++) {
     apply_cstring(iter, FORECAST_TEMP_DISPLAY_KEYS[i], d->forecast_temp_display[i], sizeof(d->forecast_temp_display[i]));
   }
 
