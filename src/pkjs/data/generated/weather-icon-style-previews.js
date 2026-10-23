@@ -1,0 +1,9 @@
+// GENERATED FILE -- do not edit by hand.
+// Produced by scripts/generate-weather-icon-previews.js from
+// resources/images/<style>/weather_partly_cloudy.png. Re-run that script after
+// changing any of those 3 source icons, before `pebble build`.
+module.exports = {
+  "0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAmUlEQVR4Ae3BUQrCUBRDwZPg/rccfwoPoVIrVg3cGXGNsIhjYREnmHKm3I1riCUs4n1hERtTzpS78ZrwPrGEc8Iidphyppx4LnyeWMIxccCUM+XEo/A94pyww5Qz5QSEDmKHKWfKCQh9xMaUM+UEhGKmnClnyplyppx4FMqYcqaceC78L7Ex5Uw58Zrwe2KHKWfGGGOMMUatOzJsEUEYoRX6AAAAAElFTkSuQmCC",
+  "1": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAxUlEQVR4Ae3BQWoDUQxEwdci979yZ2MQBhl5nMGh4VeJvzFN7MxM7EwTD0W4Ipy4zuzEzMzEzCyKcEU4cR/TRDPXiGZm4qEIV4QT7zE70cw9xKIIV4QTr5nPiWaamJmdGBThinDimZmJnZmJa8wFRbginAAzE58zM9HMTDSzKMIV4X74LrMzTSyKcEU4AWYm7mFmYmZmYlCEK8KJZ2YmvsfMxKAIV4QTr5n/J5oZFOGKcOI95nvEzDTxUIQrjuM4juM4jli/aZYgO6khbHgAAAAASUVORK5CYII=",
+  "2": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAABCElEQVR4AdXBUU7DQBBEwTcjX3FySM8hmx97F6RFwcghdFVIwlliLjG38adaDBUMLYYKLkjMJeY2btNiqGDpwSSmB5NYazFUcEjMJeZCEvcLMSj4tRCDgoXEXGIuJPECYimYirU9uCAxl5jb+BlxCzE9WGsxVDCEGHZOibnE3Mb3xEvtTM3UTMWkYCExl5jb+Eq8RfFciGHnlJhLzG38O8UnYlCwkJhLzG2AuKC7OVUV75aYS8zFvu/iUFWsdDdXVBX3a6YKDom5xNzGJ93NHbqblapipbs5VRVrFSwk5hJzIYlTd4snqio4dLd4oaoKnkjMJeZCEs4Sc4m5xFxiLjGXmEvMJeY+AJk/S/1OG/S0AAAAAElFTkSuQmCC"
+};

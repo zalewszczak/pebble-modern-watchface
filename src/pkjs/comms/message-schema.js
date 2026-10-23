@@ -1,0 +1,81 @@
+// ---- AppMessage schema: message types + key-to-chunk map -----------------
+//
+// Every send goes through sendFlatDict() (comms/message-encoder.js), which
+// buckets keys by subject into several smaller dictionaries (see
+// enqueueFlatDict() in message-queue.js) and sends them one at a time, each
+// tagged with MESSAGE_TYPE. Keep this enum in sync with the MsgType enum in
+// src/c/comms/comms_decoder.c.
+var MSG_TYPE = {
+  STATUS: 0,      // DATA_VALID, ERROR_CODE, LOCATION_NAME
+  WEATHER: 1,     // current conditions, forecast, air quality, altitude
+  ASTRONOMY: 2,   // sun/planet rise/set, moon phase, Saturn rings
+  SKY_EFFECTS: 3, // aurora, meteor shower, ISS pass
+  FEATURES: 4,    // corner/edge content-slot selection + what feeds them
+  SETTINGS: 5     // look & feel: hands, markers, colors, units, vibes
+};
+
+// STATUS first (DATA_VALID gates whether data fields are applied), then the
+// data chunks, then the purely cosmetic ones last.
+var MSG_TYPE_SEND_ORDER = [
+  MSG_TYPE.STATUS, MSG_TYPE.WEATHER, MSG_TYPE.ASTRONOMY,
+  MSG_TYPE.SKY_EFFECTS, MSG_TYPE.FEATURES, MSG_TYPE.SETTINGS
+];
+
+// BG_IMG_BEGIN/INDEX/DATA/END (custom-background image transfer, sent raw by
+// bg-image/bg-image-sync.js) and BG_IMG_STAMP (watch -> phone) are deliberately
+// not in this table: they never go through the chunked flat-dict path.
+
+// Maps every AppMessage key (other than MESSAGE_TYPE itself) to the chunk it
+// belongs in. One table, so there is one place to check when a key is added.
+var KEY_TYPE_MAP = (function () {
+  var map = {};
+  function assign(type, keys) { keys.forEach(function (k) { map[k] = type; }); }
+
+  assign(MSG_TYPE.STATUS, ['DATA_VALID', 'ERROR_CODE', 'LOCATION_NAME']);
+
+  assign(MSG_TYPE.WEATHER, [
+    'WEATHER_ERROR_CODE', 'WEATHER_TEMP_C', 'WEATHER_TEMP_HIGH_C', 'WEATHER_TEMP_LOW_C',
+    'WIND_SPEED_KMH', 'WIND_DIR_DEG', 'DEW_POINT_C', 'PRESSURE_HPA', 'PRESSURE_TREND', 'AQI_US',
+    'AQI_EU', 'ALTITUDE_M', 'WEATHER_LAST_UPDATE', 'FORECAST_TEMP_C', 'FORECAST_CONDITION',
+    'CURRENT_TEMP_DISPLAY', 'TEMP_HIGH_DISPLAY', 'TEMP_LOW_DISPLAY', 'FEELS_LIKE_DISPLAY',
+    'UV_DAILY_DISPLAY', 'UV_CURRENT_DISPLAY', 'RAIN_CHANCE_DISPLAY', 'HUMIDITY_DISPLAY',
+    'WIND_SPEED_DISPLAY', 'CLOUD_COVER_DISPLAY', 'VIS_SCORE_DISPLAY', 'ALTITUDE_DISPLAY',
+    'ALTITUDE_COLOR', 'DEW_POINT_DISPLAY', 'PRESSURE_DISPLAY', 'PRESSURE_COLOR', 'AQI_DISPLAY',
+    'AQI_COLOR', 'FORECAST_TEMP_DISPLAY_0', 'FORECAST_TEMP_DISPLAY_1',
+    'FORECAST_TEMP_DISPLAY_2', 'FORECAST_TEMP_DISPLAY_3', 'FORECAST_TEMP_DISPLAY_4',
+    'FORECAST_TEMP_DISPLAY_5', 'FORECAST_TEMP_DISPLAY_6', 'FORECAST_TEMP_DISPLAY_7',
+    'FORECAST_TEMP_DISPLAY_8', 'FORECAST_TEMP_COLORS', 'WEATHER_ICON_CATEGORY',
+    'FORECAST_ICON_CATEGORIES', 'WEATHER_ICON_COLOR', 'WEATHER_CLOUD_U8_BLOB',
+    'WEATHER_MAIN_U8_BLOB'
+  ]);
+
+  assign(MSG_TYPE.ASTRONOMY, [
+    'PLANET_RISE', 'PLANET_SET', 'SUN_RISE', 'SUN_SET', 'SUN_RISE_TOMORROW',
+    'MOON_PHASE_DISPLAY', 'SATURN_RINGS_DISPLAY', 'ASTRO_U8_BLOB'
+  ]);
+
+  assign(MSG_TYPE.SKY_EFFECTS, [
+    'AURORA_KP_X10', 'AURORA_ERROR_CODE', 'AURORA_KP_DISPLAY', 'AURORA_KP_COLOR',
+    'METEOR_SHOWER_NAME', 'METEOR_DISPLAY', 'ISS_NEXT_PASS', 'ISS_ERROR_CODE'
+  ]);
+
+  assign(MSG_TYPE.FEATURES, [
+    'CORNER_CONTENT', 'CORNER_COLOR_MODE', 'CORNER_PRIMITIVE_IDS', 'CORNER_PRIMITIVE_AUX',
+    'EDGE_LINES', 'EDGE_LINE_PRIMITIVE_IDS', 'EDGE_LINE_PRIMITIVE_AUX', 'DAILY_STEP_GOAL'
+  ]);
+
+  assign(MSG_TYPE.SETTINGS, [
+    'WEATHER_ICON_STYLE', 'SHOW_SECONDS', 'NIGHT_SCHEME_ENABLED', 'BG_ANIM_MODE',
+    'SHAKE_ANIM_MODE', 'SHADOW_TRANSLUCENT', 'SHADOW_ANGLE', 'DRAW_FEATURES_BENEATH_HANDS',
+    'BIG_ANALOG_MARKER_STYLE', 'SHAKE_ONLY_MASK', 'HANDS', 'MARKER_RINGS', 'MARKER_TEXT', 'COLORS',
+    'HOURLY_VIBE_START_MIN', 'HOURLY_VIBE_END_MIN', 'NEXT_STYLE_CHECK', 'SETTINGS_U8_BLOB'
+  ]);
+
+  return map;
+})();
+
+module.exports = {
+  MSG_TYPE: MSG_TYPE,
+  MSG_TYPE_SEND_ORDER: MSG_TYPE_SEND_ORDER,
+  KEY_TYPE_MAP: KEY_TYPE_MAP
+};

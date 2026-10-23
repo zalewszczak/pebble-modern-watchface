@@ -1,0 +1,5166 @@
+/**
+ * config-page.js -- builds the settings webview HTML for the classic
+ * Pebble "configurable" capability (no Clay, no build-time
+ * dependency). PKJS opens this via a data: URI in index.js.
+ *
+ * The page hands settings back by navigating to a "return URL" --
+ * but that URL is *not* a fixed constant. The runtime that opened the
+ * page (the real phone app, `pebble emu-app-config`, CloudPebble's
+ * emulator, etc.) appends its own `return_to` query parameter to the
+ * page URL, and the page is expected to use that value if present,
+ * falling back to the legacy `pebblejs://close#` prefix only when
+ * it's absent. This is the standard pattern from Pebble's own "App
+ * Configuration (manual setup)" guide -- skipping it is why Save can
+ * silently do nothing under some runtimes (there's no handler
+ * registered for a URL scheme we made up ourselves).
+ *
+ * Font/colour "previews" here are necessarily approximations -- the
+ * watch's actual system fonts (Leco, Roboto subset, Bitham) and
+ * custom resource fonts aren't available as web fonts in a phone
+ * browser, so each option gets a CSS style chosen to be visually
+ * evocative of the real thing rather than pixel-identical to it.
+ * Good enough to tell them apart before committing to one. The color
+ * scheme preview, however, is exact -- both this page and the watch
+ * derive colors the same way (2-bit-per-channel packed bytes), so
+ * what you see here is exactly what you'll get.
+ */
+
+var APP_VERSION = "1.3-rc-candidate";
+
+// servicelog require removed here -- serviceStatusRowsHtml() (its
+// only user in this file) moved to config/config-debug.js, which
+// requires it directly now.
+// See presets-lookups.js's own header comment for what lives there and
+// why (font metadata, color scheme presets, the corner/edge feature
+// content catalogue, hand-style presets) -- required once up top since
+// several of these tables (FONT_LOOKUP/CORNER_CATEGORIES especially)
+// are used well before HAND_PRESETS' own spot further down.
+var PRESETS_LOOKUPS = require('./presets-lookups');
+var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
+var FONT_CATEGORIES = PRESETS_LOOKUPS.FONT_CATEGORIES;
+var COLOR_SCHEMES = PRESETS_LOOKUPS.COLOR_SCHEMES;
+var CORNER_COLOR_MODE_LABELS = PRESETS_LOOKUPS.CORNER_COLOR_MODE_LABELS;
+var CORNER_CATEGORIES = PRESETS_LOOKUPS.CORNER_CATEGORIES;
+var HAND_PRESETS = PRESETS_LOOKUPS.HAND_PRESETS;
+var MARKER_STYLE_PRESET_FIELDS = PRESETS_LOOKUPS.MARKER_STYLE_PRESET_FIELDS;
+var ABOUT_LOGO_SVG = require('./data/generated/about-logo-svg');
+// Renders the traced Modern mark as an inline <svg fill="currentColor">
+// rather than an <img src="data:...">, so the mark's color comes from
+// CSS (`color`) -- see .about-btn-logo/.about-logo in the stylesheet
+// for the black-in-light/white-in-dark rule -- instead of being baked
+// into a fixed-color raster image. className/attrs are plain strings
+// spliced into the tag, matching how the rest of this file builds markup.
+function aboutLogoMarkup(className, attrs) {
+  return '<svg class="' + className + '" viewBox="' + ABOUT_LOGO_SVG.viewBox + '"' +
+    ' xmlns="http://www.w3.org/2000/svg"' + (attrs || '') + '>' +
+    '<path fill-rule="evenodd" d="' + ABOUT_LOGO_SVG.path + '"/></svg>';
+}
+
+// The 7 corner/edge base field names that mean something different in
+// Analog vs Digital (bar/top) -- an analog edge line vs. a digital
+// side-column/bottom-feature row -- see the matching SLOT_DEFS entries
+// (client-side, further down) for the full reasoning, and index.js's
+// own dualContextSetting() for how each is persisted as two separate
+// CONFIG_<BASE>_CONTENT/COLOR_ANALOG/_DIGITAL values instead of one.
+// Each name here gets a "Content" and a "Color" field. Used server-
+// *Digital; the identical list is also embedded client-side (see
+// DUAL_CONTEXT_FIELD_LIST further down in the emitted <script>) since
+// the swap logic that consumes it runs in the browser, not here --
+// kept in perfect sync with THIS array by copy rather than a second
+// require(), since it's 7 short strings, not a table worth its own
+// module export.
+// DUAL_CONTEXT_FIELD_LIST, esc, MODE_BTN_ICONS, sectionCategoryIcon,
+// SECTION_META, sectionLegendHtml, subsectionLegendHtml,
+// verticalButtonGroupHtml, modeButtonGroupHtml, colorRoleButtonGroupHtml
+// all moved to config/config-template.js (configuration architecture
+// extraction, JS8 first slice) -- generic template helpers every
+// domain-specific picker below builds on.
+var configTemplate = require('./config/config-template');
+var esc = configTemplate.esc;
+var sectionCategoryIcon = configTemplate.sectionCategoryIcon;
+var SECTION_META = configTemplate.SECTION_META;
+var sectionLegendHtml = configTemplate.sectionLegendHtml;
+var subsectionLegendHtml = configTemplate.subsectionLegendHtml;
+var verticalButtonGroupHtml = configTemplate.verticalButtonGroupHtml;
+var modeButtonGroupHtml = configTemplate.modeButtonGroupHtml;
+var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
+
+// Base64 data: URIs for each bitmap marker style's preview image,
+// generated at build time from the same resource PNGs used on the
+// watch itself (resources/images/<name>_background.png -- see
+// scripts/generate-marker-previews.js -- this file itself has no way
+// to load an external image at runtime, since the whole settings
+// page ends up as one self-contained data: URI with no server behind
+// it). Missing entries (a style with no PNG provided yet) are handled
+// gracefully wherever this is used below, not treated as an error.
+var MARKER_PREVIEW_IMAGES = require('./data/generated/marker-preview-images');
+
+// Base64 data: URIs for the hand style picker popup's 9 buttons
+// (resources/infographics/hands<n>.png -- see
+// scripts/generate-infographics.js) and the marker style picker
+// popup's 4 procedural-preset buttons (marker_preset_<name>.png,
+// same script) -- same "generated at build time, embedded gracefully
+// missing-or-not" story as MARKER_PREVIEW_IMAGES/EXAMPLE_STYLE_IMAGES
+// above and below.
+var HAND_STYLE_IMAGES = require('./data/generated/hand-style-images');
+var MARKER_PRESET_IMAGES = require('./data/generated/marker-preset-images');
+
+// Base64 data: URIs for the hand editor popup's own full-width
+// explainer diagram, one per HandConfig.style value (see
+// scripts/generate-infographics.js and its own comment) -- distinct
+// from HAND_STYLE_IMAGES above, which is the style PICKER popup's
+// thumbnail grid, not the editor's in-popup diagram.
+var HAND_STYLE_DIAGRAM_IMAGES = require('./data/generated/hand-style-diagram-images');
+// Small unlabeled silhouette icons for the hand-style PICKER's own
+// button list (see scripts/generate_hand_style_icons.py and
+// scripts/generate-hand-style-icons.js) -- a different image set from
+// HAND_STYLE_DIAGRAM_IMAGES just above, which is the full-width
+// labeled explainer diagram at the top of the editor popup instead.
+// Both are keyed the same way: HandConfig.style id as a string.
+var HAND_STYLE_ICON_IMAGES = require('./data/generated/hand-style-icon-images');
+// One representative ("partly cloudy") icon per weather_icon_style
+// value, nearest-neighbor upscaled to stay crisp -- see
+// scripts/generate-weather-icon-previews.js for how these get made.
+var WEATHER_ICON_STYLE_PREVIEWS = require('./data/generated/weather-icon-style-previews');
+
+// "Example styles" grid (first section on the settings page) -- each
+// numbered slot pairs a screenshot (resources/example-styles/<n>.png,
+// embedded at build time -- see generate-example-style-previews.js)
+// with a hand-authored preset (src/pkjs/example-style-presets.js) in
+// exactly the same shape the "Style Presets" section's own export/
+// import uses. This single constant controls how many slots exist;
+// add a 10th by bumping it, adding resources/example-styles/10.png,
+// re-running the generator script, and adding a "10" entry to
+// example-style-presets.js -- nothing else here needs to change.
+var EXAMPLE_STYLE_COUNT = 5;
+var EXAMPLE_STYLE_IMAGES = require('./data/generated/example-style-images');
+var EXAMPLE_STYLE_PRESETS = require('./example-style-presets');
+
+// Sun..Sat, matching struct tm's own tm_wday (0=Sunday) so the watch
+// can test "is today's bit set" directly against the mask byte with
+// no reindexing -- see hourly_vibe_days_mask's own comment in
+// eclipse_data.h. Rendered as a flush 7-button row (renderMarkerStyleGrid()'s
+// neighbors aside, this is the one other place a whole button row is
+// built at HTML-generation time here rather than client-side).
+var HOURLY_VIBE_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+// quiet_time_is_active() is a real, standard Pebble SDK function
+// (pebble.h, present on every platform this app targets) -- gates
+// whether the "Override quiet time" checkbox is offered at all, so
+// this whole feature degrades gracefully (silently always-on, no
+// dead checkbox) if that ever stops being true for some future
+// platform this app gets ported to.
+var QUIET_TIME_API_AVAILABLE = true;
+
+// Base64 data: URIs for the font picker popup's real on-watch
+// renderings of its own sample text -- resources/font-previews/
+// <fontId>_<role>.png, see scripts/generate-font-previews.js and its
+// own top-of-file comment for why this exists (Gothic/Bitham/LECO
+// have no free live-webfont equivalent to preview with) and the exact
+// filename convention. Same "generated at build time, embedded
+// gracefully missing-or-not" story as MARKER_PREVIEW_IMAGES/
+// HAND_STYLE_IMAGES above -- a font/role with no PNG yet just falls
+// back to the existing CSS-approximation text preview for that one
+// button.
+var FONT_PREVIEW_IMAGES = require('./data/generated/font-preview-images');
+
+// FONT_LOOKUP (required up top, alongside PRESETS_LOOKUPS itself) --
+// see presets-lookups.js's own header/FONT_LOOKUP comment for what
+// every field means. (Still need to bump FONT_MAX_CONTENT_ID in
+// index.js when adding an entry there.)
+
+// googleFontsHref, cdnFontLinks, fontLookupEntry,
+// secondsAvailableForDigital, fontOptionsHtml all moved to
+// config/config-fonts.js (configuration architecture extraction, JS8
+// second slice).
+var configFonts = require('./config/config-fonts');
+var googleFontsHref = configFonts.googleFontsHref;
+var cdnFontLinks = configFonts.cdnFontLinks;
+var directWebfontStyle = configFonts.directWebfontStyle;
+var fontLookupEntry = configFonts.fontLookupEntry;
+var fontOptionsHtml = configFonts.fontOptionsHtml;
+var fontManagerSource = require('./config/font-manager');
+
+
+// verticalButtonGroupHtml/modeButtonGroupHtml/colorRoleButtonGroupHtml
+// moved to config/config-template.js -- see the alias block near the
+// top of this file for where they're pulled back in.
+
+// CORNER_CONTENT_OPTIONS/cornerContentOptionsHtml moved to
+// config/config-features.js (configuration architecture extraction,
+// JS8 fifth slice).
+var configFeatures = require('./config/config-features');
+var CORNER_CONTENT_OPTIONS = configFeatures.CORNER_CONTENT_OPTIONS;
+var cornerContentOptionsHtml = configFeatures.cornerContentOptionsHtml;
+
+// Primitive-strip preview (Feature Primitive Refactor Phase 9) -- see
+// config/primitive-decompose.js's own header for what this can and can't
+// do yet. Phase 10: the full per-content chip table is precomputed here,
+// once, straight from primitiveChipsForContent() (which itself derives
+// from the real transport sequences -- see that function's own header) --
+// not just the two-entry ATOMIC_DECOMPOSITIONS fallback table Phase 9 sent
+// down before every other content id had a transport sequence to derive
+// from. Computed from PRESETS_LOOKUPS' own unfiltered CORNER_CATEGORIES
+// (decomposition is a fixed property of a content id, not something that
+// depends on the aurora-enabled/etc. per-request filtering
+// cornerCategoriesForClient applies), so it's the same for every request
+// and only needs computing once at module load.
+var primitiveDecomposeModule = require('./config/primitive-decompose');
+var primitiveContentDecompositions = {};
+PRESETS_LOOKUPS.CORNER_CATEGORIES.forEach(function (cat) {
+  cat.items.forEach(function (it) {
+    primitiveContentDecompositions[it.id] = primitiveDecomposeModule.primitiveChipsForContent(it.id);
+  });
+});
+// Phase 9 composer: the palette of resolver-covered primitives a person
+// can actually build a custom sequence from, and the raw numeric
+// transport table (so "start from this content" can seed the composer --
+// see PRIMITIVE_TRANSPORT_SEQUENCES in the generated script below).
+var primitivePalette = primitiveDecomposeModule.PRIMITIVE_PALETTE;
+var primitiveTransportSequences = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_SEQUENCES;
+var primitiveTransportAux = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_AUX;
+var primitiveTimezoneZones = primitiveDecomposeModule.TIMEZONE_ZONES;
+var primitiveForecastSlots = primitiveDecomposeModule.FORECAST_SLOTS;
+var primitivePreviewText = primitiveDecomposeModule.PRIMITIVE_PREVIEW_TEXT;
+var primitiveIds = require('./config/primitive-ids-generated');
+// Client-side composer code (real function declarations, spliced in below).
+var composerClientSource = require('./config/config-composer');
+
+// Whether a font renders Roman numerals correctly now lives on
+// FONT_LOOKUP itself (each entry's own `romanOk` field) -- see its
+// comment in presets-lookups.js. The Roman numerals checkbox in the
+// numerals editor gets disabled (and, if it was checked, force-
+// unchecked) whenever the selected marker-text font has `romanOk: false`.
+
+// A 12-button grid for picking which hour numerals (kind='hour', labels
+// 12,1..11) or which every-5-second slots (kind='sec', labels 0,5..55)
+// should get a numeral -- bit i of the mask corresponds to button i,
+// same order marker_layer_draw_text() iterates on-watch.
+// markBtnGridHtml/MARKER_BORDER_MIN/MARKER_BORDER_MAX/
+// customMarkerHiddenInputsHtml/customMarkerModalHtml/textMarkerModalHtml
+// all moved to config/config-markers.js (configuration architecture
+// extraction, JS8 fifth slice).
+var configMarkers = require('./config/config-markers');
+var markBtnGridHtml = configMarkers.markBtnGridHtml;
+var MARKER_BORDER_MIN = configMarkers.MARKER_BORDER_MIN;
+var MARKER_BORDER_MAX = configMarkers.MARKER_BORDER_MAX;
+var customMarkerHiddenInputsHtml = configMarkers.customMarkerHiddenInputsHtml;
+var customMarkerModalHtml = configMarkers.customMarkerModalHtml;
+var textMarkerModalHtml = configMarkers.textMarkerModalHtml;
+
+// schemeColorOptionsHtml moved to config/config-colors.js
+// (configuration architecture extraction, JS8 fifth slice).
+var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOptionsHtml;
+
+// handHiddenInputsHtml/HAND_COPY_SOURCE/HAND_COPY_SOURCE_LABEL/
+// handEditorModalHtml all moved to config/config-hands.js
+// (configuration architecture extraction, JS8 fifth slice).
+var configBackground = require('./config/config-background');
+var configHands = require('./config/config-hands');
+var handHiddenInputsHtml = configHands.handHiddenInputsHtml;
+var HAND_COPY_SOURCE = configHands.HAND_COPY_SOURCE;
+var HAND_COPY_SOURCE_LABEL = configHands.HAND_COPY_SOURCE_LABEL;
+var handEditorModalHtml = configHands.handEditorModalHtml;
+
+
+/**
+ * @param {object} current  current settings, as plain values:
+ *   { autoLoc, lat, lon, owmKey, updateMins,
+ *     clockFont, showSeconds, bottomStyle: 'digital'|'analog' (a persisted 'biganalog' from before this app version is treated as 'analog'),
+ *     bigAnalogMarkerStyle: '0'-'10' (0/1/2/9/10=None/Braun/Swiss/Classy/Minimal presets, which copy their ring + numerals values into customHour.../customSec.../markerText... and reach the watch as 8; 3-7=bitmap styles; 8=custom -- see customHour.../customSec.../markerText... below), upperMiddleLine1Content/upperMiddleLine2Content: '0'-'12', upperMiddleLine1Color/upperMiddleLine2Color: '0'-'3',
+ *     colorScheme: '0'-'9'|'custom', customBg, customText, customAccent (packed byte strings),
+ *     nightEnabled, nightScheme, nightCustomBg, nightCustomText, nightCustomAccent,
+ *     showIss, showMajorStars, sunMoonSize: '25'|'50'|'75'|'100', shakeLabelSeconds, vibrateOnPhaseChange,
+ *     tempUnit: 'C'|'F',
+ *     cornerTL, cornerTR, cornerBL, cornerBR: '0'-'9', cornerTLColor, cornerTRColor, cornerBLColor, cornerBRColor: '0'-'3', stepGoal,
+ *     customHourStyle/customSecStyle: '0'-'2' (dot/line/square), '4' (tapered -- 3 reserved/unused;
+ *     also drives customHourInnerThickness (1-20)/customSecInnerThickness (1-10) below, only
+ *     meaningful for style 4), customHourThickness (1-20)/
+ *     customSecThickness (1-10), customHourInnerEcc/customHourOuterEcc/customSecInnerEcc/
+ *     customSecOuterEcc: '0'-'100', customHourInnerBorder/customHourOuterBorder/
+ *     customSecInnerBorder/customSecOuterBorder: '0'-'100' (% reach, see marker_reach_px()
+ *     in marker_layer.c -- each mark spans directly between its inner/outer border points),
+ *     markerTextTarget: '0'(off)|'1'(hour)|'2'(second), markerTextFont: '0'-'35', markerTextOffset: '-50'-'50',
+ *     markerTextHourMask/markerTextSecMask: 0-4095 (12-bit),
+ *     hourlyVibeMode: '0'(off)|'1'(on full hours)|'2'(every X minutes), hourlyVibeIntervalMin: '1'-'180',
+ *     hourlyVibePattern: '0'(short)|'1'(double)|'2'(long), hourlyVibeStartTime/hourlyVibeEndTime: 'HH:MM'
+ *     (inclusive; start==end, including the '00:00'/'00:00' default, means all 24 hours),
+ *     hourlyVibeDaysMask: 0-127 (bit i = HOURLY_VIBE_DAY_LABELS[i], Sun=bit 0), hourlyVibeOverrideQuiet: boolean,
+ *     testMode, testDateTime, fullKeysetJson: pretty-printed JSON string, every current
+ *     AppMessage key/value pre-filled for the debug "Full keyset" window (see buildFullKeysetDict() in index.js) }
+ */
+// One quick-recall Style Presets row (apply button, rename input, save/
+// rename/delete icon buttons) plus its three backing hidden inputs --
+// called for n = 1..6 from buildConfigHtml below, same "templated, not
+// copy-pasted per slot" pattern as handEditorModalHtml() uses for the
+// 3 hands.
+// presetSlotHtml moved to config/config-presets.js (configuration
+// architecture extraction, JS8 fourth slice).
+var configPresets = require('./config/config-presets');
+var presetSlotHtml = configPresets.presetSlotHtml;
+// Scheduled My styles popup (CSS, modal markup, client script) -- see the
+// module's own header.
+var configPresetSchedule = require('./config/config-preset-schedule');
+
+// serviceStatusRowsHtml/rawMessageLogButtonsHtml moved to
+// config/config-debug.js (configuration architecture extraction, JS8
+// fourth slice).
+var configDebug = require('./config/config-debug');
+var serviceStatusRowsHtml = configDebug.serviceStatusRowsHtml;
+var rawMessageLogButtonsHtml = configDebug.rawMessageLogButtonsHtml;
+var fakeWeatherPanelHtml = configDebug.fakeWeatherPanelHtml;
+
+var FAQ_ITEMS = PRESETS_LOOKUPS.FAQ_ITEMS;
+
+function faqItemsHtml() {
+  return FAQ_ITEMS.map(function (item, index) {
+    return '<div class="faq-item" data-faq-index="' + index + '">' +
+      '<button type="button" class="faq-question" onclick="toggleFaqItem(' + index + ')">' +
+        '<span>' + esc(item[0]) + '</span><span class="faq-chevron">&#9656;</span>' +
+      '</button>' +
+      '<div class="faq-answer"><p>' + esc(item[1]) + '</p></div>' +
+    '</div>';
+  }).join('');
+}
+
+function buildConfigHtml(current) {
+  // autoLocChecked through initialNightColors all moved to
+  // config/config-state.js (configuration architecture extraction, JS8
+  // third slice) as deriveConfigState() -- one call, then aliased back
+  // to the same local names so every reference further down in this
+  // function is unchanged.
+  var configState = require('./config/config-state').deriveConfigState(current);
+  var autoLocChecked = configState.autoLocChecked;
+  var manualDisabled = configState.manualDisabled;
+  var testModeChecked = configState.testModeChecked;
+  var testDisabled = configState.testDisabled;
+  var rawLogEntries = configState.rawLogEntries;
+  var mostRecentRawChunk = configState.mostRecentRawChunk;
+  var debugTextareaInitial = configState.debugTextareaInitial;
+  var secondsChecked = configState.secondsChecked;
+  var cornerFontId = configState.cornerFontId;
+  var cornerCategoriesForClient = configState.cornerCategoriesForClient;
+  var exampleStylesButtonsHtml = configState.exampleStylesButtonsHtml;
+  var markerStyleNum = configState.markerStyleNum;
+  var isBitmapMarkerStyle = configState.isBitmapMarkerStyle;
+  var bitmapCornerOverride = configState.bitmapCornerOverride;
+  var edgeAvail = configState.edgeAvail;
+  var initialColors = configState.initialColors;
+  var initialNightColors = configState.initialNightColors;
+
+  return '<!DOCTYPE html>' +
+'<html><head><meta charset="utf-8">' +
+'<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">' +
+'<title>Modern Settings</title>' +
+'<link rel="preconnect" href="https://fonts.googleapis.com">' +
+'<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>' +
+'<link rel="stylesheet" href="' + googleFontsHref() + '">' +
+cdnFontLinks() +
+directWebfontStyle() +
+'<style id="mainStyle">' +
+'  :root { --page-bg: #f4f4f4; --card-bg: #fff; --text: #222; --text-strong: #333; --text-muted: #666; --text-faint: #888; --text-faint2: #555; --text-disabled: #999; --border: #ccc; --border-light: #eee; --border-lighter: #ddd; --btn-bg: #fafafa; }' +
+'  @media (prefers-color-scheme: dark) {' +
+'    :root { --page-bg: #1c1c1e; --card-bg: #2c2c2e; --text: #f2f2f2; --text-strong: #e5e5e5; --text-muted: #aaa; --text-faint: #999; --text-faint2: #bbb; --text-disabled: #777; --border: #48484a; --border-light: #3a3a3c; --border-lighter: #545456; --btn-bg: #3a3a3c; }' +
+'  }' +
+'  body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 16px 20px 90px; background: var(--page-bg); color: var(--text); }' +
+'  html, body { touch-action: manipulation; }' +
+'  /* Full-screen startup loader */' +
+'  #startupLoader { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--page-bg); color: var(--text); opacity: 1; transition: opacity 360ms ease; }' +
+'  #startupLoader.hidden { opacity: 0; pointer-events: none; }' +
+'  #startupLoaderTitle { font-size: 22px; font-weight: 700; letter-spacing: .2px; }' +
+'  #startupLoaderSubtitle { font-size: 13px; color: var(--text-muted); }' +
+'  #startupProgressTrack { width: min(280px, 72vw); height: 8px; overflow: hidden; border-radius: 999px; background: var(--border-light); box-shadow: inset 0 1px 2px rgba(0,0,0,.08); }' +
+'  #startupProgressBar { width: 0%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #d98b9b, #e8b46a, #9ac6b0); transition: width 260ms ease-out; }' +
+'  #startupProgressPercent { min-width: 3em; text-align: center; font-size: 12px; color: var(--text-faint); font-variant-numeric: tabular-nums; }' +
+ // belt-and-suspenders alongside the viewport meta tag --
+                                                    // some in-app webviews still allow double-tap-to-zoom
+                                                    // on individual elements unless this is set too, and a
+                                                    // double-tap on a fast-repeating button (the settings
+                                                    // and slider buttons below) shouldn't ever zoom the page.
+'  button, .mode-btn, .slot-btn, .slider-step-btn { touch-action: manipulation; -webkit-user-select: none; user-select: none; }' +
+// min-width: 0 overrides the browser's own default UA-stylesheet
+// min-width on <fieldset> (effectively "min-content" -- fieldsets
+// refuse to shrink narrower than their own content's natural width by
+// default, unlike a plain <div>). Without this, the section header's
+// long sub-header text (see .section-legend-sub's own min-width: 0
+// comment) still forced the WHOLE fieldset -- and so the whole
+// section "button" card -- wider to fit it, even though that span
+// itself already had nowrap/overflow/ellipsis set correctly; the
+// ellipsis was truncating relative to an already-too-wide box instead
+// of the page's actual width. This is the actual root cause; the
+// flex-item-level fix wasn\'t enough on its own because the fieldset
+// ancestor was the thing refusing to shrink in the first place.
+'  fieldset { border: none; background: var(--card-bg); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); min-width: 0; }' +
+'  legend { font-weight: 600; font-size: 14px; padding: 0; color: var(--text-strong); }' +
+'  label { display: block; font-size: 14px; margin: 10px 0 4px; color: var(--text-strong); }' +
+'  input[type=text], input[type=number], select { width: 100%; box-sizing: border-box; padding: 8px; font-size: 15px; border: 1px solid var(--border); border-radius: 5px; background: var(--card-bg); color: var(--text); }' +
+// Time/date-time pickers get their own, larger treatment -- these are
+// effectively buttons (tapping anywhere in the field opens the
+// system's native picker), but a bare unstyled <input type="time">
+// renders quite small and cramped next to everything else on this
+// page, making it an easy target to miss on a phone screen. Bigger
+// padding/min-height/font-size than the plain text/number/select rule
+// above, same border/radius/color language as the rest of the page,
+// and a visibly larger picker glyph (::-webkit-calendar-picker-
+// indicator) since that icon is the actual tap target on most mobile
+// browsers, not just decorative.
+'  input[type=time], input[type=datetime-local] { display: block; width: 50vw; max-width: 50vw; margin: 0 auto; box-sizing: border-box; padding: 13px 40px 13px 12px; font-size: 24px; font-weight: 600; min-height: 46px; border: 1px solid var(--border); border-radius: 8px; background: var(--card-bg); color: var(--text); }' +
+// scale() is purely visual (doesn't change layout), but the earlier
+// version also gave the indicator its own margin-left -- THAT does
+// take up real layout width on top of the input\'s own 100%-wide box,
+// which is what was actually pushing these past the right edge of
+// their section. Reserved space for the enlarged icon now comes from
+// the input\'s own right padding above instead, so the rendered
+// control never exceeds the width it was actually given.
+'  input[type=time]::-webkit-calendar-picker-indicator, input[type=datetime-local]::-webkit-calendar-picker-indicator { transform: scale(1.3); cursor: pointer; }' +
+'  input[disabled], select[disabled] { background: var(--border-light); color: var(--text-disabled); }' +
+'  .checkbox-row { display: flex; align-items: center; gap: 10px; }' +
+'  .radio-row { display: flex; align-items: center; gap: 10px; margin-top: 6px; }' +
+'  input[type=checkbox] { appearance: none; -webkit-appearance: none; width: 30px; height: 30px; flex-shrink: 0; margin: 0; padding: 0; box-sizing: border-box; border: 2px solid var(--border); border-radius: 8px; background: var(--card-bg); position: relative; }' +
+'  input[type=checkbox]:checked { background: #ff9200; border-color: #ff9200; }' +
+'  input[type=checkbox]:checked::after { content: ""; position: absolute; left: 9px; top: 4px; width: 7px; height: 14px; border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(45deg); }' +
+'  input[type=checkbox][disabled] { background: var(--border-light); border-color: var(--border-lighter); }' +
+'  input[type=checkbox][disabled]:checked { background: #f0c785; border-color: #f0c785; }' +
+'  .help { color: var(--text-faint); font-size: 12px; margin-top: 4px; }' +
+// Label row + the small round "?" toggle button used throughout this
+// page: every toggle/checkbox/button-group's own longer explanation
+// (the .help div right after it) starts hidden, and this button is
+// the only way to reveal it -- tapping again re-hides it. Deliberately
+// its own sibling element rather than living inside the control it
+// describes, so it stays tappable even while that control itself is
+// disabled (grayed-out font pickers, unavailable side-feature
+// checkboxes, etc. -- the description of why it\\'s unavailable is
+// often exactly what you want in that state). See toggleHelp() near
+// toggleSection()/toggleSubsection() for the JS side.
+'  .field-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px 0 4px; }' +
+'  .field-label-row > label { margin: 0; }' +
+'  .field-label-row > .secondary-btn { width: auto; flex: 1 1 auto; margin-top: 0; }' +
+'  .help-btn { flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text-faint); font-size: 12px; font-weight: 700; line-height: 18px; text-align: center; padding: 0; cursor: pointer; -webkit-appearance: none; }' +
+'  .faq-search-wrap { position: relative; margin: 0 0 12px; }' +
+'  .faq-search { width: 100%; box-sizing: border-box; padding: 10px 12px 10px 34px; border: 1px solid var(--border); border-radius: 8px; background: var(--btn-bg); color: var(--text-strong); font-size: 13px; }' +
+'  .faq-search-icon { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-faint); pointer-events: none; font-size: 15px; }' +
+'  .faq-item { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--btn-bg); margin-bottom: 7px; }' +
+'  .faq-question { width: 100%; display: flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--text-strong); text-align: left; padding: 10px 11px; font-size: 13px; font-weight: 650; cursor: pointer; }' +
+'  .faq-question:hover { background: var(--border-light); }' +
+'  .faq-question .faq-chevron { margin-left: auto; color: var(--text-faint); transition: transform .16s ease; flex: 0 0 auto; }' +
+'  .faq-item.open .faq-chevron { transform: rotate(90deg); }' +
+'  .faq-answer { display: none; padding: 0 11px 11px; color: var(--text-faint); font-size: 12px; line-height: 1.45; border-top: 1px solid var(--border-light); }' +
+'  .faq-item.open .faq-answer { display: block; }' +
+'  .faq-answer p { margin: 9px 0 0; }' +
+'  .faq-empty { display: none; padding: 12px 4px; color: var(--text-faint); font-size: 12px; text-align: center; }' +
+'  .checkbox-row .help-btn, .radio-row .help-btn { margin-left: auto; }' +
+// The 4 section-level intro blurbs (Example styles/Features/My Style
+// Presets/Weather -- the ones with no specific toggle of their own to
+// attach a help-btn to) get a lighter-weight version of the same idea:
+// clipped to one line with a trailing ellipsis by default, and tapping
+// the text itself (there\\'s no separate button here -- the truncated
+// line IS the tap target) expands it in place. See toggleSectionIntro().
+'  .section-intro { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
+'  .section-intro.expanded { white-space: normal; overflow: visible; text-overflow: clip; }' +
+'  .tooltip-warning { color: #ff9200; font-weight: 600; }' +
+'  .radio-row { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }' +
+'  .radio-row label { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; }' +
+'  .radio-row input { width: auto; }' +
+'  .secondary-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--border-light); border: 1px solid var(--border); border-radius: 8px; margin-top: 12px; }' +
+'  .preset-slot-row { display: flex; gap: 6px; align-items: stretch; margin-top: 8px; }' +
+'  .preset-apply-btn { flex: 1; box-sizing: border-box; padding: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; text-align: left; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+'  .preset-apply-btn:disabled { opacity: 0.45; }' +
+'  .preset-icon-btn { width: 44px; flex-shrink: 0; font-size: 18px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text-strong); }' +
+'  .preset-name-input { flex: 1; box-sizing: border-box; }' +
+configPresetSchedule.css +
+'  .example-style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }' +
+'  .example-style-btn { position: relative; aspect-ratio: 200 / 228; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
+'  .example-style-btn:disabled { opacity: 0.4; }' +
+'  .example-style-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }' +
+'  .example-style-btn-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 13px; font-weight: 600; color: var(--text); }' +
+'  .style-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }' +
+'  .style-picker-btn { position: relative; aspect-ratio: 200 / 228; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
+'  .style-picker-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }' +
+// The 5 bitmap marker style thumbnails (Modern/Shadow/Tally/Bell/Fancy)
+// are the SAME mask art the watch itself tints with the user's main
+// color -- i.e. drawn in white on transparent, meant to be recolored
+// before display, never shown as-is. Shown as-is here (no tint
+// applied, just the raw watch resource -- see MARKER_PREVIEW_IMAGES),
+// that reads fine against this page's own dark/night theme (white on
+// a dark button background) but is invisible against its light/day
+// theme (white on a near-white button background) -- inverted here so
+// day mode gets black-on-light instead, and un-inverted back in the
+// dark-mode block below so night mode keeps its already-fine look.
+// Doesn\'t apply to the 4 procedural marker-preset thumbnails or the 9
+// hand-style thumbnails (style-picker-btn img above, unaffected) --
+// those are ordinary full-color pictures already visible in both
+// themes, not tintable masks.
+'  .bitmap-marker-img { filter: invert(1); }' +
+'  .style-picker-btn-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 11px; font-weight: 600; color: var(--text); text-align: center; padding: 4px; box-sizing: border-box; }' +
+'  .style-picker-btn-cap { position: absolute; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 2px; text-align: center; line-height: 1.2; }' +
+// Hand style selector specifically wants its name at the TOP of the
+// image rather than the bottom every other style-picker-btn grid
+// (marker/indices style) still uses -- same look, just anchored to
+// top:0 instead of bottom:0.
+'  .style-picker-btn-cap-top { position: absolute; left: 0; right: 0; top: 0; background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; font-weight: 700; padding: 3px 2px; text-align: center; line-height: 1.2; }' +
+'  .style-picker-custom-btn { width: 100%; box-sizing: border-box; padding: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 10px; }' +
+'  .style-picker-custom-btn:active { background: var(--border-light); }' +
+// Same shape/size as "Custom" above -- reddish hue is purely to signal
+// "this turns the feature off" the same way other destructive/off
+// controls on this page read, not a different button style.
+'  .style-picker-none-btn { color: #b23a3a; border-color: #d99; background: rgba(178,58,58,0.08); }' +
+'  .style-picker-none-btn:active { background: rgba(178,58,58,0.16); }' +
+// Font picker -- one full-width row per font, left third showing that
+// font's own live preview text set in its actual (Google Fonts, where
+// available -- see FONT_LOOKUP's own comment) family at a size scaled
+// toward its real on-watch bake size, right two-thirds the font's
+// plain-text name at the page's normal UI size. Same overall shape as
+// .mode-btn-group-vertical's stacked rows, just with an internal
+// left/right split instead of plain centered text.
+'  .font-picker-btn { display: flex; align-items: stretch; width: 100%; box-sizing: border-box; text-align: left; padding: 0; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; overflow: hidden; }' +
+// Fixed at roughly half the screen regardless of how many fonts the
+// current category/compatibility filters leave standing -- without
+// this the popup shrank down to fit just a couple of rows (or the
+// empty-state message) whenever a filter narrowed the grid, changing
+// size every time you tapped a category and making the sheet feel
+// unstable. #fontPickerModal only, not .modal-box generally -- other
+// pickers using that same class (marker style, hand style, colors...)
+// already size themselves reasonably to their own fixed content and
+// don\'t have this problem.
+'  #fontPickerModal .modal-box { height: 75vh; max-height: 75vh; }' +
+'  .font-picker-btn:active { background: var(--border-light); }' +
+'  .font-picker-btn.selected { border-color: #ff9200; border-width: 2px; }' +
+'  .font-picker-preview { flex: 0 0 34%; display: flex; align-items: center; justify-content: center; padding: 10px 4px; box-sizing: border-box; border-right: 1px solid var(--border); overflow: hidden; white-space: nowrap; color: var(--text-strong); line-height: 1.1; }' +
+'  .font-picker-name { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; padding: 8px 12px; font-size: 13px; font-weight: 600; color: var(--text-strong); box-sizing: border-box; }' +
+'  .font-picker-size { display: inline-flex; align-items: center; justify-content: center; padding: 2px 7px; border-radius: 999px; font-size: 9px; line-height: 1.2; font-weight: 700; letter-spacing: 0.45px; white-space: nowrap; }' +
+'  .font-picker-size-xs { background: #dbeafe; color: #245b9e; }' +
+'  .font-picker-size-s { background: #dcfce7; color: #28734a; }' +
+'  .font-picker-size-m { background: #fef3c7; color: #8a6410; }' +
+'  .font-picker-size-l { background: #ffedd5; color: #a45116; }' +
+'  .font-picker-size-xl { background: #fee2e2; color: #a33a3a; }' +
+// Size label + [font height number | gray category tags] share ONE
+// non-wrapping row under the font's name: whatever doesn't fit inside
+// the button is simply clipped at its edge (overflow: hidden, with
+// align-self: stretch + min-width: 0 so the row is capped at the
+// button's own width instead of growing to its content). The tags are
+// 30% smaller than the size label (9px * 0.7 = 6.3px, padding/spacing/
+// gap scaled the same). Gray comes from the theme's own border/muted-
+// text variables so it stays gray (and readable) in dark mode too.
+'  .font-picker-tags { display: flex; flex-wrap: nowrap; align-items: center; gap: 3px; align-self: stretch; min-width: 0; overflow: hidden; }' +
+'  .font-picker-tags > * { flex: 0 0 auto; }' +
+'  .font-picker-height { font-size: 10px; line-height: 1.2; font-weight: 300; font-stretch: condensed; letter-spacing: 0.32px; color: var(--text-faint); }' +
+'  .font-picker-tags-divider { width: 1px; height: 8px; background: var(--border); }' +
+'  .font-picker-tag { display: inline-flex; align-items: center; justify-content: center; padding: 1.4px 4.9px; border-radius: 999px; font-size: 6.3px; line-height: 1.2; font-weight: 400; font-stretch: condensed; letter-spacing: 0.32px; white-space: nowrap; text-transform: uppercase; background: var(--border-lighter); color: var(--text-muted); }' +
+// Real on-watch renderings (see FONT_PREVIEW_IMAGES's own comment)
+// rather than styled text, for the fonts that have one. Unlike
+// .bitmap-marker-img/.hand-style-icon-preview img just below (which
+// stay plain <img>s, filtered to flip black/white polarity for the
+// page's own light/dark mode), these render as a CSS mask instead: the
+// source PNG is white ink on transparent (see generate-font-previews.js),
+// so using it as a mask and filling with an arbitrary background-color
+// lets fontPreviewInnerHtml() paint these in the exact same color as
+// every live-Google-Fonts-text preview around them (the current color
+// scheme's own text color, not just page-theme black/white) -- a plain
+// filter can only flip polarity, not recolor to red/yellow/whatever a
+// scheme's text color actually is.
+'  .font-preview-img { display: inline-block; width: 100%; height: 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }' +
+// Hand-style icon picker buttons -- same .font-picker-btn/-preview/
+// -name shape the font picker uses (left cell + right cell, trigger
+// variant included), just a 1/4-3/4 split instead of that one's own
+// ~1/3-2/3, per this button\'s own request. The icons themselves are
+// plain black-on-transparent PNGs (see generate_hand_style_icons.py)
+// -- the OPPOSITE polarity from .font-preview-img/.bitmap-marker-img
+// above/below (those are white-on-transparent) -- so they need the
+// mirror-image treatment: shown as-is (filter: none) in light mode,
+// where black-on-light is already visible, and inverted to white
+// only in dark mode, where black-on-dark would otherwise disappear.
+// Previously used the same invert(1)-by-default rule as the white-ink
+// images, which made these invisible in light mode instead (black
+// inverted to white, on a light page background) -- fixed below; see
+// the dark-mode override further up for the other half of this.
+'  .hand-style-icon-preview { flex: 0 0 25%; }' +
+'  .hand-style-icon-preview img { max-width: 100%; max-height: 100%; display: block; filter: none; }' +
+// Dark-mode overrides for the two rules just above and .bitmap-marker-img
+// further up -- deliberately placed here, AFTER both of those base
+// rules, rather than up in the earlier @media (prefers-color-scheme:
+// dark) block alongside the --page-bg/etc. custom-property overrides.
+// CSS cascade breaks ties between equal-specificity rules by SOURCE
+// ORDER regardless of which one sits in a matching @media block --
+// so a dark-mode override declared before a later unconditional rule
+// for the very same selector loses to it whenever dark mode is
+// actually active, which is exactly what silently made both of these
+// dead code (bitmap marker previews stayed inverted/dark instead of
+// turning white, hand-style icons stayed plain black instead of
+// turning white) until this block was moved down here, past both
+// selectors\' own base declarations.
+'  @media (prefers-color-scheme: dark) {' +
+'    .bitmap-marker-img { filter: none; }' +
+'    .hand-style-icon-preview img { filter: invert(1); }' +
+'  }' +
+// Weather icon style previews -- unlike the plain black-on-transparent
+// hand-style icons just above, these are actual on-watch artwork (a
+// real image with its own colors/background, per features_layer.c's
+// own comment on how these are authored), so shown as-is here with no
+// invert-for-dark-mode filter -- inverting real artwork would misrepresent
+// what it actually looks like rather than just adapting a silhouette's
+// polarity to the theme.
+'  .weather-icon-style-preview { flex: 0 0 25%; }' +
+// Fixed pixel cap rather than max-width/max-height:100% -- percentages
+// here resolve against this flex cell's own auto height, which is
+// itself set BY the image (align-items:center row, nothing else
+// tall in it), so "100%" was really "however big the source PNG
+// happens to be" (64x48 native, see generate-weather-icon-previews.js)
+// with nothing actually constraining it. That's what made the icons
+// -- and with them the whole button row, padding included -- too
+// big. A real pixel size keeps every button the same compact height
+// no matter what resolution the 3 source icons are authored at.
+'  .weather-icon-style-preview img { width: 28px; height: 28px; object-fit: contain; display: block; image-rendering: pixelated; }' +
+// The always-visible trigger button that replaces each plain <select>
+// -- looks like one .font-picker-btn row (so the CURRENTLY chosen
+// font is already shown in its own real typeface before the popup
+// even opens), just outside the grid and with its own top margin
+// matching where the <select> it replaces used to sit.
+'  .font-picker-trigger { margin-top: 6px; }' +
+// Color preset picker -- one full-width button per COLOR_SCHEMES entry
+// (see renderColorPresetGrid()'s own comment), the button's own
+// background set to that preset's actual background color so it reads
+// as a real preview, not just a swatch next to text. "selected" (the
+// one preset -- if any -- whose 3 colors exactly match the current
+// ones, see matchingPresetId()) gets a visibly pressed-in look
+// regardless of how light or dark that particular preset\'s own
+// background happens to be.
+'  .color-preset-btn { display: block; width: 100%; text-align: left; padding: 10px 14px; border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; box-sizing: border-box; }' +
+'  .color-preset-btn.selected { border: 2px solid #ff9200; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
+'  .color-preset-main-line { display: block; font-size: 15px; font-weight: 700; }' +
+'  .color-preset-accent-line { display: block; font-size: 12px; font-weight: 600; margin-top: 2px; }' +
+// The trigger itself needs to visibly read as "opens something" --
+// unlike a plain .color-preset-btn grid item (which IS the
+// destination, not a door to one), it shows the CURRENT state filling
+// its whole background/text, which on its own looked identical to a
+// plain non-interactive status readout. A trailing chevron (the same
+// "&rsaquo;" affordance every other button-that-opens-a-popup in this
+// file already uses -- see .marker-edit-btn) fixes that; needs its own
+// flex row (text block on the left, chevron pinned right) since the
+// plain .color-preset-btn layout above is just a stacked block with no
+// room reserved for one.
+'  .color-preset-trigger { margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }' +
+'  .color-preset-trigger-text { display: flex; flex-direction: column; min-width: 0; }' +
+'  .color-preset-chevron { font-size: 24px; font-weight: 700; opacity: 0.5; flex-shrink: 0; }' +
+'  .secondary-btn:active { background: var(--border-lighter); }' +
+'  .save-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--page-bg); box-shadow: 0 -2px 6px rgba(0,0,0,0.1); }' +
+'  .save-bar button { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; color: #fff; background: #ff9200; border: none; border-radius: 8px; }' +
+'  .save-bar button:active { background: #e08300; }' +
+'  #topBar { position: fixed; top: 0; left: 0; right: 0; max-height: 25vh; overflow: hidden; background: var(--page-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); box-sizing: border-box; z-index: 50; }' +
+'  .top-bar-left { display: flex; flex-direction: column; justify-content: center; flex: 0 1 66%; min-width: 0; }' +
+'  .top-bar-actions { display: flex; gap: 6px; align-items: center; }' +
+'  .back-btn { padding: 6px 10px; font-size: 13px; font-weight: 600; color: var(--text-strong); background: var(--card-bg); border: 1px solid var(--border); border-radius: 6px; }' +
+'  .back-btn:active { background: var(--border-light); }' +
+'  .about-btn { width: 30px; height: 30px; padding: 3px; display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; border: 1px solid var(--border); border-radius: 6px; background: var(--card-bg); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }' +
+'  .about-btn-logo { display: block; width: 22px; height: 22px; border-radius: 4px; fill: currentColor; color: #000; }' +
+'  @media (prefers-color-scheme: dark) { .about-btn-logo { color: #fff; } }' +
+'  .about-btn:active { background: var(--border-light); transform: scale(0.96); }' +
+// Soft, slow pastel cycle rather than the vivid orange pulse this used
+// to be -- 5 gentle hues (pink, peach, buttery yellow, mint, sky blue)
+// so it visibly moves through distinct colors rather than oscillating
+// between two shades of the same one, at a slow, 18s, ease-in-out
+// loop through 4 different background-position corners (not just back
+// and forth between 2 points) for a gentle drifting feel rather than a
+// mechanical ping-pong. Text switches to a soft plum-gray -- white no
+// longer has enough contrast against pastels the way it did against
+// the old saturated orange.
+'  .donate-btn { padding: 6px 10px; font-size: 13px; font-weight: 700; color: #6b5a72; background: linear-gradient(135deg, #ffd6e0, #ffe8c2, #eaf6c8, #c8ecec, #d6d6f5, #ffd6e0); background-size: 300% 300%; animation: donateGradientShift 18s ease-in-out infinite; border: none; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }' +
+'  @keyframes donateGradientShift { 0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; } }' +
+'  .donate-btn:active { filter: brightness(0.94); }' +
+'  .top-bar-title { font-size: 15px; font-weight: 700; margin-top: 6px; color: var(--text); white-space: nowrap; }' +
+'  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
+'  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
+'  #previewCanvas { height: 50%; max-height: 50%; width: auto; max-width: 98%; border-radius: 4px; }' +
+'  .subsection { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }' +
+// Flags whichever of the day/night color sets isn't the one actually
+// in effect right now, per the request -- the controls underneath
+// stay fully clickable either way (editing the inactive set is a
+// completely legitimate thing to do, e.g. setting up night colors in
+// the middle of the day); this is purely a visual hint so a change
+// that appears to do nothing is immediately explained rather than
+// confusing. Both badges are always shown together once night colors
+// are on (see updateSchemeActiveHighlight()) -- green "Active now" on
+// whichever set is actually in effect, red "Not active now" (the
+// .inactive modifier below) on the other -- rather than graying the
+// inactive section out, so it stays exactly as legible as the active
+// one while still being unambiguous about which is which.
+'  .scheme-active-badge { font-size: 11px; font-weight: 700; color: #2e8b3d; background: rgba(46,139,61,0.15); border-radius: 4px; padding: 2px 6px; margin-left: 8px; vertical-align: middle; }' +
+'  .scheme-active-badge.inactive { color: #c0392b; background: rgba(192,57,43,0.15); }' +
+'  .color-role-buttons { display: flex; gap: 8px; margin-top: 6px; }' +
+'  .color-role-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--btn-bg); }' +
+'  .color-role-btn:active { background: var(--border-light); }' +
+'  .color-role-swatch { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); box-sizing: border-box; }' +
+'  .color-role-label { font-size: 11px; color: var(--text-faint2); }' +
+'  .service-status-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }' +
+'  .service-dot { width: 12px; height: 12px; border-radius: 50%; flex: 0 0 auto; border: 1px solid var(--border); }' +
+'  .service-dot-gray { background: #999; }' +
+'  .service-dot-green { background: #2ecc71; }' +
+'  .service-dot-yellow { background: #f1c40f; }' +
+'  .service-dot-red { background: #e74c3c; }' +
+'  .service-name { flex: 1 1 auto; font-size: 13px; color: var(--text); }' +
+'  .service-info-btn { width: 20px; height: 20px; border-radius: 50%; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text-faint2); font-size: 12px; font-style: italic; font-weight: 700; line-height: 18px; text-align: center; padding: 0; flex: 0 0 auto; }' +
+'  .service-log-line { font-family: monospace; font-size: 11px; white-space: pre-wrap; word-break: break-word; padding: 3px 0; border-bottom: 1px solid var(--border-light); color: var(--text); }' +
+'  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; align-items: flex-end; justify-content: center; z-index: 100; overflow: hidden; }' +
+'  .modal-overlay.open { display: flex; }' +
+'  .modal-box { background: var(--card-bg); border-radius: 12px 12px 0 0; padding: 16px; width: 100%; max-width: 400px; max-height: 80vh; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }' +
+'  #aboutModal { align-items: center; }' +
+'  .about-modal-box { width: calc(100% - 32px); max-width: 340px; max-height: 78vh; border-radius: 14px; padding: 18px; box-shadow: 0 14px 42px rgba(0,0,0,0.28); transform-origin: center center; animation: about-modal-in 360ms cubic-bezier(.18,.9,.25,1.15) both; }' +
+'  @keyframes about-modal-in { from { transform: translate(var(--about-dx, 0px), var(--about-dy, 0px)) scale(.08); opacity: 0; } 65% { transform: translate(0, 0) scale(1.025); opacity: 1; } to { transform: translate(0, 0) scale(1); opacity: 1; } }' +
+'  .about-logo { width: 62px; height: 62px; margin: 0 auto 10px; display: block; border-radius: 12px; cursor: pointer; transform-origin: 50% 50%; -webkit-tap-highlight-color: transparent; user-select: none; fill: currentColor; color: #000; }' +
+'  @media (prefers-color-scheme: dark) { .about-logo { color: #fff; } }' +
+'  .about-logo.logo-tap-effect { animation: about-logo-tap 560ms cubic-bezier(.18,.9,.25,1.2); }' +
+'  @keyframes about-logo-tap { 0% { transform: scale(1) rotate(0deg); filter: brightness(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); } 18% { transform: scale(.88) rotate(-7deg); filter: brightness(1.35); box-shadow: 0 0 0 5px rgba(255,255,255,.16), 0 0 18px 4px rgba(255,205,92,.28); } 42% { transform: scale(1.14) rotate(5deg); filter: brightness(1.75); box-shadow: 0 0 0 10px rgba(255,255,255,.07), 0 0 28px 8px rgba(255,205,92,.20); } 68% { transform: scale(.97) rotate(-2deg); filter: brightness(1.12); box-shadow: 0 0 0 4px rgba(255,255,255,.08), 0 0 12px 2px rgba(255,205,92,.12); } 100% { transform: scale(1) rotate(0deg); filter: brightness(1); box-shadow: 0 0 0 0 rgba(255,255,255,0); } }' +
+'  .about-logo.logo-tap-effect::selection { background: transparent; }' +
+'  .about-title { text-align: center; font-size: 20px; line-height: 1.1; font-weight: 800; color: var(--text-strong); }' +
+'  .about-subtitle { margin-top: 4px; text-align: center; font-size: 12px; color: var(--text-muted); }' +
+'  .about-info { margin-top: 16px; padding: 11px 12px; border: 1px solid var(--border-light); border-radius: 9px; background: var(--page-bg); }' +
+'  .about-info-row { display: flex; gap: 10px; padding: 4px 0; font-size: 12px; line-height: 1.35; }' +
+'  .about-info-label { flex: 0 0 72px; font-weight: 700; color: var(--text-muted); }' +
+'  .about-info-value { min-width: 0; flex: 1 1 auto; color: var(--text); }' +
+'  .about-description { margin: 13px 2px 0; text-align: center; font-size: 11px; line-height: 1.45; color: var(--text-muted); }' +
+'  .about-source { display: block; margin: 15px 2px 0; text-align: center; font-size: 11px; line-height: 1.35; color: #3f6fa8; text-decoration: none; word-break: break-word; }' +
+'  .about-source:active { text-decoration: underline; }' +
+'  .about-ok-btn { width: 100%; padding: 11px; font-size: 14px; font-weight: 700; color: var(--text-strong); background: var(--border-light); border: none; border-radius: 8px; margin-top: 8px; }' +
+'  .about-ok-btn:active { background: var(--border); }' +
+// Ten taps on the logo unlock a deliberately hidden retro terminal
+// treatment.  It is a CSS theme switch rather than a second rendering
+// implementation, so the rest of the settings page keeps behaving exactly
+// as before.  The two palettes below intentionally follow the browser's
+// own day/night preference.
+'  body.retro-easter-egg { --retro-bg: #edf3e6; --retro-card: #f8fbf4; --retro-text: #174c2d; --retro-strong: #083b20; --retro-muted: #3f7455; --retro-border: #6c9a7b; --retro-accent: #176b3d; --retro-shadow: rgba(23,107,61,.22); font-family: "Courier New", Courier, monospace; background: var(--retro-bg); color: var(--retro-text); }' +
+'  body.retro-easter-egg::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99998; background: repeating-linear-gradient(to bottom, rgba(23,107,61,.045) 0, rgba(23,107,61,.045) 1px, transparent 1px, transparent 4px); mix-blend-mode: multiply; opacity: .65; }' +
+'  body.retro-easter-egg #topBar, body.retro-easter-egg .save-bar { background: var(--retro-bg); box-shadow: 0 2px 0 var(--retro-border); }' +
+'  body.retro-easter-egg fieldset, body.retro-easter-egg .modal-box { background: var(--retro-card); border: 2px solid var(--retro-border); border-radius: 0; box-shadow: 4px 4px 0 var(--retro-shadow); }' +
+'  body.retro-easter-egg input[type=text], body.retro-easter-egg input[type=number], body.retro-easter-egg input[type=time], body.retro-easter-egg input[type=datetime-local], body.retro-easter-egg select { background: var(--retro-card); color: var(--retro-text); border-color: var(--retro-border); border-radius: 0; font-family: inherit; box-shadow: inset 2px 2px 0 rgba(23,107,61,.08); }' +
+'  body.retro-easter-egg button { border-radius: 0 !important; font-family: inherit; }' +
+'  body.retro-easter-egg .back-btn, body.retro-easter-egg .about-btn, body.retro-easter-egg .secondary-btn, body.retro-easter-egg .mode-btn, body.retro-easter-egg .color-role-btn, body.retro-easter-egg .service-info-btn { background: var(--retro-card); color: var(--retro-text); border-color: var(--retro-border); box-shadow: 2px 2px 0 var(--retro-shadow); }' +
+'  body.retro-easter-egg .donate-btn { background: var(--retro-accent); color: var(--retro-card); border: 2px solid var(--retro-strong); border-radius: 0; box-shadow: 2px 2px 0 var(--retro-strong); animation: none; }' +
+'  body.retro-easter-egg .top-bar-title, body.retro-easter-egg .section-title, body.retro-easter-egg label, body.retro-easter-egg .modal-title { letter-spacing: .04em; text-transform: uppercase; }' +
+'  body.retro-easter-egg .about-modal-box { border: 2px solid var(--retro-accent); box-shadow: 6px 6px 0 var(--retro-shadow); }' +
+'  body.retro-easter-egg .about-logo { image-rendering: pixelated; border-radius: 0; border: 2px solid var(--retro-accent); padding: 2px; background: var(--retro-card); cursor: pointer; }' +
+'  body.retro-easter-egg .about-title { color: var(--retro-strong); letter-spacing: .12em; text-transform: uppercase; }' +
+'  body.retro-easter-egg .about-subtitle, body.retro-easter-egg .about-description, body.retro-easter-egg .about-info-label { color: var(--retro-muted); }' +
+'  body.retro-easter-egg .about-info { background: var(--retro-bg); border-color: var(--retro-border); border-radius: 0; }' +
+'  body.retro-easter-egg .about-info-value { color: var(--retro-text); }' +
+'  body.retro-easter-egg .about-source { color: var(--retro-accent); font-weight: 700; }' +
+'  body.retro-easter-egg .about-ok-btn { background: var(--retro-accent); color: var(--retro-card); border: 2px solid var(--retro-strong); box-shadow: 2px 2px 0 var(--retro-strong); }' +
+// Retro Windows-style controls: chunky beveled track, square thumb, and
+// classic raised/sunken checkbox states.  These intentionally replace the
+// normal rounded mobile controls only while the hidden retro theme is active.
+'  body.retro-easter-egg input[type=range] { height: 30px; }' +
+'  body.retro-easter-egg input[type=range]::-webkit-slider-runnable-track { height: 10px; border-radius: 0; background: var(--retro-card); border: 2px solid var(--retro-border); box-shadow: inset 2px 2px 0 rgba(23,107,61,.16), inset -2px -2px 0 rgba(255,255,255,.55); }' +
+'  body.retro-easter-egg input[type=range]::-webkit-slider-thumb { width: 22px; height: 26px; margin-top: -10px; border-radius: 0; background: var(--retro-card); border: 2px solid var(--retro-strong); box-shadow: inset 2px 2px 0 rgba(255,255,255,.7), inset -2px -2px 0 rgba(23,107,61,.28), 2px 2px 0 var(--retro-shadow); }' +
+'  body.retro-easter-egg input[type=range]::-moz-range-track { height: 10px; border-radius: 0; background: var(--retro-card); border: 2px solid var(--retro-border); box-shadow: inset 2px 2px 0 rgba(23,107,61,.16), inset -2px -2px 0 rgba(255,255,255,.55); }' +
+'  body.retro-easter-egg input[type=range]::-moz-range-thumb { width: 22px; height: 26px; border-radius: 0; background: var(--retro-card); border: 2px solid var(--retro-strong); box-shadow: inset 2px 2px 0 rgba(255,255,255,.7), inset -2px -2px 0 rgba(23,107,61,.28), 2px 2px 0 var(--retro-shadow); }' +
+'  body.retro-easter-egg input[type=checkbox] { width: 26px; height: 26px; border-radius: 0; background: var(--retro-card); border: 2px solid var(--retro-strong); box-shadow: inset 2px 2px 0 rgba(23,107,61,.28), inset -2px -2px 0 rgba(255,255,255,.72); }' +
+'  body.retro-easter-egg input[type=checkbox]:checked { background: var(--retro-card); border-color: var(--retro-strong); }' +
+'  body.retro-easter-egg input[type=checkbox]:checked::after { left: 6px; top: 3px; width: 7px; height: 13px; border-color: var(--retro-accent); border-width: 0 3px 3px 0; }' +
+'  body.retro-easter-egg input[type=checkbox][disabled] { background: var(--retro-bg); border-color: var(--retro-border); box-shadow: inset 2px 2px 0 rgba(23,107,61,.16); }' +
+// Second hidden theme: a CSS approximation of the Liquid Glass language
+// introduced with iOS 26 -- translucent, layered controls, soft blur,
+// rounded/concentric geometry, tint from the surrounding page, and bright
+// specular highlights.  The effect is deliberately implemented with CSS so
+// it remains self-contained in the injected settings page.
+'  body.liquid-glass-easter-egg { --glass-bg: rgba(246,248,252,.74); --glass-card: rgba(255,255,255,.48); --glass-card-strong: rgba(255,255,255,.68); --glass-text: #18202b; --glass-muted: rgba(42,50,63,.68); --glass-border: rgba(255,255,255,.72); --glass-shadow: rgba(25,34,49,.18); --glass-tint: rgba(111,133,255,.18); background: radial-gradient(circle at 12% 8%, rgba(117,167,255,.22), transparent 30%), radial-gradient(circle at 88% 22%, rgba(255,153,213,.18), transparent 27%), linear-gradient(145deg, #edf1f8, #f8f9fc 55%, #e9eef7); color: var(--glass-text); }' +
+'  body.liquid-glass-easter-egg::before { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99996; background: radial-gradient(circle at 30% 15%, rgba(255,255,255,.38), transparent 28%), radial-gradient(circle at 80% 72%, rgba(126,165,255,.14), transparent 30%); }' +
+'  body.liquid-glass-easter-egg::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99998; background: linear-gradient(120deg, rgba(255,255,255,.22), transparent 24%, transparent 74%, rgba(255,255,255,.16)); mix-blend-mode: screen; }' +
+'  body.liquid-glass-easter-egg #topBar, body.liquid-glass-easter-egg .save-bar { background: rgba(246,248,252,.55); border-bottom: 1px solid rgba(255,255,255,.78); box-shadow: 0 8px 28px rgba(40,54,80,.10); backdrop-filter: blur(24px) saturate(145%); -webkit-backdrop-filter: blur(24px) saturate(145%); }' +
+'  body.liquid-glass-easter-egg fieldset, body.liquid-glass-easter-egg .modal-box { background: linear-gradient(145deg, rgba(255,255,255,.62), rgba(245,248,255,.36)); border: 1px solid var(--glass-border); border-radius: 22px; box-shadow: 0 18px 48px var(--glass-shadow), inset 0 1px 0 rgba(255,255,255,.82); backdrop-filter: blur(24px) saturate(145%); -webkit-backdrop-filter: blur(24px) saturate(145%); }' +
+'  body.liquid-glass-easter-egg .card, body.liquid-glass-easter-egg .faq-item, body.liquid-glass-easter-egg .about-info { background: rgba(255,255,255,.34); border-color: rgba(255,255,255,.68); box-shadow: inset 0 1px 0 rgba(255,255,255,.72), 0 8px 24px rgba(42,55,80,.08); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }' +
+'  body.liquid-glass-easter-egg input[type=text], body.liquid-glass-easter-egg input[type=number], body.liquid-glass-easter-egg input[type=time], body.liquid-glass-easter-egg input[type=datetime-local], body.liquid-glass-easter-egg select, body.liquid-glass-easter-egg .faq-search { background: rgba(255,255,255,.44); color: var(--glass-text); border: 1px solid rgba(255,255,255,.8); border-radius: 15px; box-shadow: inset 0 1px 1px rgba(255,255,255,.78), 0 3px 12px rgba(34,47,73,.07); backdrop-filter: blur(14px) saturate(145%); -webkit-backdrop-filter: blur(14px) saturate(145%); }' +
+'  body.liquid-glass-easter-egg button { border-radius: 999px !important; border-color: rgba(255,255,255,.76); box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 5px 14px rgba(38,52,78,.10); transition: transform .16s ease, box-shadow .16s ease, background .16s ease; }' +
+'  body.liquid-glass-easter-egg button:active { transform: scale(.97); box-shadow: inset 0 1px 2px rgba(35,45,65,.12), 0 2px 7px rgba(38,52,78,.10); }' +
+'  body.liquid-glass-easter-egg .back-btn, body.liquid-glass-easter-egg .about-btn, body.liquid-glass-easter-egg .secondary-btn, body.liquid-glass-easter-egg .mode-btn, body.liquid-glass-easter-egg .color-role-btn, body.liquid-glass-easter-egg .service-info-btn { background: rgba(255,255,255,.42); color: var(--glass-text); border: 1px solid rgba(255,255,255,.78); }' +
+'  body.liquid-glass-easter-egg .donate-btn { color: #2b2142; background: linear-gradient(135deg, rgba(255,205,231,.72), rgba(204,223,255,.70), rgba(218,250,232,.68)); border: 1px solid rgba(255,255,255,.86); box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 7px 18px rgba(71,79,120,.13); animation: glass-shimmer 8s ease-in-out infinite; }' +
+'  body.liquid-glass-easter-egg .about-btn { background: rgba(255,255,255,.58); }' +
+'  body.liquid-glass-easter-egg .about-logo { border-radius: 18px; box-shadow: 0 10px 25px rgba(39,50,75,.15), inset 0 1px 0 rgba(255,255,255,.85); }' +
+'  body.liquid-glass-easter-egg .about-modal-box { background: linear-gradient(145deg, rgba(255,255,255,.70), rgba(244,248,255,.45)); border-radius: 28px; box-shadow: 0 28px 70px rgba(31,43,66,.22), inset 0 1px 0 rgba(255,255,255,.9); }' +
+'  body.liquid-glass-easter-egg .about-info { background: rgba(255,255,255,.30); border-radius: 17px; }' +
+'  body.liquid-glass-easter-egg .about-source { color: #4969d7; font-weight: 650; }' +
+'  body.liquid-glass-easter-egg .about-ok-btn { color: #26314c; background: linear-gradient(180deg, rgba(255,255,255,.76), rgba(225,233,249,.54)); border: 1px solid rgba(255,255,255,.9); }' +
+'  body.liquid-glass-easter-egg input[type=range] { height: 32px; }' +
+'  body.liquid-glass-easter-egg input[type=range]::-webkit-slider-runnable-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,.42); border: 1px solid rgba(255,255,255,.72); box-shadow: inset 0 1px 3px rgba(52,65,90,.12), 0 2px 8px rgba(45,58,82,.07); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }' +
+'  body.liquid-glass-easter-egg input[type=range]::-webkit-slider-thumb { width: 25px; height: 25px; margin-top: -8px; border-radius: 50%; background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.98), rgba(240,246,255,.72) 42%, rgba(184,205,255,.64)); border: 1px solid rgba(255,255,255,.92); box-shadow: inset 0 1px 2px rgba(255,255,255,.95), 0 4px 12px rgba(54,69,104,.20); }' +
+'  body.liquid-glass-easter-egg input[type=range]::-moz-range-track { height: 10px; border-radius: 999px; background: rgba(255,255,255,.42); border: 1px solid rgba(255,255,255,.72); box-shadow: inset 0 1px 3px rgba(52,65,90,.12), 0 2px 8px rgba(45,58,82,.07); }' +
+'  body.liquid-glass-easter-egg input[type=range]::-moz-range-thumb { width: 25px; height: 25px; border-radius: 50%; background: rgba(245,249,255,.84); border: 1px solid rgba(255,255,255,.92); box-shadow: inset 0 1px 2px rgba(255,255,255,.95), 0 4px 12px rgba(54,69,104,.20); }' +
+'  body.liquid-glass-easter-egg input[type=checkbox] { width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,.45); border: 1px solid rgba(255,255,255,.84); box-shadow: inset 0 1px 2px rgba(255,255,255,.9), 0 4px 10px rgba(54,69,104,.12); }' +
+'  body.liquid-glass-easter-egg input[type=checkbox]:checked { background: linear-gradient(145deg, rgba(114,150,255,.90), rgba(83,119,229,.72)); border-color: rgba(255,255,255,.92); box-shadow: inset 0 1px 2px rgba(255,255,255,.65), 0 4px 13px rgba(76,104,207,.24); }' +
+'  body.liquid-glass-easter-egg input[type=checkbox]:checked::after { left: 8px; top: 5px; width: 7px; height: 13px; border-color: #fff; border-width: 0 3px 3px 0; }' +
+'  body.liquid-glass-easter-egg input[type=checkbox][disabled] { opacity: .48; }' +
+'  @keyframes glass-shimmer { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }' +
+'  @media (prefers-reduced-motion: reduce) { body.liquid-glass-easter-egg button, body.liquid-glass-easter-egg .donate-btn { transition: none; animation: none; } }' +
+'  @media (prefers-color-scheme: dark) {' +
+'    body.retro-easter-egg { --retro-bg: #07110b; --retro-card: #0d1b12; --retro-text: #76e69a; --retro-strong: #a1ffbd; --retro-muted: #54aa70; --retro-border: #286b42; --retro-accent: #43bd69; --retro-shadow: rgba(0,0,0,.7); }' +
+'    body.retro-easter-egg::after { background: repeating-linear-gradient(to bottom, rgba(118,230,154,.055) 0, rgba(118,230,154,.055) 1px, transparent 1px, transparent 4px); mix-blend-mode: screen; opacity: .7; }' +
+'    body.liquid-glass-easter-egg { --glass-bg: rgba(25,29,38,.66); --glass-card: rgba(48,54,68,.48); --glass-card-strong: rgba(67,75,92,.60); --glass-text: #f2f5fb; --glass-muted: rgba(226,232,243,.68); --glass-border: rgba(255,255,255,.20); --glass-shadow: rgba(0,0,0,.38); --glass-tint: rgba(126,151,255,.22); background: radial-gradient(circle at 12% 8%, rgba(92,126,255,.20), transparent 30%), radial-gradient(circle at 88% 22%, rgba(255,111,198,.13), transparent 27%), linear-gradient(145deg, #171b24, #222733 55%, #151a24); }' +
+'    body.liquid-glass-easter-egg::before { background: radial-gradient(circle at 30% 15%, rgba(255,255,255,.08), transparent 28%), radial-gradient(circle at 80% 72%, rgba(90,132,255,.14), transparent 30%); }' +
+'    body.liquid-glass-easter-egg #topBar, body.liquid-glass-easter-egg .save-bar { background: rgba(23,27,36,.55); border-color: rgba(255,255,255,.16); }' +
+'    body.liquid-glass-easter-egg fieldset, body.liquid-glass-easter-egg .modal-box { background: linear-gradient(145deg, rgba(65,72,88,.58), rgba(31,36,47,.46)); border-color: rgba(255,255,255,.20); }' +
+'    body.liquid-glass-easter-egg input[type=text], body.liquid-glass-easter-egg input[type=number], body.liquid-glass-easter-egg input[type=time], body.liquid-glass-easter-egg input[type=datetime-local], body.liquid-glass-easter-egg select, body.liquid-glass-easter-egg .faq-search { background: rgba(52,59,73,.50); color: var(--glass-text); border-color: rgba(255,255,255,.20); }' +
+'    body.liquid-glass-easter-egg .back-btn, body.liquid-glass-easter-egg .about-btn, body.liquid-glass-easter-egg .secondary-btn, body.liquid-glass-easter-egg .mode-btn, body.liquid-glass-easter-egg .color-role-btn, body.liquid-glass-easter-egg .service-info-btn { background: rgba(255,255,255,.10); color: var(--glass-text); border-color: rgba(255,255,255,.20); }' +
+'    body.liquid-glass-easter-egg .donate-btn { color: #fff; background: linear-gradient(135deg, rgba(145,106,171,.55), rgba(84,116,181,.58), rgba(74,143,126,.48)); border-color: rgba(255,255,255,.25); }' +
+'    body.liquid-glass-easter-egg .about-modal-box { background: linear-gradient(145deg, rgba(67,75,92,.70), rgba(28,33,44,.54)); }' +
+'    body.liquid-glass-easter-egg .about-ok-btn { color: #f5f7fc; background: linear-gradient(180deg, rgba(93,103,126,.68), rgba(50,57,72,.58)); border-color: rgba(255,255,255,.22); }' +
+'    body.liquid-glass-easter-egg input[type=range]::-webkit-slider-runnable-track { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.20); box-shadow: inset 0 1px 3px rgba(0,0,0,.25), 0 2px 8px rgba(0,0,0,.16); }' +
+'    body.liquid-glass-easter-egg input[type=range]::-webkit-slider-thumb { background: radial-gradient(circle at 32% 26%, rgba(255,255,255,.92), rgba(177,194,224,.70) 45%, rgba(99,124,171,.66)); border-color: rgba(255,255,255,.34); }' +
+'    body.liquid-glass-easter-egg input[type=range]::-moz-range-track { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.20); }' +
+'    body.liquid-glass-easter-egg input[type=range]::-moz-range-thumb { background: rgba(177,194,224,.70); border-color: rgba(255,255,255,.34); }' +
+'    body.liquid-glass-easter-egg input[type=checkbox] { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.24); }' +
+'    body.liquid-glass-easter-egg input[type=checkbox]:checked { background: linear-gradient(145deg, rgba(113,143,236,.88), rgba(72,102,190,.72)); }' +
+'  }' +
+'  @keyframes retro-easter-flicker { 0%, 100% { opacity: 1; } 47% { opacity: .96; } 48% { opacity: .78; } 49% { opacity: 1; } }' +
+'  @keyframes retro-easter-flash { 0% { filter: brightness(1); transform: scale(1); } 35% { filter: brightness(1.8); transform: scale(1.08); } 100% { filter: brightness(1); transform: scale(1); } }' +
+'  .about-logo.retro-easter-flash { animation: retro-easter-flash 420ms steps(3,end); }' +
+'  body.retro-easter-egg .about-logo.logo-tap-effect { animation-name: about-logo-retro-tap; animation-duration: 520ms; animation-timing-function: steps(4,end); }' +
+'  @keyframes about-logo-retro-tap { 0% { transform: translate(0,0) scale(1); filter: brightness(1); box-shadow: 0 0 0 transparent; } 20% { transform: translate(-2px,1px) scale(1.05); filter: brightness(1.7); box-shadow: 3px 0 0 rgba(67,189,105,.45), -3px 0 0 rgba(67,189,105,.2); } 40% { transform: translate(3px,-1px) scale(.94); filter: brightness(1.9); box-shadow: -3px 0 0 rgba(67,189,105,.5), 3px 0 0 rgba(67,189,105,.18); } 60% { transform: translate(-1px,1px) scale(1.08); filter: brightness(1.35); box-shadow: 0 0 0 4px rgba(67,189,105,.18); } 100% { transform: translate(0,0) scale(1); filter: brightness(1); box-shadow: 0 0 0 transparent; } }' +
+'  body.liquid-glass-easter-egg .about-logo.logo-tap-effect { animation-name: about-logo-glass-tap; animation-duration: 650ms; }' +
+'  @keyframes about-logo-glass-tap { 0% { transform: scale(1); filter: brightness(1) saturate(1); box-shadow: 0 10px 25px rgba(39,50,75,.15), inset 0 1px 0 rgba(255,255,255,.85); } 35% { transform: scale(1.12); filter: brightness(1.28) saturate(1.25); box-shadow: 0 0 0 7px rgba(255,255,255,.18), 0 18px 36px rgba(88,112,196,.24), inset 0 1px 0 rgba(255,255,255,.98); } 70% { transform: scale(.97); filter: brightness(1.08) saturate(1.1); box-shadow: 0 0 0 14px rgba(255,255,255,.04), 0 12px 28px rgba(88,112,196,.18), inset 0 1px 0 rgba(255,255,255,.9); } 100% { transform: scale(1); filter: brightness(1) saturate(1); box-shadow: 0 10px 25px rgba(39,50,75,.15), inset 0 1px 0 rgba(255,255,255,.85); } }' +
+'  body.retro-easter-egg .about-modal-box { animation: retro-easter-flicker 3.8s steps(1,end) infinite, about-modal-in 360ms cubic-bezier(.18,.9,.25,1.15) both; }' +
+'  .modal-title { font-weight: 600; font-size: 15px; margin-bottom: 10px; text-align: center; color: var(--text); flex: 0 0 auto; }' +
+'  .donate-modal-box { position: relative; animation: donate-modal-in 480ms cubic-bezier(.2,.85,.25,1) both; }' +
+'  @keyframes donate-modal-in { from { transform: translateY(28px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }' +
+'  .donate-modal-box::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 92px; pointer-events: none; border-radius: 12px 12px 0 0; background: linear-gradient(135deg, rgba(18,22,34,.98), rgba(31,31,46,.96)); opacity: .98; }' +
+'  .donate-header { position: relative; overflow: hidden; margin: -16px -16px 13px; padding: 10px 16px 13px; border-bottom: 1px solid var(--border-light); background: linear-gradient(180deg, #171a28 0%, #242333 100%); }' +
+'  .donate-eclipse-scene { position: relative; z-index: 1; height: 45px; margin: -2px 0 0; overflow: hidden; }' +
+'  .donate-eclipse-scene .donate-eclipse { position: absolute; left: 50%; top: 0; transform: translateX(-50%); }' +
+'  .donate-header-content { position: relative; z-index: 2; text-align: center; }' +
+'  .donate-header-title { font-size: 19px; font-weight: 800; letter-spacing: .3px; color: #fff; text-shadow: 0 1px 0 rgba(0,0,0,.35); }' +
+'  .donate-header-subtitle { margin-top: 3px; font-size: 11px; color: rgba(255,255,255,.72); }' +
+'  .donate-sparkle { display: inline-block; margin: 0 4px; animation: donate-sparkle 1.8s ease-in-out infinite; }' +
+'  @keyframes donate-sparkle { 0%,100% { transform: scale(.8) rotate(0deg); opacity: .45; } 50% { transform: scale(1.2) rotate(45deg); opacity: 1; } }' +
+'  .donate-header { transition: box-shadow 700ms ease; background: linear-gradient(180deg, var(--donate-sky-top, #b9e5f4) 0%, var(--donate-sky-bottom, #e9f4df) 100%); }' +
+'  .donate-sky { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }' +
+'  .donate-star { position: absolute; width: 2px; height: 2px; border-radius: 50%; background: #fff8d8; box-shadow: 0 0 3px 1px rgba(255,244,196,.45); opacity: 0; animation: donate-star-appear 14s ease-in-out infinite; }' +
+'  .donate-star.twinkle { animation-name: donate-star-twinkle; }' +
+'  .donate-star.s1 { left: 8%; top: 18%; animation-delay: -1.1s; }' +
+'  .donate-star.s2 { left: 16%; top: 66%; width: 1px; height: 1px; animation-delay: -4.7s; }' +
+'  .donate-star.s3 { left: 25%; top: 28%; animation-delay: -7.3s; }' +
+'  .donate-star.s4 { left: 34%; top: 72%; width: 1px; height: 1px; animation-delay: -2.6s; }' +
+'  .donate-star.s5 { left: 43%; top: 14%; animation-delay: -5.9s; }' +
+'  .donate-star.s6 { left: 53%; top: 78%; width: 1px; height: 1px; animation-delay: -9.2s; }' +
+'  .donate-star.s7 { left: 62%; top: 23%; animation-delay: -3.4s; }' +
+'  .donate-star.s8 { left: 71%; top: 68%; width: 1px; height: 1px; animation-delay: -8.1s; }' +
+'  .donate-star.s9 { left: 81%; top: 16%; animation-delay: -10.4s; }' +
+'  .donate-star.s10 { left: 91%; top: 54%; width: 1px; height: 1px; animation-delay: -6.5s; }' +
+'  .donate-star.s11 { left: 11%; top: 43%; width: 1px; height: 1px; animation-delay: -11.2s; }' +
+'  .donate-star.s12 { left: 20%; top: 87%; animation-delay: -3.9s; }' +
+'  .donate-star.s13 { left: 30%; top: 51%; width: 1px; height: 1px; animation-delay: -12.3s; }' +
+'  .donate-star.s14 { left: 39%; top: 36%; animation-delay: -6.9s; }' +
+'  .donate-star.s15 { left: 69%; top: 42%; width: 1px; height: 1px; animation-delay: -1.8s; }' +
+'  .donate-star.s16 { left: 77%; top: 83%; animation-delay: -9.8s; }' +
+'  .donate-star.s17 { left: 87%; top: 31%; width: 1px; height: 1px; animation-delay: -4.2s; }' +
+'  .donate-star.s18 { left: 96%; top: 76%; animation-delay: -7.7s; }' +
+'  .donate-star.s19 { left: 47%; top: 48%; width: 1px; height: 1px; animation-delay: -10.9s; }' +
+'  .donate-star.s20 { left: 57%; top: 34%; width: 2px; height: 2px; animation-delay: -5.1s; }' +
+'  .donate-star.s5, .donate-star.s14 { box-shadow: 0 0 4px 1px rgba(255,248,210,.65); }' +
+'  .donate-meteor { position: absolute; width: 28px; height: 1px; border-radius: 50%; transform-origin: right center; background: linear-gradient(90deg, rgba(255,249,214,0), rgba(255,249,214,.9)); box-shadow: 0 0 4px rgba(255,240,190,.55); opacity: 0; }' +
+'  .donate-meteor.m1 { top: 17%; left: 2%; animation: donate-perseid-1 14s linear infinite; animation-delay: -3.2s; }' +
+'  .donate-meteor.m2 { top: 31%; left: 54%; width: 23px; animation: donate-perseid-2 14s linear infinite; animation-delay: -7.1s; }' +
+'  .donate-meteor.m3 { top: 69%; left: 72%; width: 19px; animation: donate-perseid-3 14s linear infinite; animation-delay: -10.6s; }' +
+'  .donate-meteor.m4 { top: 55%; left: 18%; width: 17px; animation: donate-perseid-4 14s linear infinite; animation-delay: -12.7s; }' +
+'  .donate-eclipse { position: relative; z-index: 1; width: 122px; height: 42px; margin: 0 auto 3px; overflow: hidden; }' +
+'  .donate-sun { position: absolute; width: 34px; height: 34px; left: 50%; top: 50%; border-radius: 50%; background: #fff4bd; box-shadow: 0 0 10px 2px rgba(255,223,130,.85), 0 0 22px 5px rgba(255,195,90,.28); animation: donate-sun-eclipse 14s ease-in-out infinite; }' +
+'  .donate-moon { position: absolute; width: 35px; height: 35px; left: 50%; top: 50%; border-radius: 50%; background: #d4e9df; box-shadow: 0 0 0 rgba(0,0,0,0); animation: donate-moon-eclipse 14s ease-in-out infinite, donate-moon-sky 14s ease-in-out infinite; }' +
+'  .donate-corona { position: absolute; width: 35px; height: 35px; left: 50%; top: 50%; border-radius: 50%; border: 2px solid rgba(255,236,174,.18); box-shadow: 0 0 12px 3px rgba(255,222,145,.18), inset 0 0 9px rgba(255,240,185,.12); opacity: 0; animation: donate-corona 14s ease-in-out infinite; }' +
+'  .donate-bead { position: absolute; width: 5px; height: 5px; border-radius: 50%; background: #fff9d5; box-shadow: 0 0 5px 2px rgba(255,224,130,.9); opacity: 0; }' +
+'  .donate-bead.b1 { left: calc(50% - 18px); top: calc(50%); animation: donate-bead-1 14s ease-in-out infinite; }' +
+'  .donate-bead.b2 { left: calc(50% - 18px); top: calc(50%); width: 4px; height: 4px; animation: donate-bead-2 14s ease-in-out infinite; }' +
+'  /* The sky is driven by JS color interpolation rather than animating whole gradients. Browsers can discretely switch between gradient declarations; interpolating the two RGB stops directly keeps the eclipse transition continuous. */' +
+'  @keyframes donate-star-appear { 0%, 32% { opacity: 0; } 40%, 64% { opacity: .72; } 72%, 100% { opacity: 0; } }' +
+'  @keyframes donate-star-twinkle { 0%, 32% { opacity: 0; transform: scale(.6); } 40%, 48% { opacity: .45; transform: scale(.8); } 51% { opacity: 1; transform: scale(1.65); } 54%, 64% { opacity: .35; transform: scale(.75); } 72%, 100% { opacity: 0; transform: scale(.6); } }' +
+'  @keyframes donate-perseid-1 { 0%, 39% { opacity: 0; transform: translate(-30px, -3px) rotate(21.5deg); } 42% { opacity: .95; } 47%, 100% { opacity: 0; transform: translate(135px, 62px) rotate(21.5deg); } }' +
+'  @keyframes donate-perseid-2 { 0%, 45% { opacity: 0; transform: translate(22px, -8px) rotate(145.6deg); } 48% { opacity: .8; } 53%, 100% { opacity: 0; transform: translate(-70px, 55px) rotate(145.6deg); } }' +
+'  @keyframes donate-perseid-3 { 0%, 55% { opacity: 0; transform: translate(28px, -12px) rotate(-162.1deg); } 58% { opacity: .9; } 63%, 100% { opacity: 0; transform: translate(-65px, -42px) rotate(-162.1deg); } }' +
+'  @keyframes donate-perseid-4 { 0%, 47% { opacity: 0; transform: translate(-8px, -35px) rotate(27.6deg); } 50% { opacity: .7; } 55%, 100% { opacity: 0; transform: translate(78px, 10px) rotate(27.6deg); } }' +
+'  @keyframes donate-sun-eclipse { 0%, 18% { transform: translate(-150%, -50%); opacity: 1; } 40%, 62% { transform: translate(-50%, -50%); opacity: .9; } 84%, 100% { transform: translate(-150%, -50%); opacity: 1; } }' +
+'  @keyframes donate-moon-eclipse { 0%, 18% { transform: translate(50%, -50%); } 40%, 62% { transform: translate(-50%, -50%); } 84%, 100% { transform: translate(50%, -50%); } }' +
+'  @keyframes donate-moon-sky { 0%, 30% { background: #d4e9df; box-shadow: 0 0 0 rgba(0,0,0,0); } 36% { background: #8d9b9a; box-shadow: 0 0 1px rgba(0,0,0,.18); } 42% { background: #42474e; box-shadow: 0 0 3px rgba(0,0,0,.45); } 46%, 58% { background: #090b12; box-shadow: 0 0 5px rgba(0,0,0,.8); } 64% { background: #42474e; box-shadow: 0 0 3px rgba(0,0,0,.45); } 70% { background: #8d9b9a; box-shadow: 0 0 1px rgba(0,0,0,.18); } 76%, 100% { background: #d4e9df; box-shadow: 0 0 0 rgba(0,0,0,0); } }' +
+'  @keyframes donate-corona { 0%, 34% { opacity: 0; transform: translate(-50%, -50%) scale(.75); } 43%, 58% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 70%, 100% { opacity: 0; transform: translate(-50%, -50%) scale(.8); } }' +
+'  @keyframes donate-bead-1 { 0%, 36% { opacity: 0; transform: scale(.2); } 37%, 38% { opacity: 1; transform: scale(1.35); } 42%, 100% { opacity: 0; transform: scale(.2); } }' +
+'  @keyframes donate-bead-2 { 0%, 58% { opacity: 0; transform: scale(.2); } 59%, 64% { opacity: .95; transform: scale(1.2); } 66%, 100% { opacity: 0; transform: scale(.2); } }' +
+'  .hand-editor-diagram { width: 100%; height: auto; display: block; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; flex: 0 0 auto; }' +
+'  .hand-editor-diagram:not([src]), .hand-editor-diagram[src=""] { display: none; }' +
+'  .modal-scroll-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }' +
+'  .modal-footer { flex: 0 0 auto; }' +
+'  .hex-grid { position: relative; width: 260px; height: 255px; margin: 0 auto; }' +
+'  .hex-swatch { position: absolute; width: 26px; height: 30px; margin: -15px 0 0 -13px; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); border: 1px solid rgba(0,0,0,0.15); box-sizing: border-box; }' +
+'  .hex-swatch.hollow { border: none; background: transparent !important; pointer-events: none; }' +
+'  .hex-swatch.selected { border: 2px solid #ff9200; }' +
+'  .modal-cancel-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--border-light); border: none; border-radius: 8px; margin-top: 12px; }' +
+'  .donate-modal-box { max-height: 90vh; }' +
+'  .donate-content { overflow-y: auto; flex: 1 1 auto; min-height: 0; position: relative; z-index: 1; }' +
+'  .donate-intro { text-align: center; color: var(--text-muted); font-size: 12px; line-height: 1.45; margin: 0 4px 12px; animation: donate-content-in 500ms 120ms both; }' +
+'  @keyframes donate-content-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }' +
+'  .donate-method { position: relative; isolation: isolate; border: 2px solid transparent; border-radius: 11px; padding: 12px; margin-top: 10px; background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, conic-gradient(from 0deg, #ffd6e7, #ffe7b8, #e1f7c9, #ccecff, #ddd0ff, #ffd6e7) border-box; background-size: 100% 100%, 200% 200%; animation: donate-rainbow 5s linear infinite, donate-card-in 550ms both; box-shadow: 0 2px 8px rgba(0,0,0,.06); }' +
+'  .donate-method:nth-child(2) { animation-delay: 370ms; }' +
+'  .donate-method:nth-child(3) { animation-delay: 670ms; }' +
+'  .donate-method:nth-child(4) { animation-delay: 970ms; }' +
+'  @keyframes donate-rainbow { to { background-position: 100% 100%, 0% 50%; } }' +
+'  @keyframes donate-card-in { from { opacity: 0; transform: translateY(12px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }' +
+'  .donate-method-title { font-size: 13px; font-weight: 800; color: var(--text-strong); margin-bottom: 5px; }' +
+'  .donate-method-note { font-size: 11px; line-height: 1.35; color: var(--text-muted); margin-bottom: 9px; }' +
+'  .donate-paypal { text-align: center; padding: 4px 0 2px; }' +
+'  .donate-paypal input[type=image] { max-width: 100%; height: auto; }' +
+'  .donate-address { display: block; padding: 8px 9px; border-radius: 6px; background: var(--card-bg); border: 1px solid var(--border-light); color: var(--text); font-family: monospace; font-size: 11px; line-height: 1.35; word-break: break-all; user-select: text; -webkit-user-select: text; }' +
+'  .donate-footnote { text-align: center; color: var(--text-faint); font-size: 11px; line-height: 1.4; margin: 12px 6px 2px; }' +
+'  .modal-confirm-btn { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; color: #fff; background: #ff9200; border: none; border-radius: 8px; margin-top: 8px; }' +
+'  .modal-confirm-btn:active { background: #e08300; }' +
+// Delete's own red variant of .modal-confirm-btn, for the delete-preset
+// confirmation only -- everything else that uses showConfirm() keeps
+// the ordinary orange "Confirm" styling/wording.
+'  .modal-confirm-btn.danger { background: #e03131; }' +
+'  .modal-confirm-btn.danger:active { background: #c92a2a; }' +
+// Preset save/apply confirmations show a quick before/after preview
+// pair here -- see showConfirm()'s own images param -- each about a
+// third of the popup's own width (.modal-box maxes out at 400px), a
+// red-bordered "what's there now / about to change FROM" image, an
+// arrow, and a green-bordered "what it's changing TO" one. Delete's
+// own confirmation reuses just the left (red) slot alone, no arrow/
+// right image, for the one preset image being removed.
+'  .confirm-image-compare { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 12px; }' +
+'  .confirm-compare-img { width: 32%; height: auto; display: block; border-radius: 8px; box-sizing: border-box; border: 3px solid; background: #000; }' +
+'  .confirm-compare-img.border-red { border-color: #e03131; }' +
+'  .confirm-compare-img.border-green { border-color: #2f9e44; }' +
+'  .confirm-compare-arrow { font-size: 22px; line-height: 1; color: var(--text-faint); flex-shrink: 0; }' +
+'  .example-style-modal-img { max-width: min(50%, 3cm); width: auto; height: auto; margin: 0 auto; border-radius: 8px; display: block; }' +
+'  .example-style-modal-title { font-weight: 700; font-size: 16px; margin-top: 10px; text-align: center; color: var(--text-strong); }' +
+'  .mode-btn-group { display: flex; width: 100%; margin-top: 6px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); box-sizing: border-box; }' +
+// Primitive-strip preview (Feature Primitive Refactor Phase 9) -- a row of
+// small chips under the Content dropdown showing what that content
+// actually decomposes into on the watch (see primitiveChipsForContent()
+// below). Read-only for now (no drag/append/remove -- see
+// config/primitive-decompose.js's header for why), so styled as a plain
+// inline preview, not as interactive buttons: no hover/active states,
+// smaller and quieter than .mode-btn/.category-btn.
+'  .primitive-strip { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }' +
+'  .primitive-chip { display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 10px; line-height: 1.4; }' +
+'  .primitive-chip-value { background: var(--btn-bg); color: var(--text-strong); border: 1px solid var(--border); }' +
+'  .primitive-chip-label { background: #ff9200; color: #fff; }' +
+'  .primitive-chip-icon { background: var(--btn-bg); color: var(--text-faint); border: 1px dashed var(--border); font-style: italic; }' +
+'  .primitive-chip-space, .primitive-chip-slash { background: none; color: var(--text-faint); padding: 3px 2px; font-weight: 700; }' +
+'  #slotEditModal .modal-box { overflow-y: auto; }' +
+'  .composer-row { display: flex; gap: 6px; margin-top: 8px; align-items: center; flex-wrap: wrap; }' +
+'  .composer-btn { padding: 8px 14px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; }' +
+'  .composer-btn:active { background: var(--border-light); }' +
+'  .composer-btn:disabled { opacity: 0.4; }' +
+'  .composer-btn-grow { flex: 1; }' +
+'  .composer-chip { padding: 5px 9px; font-size: 12px; font-weight: 600; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 10px; cursor: grab; }' +
+'  .composer-chip.selected { background: #ff9200; color: #fff; border-color: #ff9200; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
+'  .composer-error { color: #d00; font-size: 13px; font-weight: 600; margin-top: 6px; }' +
+'  .composer-count { font-size: 12px; color: var(--text-faint); margin-left: auto; }' +
+// 9 icon-only, roughly-square buttons for the slot editor's category
+// picker (replacing what used to be a plain <select>). A fixed 44px
+// button size (>= this page's other buttons -- .slider-step-btn is
+// 34px, .mode-btn\'s own padding alone is 18px plus content) with
+// flex-wrap means the browser decides 1 vs 2 rows purely from
+// available width: 9 * 44px plus gaps doesn\'t fit the modal\'s own
+// max-width (400px) at all, let alone narrower phone screens, so this
+// always wraps to two rows in practice -- but stays correct (and
+// would use one row) if the modal is ever widened.
+'  .category-btn-group { display: flex; flex-wrap: wrap; margin-top: 6px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }' +
+'  .category-btn { width: 35px; height: 35px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; background: var(--btn-bg); border: none; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: 0; margin: 0; color: var(--text-strong); }' +
+'  .category-btn:last-child { border-right: none; }' +
+'  .category-btn.active { background: #ff9200; border-color: #ff9200; color: #fff; }' +
+'  .category-btn svg { width: 21px; height: 21px; pointer-events: none; }' +
+// Font picker's own category filter row -- a horizontally-scrolling,
+// no-gap strip of pill buttons (same flush/bordered-divider look as
+// .category-btn-group above, just single-row + scrolling instead of
+// wrapping, since there are 18 of these vs. that one's 9). Negative
+// margin + matching padding lets the scroll area bleed to the modal's
+// own edges (so the first/last buttons aren't visually inset) without
+// actually widening the modal-box itself.
+'  .font-category-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; flex: 0 0 auto; margin: 0 -16px 10px; padding: 0 16px; scrollbar-width: none; }' +
+'  .font-category-scroll::-webkit-scrollbar { display: none; }' +
+'  .font-category-row { display: flex; width: max-content; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }' +
+'  .font-category-btn { flex: 0 0 auto; padding: 8px 14px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--btn-bg); border: none; border-right: 1px solid var(--border); color: var(--text-strong); }' +
+'  .font-category-btn:last-child { border-right: none; }' +
+'  .font-category-btn.active { background: #ff9200; border-color: #ff9200; color: #fff; }' +
+'  .mode-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 8px 0 10px; font-size: 12px; font-weight: 700; color: var(--text-strong); background: var(--btn-bg); border: none; border-right: 1px solid var(--border); }' +
+'  .mode-btn svg { width: 23px; height: 26px; display: block; }' +
+'  .mode-btn:last-child { border-right: none; }' +
+'  .mode-btn.active { background: #ff9200; color: #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
+'  .mode-btn-group-vertical { display: flex; flex-direction: column; width: 100%; margin-top: 6px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); box-sizing: border-box; }' +
+'  .mode-btn-vertical { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 13px; font-weight: 700; color: var(--text-strong); background: var(--btn-bg); border: none; border-bottom: 1px solid var(--border); box-sizing: border-box; }' +
+'  .mode-btn-vertical:last-child { border-bottom: none; }' +
+'  .mode-btn-vertical.active { background: #ff9200; color: #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
+// Day-of-week toggle row for Hourly vibrations -- like .mode-btn-group
+// but each button toggles independently (any subset can be active at
+// once) instead of exactly one, since this picks a SET of days rather
+// than a single mode.
+'  .day-toggle-group { display: flex; width: 100%; margin-top: 6px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); box-sizing: border-box; }' +
+'  .day-toggle-btn { flex: 1; padding: 10px 0; font-size: 13px; font-weight: 700; color: var(--text-strong); background: var(--btn-bg); border: none; border-right: 1px solid var(--border); }' +
+'  .day-toggle-btn:last-child { border-right: none; }' +
+'  .day-toggle-btn.active { background: #ff9200; color: #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
+'  .slider-row { margin-top: 12px; }' +
+'  .slider-row label { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-faint2); margin-bottom: 2px; }' +
+'  .slider-row label .val { font-weight: 700; color: var(--text-strong); }' +
+'  input[type=range] { width: 100%; -webkit-appearance: none; appearance: none; height: 30px; background: transparent; margin: 0; }' +
+'  input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: var(--border-lighter); }' +
+'  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 24px; height: 24px; border-radius: 50%; background: #ff9200; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.4); margin-top: -9px; }' +
+'  input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--border-lighter); }' +
+'  input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #ff9200; border: 2px solid #fff; }' +
+'  .mark-btn-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; margin-top: 6px; }' +
+'  .mark-btn { padding: 8px 0; font-size: 12px; font-weight: 700; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; }' +
+'  .mark-btn.active { background: #ff9200; color: #fff; border-color: #ff9200; }' +
+'  .raw-log-btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-top: 6px; }' +
+'  .raw-log-btn { padding: 8px 2px; font-size: 11px; font-weight: 600; font-family: monospace; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; }' +
+'  .raw-log-btn.active { background: #ff9200; color: #fff; border-color: #ff9200; }' +
+'  .preset-btn-row { display: flex; gap: 6px; margin-top: 8px; }' +
+'  .preset-btn-row button { flex: 1; padding: 8px 0; font-size: 11px; font-weight: 700; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 6px; }' +
+'  .marker-edit-btn { width: 100%; box-sizing: border-box; padding: 12px; font-size: 14px; font-weight: 600; color: var(--text-strong); background: var(--btn-bg); border: 1px solid var(--border); border-radius: 8px; margin-top: 8px; text-align: left; }' +
+'  .marker-edit-btn:disabled { opacity: 0.45; }' +
+// Icon + stacked title/sub-header + chevron, replacing what used to
+// be a single plain-text line (see sectionLegendHtml() above). Kept
+// deliberately tight -- smaller title size, near-zero line-heights,
+// and less top/bottom padding than a plain label would get -- so
+// adding a whole second (sub-header) line doesn't make the collapsed
+// button noticeably taller than it was before; the icon square is
+// sized to roughly match that same two-line block's own height rather
+// than to any fixed larger "icon size", so the row still reads as one
+// compact tappable bar.
+'  .section-legend { cursor: pointer; display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin: 0; padding: 4px 0; user-select: none; color: var(--text-strong); }' +
+'  .section-icon { width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; color: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.25); }' +
+'  .section-icon svg { width: 17px; height: 17px; display: block; }' +
+// The one icon that's actually animated (Animation's own) -- spins
+// forever, independent of any setting, purely to say "this section is
+// about motion" at a glance.
+'  @keyframes sectionIconSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }' +
+'  .section-icon-animated svg { animation: sectionIconSpin 2.2s linear infinite; transform-origin: 50% 50%; }' +
+'  .section-legend-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }' +
+'  .section-legend-title { font-size: 15px; font-weight: 700; line-height: 1.15; }' +
+// Roughly half the title's own font-size, per the request -- hidden
+// entirely once the section is expanded (see toggleSection() below)
+// since the full controls underneath make it redundant at that point.
+// min-width: 0 is needed here (not just on the .section-legend-text
+// column flex container above) because flex items default to
+// min-width: auto, not 0 -- without overriding that on THIS element
+// too, a long sub-header string's own natural nowrap width becomes an
+// unshrinkable floor, silently defeating text-overflow: ellipsis and
+// forcing the whole header row (and the section toggle "button" it's
+// inside) wider than it should be instead of actually clipping.
+'  .section-legend-sub { font-size: 11.2px; line-height: 1.25; color: var(--text-faint); margin-top: 1px; min-width: 0; white-space: nowrap; overflow: hidden; position: relative; }' +
+// A lighter, nested variant of .section-legend/.section-icon above --
+// used for Hands style/Indices style, one level down inside the Style
+// section rather than a full top-level section of their own (no
+// SECTION_META color-coded icon; a small thumbnail of the actual
+// currently-selected preset instead -- see subsectionLegendHtml()
+// further down for how that gets filled in).
+'  .subsection-legend { cursor: pointer; display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; margin: 12px 0 0; padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--btn-bg); user-select: none; color: var(--text-strong); }' +
+'  .subsection-legend-preview { width: 34px; height: 34px; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--card-bg); border: 1px solid var(--border-light); }' +
+'  .subsection-legend-preview img { max-width: 100%; max-height: 100%; display: block; }' +
+'  .subsection-legend-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; justify-content: center; }' +
+'  .subsection-legend-title { font-size: 14px; font-weight: 700; line-height: 1.15; }' +
+'  .subsection-legend-sub { font-size: 11px; line-height: 1.25; color: var(--text-faint); margin-top: 1px; min-width: 0; white-space: nowrap; overflow: hidden; position: relative; }' +
+'  .subsection-body { border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 10px 8px 4px; margin-top: -1px; margin-bottom: 4px; }' +
+// Sliding-overflow inner span for .section-legend-sub -- see
+// applySubheadSlide()/setSubheaderText()/setSubheaderHtml() further
+// down for when the sliding animation actually gets applied (only
+// once the text is measured as genuinely too wide for the collapsed
+// row, not unconditionally). Rests at its normal readable position
+// for a several-second pause, then scrolls left at a constant speed
+// until it's fully exited, then jumps back and repeats -- not a
+// constant nonstop marquee, so it reads as "pausing to let you read,
+// then sliding to reveal the rest" each cycle.
+'  .subhead-sub-inner { display: inline-block; white-space: nowrap; }' +
+// Colors section sub-header's own "3 dots" (current main/accent/
+// background) -- see computeColorsSubheaderHtml() further down.
+'  .subhead-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-left: 3px; border: 1px solid rgba(0,0,0,0.25); vertical-align: middle; }' +
+'  .chevron { display: inline-block; flex: 0 0 auto; font-size: 24px; line-height: 1; transition: transform 0.15s; }' +
+'  .chevron.open { transform: rotate(90deg); }' +
+'  .slider-with-buttons { display: flex; align-items: center; gap: 8px; }' +
+'  .slider-with-buttons input[type=range] { flex: 1; }' +
+'  .slider-step-btn { width: 34px; height: 34px; flex-shrink: 0; border-radius: 8px; background: var(--btn-bg); border: 1px solid var(--border); font-size: 20px; font-weight: 700; color: var(--text-strong); line-height: 1; }' +
+'  .grayed-out { opacity: 0.4; pointer-events: none; }' +
+'  #slotPickerDiagram { position: relative; width: 240px; height: 274px; margin: 10px auto; background: linear-gradient(to bottom, #4a90d9, #bfe3f5); border-radius: 8px; overflow: hidden; }' +
+'  .slot-btn { position: absolute; min-width: 54px; padding: 5px 8px; font-size: 11px; font-weight: 700; color: #222; background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.2); border-radius: 6px; text-align: center; }' +
+'  .slot-btn:active { background: #fff; }' +
+'  .slot-btn.slot-off { color: #777; font-weight: 400; }' +
+'  .slot-btn.slot-na { color: #aaa; background: rgba(230,230,230,0.7); font-style: italic; pointer-events: none; }' +
+'  .slot-corner-tl { left: 6px; top: 6px; }' +
+'  .slot-corner-tr { right: 6px; top: 6px; }' +
+'  .slot-corner-bl { left: 6px; bottom: 6px; }' +
+'  .slot-corner-br { right: 6px; bottom: 6px; }' +
+'  .slot-upper-l1 { left: 50%; top: 34px; transform: translateX(-50%); }' +
+'  .slot-upper-l2 { left: 50%; top: 62px; transform: translateX(-50%); }' +
+'  .slot-bottom-l1 { left: 50%; bottom: 62px; transform: translateX(-50%); }' +
+'  .slot-bottom-l2 { left: 50%; bottom: 34px; transform: translateX(-50%); }' +
+'  .slot-middle-left-l1 { left: 6px; top: calc(50% - 15px); transform: translateY(-50%); }' +
+'  .slot-middle-left-l2 { left: 6px; top: calc(50% + 15px); transform: translateY(-50%); }' +
+'  .slot-middle-right-l1 { right: 6px; top: calc(50% - 15px); transform: translateY(-50%); }' +
+'  .slot-middle-right-l2 { right: 6px; top: calc(50% + 15px); transform: translateY(-50%); }' +
+    configBackground.backgroundCss() +
+'</style></head>' +
+'<body>' +
+
+'<div id="startupLoader" aria-live="polite">' +
+'  <div id="startupLoaderTitle">Loading Modern</div>' +
+'  <div id="startupLoaderSubtitle">Preparing the watchface preview…</div>' +
+'  <div id="startupProgressTrack"><div id="startupProgressBar"></div></div>' +
+'  <div id="startupProgressPercent">0%</div>' +
+'</div>' +
+
+'<div id="topBar">' +
+'  <div class="top-bar-left">' +
+'    <div class="top-bar-actions">' +
+'      <button type="button" class="back-btn" onclick="goBack()">&lsaquo; Back</button>' +
+'      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
+'      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
+'    </div>' +
+'    <div class="top-bar-title">Modern Watchface Preview</div>' +
+'    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>' +
+'  </div>' +
+'  <div class="top-bar-preview">' +
+'    <canvas id="previewCanvas" width="176" height="201"></canvas>' +
+'  </div>' +
+'</div>' +
+
+'<div class="modal-overlay" id="aboutModal" onclick="if (event.target === this) closeAboutModal();">' +
+'  <div class="modal-box about-modal-box">' +
+'    ' + aboutLogoMarkup('about-logo', ' id="aboutEasterEggLogo" role="img" aria-label="Modern logo" onclick="tapAboutLogo()" title="Modern"') +
+'    <div class="about-title">Modern</div>' +
+'    <div class="about-subtitle">Modern analog watchface for Pebble</div>' +
+'    <div class="about-info">' +
+'      <div class="about-info-row"><div class="about-info-label">Version</div><div class="about-info-value">' + APP_VERSION + '</div></div>' +
+'      <div class="about-info-row"><div class="about-info-label">Creator</div><div class="about-info-value">Łukasz Zalewski</div></div>' +
+'      <div class="about-info-row"><div class="about-info-label">Platform</div><div class="about-info-value">Pebble Time 2 / Emery</div></div>' +
+'    </div>' +
+'    <div class="about-description">Find out more about the project on github, feel free to contribute as well.</div>' +
+'    <a class="about-source" href="https://github.com/zalewszczak/solar-eclipse-watch" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>' +
+'    <button type="button" class="about-ok-btn" onclick="closeAboutModal()">OK</button>' +
+'  </div>' +
+'</div>' +
+
+'<div class="modal-overlay" id="slotEditModal" onclick="if (event.target === this) closeSlotEditor();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title" id="slotEditTitle">Edit slot</div>' +
+'    <label>Category</label>' +
+'    <div class="category-btn-group" id="slotEditCategoryGroup"></div>' +
+'    <input type="hidden" id="slotEditCategory">' +
+'    <label for="slotEditContent" style="margin-top:10px;">Content</label>' +
+'    <select id="slotEditContent" onchange="onSlotEditContentChange()">' + cornerContentOptionsHtml(0) + '</select>' +
+'    <div class="primitive-strip" id="slotEditPrimitives" style="display:none;"></div>' +
+'    <div id="slotEditCustomPrimsSection" style="display:none; margin-top:10px;">' +
+'      <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">' +
+'        <input type="checkbox" id="slotEditCustomPrimsToggle" onchange="composerOnToggle()">' +
+'        Build a custom feature from elements' +
+'      </label>' +
+'      <div id="slotEditCustomPrimsBody" style="display:none; margin-top:6px;">' +
+'        <div class="help">Build the feature from up to 10 elements. Tap one to select it, then move or delete it -- or drag a chip to reorder it. Changes only apply when you press OK.</div>' +
+'        <div class="composer-row">' +
+'          <div class="primitive-strip" id="composerPreview" style="margin-top:0; flex:1;"></div>' +
+'          <button type="button" class="composer-btn" id="composerPlus" onclick="composerPlus()" title="Append a space">+</button>' +
+'          <button type="button" class="composer-btn" id="composerMinus" onclick="composerMinus()" title="Remove the last element">&minus;</button>' +
+'        </div>' +
+'        <div class="primitive-strip" id="composerStrip"></div>' +
+'        <div class="help" id="composerEmpty" style="display:none;">Nothing here yet. Use + or the palette below, or append the selected Content.</div>' +
+'        <div class="composer-row">' +
+'          <button type="button" class="composer-btn composer-btn-grow" id="composerLeft" onclick="composerMove(-1)">&larr;</button>' +
+'          <button type="button" class="composer-btn composer-btn-grow" id="composerDelete" onclick="composerDelete()">Delete</button>' +
+'          <button type="button" class="composer-btn composer-btn-grow" id="composerRight" onclick="composerMove(1)">&rarr;</button>' +
+'          <span class="composer-count" id="composerCount"></span>' +
+'        </div>' +
+'        <div class="composer-row" id="composerSelZoneRow" style="display:none;">' +
+'          <label style="margin:0;" id="composerSelZoneLabel">Zone for selected</label>' +
+'          <select id="composerSelZone" onchange="composerOnSelZoneChange()" style="flex:1;"></select>' +
+'        </div>' +
+'        <label style="margin-top:10px;">Add from palette</label>' +
+'        <div class="composer-row" style="margin-top:4px;">' +
+'          <select id="composerAddGroup" onchange="composerOnAddGroupChange()" style="flex:1;"></select>' +
+'          <select id="composerAddItem" onchange="composerUpdateAddZoneVisibility()" style="flex:2;"></select>' +
+'        </div>' +
+'        <div class="composer-row" id="composerAddZoneRow" style="display:none;">' +
+'          <label style="margin:0;" id="composerAddZoneLabel">Zone</label>' +
+'          <select id="composerAddZone" style="flex:1;"></select>' +
+'        </div>' +
+'        <div class="composer-row">' +
+'          <button type="button" class="composer-btn composer-btn-grow" onclick="composerAddFromPalette()">Add element</button>' +
+'          <button type="button" class="composer-btn composer-btn-grow" onclick="composerAppendPrebuilt()">Append selected Content</button>' +
+'        </div>' +
+'        <div class="composer-error" id="composerError" style="display:none;"></div>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="slotEditCategoryHelp" style="display:none;">Shows the time-zone option used for the selected location. Daylight saving rules may vary by location.</div>' +
+'    <div class="mode-btn-group" id="slotEditColorGroup" style="margin-top:10px;">' +
+'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(0)">MONO</button>' +
+'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(1)">ACC</button>' +
+'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(2)">PILL</button>' +
+'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(3)">COLOR</button>' +
+'    </div>' +
+'    <div class="help"><b>MONO</b> = your main color, <b>ACC</b> = accent color, <b>PILL</b> = solid background-color capsule behind main-color content, <b>COLOR</b> = dynamic (changes with the value shown).</div>' +
+'    <div class="checkbox-row" style="margin-top:12px;">' +
+'      <input type="checkbox" id="slotEditShake">' +
+'      <label for="slotEditShake" style="margin:0;">Show only when the watch is shaken</label>' +
+'    </div>' +
+'    <div class="help" style="margin-top:2px;">Appears for the same number of seconds as the shake animation duration.</div>' +
+'    <button type="button" onclick="saveSlotEditor()" style="width:100%; box-sizing:border-box; padding:14px; font-size:16px; font-weight:600; color:#fff; background:#ff9200; border:none; border-radius:8px; margin-top:14px;">OK</button>' +
+'    <button type="button" class="modal-cancel-btn" onclick="closeSlotEditor()">Cancel</button>' +
+'  </div>' +
+'</div>' +
+
+customMarkerModalHtml('hour', 'Edit hour indices', 20) +
+customMarkerModalHtml('sec', 'Edit seconds indices', 10) +
+textMarkerModalHtml(current) +
+configBackground.backgroundModalHtml() +
+
+handEditorModalHtml('hour', 'Edit hour hand') +
+handEditorModalHtml('min', 'Edit minute hand') +
+handEditorModalHtml('sec', 'Edit second hand') +
+
+// Hand style / marker style pickers -- a 3x3 grid of image+title
+// buttons (see HAND_PRESETS/MARKER_PRESET_STYLES + MARKER_BITMAP_STYLES
+// below) plus one horizontal "Custom" button, same one-tap-applies-
+// and-closes interaction for both. Tapping outside the popup (the
+// overlay itself, not the box) discards -- nothing is applied.
+'<div class="modal-overlay" id="handStyleModal" onclick="if (event.target === this) closeHandStyleModal();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Hand style</div>' +
+'    <div class="modal-scroll-body">' +
+'      <div class="style-picker-grid" id="handStyleGrid"></div>' +
+'      <button type="button" class="style-picker-custom-btn" onclick="chooseHandStyleCustom()">Custom</button>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+
+'<div class="modal-overlay" id="markerStyleModal" onclick="if (event.target === this) closeMarkerStyleModal();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Hour/seconds indices style</div>' +
+'    <div class="modal-scroll-body">' +
+'      <div class="style-picker-grid" id="markerStyleGrid"></div>' +
+'      <button type="button" class="style-picker-custom-btn" onclick="chooseMarkerStyleCustom()">Custom</button>' +
+'      <button type="button" class="style-picker-custom-btn style-picker-none-btn" onclick="chooseMarkerStyle(\'0\')">None</button>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+
+// Center circle -- same "commits live, no separate draft/Save state"
+// shape as the numerals modal above, not the hand editor's own
+// draft-then-Save/Cancel one, since there are only 2 fields here and
+// they already commit live via their own oninput/onchange handlers.
+'<div class="modal-overlay" id="centerCircleModal" onclick="if (event.target === this) closeCenterCircleEditor();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Center circle</div>' +
+
+'    <div class="slider-row">' +
+'      <label for="centerCircleRadius">Radius <span class="val" id="centerCircleRadiusVal">' + esc(current.centerCircleRadius || '3') + 'px</span></label>' +
+'    <div class="slider-with-buttons">' +
+'    <button type="button" class="slider-step-btn" onclick="stepSlider(\'centerCircleRadius\', -1)">&minus;</button>' +
+'      <input type="range" id="centerCircleRadius" min="0" max="30" step="1" value="' + esc(current.centerCircleRadius || '3') + '" oninput="document.getElementById(\'centerCircleRadiusVal\').textContent = this.value + \'px\'; refreshEditButtonLabels();">' +
+'    <button type="button" class="slider-step-btn" onclick="stepSlider(\'centerCircleRadius\', 1)">+</button>' +
+'    </div>' +
+'    </div>' +
+'    <div class="help">Set the radius to 0 to hide the center circle.</div>' +
+'    <label for="centerCircleColor">Color</label>' +
+'    <select id="centerCircleColor">' + schemeColorOptionsHtml(current.centerCircleColor) + '</select>' +
+
+'    <button type="button" class="modal-cancel-btn" onclick="closeCenterCircleEditor()" style="margin-top:14px;">Close</button>' +
+'  </div>' +
+'</div>' +
+
+// Shadow style/angle apply to every hand's shadow at once (preset or
+// custom, see their own help text below) -- not hand-specific the way
+// the per-hand editors above are, so this is its own standalone modal
+// rather than another field inside openHandEditor()'s. Same "changes
+// apply live via onchange, no separate save step" behavior these two
+// fields already had inline before moving in here -- just decluttering
+// the main page, not changing how they work.
+'<div class="modal-overlay" id="shadowStyleModal" onclick="if (event.target === this) closeShadowStyleEditor();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Shadow style</div>' +
+
+'    <label>Shadow style</label>' +
+      modeButtonGroupHtml('shadowTranslucentGroup', 'shadowTranslucent', [
+        { value: 'false', label: 'Solid' },
+        { value: 'true', label: 'Translucent' }
+      ], current.shadowTranslucent !== 'false' ? 'true' : 'false', 'selectShadowTranslucent') +
+'    <div class="help">Applies the selected shadow style to all analog hands. Translucent uses dithering to make the shadow lighter.</div>' +
+
+'    <div class="slider-row">' +
+'      <label for="shadowAngle">Shadow angle <span class="val" id="shadowAngleVal">' + (current.shadowAngle || '120') + '&deg;</span></label>' +
+'      <div class="slider-with-buttons">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'shadowAngle\', -1)">&minus;</button>' +
+'      <input type="range" id="shadowAngle" min="0" max="359" step="1" value="' + (current.shadowAngle || '120') + '" oninput="onShadowAngleInput()">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'shadowAngle\', 1)">+</button>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help">Sets the direction of the shadow for all analog hands.</div>' +
+
+'    <button type="button" class="modal-cancel-btn" onclick="closeShadowStyleEditor()" style="margin-top:14px;">Close</button>' +
+'  </div>' +
+'</div>' +
+
+// Shared by all 4 font pickers (clock, clock\'s small companion,
+// corner/edge, marker numerals) -- which one is currently open lives
+// in currentFontPickerRole (see openFontPicker() below), so there\'s
+// one grid/modal to keep in sync rather than 4 near-identical copies.
+// "Show incompatible fonts" (only meaningful for the 2 pickers that
+// default to hiding the ~48px-scale display fonts -- see FONT_LOOKUP\'s
+// own `small` comment) lives at the bottom here now instead of inline
+// on the main page, and is hidden entirely for the other 2 pickers.
+'<div class="modal-overlay" id="fontPickerModal" onclick="if (event.target === this) closeFontPicker();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title" id="fontPickerTitle">Font</div>' +
+'    <div class="font-category-scroll"><div class="font-category-row" id="fontPickerCategoryRow"></div></div>' +
+'    <div class="modal-scroll-body">' +
+'      <div id="fontPickerGrid"></div>' +
+'      <div class="help" id="fontPickerEmptyMsg" style="display:none; text-align:center; margin-top:16px;">No fonts match these filters -- remove some to see results.</div>' +
+'      <button type="button" id="fontPickerResetFiltersBtn" class="secondary-btn" style="display:none; width:auto; margin:10px auto 0; padding:10px 16px;" onclick="resetFontCategoryFilters()">Reset filters</button>' +
+'    </div>' +
+'    <div class="modal-footer">' +
+'      <div class="checkbox-row" id="fontPickerIncompatibleRow" style="margin-top:10px;">' +
+'        <input type="checkbox" id="fontPickerShowIncompatible" onchange="renderFontPickerGrid()">' +
+'        <label for="fontPickerShowIncompatible" style="margin:0;">Show incompatible fonts</label>' +
+'      </div>' +
+'      <button type="button" class="modal-cancel-btn" onclick="closeFontPicker()">Cancel</button>' +
+'    </div>' +
+'  </div>' +
+'</div>' +
+
+// Shared by all 3 hand editor popups\' own Shape picker (hour/min/sec)
+// -- which popup-field-prefix is currently being edited lives in
+// HAND_STYLE_ICON_PREFIX (see openHandStyleIconPicker() below), same
+// "one popup, not 3 near-identical copies" shape the color preset
+// picker uses for its own day/night pair.
+'<div class="modal-overlay" id="handStyleIconPickerModal" onclick="if (event.target === this) closeHandStyleIconPicker();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Shape</div>' +
+'    <div class="modal-scroll-body" id="handStyleIconPickerGrid"></div>' +
+'  </div>' +
+'</div>' +
+
+'<div class="modal-overlay" id="weatherIconStylePickerModal" onclick="if (event.target === this) closeWeatherIconStylePicker();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title">Icons style</div>' +
+'    <div class="modal-scroll-body" id="weatherIconStylePickerGrid"></div>' +
+'  </div>' +
+'</div>' +
+
+'<div class="modal-overlay" id="donateModal">' +
+'  <div class="modal-box donate-modal-box">' +
+'    <div class="donate-header">' +
+'      <div class="donate-eclipse-scene" aria-hidden="true">' +
+'        <div class="donate-sky">' +
+'          <span class="donate-star s1"></span><span class="donate-star s2"></span><span class="donate-star s3"></span><span class="donate-star s4"></span><span class="donate-star s5 twinkle"></span>' +
+'          <span class="donate-star s6"></span><span class="donate-star s7"></span><span class="donate-star s8"></span><span class="donate-star s9"></span><span class="donate-star s10"></span>' +
+'          <span class="donate-star s11"></span><span class="donate-star s12"></span><span class="donate-star s13"></span><span class="donate-star s14 twinkle"></span><span class="donate-star s15"></span>' +
+'          <span class="donate-star s16"></span><span class="donate-star s17"></span><span class="donate-star s18"></span><span class="donate-star s19"></span><span class="donate-star s20"></span>' +
+'          <span class="donate-meteor m1"></span><span class="donate-meteor m2"></span><span class="donate-meteor m3"></span><span class="donate-meteor m4"></span>' +
+'        </div>' +
+'        <div class="donate-eclipse"><div class="donate-corona"></div><div class="donate-sun"></div><div class="donate-moon"></div><span class="donate-bead b1"></span><span class="donate-bead b2"></span><span class="donate-bead b3"></span></div>' +
+'      </div>' +
+'      <div class="donate-header-content"><div class="donate-header-title"><span class="donate-sparkle">✦</span>Support Modern<span class="donate-sparkle">✦</span></div><div class="donate-header-subtitle">Keep the eclipse magic going</div></div>' +
+'    </div>' +
+'    <div class="donate-content">' +
+'      <div class="donate-intro">Modern is a little passion project born out of need to track the rare eclipse event that spiraled out of control and ended up being this monster of configuration options and astronomy/sky fanatic dream. If you enjoy using it and would like to help keep the project going, a small donation is very much appreciated. Thank you! ♥</div>' +
+'      <div class="donate-method">' +
+'        <div class="donate-method-title">PayPal</div>' +
+'        <div class="donate-method-note">The easiest option. FYI: payments below ~1USD are swallowed by transaction fees and I recieve nothing. ¯\_(ツ)_/¯</div>' +
+'        <div class="donate-paypal">' +
+'          <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">' +
+'            <input type="hidden" name="cmd" value="_s-xclick">' +
+'            <input type="hidden" name="hosted_button_id" value="D3C427GK2PGE8">' +
+'            <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" alt="Donate with PayPal">' +
+'            <img alt="" border="0" src="https://www.paypalobjects.com/pl_PL/i/scr/pixel.gif" width="1" height="1">' +
+'          </form>' +
+'        </div>' +
+'      </div>' +
+'      <div class="donate-method">' +
+'        <div class="donate-method-title">Bitcoin</div>' +
+'        <div class="donate-method-note">If you prefer crypto, you can send BTC directly to this address:</div>' +
+'        <div class="donate-address">1DAvDGQCXJtL2SHPz47QUjaSXBXLSXwThJ</div>' +
+'      </div>' +
+'      <div class="donate-method">' +
+'        <div class="donate-method-title">Coinbase</div>' +
+'        <div class="donate-method-note">You can also send supported coins through Coinbase to:</div>' +
+'        <div class="donate-address">zalewszczak@gmail.com</div>' +
+'      </div>' +
+'      <div class="donate-footnote">Every contribution goes back into the project — with a little help for beer or Pebble Round 2 (whichever goal gets hit first). Cheers! 🍻</div>' +
+'    </div>' +
+'    <button type="button" class="modal-cancel-btn" onclick="closeDonateModal()">Close</button>' +
+'  </div>' +
+'</div>' +
+
+// Shared by anything that needs a plain "are you sure?" step before
+// acting -- Style Presets' save/apply buttons below. showConfirm()
+// stashes the action to run and shows this; confirmModalYes() runs it
+// (once) and closes; canceling (or tapping outside) just closes.
+'<div class="modal-overlay" id="confirmModal" onclick="if (event.target === this) closeConfirmModal();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title" id="confirmModalTitle"></div>' +
+'    <div class="confirm-image-compare" id="confirmImageCompare" style="display:none;">' +
+'      <img class="confirm-compare-img border-red" id="confirmImageLeft" alt="">' +
+'      <span class="confirm-compare-arrow" id="confirmImageArrow">&#8594;</span>' +
+'      <img class="confirm-compare-img border-green" id="confirmImageRight" alt="">' +
+'    </div>' +
+'    <div class="help" id="confirmModalMessage" style="text-align:center;"></div>' +
+'    <button type="button" class="modal-confirm-btn" id="confirmModalYesBtn" onclick="confirmModalYes()">Confirm</button>' +
+'    <button type="button" class="modal-cancel-btn" onclick="closeConfirmModal()">Cancel</button>' +
+'  </div>' +
+'</div>' +
+
+// Per-slot schedule popup (clock button on each My Style row).
+configPresetSchedule.modalHtml +
+
+// Shared by every service's (i) button in the Updates section -- one
+// modal, repopulated per tap by openServiceLog() from that service's
+// own slice of serviceLogsJson (see serviceStatusRowsHtml() above).
+// Console-style: newest first, one line per attempt with its date,
+// time, OK/ERR ###, and (for errors) the message.
+'<div class="modal-overlay" id="serviceLogModal" onclick="if (event.target === this) closeServiceLogModal();">' +
+'  <div class="modal-box">' +
+'    <div class="modal-title" id="serviceLogModalTitle"></div>' +
+'    <div class="modal-scroll-body" id="serviceLogModalBody"></div>' +
+'    <button type="button" class="modal-cancel-btn" onclick="closeServiceLogModal()">Close</button>' +
+'  </div>' +
+'</div>' +
+
+// Example styles: tapping a tile opens this instead of applying
+// immediately -- image preview, bold title, description, then an
+// explicit Apply button, per the same "confirm before it takes
+// effect" idea as the plain confirm modal above, just with a richer
+// preview since there's a real design to show off first.
+'<div class="modal-overlay" id="exampleStyleModal" onclick="if (event.target === this) closeExampleStyleModal();">' +
+'  <div class="modal-box">' +
+'    <img class="example-style-modal-img" id="exampleStyleModalImg" src="" alt="">' +
+'    <div class="example-style-modal-title" id="exampleStyleModalTitle"></div>' +
+'    <div class="help" id="exampleStyleModalDesc" style="text-align:center;"></div>' +
+'    <button type="button" class="modal-confirm-btn" id="exampleStyleModalApplyBtn" onclick="confirmExampleStyleApply()">Apply this style</button>' +
+'    <button type="button" class="modal-cancel-btn" onclick="closeExampleStyleModal()">Cancel</button>' +
+'  </div>' +
+'</div>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('examples', 'Example styles') +
+'    <div class="section-body" id="section-examples" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Tap a design below to preview it -- each one sets every Style, Colors, and Features setting to match once you confirm, the same as pasting its JSON into "Style Presets" further down.</div>' +
+'    <div class="example-style-grid">' + exampleStylesButtonsHtml + '</div>' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('style', 'Style') +
+'    <div class="section-body" id="section-style" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div id="showSecondsRow">' +
+'    <div class="checkbox-row subsection">' +
+'      <input type="checkbox" id="showSeconds" ' + secondsChecked + ' onchange="onShowSecondsChange()">' +
+'      <label for="showSeconds" style="margin:0;">Show second hand</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-showSeconds\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-showSeconds" style="display:none;">Adds a second hand to the analog face.</div>' +
+'    </div>' +
+
+'    <div id="bigAnalogSettings" class="subsection">' +
+
+      subsectionLegendHtml('hands', 'Hands style') +
+'      <div class="subsection-body" id="subsec-hands" style="display:none;">' +
+'      <div class="field-label-row"><label>Hand style</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-handStyle\')">?</button></div>' +
+'      <button type="button" class="marker-edit-btn" id="handStyleTriggerBtn" style="margin-top:8px;" onclick="openHandStyleModal()">Hand style: <span id="handStyleTriggerLabel"></span> &rsaquo;</button>' +
+'      <div class="help" id="help-handStyle" style="display:none;">Choose the shape of the analog hands. Custom lets you edit each hand.</div>' +
+
+'      <div id="customHandSection">' +
+'        <button type="button" class="marker-edit-btn" onclick="openHandEditor(\'hour\')">Edit hour hand: <span id="handHourStatusLabel"></span> &rsaquo;</button>' +
+'        <button type="button" class="marker-edit-btn" onclick="openHandEditor(\'min\')">Edit minute hand: <span id="handMinStatusLabel"></span> &rsaquo;</button>' +
+'        <button type="button" class="marker-edit-btn" id="editSecHandBtn" ' + (secondsChecked ? '' : 'disabled') + ' onclick="openHandEditor(\'sec\')">Edit second hand: <span id="handSecStatusLabel"></span> &rsaquo;</button>' +
+'        <button type="button" class="marker-edit-btn" onclick="openCenterCircleEditor()">Edit center circle: <span id="centerCircleStatusLabel"></span> &rsaquo;</button>' +
+          handHiddenInputsHtml(current) +
+'      </div>' +
+'      <button type="button" class="marker-edit-btn" id="shadowStyleTriggerBtn" onclick="openShadowStyleEditor()">Edit shadow style: <span id="shadowStyleStatusLabel"></span> &rsaquo;</button>' +
+'      </div>' +
+
+      subsectionLegendHtml('indices', 'Indices style') +
+'      <div class="subsection-body" id="subsec-indices" style="display:none;">' +
+'      <div class="field-label-row"><label>Hour/seconds indices style</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-indicesStyle\')">?</button></div>' +
+'      <button type="button" class="marker-edit-btn" id="markerStyleTriggerBtn" style="margin-top:8px;" onclick="openMarkerStyleModal()">Indices style: <span id="markerStyleTriggerLabel"></span> &rsaquo;</button>' +
+'      <select id="bigAnalogMarkerStyle" style="display:none;" onchange="onMarkerStyleChange()">' +
+'        <option value="10"' + (current.bigAnalogMarkerStyle === '10' ? ' selected' : '') + '>Minimal (thin hour indices only)</option>' +
+'        <option value="9"' + (current.bigAnalogMarkerStyle === '9' ? ' selected' : '') + '>Classy</option>' +
+'        <option value="0"' + (current.bigAnalogMarkerStyle === '0' ? ' selected' : '') + '>None</option>' +
+'        <option value="1"' + (current.bigAnalogMarkerStyle === '1' ? ' selected' : '') + '>Braun</option>' +
+'        <option value="2"' + (current.bigAnalogMarkerStyle === '2' ? ' selected' : '') + '>Swiss</option>' +
+'        <option value="3"' + (current.bigAnalogMarkerStyle === '3' || !current.bigAnalogMarkerStyle ? ' selected' : '') + '>Modern</option>' +
+'        <option value="4"' + (current.bigAnalogMarkerStyle === '4' ? ' selected' : '') + '>Shadow</option>' +
+'        <option value="5"' + (current.bigAnalogMarkerStyle === '5' ? ' selected' : '') + '>Tally</option>' +
+'        <option value="6"' + (current.bigAnalogMarkerStyle === '6' ? ' selected' : '') + '>Bell</option>' +
+'        <option value="7"' + (current.bigAnalogMarkerStyle === '7' ? ' selected' : '') + '>Fancy</option>' +
+'        <option value="8"' + (current.bigAnalogMarkerStyle === '8' ? ' selected' : '') + '>Custom</option>' +
+'      </select>' +
+'      <div class="checkbox-row" id="bitmapMarkerTransparentRow" style="margin-top:12px;' + (isBitmapMarkerStyle ? '' : ' display:none;') + '">' +
+'        <input type="checkbox" id="bitmapMarkerTransparent" ' + (current.bitmapMarkerTransparent ? 'checked' : '') + ' onchange="onBitmapMarkerTransparentChange()">' +
+'        <label for="bitmapMarkerTransparent" style="margin:0;">Semi transparent markers (see the background through them)</label>' +
+'      </div>' +
+'      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face. Custom lets you edit them.</div>' +
+
+'      <div id="customMarkerSection" style="' + (current.bigAnalogMarkerStyle === '8' ? '' : 'display:none;') + '">' +
+'        <button type="button" class="marker-edit-btn" onclick="openCustomMarkerEditor(\'hour\')">Edit hour indices: <span id="cmHourStatusLabel"></span> &rsaquo;</button>' +
+'        <button type="button" class="marker-edit-btn" onclick="openCustomMarkerEditor(\'sec\')">Edit seconds indices: <span id="cmSecStatusLabel"></span> &rsaquo;</button>' +
+'        <button type="button" class="marker-edit-btn" onclick="openTextMarkerEditor()">Numerals: <span id="numeralsStatusLabel"></span> &rsaquo;</button>' +
+          customMarkerHiddenInputsHtml(current) +
+'      </div>' +
+'      </div>' +
+'    </div>' +
+
+    configBackground.backgroundSectionHtml(current) +
+
+'  </fieldset>' +
+
+'  <fieldset id="cornersFieldset">' +
+    sectionLegendHtml('corners', 'Features') +
+'    <div class="section-body" id="section-corners" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Features are small info readouts (weather, health, date/time, and more) placed around your watch face. Tap a slot on the diagram below to pick what it shows and how it\'s colored -- grayed-out slots aren\'t available for your current style.</div>' +
+
+'    <div id="slotPickerDiagram">' +
+'      <button type="button" class="slot-btn slot-corner-tl" id="slotBtn-cornerTL" onclick="openSlotEditor(\'cornerTL\')"></button>' +
+'      <button type="button" class="slot-btn slot-corner-tr" id="slotBtn-cornerTR" onclick="openSlotEditor(\'cornerTR\')"></button>' +
+'      <button type="button" class="slot-btn slot-corner-bl" id="slotBtn-cornerBL" onclick="openSlotEditor(\'cornerBL\')"></button>' +
+'      <button type="button" class="slot-btn slot-corner-br" id="slotBtn-cornerBR" onclick="openSlotEditor(\'cornerBR\')"></button>' +
+'      <button type="button" class="slot-btn slot-upper-l1" id="slotBtn-upperMiddleLine1" onclick="openSlotEditor(\'upperMiddleLine1\')"></button>' +
+'      <button type="button" class="slot-btn slot-upper-l2" id="slotBtn-upperMiddleLine2" onclick="openSlotEditor(\'upperMiddleLine2\')"></button>' +
+'      <button type="button" class="slot-btn slot-bottom-l1" id="slotBtn-bottomMiddleLine1" onclick="openSlotEditor(\'bottomMiddleLine1\')"></button>' +
+'      <button type="button" class="slot-btn slot-bottom-l2" id="slotBtn-bottomMiddleLine2" onclick="openSlotEditor(\'bottomMiddleLine2\')"></button>' +
+'      <button type="button" class="slot-btn slot-middle-left-l1" id="slotBtn-middleLeftLine1" onclick="openSlotEditor(\'middleLeftLine1\')"></button>' +
+'      <button type="button" class="slot-btn slot-middle-left-l2" id="slotBtn-middleLeftLine2" onclick="openSlotEditor(\'middleLeftLine2\')"></button>' +
+'      <button type="button" class="slot-btn slot-middle-right-l1" id="slotBtn-middleRightLine1" onclick="openSlotEditor(\'middleRightLine1\')"></button>' +
+'      <button type="button" class="slot-btn slot-middle-right-l2" id="slotBtn-middleRightLine2" onclick="openSlotEditor(\'middleRightLine2\')"></button>' +
+'    </div>' +
+
+'    <div class="checkbox-row" id="bitmapCornerOverrideRow" style="margin-top:12px;' + ((isBitmapMarkerStyle && markerStyleNum !== 5) ? '' : ' display:none;') + '">' +
+'      <input type="checkbox" id="bitmapCornerOverride" ' + (current.bitmapCornerOverride ? 'checked' : '') + ' onchange="onBitmapCornerOverrideChange()">' +
+'      <label for="bitmapCornerOverride" style="margin:0;">Incompatible features (may overlap the design)</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bitmapCornerOverride\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-bitmapCornerOverride" style="display:none;">Allows features to use areas that may overlap some bitmap marker designs.</div>' +
+
+'    <div class="field-label-row"><label for="cornerFont">Font</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-cornerFont\')">?</button></div>' +
+
+
+'    <select id="cornerFont" onchange="onCornerFontChange()" style="display:none;">' + fontOptionsHtml(cornerFontId, false) + '</select>' +
+'    <button type="button" class="font-picker-btn font-picker-trigger" id="cornerFontTrigger" onclick="openFontPicker(\'cornerFont\')">' +
+'      <span class="font-picker-preview" id="cornerFontTriggerPreview"></span>' +
+'      <span class="font-picker-name" id="cornerFontTriggerName"></span>' +
+'    </button>' +
+'    <div class="help" id="help-cornerFont" style="display:none;">Sets the font used for feature text and the analog date.</div>' +
+
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>Outline text and icons for contrast</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-outlineStyle\')">?</button></div>' +
+      modeButtonGroupHtml('outlineStyleGroup', 'outlineStyle', [
+        { value: '0', label: 'None' },
+        { value: '1', label: 'Thin' },
+        { value: '2', label: 'Thick' }
+      ], current.outlineStyle || '1', 'onOutlineStyleChange') +
+'    </div>' +
+'    <div class="help" id="help-outlineStyle" style="display:none;">Adds an outline to text and icons to keep them readable over the background.</div>' +
+
+'    <div id="weatherIconStyleRow">' +
+'      <div class="field-label-row"><label>Icons style</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-weatherIconStyle\')">?</button></div>' +
+'      <select id="weatherIconStyle" style="display:none;">' +
+'        <option value="0"' + (current.weatherIconStyle === '0' ? ' selected' : '') + '>Simple</option>' +
+'        <option value="1"' + (current.weatherIconStyle === '1' || !current.weatherIconStyle ? ' selected' : '') + '>Hollow</option>' +
+'        <option value="2"' + (current.weatherIconStyle === '2' ? ' selected' : '') + '>Full color</option>' +
+'      </select>' +
+'      <button type="button" class="font-picker-btn font-picker-trigger" id="weatherIconStyleTrigger" onclick="openWeatherIconStylePicker()">' +
+'        <span class="font-picker-preview weather-icon-style-preview"></span>' +
+'        <span class="font-picker-name"></span>' +
+'      </button>' +
+'      <div class="help" id="help-weatherIconStyle" style="display:none;">Choose how weather and feature icons are drawn in feature slots.</div>' +
+'    </div>' +
+
+'    <div style="display:none;" id="slotDataStore">' +
+'      <select id="cornerTL">' + cornerContentOptionsHtml(current.cornerTL) + '</select>' +
+'      <input type="hidden" id="cornerTLColor" value="' + esc(current.cornerTLColor || '0') + '">' +
+'      <input type="hidden" id="cornerTLCustomPrims" value="' + esc(current.cornerTLCustomPrims || '') + '">' +
+'      <input type="hidden" id="cornerTLShake" value="' + (current.cornerTLShake === '1' ? '1' : '0') + '">' +
+'      <select id="cornerTR">' + cornerContentOptionsHtml(current.cornerTR) + '</select>' +
+'      <input type="hidden" id="cornerTRColor" value="' + esc(current.cornerTRColor || '0') + '">' +
+'      <input type="hidden" id="cornerTRCustomPrims" value="' + esc(current.cornerTRCustomPrims || '') + '">' +
+'      <input type="hidden" id="cornerTRShake" value="' + (current.cornerTRShake === '1' ? '1' : '0') + '">' +
+'      <select id="cornerBL">' + cornerContentOptionsHtml(current.cornerBL) + '</select>' +
+'      <input type="hidden" id="cornerBLColor" value="' + esc(current.cornerBLColor || '0') + '">' +
+'      <input type="hidden" id="cornerBLCustomPrims" value="' + esc(current.cornerBLCustomPrims || '') + '">' +
+'      <input type="hidden" id="cornerBLShake" value="' + (current.cornerBLShake === '1' ? '1' : '0') + '">' +
+'      <select id="cornerBR">' + cornerContentOptionsHtml(current.cornerBR) + '</select>' +
+'      <input type="hidden" id="cornerBRColor" value="' + esc(current.cornerBRColor || '0') + '">' +
+'      <input type="hidden" id="cornerBRCustomPrims" value="' + esc(current.cornerBRCustomPrims || '') + '">' +
+'      <input type="hidden" id="cornerBRShake" value="' + (current.cornerBRShake === '1' ? '1' : '0') + '">' +
+'      <select id="upperMiddleLine1Content">' + cornerContentOptionsHtml(current.upperMiddleLine1ContentAnalog) + '</select>' +
+'      <input type="hidden" id="upperMiddleLine1Color" value="' + esc(current.upperMiddleLine1ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="upperMiddleLine1CustomPrims" value="' + esc(current.upperMiddleLine1CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="upperMiddleLine1Shake" value="' + (current.upperMiddleLine1Shake === '1' ? '1' : '0') + '">' +
+'      <select id="upperMiddleLine2Content">' + cornerContentOptionsHtml(current.upperMiddleLine2ContentAnalog) + '</select>' +
+'      <input type="hidden" id="upperMiddleLine2Color" value="' + esc(current.upperMiddleLine2ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="upperMiddleLine2CustomPrims" value="' + esc(current.upperMiddleLine2CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="upperMiddleLine2Shake" value="' + (current.upperMiddleLine2Shake === '1' ? '1' : '0') + '">' +
+'      <select id="bottomMiddleLine1Content">' + cornerContentOptionsHtml(current.bottomMiddleLine1ContentAnalog) + '</select>' +
+'      <input type="hidden" id="bottomMiddleLine1Color" value="' + esc(current.bottomMiddleLine1ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="bottomMiddleLine1CustomPrims" value="' + esc(current.bottomMiddleLine1CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="bottomMiddleLine1Shake" value="' + (current.bottomMiddleLine1Shake === '1' ? '1' : '0') + '">' +
+'      <select id="bottomMiddleLine2Content">' + cornerContentOptionsHtml(current.bottomMiddleLine2Content) + '</select>' +
+'      <input type="hidden" id="bottomMiddleLine2Color" value="' + esc(current.bottomMiddleLine2Color || '0') + '">' +
+'      <input type="hidden" id="bottomMiddleLine2CustomPrims" value="' + esc(current.bottomMiddleLine2CustomPrims || '') + '">' +
+'      <input type="hidden" id="bottomMiddleLine2Shake" value="' + (current.bottomMiddleLine2Shake === '1' ? '1' : '0') + '">' +
+'      <select id="middleLeftLine1Content">' + cornerContentOptionsHtml(current.middleLeftLine1ContentAnalog) + '</select>' +
+'      <input type="hidden" id="middleLeftLine1Color" value="' + esc(current.middleLeftLine1ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="middleLeftLine1CustomPrims" value="' + esc(current.middleLeftLine1CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="middleLeftLine1Shake" value="' + (current.middleLeftLine1Shake === '1' ? '1' : '0') + '">' +
+'      <select id="middleLeftLine2Content">' + cornerContentOptionsHtml(current.middleLeftLine2ContentAnalog) + '</select>' +
+'      <input type="hidden" id="middleLeftLine2Color" value="' + esc(current.middleLeftLine2ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="middleLeftLine2CustomPrims" value="' + esc(current.middleLeftLine2CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="middleLeftLine2Shake" value="' + (current.middleLeftLine2Shake === '1' ? '1' : '0') + '">' +
+'      <select id="middleRightLine1Content">' + cornerContentOptionsHtml(current.middleRightLine1ContentAnalog) + '</select>' +
+'      <input type="hidden" id="middleRightLine1Color" value="' + esc(current.middleRightLine1ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="middleRightLine1CustomPrims" value="' + esc(current.middleRightLine1CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="middleRightLine1Shake" value="' + (current.middleRightLine1Shake === '1' ? '1' : '0') + '">' +
+'      <select id="middleRightLine2Content">' + cornerContentOptionsHtml(current.middleRightLine2ContentAnalog) + '</select>' +
+'      <input type="hidden" id="middleRightLine2Color" value="' + esc(current.middleRightLine2ColorAnalog || '0') + '">' +
+'      <input type="hidden" id="middleRightLine2CustomPrims" value="' + esc(current.middleRightLine2CustomPrimsAnalog || '') + '">' +
+'      <input type="hidden" id="middleRightLine2Shake" value="' + (current.middleRightLine2Shake === '1' ? '1' : '0') + '">' +
+'    </div>' +
+
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label for="stepGoal">Daily step goal (used by "Step goal %")</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-stepGoal\')">?</button></div>' +
+'      <input type="number" id="stepGoal" min="1000" max="60000" step="500" value="' + esc(current.stepGoal || '10000') + '">' +
+'      <div class="help" id="help-stepGoal" style="display:none;">Sets the step target used by the Steps feature.</div>' +
+'    </div>' +
+
+'    <div class="checkbox-row subsection" id="drawFeaturesBeneathHandsRow">' +
+'      <input type="checkbox" id="drawFeaturesBeneathHands" ' + (current.drawFeaturesBeneathHands ? 'checked' : '') + ' onchange="updatePreview()">' +
+'      <label for="drawFeaturesBeneathHands" style="margin:0;">Draw features beneath hands</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-drawFeaturesBeneathHands\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-drawFeaturesBeneathHands" style="display:none;">In Analog mode, draws feature text underneath the hands instead of on top.</div>' +
+'    </div>' +
+'  </fieldset>' +
+'  <fieldset>' +
+    sectionLegendHtml('colors', 'Colors') +
+'    <div class="section-body" id="section-colors" style="display:none;">' +
+
+'    <div class="subsection" id="daySchemeSubsection">' +
+'      <label>Colors<span class="scheme-active-badge" id="daySchemeActiveBadge" style="display:none;">Active now</span></label>' +
+'      <div class="color-role-buttons">' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'text\')">' +
+'          <span class="color-role-swatch" id="swatchMain" style="background:' + esc(initialColors.text) + ';"></span>' +
+'          <span class="color-role-label">Main</span>' +
+'        </button>' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'accent\')">' +
+'          <span class="color-role-swatch" id="swatchAccent" style="background:' + esc(initialColors.accent) + ';"></span>' +
+'          <span class="color-role-label">Accent</span>' +
+'        </button>' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'bg\')">' +
+'          <span class="color-role-swatch" id="swatchBg" style="background:' + esc(initialColors.bg) + ';"></span>' +
+'          <span class="color-role-label">Background</span>' +
+'        </button>' +
+'      </div>' +
+'      <div class="field-label-row"><label style="margin-top:12px;">Or pick a preset</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-colorSchemePreset\')">?</button></div>' +
+'      <button type="button" class="color-preset-btn color-preset-trigger" id="colorSchemePresetTrigger" onclick="openColorPresetPicker(\'day\')">' +
+'        <span class="color-preset-trigger-text">' +
+'          <span class="color-preset-main-line"></span>' +
+'          <span class="color-preset-accent-line"></span>' +
+'        </span>' +
+'        <span class="color-preset-chevron">&rsaquo;</span>' +
+'      </button>' +
+'      <div class="help" id="help-colorSchemePreset" style="display:none;">Applies a ready-made set of main, accent, and background colors.</div>' +
+'      <input type="hidden" id="customBgValue" value="' + esc(current.customBg || '255') + '">' +
+'      <input type="hidden" id="customTextValue" value="' + esc(current.customText || '192') + '">' +
+'      <input type="hidden" id="customAccentValue" value="' + esc(current.customAccent || '192') + '">' +
+'    </div>' +
+
+'    <div class="modal-overlay" id="colorPickerModal">' +
+'      <div class="modal-box">' +
+'        <div class="modal-title" id="colorPickerTitle">Pick a color</div>' +
+'        <div class="hex-grid" id="hexColorGrid"></div>' +
+'        <button type="button" class="modal-cancel-btn" onclick="closeColorPicker()">Cancel</button>' +
+'      </div>' +
+'    </div>' +
+
+// Shared by both the day and night "Or pick a preset" triggers --
+// which one is currently open lives in CURRENT_PRESET_SCHEME (see
+// openColorPresetPicker() below), same "one popup, not two near-
+// identical copies" shape the font picker uses for its own 4 roles.
+// "Custom" is just the last button in the same list (see
+// renderColorPresetGrid()'s own comment) rather than a separate
+// footer action -- tapping it, same as tapping outside the popup,
+// closes without changing anything.
+'    <div class="modal-overlay" id="colorPresetPickerModal" onclick="if (event.target === this) closeColorPresetPicker();">' +
+'      <div class="modal-box">' +
+'        <div class="modal-title" id="colorPresetPickerTitle">Color preset</div>' +
+'        <div class="modal-scroll-body" id="colorPresetPickerGrid"></div>' +
+'        <div class="checkbox-row" style="margin-top:12px; padding-top:10px; border-top:1px solid var(--border);">' +
+'          <input type="checkbox" id="showAllColorPresets" onchange="onShowAllColorPresetsToggle()">' +
+'          <label for="showAllColorPresets" style="margin:0;">Show all presets</label>' +
+'        </div>' +
+'      </div>' +
+'    </div>' +
+
+'    <div class="checkbox-row subsection">' +
+'      <input type="checkbox" id="nightEnabled" ' + (current.nightEnabled ? 'checked' : '') + ' onchange="onNightToggle()">' +
+'      <label for="nightEnabled" style="margin:0;">Use different colors at night</label>' +
+'    </div>' +
+'    <div id="nightSchemeSettings" style="' + (current.nightEnabled ? '' : 'display:none;') + '">' +
+'      <label>Night colors<span class="scheme-active-badge" id="nightSchemeActiveBadge" style="display:none;">Active now</span></label>' +
+'      <div class="color-role-buttons">' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'text\', \'night\')">' +
+'          <span class="color-role-swatch" id="swatchNightMain" style="background:' + esc(initialNightColors.text) + ';"></span>' +
+'          <span class="color-role-label">Main</span>' +
+'        </button>' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'accent\', \'night\')">' +
+'          <span class="color-role-swatch" id="swatchNightAccent" style="background:' + esc(initialNightColors.accent) + ';"></span>' +
+'          <span class="color-role-label">Accent</span>' +
+'        </button>' +
+'        <button type="button" class="color-role-btn" onclick="openColorPicker(\'bg\', \'night\')">' +
+'          <span class="color-role-swatch" id="swatchNightBg" style="background:' + esc(initialNightColors.bg) + ';"></span>' +
+'          <span class="color-role-label">Background</span>' +
+'        </button>' +
+'      </div>' +
+'      <div class="field-label-row"><label style="margin-top:12px;">Or pick a preset</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-nightSchemePreset\')">?</button></div>' +
+'      <button type="button" class="color-preset-btn color-preset-trigger" id="nightSchemePresetTrigger" onclick="openColorPresetPicker(\'night\')">' +
+'        <span class="color-preset-trigger-text">' +
+'          <span class="color-preset-main-line"></span>' +
+'          <span class="color-preset-accent-line"></span>' +
+'        </span>' +
+'        <span class="color-preset-chevron">&rsaquo;</span>' +
+'      </button>' +
+'      <div class="help" id="help-nightSchemePreset" style="display:none;">Applies a ready-made set of night colors.</div>' +
+'      <input type="hidden" id="nightCustomBgValue" value="' + esc(current.nightCustomBg || '192') + '">' +
+'      <input type="hidden" id="nightCustomTextValue" value="' + esc(current.nightCustomText || '255') + '">' +
+'      <input type="hidden" id="nightCustomAccentValue" value="' + esc(current.nightCustomAccent || '255') + '">' +
+'    </div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Battery and Moon phase are now pickable as Features content below, with their own color style.</div>' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('animation', 'Animation') +
+'    <div class="section-body" id="section-animation" style="display:none;">' +
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>Startup clock animation</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-startupClockAnim\')">?</button></div>' +
+      verticalButtonGroupHtml('startupClockAnimModeGroup', 'startupClockAnimMode', [
+        { value: '0', label: 'Off' },
+        { value: '1', label: 'Animate clock' }
+      ], current.startupClockAnimMode || '1') +
+'    </div>' +
+'    <div class="help" id="help-startupClockAnim" style="display:none;">Choose how the clock appears when the watchface starts.</div>' +
+
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>Animate indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
+      verticalButtonGroupHtml('bgAnimModeGroup', 'bgAnimMode', [
+        { value: '0', label: 'Off' },
+        { value: '1', label: 'Indices (hour indices animate in; seconds draw normally)' }
+      ], current.bgAnimMode || '0') +
+'    </div>' +
+'    <div class="help" id="help-bgAnimMode" style="display:none;">Choose whether the indices animate in when the watchface appears.</div>' +
+
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>On shake animation</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-shakeAnimMode\')">?</button></div>' +
+      verticalButtonGroupHtml('shakeAnimModeGroup', 'shakeAnimMode', [
+        { value: '0', label: 'Off' },
+        { value: '1', label: 'Smooth second hand' }
+      ], current.shakeAnimMode || '0') +
+'    </div>' +
+'    <div class="help" id="help-shakeAnimMode" style="display:none;">Choose what happens when you shake the watch.</div>' +
+
+'    <div class="subsection">' +
+'      <div class="slider-row">' +
+'        <div class="field-label-row"><label for="shakeLabelSeconds">Shake animations duration <span class="val" id="shakeLabelSecondsVal">' + esc(current.shakeLabelSeconds || '3') + 's</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-shakeLabelSeconds\')">?</button></div>' +
+'        <div class="slider-with-buttons">' +
+'        <button type="button" class="slider-step-btn" onclick="stepSlider(\'shakeLabelSeconds\', -1)">&minus;</button>' +
+'          <input type="range" id="shakeLabelSeconds" min="0" max="30" step="1" value="' + esc(current.shakeLabelSeconds || '3') + '" oninput="document.getElementById(\'shakeLabelSecondsVal\').textContent = this.value + \'s\';">' +
+'        <button type="button" class="slider-step-btn" onclick="stepSlider(\'shakeLabelSeconds\', 1)">+</button>' +
+'        </div>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="help-shakeLabelSeconds" style="display:none;">Sets how long the smooth second hand keeps running after a shake.</div>' +
+'    </div>' +
+
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('presets', 'My Style Presets') +
+'    <div class="section-body" id="section-presets" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Save up to 6 quick-recall snapshots of your whole Style + Colors + Features design below, or export/import it as JSON to back it up or share it.</div>' +
+
+'    ' + [1, 2, 3, 4, 5, 6].map(function (n) { return presetSlotHtml(current, n); }).join('') +
+
+'    <label for="presetExportBox" style="margin-top:12px;">Export current design</label>' +
+'    <button type="button" class="secondary-btn" onclick="exportDesignJson()">Generate JSON</button>' +
+'    <button type="button" class="secondary-btn" onclick="copyExportBoxToClipboard()">Copy to clipboard</button>' +
+'    <textarea id="presetExportBox" readonly rows="6" style="margin-top:8px; font-family:monospace; font-size:11px;" onclick="this.select();"></textarea>' +
+'    <div class="help" id="presetExportStatus">Tap the box above then copy the text -- covers everything in the Style, Colors, and Features sections.</div>' +
+
+'    <label for="presetImportBox" style="margin-top:12px;">Import a design</label>' +
+'    <button type="button" class="secondary-btn" onclick="pasteImportBoxFromClipboard()">Paste from clipboard</button>' +
+'    <textarea id="presetImportBox" rows="6" placeholder="Paste JSON here" style="margin-top:8px; font-family:monospace; font-size:11px;"></textarea>' +
+'    <button type="button" class="secondary-btn" onclick="importDesignJson()">Apply</button>' +
+'    <div class="help" id="presetImportStatus"></div>' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('weather', 'Weather') +
+'    <div class="section-body" id="section-weather" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Cloud cover is always pulled from Open-Meteo (no signup needed). Optionally add an OpenWeatherMap API key to average in a second forecast.</div>' +
+'    <label for="owmKey">OpenWeatherMap API key (optional)</label>' +
+'    <input type="text" id="owmKey" placeholder="leave blank to skip" value="' + esc(current.owmKey) + '">' +
+
+'    <div class="field-label-row"><label style="margin-top:10px;">Temperature unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-tempUnit\')">?</button></div>' +
+      modeButtonGroupHtml('tempUnitGroup', 'tempUnit', [
+        { value: 'C', label: '\u00b0C' },
+        { value: 'F', label: '\u00b0F' },
+        { value: 'K', label: 'K' }
+      ], current.tempUnit || 'C') +
+'    <div class="help" id="help-tempUnit" style="display:none;">Sets the temperature unit used throughout the watchface.</div>' +
+
+'    <div class="field-label-row"><label style="margin-top:10px;">Wind speed unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-windSpeedUnit\')">?</button></div>' +
+      modeButtonGroupHtml('windSpeedUnitGroup', 'windSpeedUnit', [
+        { value: 'kmh', label: 'KM/H' },
+        { value: 'mph', label: 'MPH' },
+        { value: 'ms', label: 'M/S' },
+        { value: 'kn', label: 'KNOTS' }
+      ], current.windSpeedUnit || 'kmh') +
+'    <div class="help" id="help-windSpeedUnit" style="display:none;">Sets the unit used by the Wind feature.</div>' +
+
+'    <div class="field-label-row"><label style="margin-top:10px;">Air quality index scale</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-aqiUnit\')">?</button></div>' +
+      modeButtonGroupHtml('aqiUnitGroup', 'aqiUnit', [
+        { value: '0', label: 'US AQI' },
+        { value: '1', label: 'EUROPEAN' }
+      ], current.aqiUnit || '0') +
+'    <div class="help" id="help-aqiUnit" style="display:none;">Sets the scale used by the Air Quality feature.</div>' +
+
+'    <div class="field-label-row"><label style="margin-top:10px;">Altitude unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-altitudeUnit\')">?</button></div>' +
+      modeButtonGroupHtml('altitudeUnitGroup', 'altitudeUnit', [
+        { value: '0', label: 'METERS' },
+        { value: '1', label: 'FEET' }
+      ], current.altitudeUnit || '0') +
+'    <div class="help" id="help-altitudeUnit" style="display:none;">Sets the unit used by the Altitude feature.</div>' +
+
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('location', 'Location') +
+'    <div class="section-body" id="section-location" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="checkbox-row">' +
+'      <input type="checkbox" id="autoLoc" ' + autoLocChecked + ' onchange="toggleManual()">' +
+'      <label for="autoLoc" style="margin:0;">Use phone GPS automatically</label>' +
+'    </div>' +
+'    <label for="locationSearch">Search for a place</label>' +
+'    <div style="display:flex; gap:6px;">' +
+'      <input type="text" id="locationSearch" style="flex:1;" placeholder="e.g. Innsbruck, Austria" ' + manualDisabled + '>' +
+'      <button type="button" id="locationSearchBtn" class="secondary-btn" style="width:auto; margin-top:0; padding:8px 14px;" onclick="searchLocation()" ' + manualDisabled + '>Find</button>' +
+'    </div>' +
+'    <div class="help" id="locationSearchStatus"></div>' +
+'    <div class="field-label-row"><label for="lat">Manual latitude (decimal degrees)</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-manualCoords\')">?</button></div>' +
+'    <input type="number" step="any" id="lat" ' + manualDisabled + ' placeholder="e.g. 40.7128" value="' + esc(current.lat) + '" oninput="onManualCoordsInput()" onblur="onManualCoordsBlur()">' +
+'    <label for="lon">Manual longitude (decimal degrees)</label>' +
+'    <input type="number" step="any" id="lon" ' + manualDisabled + ' placeholder="e.g. -74.0060" value="' + esc(current.lon) + '" oninput="onManualCoordsInput()" onblur="onManualCoordsBlur()">' +
+'    <div class="help" id="help-manualCoords" style="display:none;">Used when automatic GPS is off. The location affects astronomy, weather and other location-based data.</div>' +
+// Cached resolved display name for the coordinates above -- see the
+// Location sub-header's own compute function and
+// reverseGeocodeAndCacheLocationName() further down for how this gets
+// filled in and kept from being re-looked-up on every page load.
+'    <input type="hidden" id="locationName" value="' + esc(current.locationName || '') + '">' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('updates', 'Updates') +
+'    <div class="section-body" id="section-updates" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="checkbox-row">' +
+'      <input type="checkbox" id="batterySaverEnabled" ' + (current.batterySaverEnabled ? 'checked' : '') + '>' +
+'      <label for="batterySaverEnabled" style="margin:0;">Preserve battery when watch is not in use</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-batterySaverEnabled\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-batterySaverEnabled" style="display:none;">Reduces updates after long periods without interaction to save battery.</div>' +
+'    <div class="slider-row">' +
+'      <div class="field-label-row"><label for="updateMins">Refresh interval <span class="val" id="updateMinsVal">' + esc(current.updateMins) + ' min</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-updateMins\')">?</button></div>' +
+'      <div class="slider-with-buttons">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'updateMins\', -5)">&minus;</button>' +
+'        <input type="range" id="updateMins" min="5" max="60" step="5" value="' + esc(current.updateMins) + '" oninput="document.getElementById(\'updateMinsVal\').textContent = this.value + \' min\';">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'updateMins\', 5)">+</button>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="help-updateMins" style="display:none;">Sets the minimum time between automatic data refreshes. A significant location change can trigger an earlier refresh.</div>' +
+'    <div class="field-label-row">' +
+'      <button type="button" class="secondary-btn" onclick="save(true)">Force refresh now</button>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-forceRefresh\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-forceRefresh" style="display:none;">Fetches fresh data now instead of waiting for the normal refresh interval.</div>' +
+
+'    <div class="field-label-row" style="margin-top:14px;"><label style="margin:0;">Service status</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-serviceStatus\')">?</button></div>' +
+'    <div class="help" id="help-serviceStatus" style="display:none;">Shows the recent result of each data service. Tap a warning or error for details.</div>' +
+      serviceStatusRowsHtml(current) +
+'    <input type="hidden" id="serviceLogsJson" value="' + esc(JSON.stringify(current.serviceLogs || {})) + '">' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('other', 'Other') +
+'    <div class="section-body" id="section-other" style="display:none;">' +
+'    <div class="subsection"></div>' +
+
+'    <label>Hourly vibrations</label>' +
+      verticalButtonGroupHtml('hourlyVibeModeGroup', 'hourlyVibeMode', [
+        { value: '0', label: 'Off' },
+        { value: '1', label: 'On full hours' },
+        { value: '2', label: 'Every X minutes' }
+      ], current.hourlyVibeMode || '0', 'onHourlyVibeModeChange') +
+
+'    <div id="hourlyVibeSubOptions" class="' + ((current.hourlyVibeMode || '0') === '0' ? 'grayed-out' : '') + '">' +
+
+'    <div class="slider-row" id="hourlyVibeIntervalRow" style="' + ((current.hourlyVibeMode || '0') === '2' ? '' : 'display:none;') + '">' +
+'      <label for="hourlyVibeIntervalMin">Minutes interval <span class="val" id="hourlyVibeIntervalMinVal">' + esc(current.hourlyVibeIntervalMin || '30') + '</span></label>' +
+'      <div class="slider-with-buttons">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'hourlyVibeIntervalMin\', -1)">&minus;</button>' +
+'      <input type="range" id="hourlyVibeIntervalMin" min="1" max="180" step="1" value="' + esc(current.hourlyVibeIntervalMin || '30') + '" oninput="document.getElementById(\'hourlyVibeIntervalMinVal\').textContent = this.value;">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'hourlyVibeIntervalMin\', 1)">+</button>' +
+'      </div>' +
+'    </div>' +
+
+'    <label style="margin-top:12px;">Vibration</label>' +
+      verticalButtonGroupHtml('hourlyVibePatternGroup', 'hourlyVibePattern', [
+        { value: '0', label: 'Short' },
+        { value: '1', label: 'Double' },
+        { value: '2', label: 'Long' }
+      ], current.hourlyVibePattern || '0') +
+
+'    <div class="field-label-row"><label style="margin-top:12px;" for="hourlyVibeStartTime">Start time</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeTimeRange\')">?</button></div>' +
+'    <input type="time" id="hourlyVibeStartTime" value="' + esc(current.hourlyVibeStartTime || '00:00') + '" onchange="onHourlyVibeTimeChange(\'hourlyVibeStartTime\')">' +
+'    <label for="hourlyVibeEndTime">End time</label>' +
+'    <input type="time" id="hourlyVibeEndTime" value="' + esc(current.hourlyVibeEndTime || '00:00') + '" onchange="onHourlyVibeTimeChange(\'hourlyVibeEndTime\')">' +
+'    <div class="help" id="help-hourlyVibeTimeRange" style="display:none;">The start and end times are included. Set both to 00:00 to allow vibrations all day.</div>' +
+
+'    <label style="margin-top:12px;">Active days</label>' +
+'    <div class="day-toggle-group" id="hourlyVibeDaysGroup">' +
+      HOURLY_VIBE_DAY_LABELS.map(function (label, i) {
+        return '<button type="button" class="day-toggle-btn active" data-bit="' + i + '" onclick="toggleHourlyVibeDay(' + i + ')">' + esc(label) + '</button>';
+      }).join('') +
+'    </div>' +
+'    <input type="hidden" id="hourlyVibeDaysMask" value="' + esc(current.hourlyVibeDaysMask == null ? '127' : current.hourlyVibeDaysMask) + '">' +
+
+'    </div>' + // #hourlyVibeSubOptions
+
+(QUIET_TIME_API_AVAILABLE ? (
+'    <div class="checkbox-row' + ((current.hourlyVibeMode || '0') === '0' ? ' grayed-out' : '') + '" style="margin-top:12px;" id="hourlyVibeOverrideQuietRow">' +
+'      <input type="checkbox" id="hourlyVibeOverrideQuiet" ' + (current.hourlyVibeOverrideQuiet === false ? '' : 'checked') + '>' +
+'      <label for="hourlyVibeOverrideQuiet" style="margin:0;">Override quiet time</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeOverrideQuiet\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-hourlyVibeOverrideQuiet" style="display:none;">When enabled, hourly vibrations continue during Quiet Time.</div>'
+    ) : '') +
+
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('faq', 'FAQ') +
+'    <div class="section-body" id="section-faq" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="faq-search-wrap">' +
+'      <span class="faq-search-icon">&#128269;</span>' +
+'      <input type="search" id="faqSearch" class="faq-search" placeholder="Search questions..." autocomplete="off" oninput="filterFaq(this.value)">' +
+'    </div>' +
+'    <div id="faqList">' + faqItemsHtml() + '</div>' +
+'    <div id="faqEmpty" class="faq-empty">No matching FAQ entries.</div>' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <fieldset>' +
+    sectionLegendHtml('testing', 'Debug') +
+'    <div class="section-body" id="section-testing" style="display:none;">' +
+'    <div class="subsection"></div>' +
+'    <div class="checkbox-row">' +
+'      <input type="checkbox" id="testMode" ' + testModeChecked + ' onchange="toggleTestMode()">' +
+'      <label for="testMode" style="margin:0;">Use a custom test date/time</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-testMode\')">?</button>' +
+'    </div>' +
+'    <label for="testDateTime">Test date &amp; time</label>' +
+'    <input type="datetime-local" id="testDateTime" ' + testDisabled + ' value="' + esc(current.testDateTime) + '">' +
+'    <div class="help" id="help-testMode" style="display:none;">Uses the selected date and time for astronomy calculations so you can preview another date.</div>' +
+'    <div class="checkbox-row subsection">' +
+'      <input type="checkbox" id="drawDebug" ' + (current.drawDebug ? 'checked' : '') + '>' +
+'      <label for="drawDebug" style="margin:0;">Draw debug bounding boxes</label>' +
+'    </div>' +
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label for="fontImportTarget">Import font for preview</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-fontImport\')">?</button></div>' +
+'      <div class="help" id="help-fontImport" style="display:none;">Imports a local TTF, OTF, WOFF or WOFF2 file as the live settings-page preview for the selected font. This does not change the font installed on the watch or the app resources. Choose the exact font entry the file is replacing before importing it, and use the same family, weight and italic/regular style. For the most accurate result, use the original font file rather than a different webfont or a visually similar substitute. The replacement is matched to the selected font entry, not detected automatically from the filename. If the same font is used by several entries (for example different sizes), import it separately for each entry you want to override.</div>' +
+'      <select id="fontImportTarget" style="width:100%;" onchange="updateFontImportStatus()">' + fontOptionsHtml(cornerFontId, false) + '</select>' +
+'      <button type="button" class="secondary-btn" style="width:100%; margin-top:6px;" onclick="triggerFontImport()">Import font for preview</button>' +
+'      <input type="file" id="fontPickerImportInput" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2" style="display:none;" onchange="onFontImportSelected()">' +
+'      <div class="help" id="fontPickerImportStatus" style="margin-top:6px;"></div>' +
+'      <button type="button" id="fontPickerClearImportBtn" class="secondary-btn" style="display:none; width:100%; margin-top:6px;" onclick="clearImportedFont()">Use normal preview font</button>' +
+'    </div>' +
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>Last 10 raw messages sent to watch</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-rawMessageLog\')">?</button></div>' +
+'      <div class="help" id="help-rawMessageLog" style="display:none;">Shows recently sent data messages for troubleshooting.</div>' +
+      rawMessageLogButtonsHtml(current) +
+'      <input type="hidden" id="rawMessageLogJson" value="' + esc(JSON.stringify(current.rawMessageLog || [])) + '">' +
+'      <label for="debugData" style="margin-top:10px;">Raw data (editable)</label>' +
+'      <textarea id="debugData" rows="12" style="width:100%; box-sizing:border-box; font-family:monospace; font-size:11px;">' + esc(debugTextareaInitial) + '</textarea>' +
+'      <button type="button" class="secondary-btn" id="copyDebugDataBtn" style="width:auto; margin-top:6px; padding:6px 12px;" onclick="copyTextareaContent(\'debugData\', \'copyDebugDataBtn\')">Copy</button>' +
+'      <div class="checkbox-row" style="margin-top:8px;">' +
+'        <input type="checkbox" id="debugOverrideEnabled" ' + (current.debugOverrideEnabled ? 'checked' : '') + '>' +
+'        <label for="debugOverrideEnabled" style="margin:0;">Override data sent to watch with the text above</label>' +
+'        <button type="button" class="help-btn" onclick="toggleHelp(\'help-debugOverrideEnabled\')">?</button>' +
+'      </div>' +
+'      <div class="help" id="help-debugOverrideEnabled" style="display:none;">Sends the edited test data instead of normal calculated data. Nothing is saved.</div>' +
+'    </div>' +
+
+      fakeWeatherPanelHtml(current) +
+
+'    <div class="subsection">' +
+'      <div class="field-label-row"><label>Full keyset (every current value)</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-fullKeyset\')">?</button></div>' +
+'      <div class="help" id="help-fullKeyset" style="display:none;">Shows all available data fields and their current values. A manual send affects that send only.</div>' +
+'      <textarea id="fullKeysetData" rows="16" style="width:100%; box-sizing:border-box; font-family:monospace; font-size:11px;">' + esc(current.fullKeysetJson || '{}') + '</textarea>' +
+'      <button type="button" class="secondary-btn" id="copyFullKeysetBtn" style="width:auto; margin-top:6px; padding:6px 12px;" onclick="copyTextareaContent(\'fullKeysetData\', \'copyFullKeysetBtn\')">Copy</button>' +
+'      <button type="button" class="secondary-btn" style="width:auto; margin-top:6px; margin-left:6px; padding:6px 12px;" onclick="sendFullKeysetToWatch()">Send to watch now</button>' +
+'    </div>' +
+'    </div>' +
+'  </fieldset>' +
+
+'  <div class="save-bar"><button onclick="save()">Save</button></div>' +
+
+'<script>' +
+'var MARKER_PREVIEW_IMAGES = ' + JSON.stringify(MARKER_PREVIEW_IMAGES) + ';' +
+'var HAND_STYLE_IMAGES = ' + JSON.stringify(HAND_STYLE_IMAGES) + ';' +
+'var MARKER_PRESET_IMAGES = ' + JSON.stringify(MARKER_PRESET_IMAGES) + ';' +
+'var HAND_STYLE_DIAGRAM_IMAGES = ' + JSON.stringify(HAND_STYLE_DIAGRAM_IMAGES) + ';' +
+'var HAND_STYLE_ICON_IMAGES = ' + JSON.stringify(HAND_STYLE_ICON_IMAGES) + ';' +
+'var FAQ_ITEMS = ' + JSON.stringify(FAQ_ITEMS) + ';' +
+'var WEATHER_ICON_STYLE_PREVIEWS = ' + JSON.stringify(WEATHER_ICON_STYLE_PREVIEWS) + ';' +
+// Matches weather_icon_style\'s own <option> list exactly.
+'var WEATHER_ICON_STYLE_NAMES = ["Simple", "Hollow", "Full color"];' +
+// Matches the Shape <option> list\'s own order/values exactly (see
+// handEditorModalHtml() and STYLE_IDS_BY_NAME in
+// scripts/generate-hand-style-icons.js).
+'var HAND_STYLE_NAMES = ["Baton", "Galba", "Pencil", "Dauphine", "Sword", "Pomme", "Spade", "Arrow", "Leaf", "Syringe", "Serpentine"];' +
+// EXAMPLE_STYLE_PRESETS is { title, description, preset } per slot
+// (or null for an empty one) -- the popup below reads title/
+// description directly, and applies `.preset` (the same shape
+// applyStyleCornersJson() everywhere else already expects) only once
+// the user actually taps "Apply this style". EXAMPLE_STYLE_IMAGES is
+// needed client-side too now, for the popup's own <img> -- each
+// button's own <img src> above is a separate, already-baked-in copy.
+'var EXAMPLE_STYLE_PRESETS = ' + JSON.stringify(EXAMPLE_STYLE_PRESETS) + ';' +
+'var EXAMPLE_STYLE_IMAGES = ' + JSON.stringify(EXAMPLE_STYLE_IMAGES) + ';' +
+'var s_exampleStyleModalSlot = null;' +
+'function openExampleStyleModal(n) {' +
+'  var entry = EXAMPLE_STYLE_PRESETS[String(n)];' +
+'  if (!entry) return;' +
+'  s_exampleStyleModalSlot = n;' +
+'  var img = document.getElementById("exampleStyleModalImg");' +
+'  var src = EXAMPLE_STYLE_IMAGES[String(n)];' +
+'  img.style.display = src ? "" : "none";' +
+'  img.src = src || "";' +
+'  document.getElementById("exampleStyleModalTitle").textContent = entry.title || ("Example " + n);' +
+'  document.getElementById("exampleStyleModalDesc").textContent = entry.description || "";' +
+'  document.getElementById("exampleStyleModal").className = "modal-overlay open";' +
+'}' +
+'function closeExampleStyleModal() {' +
+'  document.getElementById("exampleStyleModal").className = "modal-overlay";' +
+'  s_exampleStyleModalSlot = null;' +
+'}' +
+'function confirmExampleStyleApply() {' +
+'  var entry = s_exampleStyleModalSlot != null ? EXAMPLE_STYLE_PRESETS[String(s_exampleStyleModalSlot)] : null;' +
+'  closeExampleStyleModal();' +
+'  if (entry && entry.preset) applyStyleCornersJson(entry.preset);' +
+'}' +
+'function toggleManual() {' +
+'  var on = !document.getElementById("autoLoc").checked;' +
+'  document.getElementById("lat").disabled = !on;' +
+'  document.getElementById("lon").disabled = !on;' +
+'  document.getElementById("locationSearch").disabled = !on;' +
+'  document.getElementById("locationSearchBtn").disabled = !on;' +
+'}' +
+'function toggleTestMode() {' +
+'  document.getElementById("testDateTime").disabled = !document.getElementById("testMode").checked;' +
+'}' +
+// Loads raw message log entry `i` (index into rawMessageLogJson, same
+// oldest-first order rawMessageLogButtonsHtml() built its button ids
+// from) into the debugData textarea, and highlights the button that
+// was tapped.
+'function loadRawMessage(i) {' +
+'  var all = [];' +
+'  try { all = JSON.parse(document.getElementById("rawMessageLogJson").value || "[]"); } catch (e) {}' +
+'  var entry = all[i];' +
+'  if (!entry) return;' +
+'  document.getElementById("debugData").value = JSON.stringify(entry.dict, null, 2);' +
+'  var grid = document.getElementById("rawLogBtnGrid");' +
+'  if (grid) {' +
+'    var btns = grid.getElementsByClassName("raw-log-btn");' +
+'    for (var j = 0; j < btns.length; j++) btns[j].className = "raw-log-btn";' +
+'  }' +
+'  var btn = document.getElementById("rawLogBtn" + i);' +
+'  if (btn) btn.className = "raw-log-btn active";' +
+'}' +
+'function copyTextareaContent(textareaId, btnId) {' +
+'  var ta = document.getElementById(textareaId);' +
+'  ta.focus();' +
+'  ta.select();' +
+'  ta.setSelectionRange(0, 999999);' +
+'  var ok = false;' +
+'  try { ok = document.execCommand("copy"); } catch (e) {}' +
+'  var btn = document.getElementById(btnId);' +
+'  if (btn) {' +
+'    var original = btn.textContent;' +
+'    btn.textContent = ok ? "Copied!" : "Copy failed";' +
+'    setTimeout(function () { btn.textContent = original; }, 1500);' +
+'  }' +
+'}' +
+// The "Send full keyset to watch now" button below -- reads whatever
+// is CURRENTLY in the fullKeysetData textarea (the auto-generated
+// snapshot from page load, or whatever the person edited it to since
+// then), closes the settings page carrying it plus a marker flag, and
+// returns. index.js's webviewclosed handler checks for that flag
+// before anything else and, if set, parses this text and sends it
+// chunked to the watch AS-IS -- skipping every normal setSetting()/
+// sendFlatDict()/refreshAndSend() call entirely, so nothing else
+// changes and nothing here gets persisted. A deliberately different,
+// parallel exit from the page than the normal Save button\'s -- Save
+// itself never sets this flag, so an ordinary save is completely
+// unaffected by this textarea\'s contents.
+'function sendFullKeysetToWatch() {' +
+'  var text = document.getElementById("fullKeysetData").value;' +
+'  try {' +
+'    JSON.parse(text);' +
+'  } catch (e) {' +
+'    alert("Not valid JSON -- fix the text before sending:\\n\\n" + e.message);' +
+'    return;' +
+'  }' +
+'  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
+'  var payload = { CONFIG_SEND_FULL_KEYSET: true, CONFIG_FULL_KEYSET_DATA: text };' +
+'  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
+'}' +
+// 8-point compass label for the wind-direction slider's live readout
+// -- same +22/45 bucketing as the watch\'s own compass-arrow feature
+// slot (see case 35 in feature_value_weather.c) so the label shown
+// here always matches what the watch itself would display.
+'function compassLabelForDeg(deg) {' +
+'  var DIRS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];' +
+'  var idx = Math.floor((Number(deg) + 22) / 45) % 8;' +
+'  if (idx < 0) idx += 8;' +
+'  return DIRS[idx];' +
+'}' +
+// Fake weather panel\'s own Send button (see fakeWeatherPanelHtml() in
+// config/config-debug.js for the sliders themselves) -- reads every
+// fakeWx* control, builds just the WEATHER-chunk (plus
+// CLOUD_ALTITUDE_PCT) fields as a flat dict, and closes the page
+// carrying it plus its own marker flag, same "separate parallel exit
+// from Save, nothing persisted" pattern as sendFullKeysetToWatch()
+// above -- see index.js\'s webviewclosed handler for the matching
+// CONFIG_SEND_FAKE_WEATHER branch, which enqueues this dict as-is and
+// returns before any of the normal setSetting()/save-flow code runs.
+// WEATHER_ERROR_CODE is always forced to 0 here (never exposed as a
+// slider) so a spoofed reading always reads as fresh/healthy rather
+// than risking a stale "ERR ###" left over from a real failed fetch;
+// WEATHER_LAST_UPDATE is stamped to right now for the same reason.
+'function buildFakeWeatherDict() {' +
+'  function iv(id) { return parseInt(document.getElementById(id).value, 10); }' +
+'  return {' +
+'    WEATHER_CONDITION: iv("fakeWxCondition"),' +
+'    CLOUD_COVER: iv("fakeWxCloudCover"),' +
+'    VIS_SCORE: iv("fakeWxVisScore"),' +
+'    CLOUD_ALTITUDE_PCT: iv("fakeWxCloudAltitude"),' +
+'    WEATHER_TEMP_C: iv("fakeWxTempC"),' +
+'    WEATHER_TEMP_HIGH_C: iv("fakeWxTempHighC"),' +
+'    WEATHER_TEMP_LOW_C: iv("fakeWxTempLowC"),' +
+'    UV_INDEX_X10: iv("fakeWxUvMax"),' +
+'    UV_INDEX_CURRENT_X10: iv("fakeWxUvCurrent"),' +
+'    RAIN_CHANCE_PCT: iv("fakeWxRainChance"),' +
+'    HUMIDITY_PCT: iv("fakeWxHumidity"),' +
+'    WIND_SPEED_KMH: iv("fakeWxWindSpeed"),' +
+'    WIND_DIR_DEG: iv("fakeWxWindDir"),' +
+'    DEW_POINT_C: iv("fakeWxDewPoint"),' +
+'    PRESSURE_HPA: iv("fakeWxPressure"),' +
+'    PRESSURE_TREND: iv("fakeWxPressureTrend"),' +
+'    AQI_US: iv("fakeWxAqiUs"),' +
+'    AQI_EU: iv("fakeWxAqiEu"),' +
+'    WEATHER_ERROR_CODE: 0,' +
+'    WEATHER_LAST_UPDATE: Math.floor(Date.now() / 1000)' +
+'  };' +
+'}' +
+'function sendFakeWeatherToWatch() {' +
+'  var dict = buildFakeWeatherDict();' +
+'  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
+'  var payload = { CONFIG_SEND_FAKE_WEATHER: true, CONFIG_FAKE_WEATHER_DATA: JSON.stringify(dict) };' +
+'  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
+'}' +
+// Boils a Nominatim `address` object (city/town/village/... + country)
+// down to the short "City, Country" form the Location sub-header shows
+// (see computeLocationSubheader() below) -- falls back gracefully to
+// whichever half is actually present rather than requiring both.
+'function shortNameFromAddress(addr) {' +
+'  if (!addr) return "";' +
+'  var place = addr.city || addr.town || addr.village || addr.municipality || addr.county || addr.state || "";' +
+'  var country = addr.country || "";' +
+'  if (place && country) return place + ", " + country;' +
+'  return place || country;' +
+'}' +
+// Coordinates just changed by hand -- the cached name (if any) no
+// longer necessarily matches them, so clear it rather than let a
+// now-stale "Use Innsbruck, Austria" linger over different
+// coordinates; onManualCoordsBlur() below re-resolves it once typing
+// stops, same "don\'t look it up on every keystroke" reasoning as not
+// re-fetching on every settings page load.
+'function onManualCoordsInput() {' +
+'  var el = document.getElementById("locationName");' +
+'  if (el) el.value = "";' +
+'}' +
+'function onManualCoordsBlur() {' +
+'  if (!document.getElementById("autoLoc").checked && !document.getElementById("locationName").value) {' +
+'    reverseGeocodeAndCacheLocationName();' +
+'  }' +
+'}' +
+// One-shot reverse geocode of whatever\'s currently in #lat/#lon into
+// #locationName (see that hidden field\'s own comment) -- called once
+// at page init if a name isn\'t already cached (see the bottom of this
+// script) and again from onManualCoordsBlur() above after a manual
+// coordinate edit. Silently does nothing on failure/no results,
+// leaving the Location sub-header to fall back to raw coordinates --
+// this is a "nice to have" label, not something worth surfacing an
+// error for.
+'function reverseGeocodeAndCacheLocationName() {' +
+'  var lat = document.getElementById("lat").value;' +
+'  var lon = document.getElementById("lon").value;' +
+'  if (!lat || !lon) return;' +
+'  var xhr = new XMLHttpRequest();' +
+'  xhr.open("GET", "https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=" + encodeURIComponent(lat) + "&lon=" + encodeURIComponent(lon) + "&zoom=10&addressdetails=1", true);' +
+'  xhr.timeout = 8000;' +
+'  xhr.onload = function () {' +
+'    try {' +
+'      var data = JSON.parse(xhr.responseText);' +
+'      var name = shortNameFromAddress(data && data.address);' +
+'      if (name) {' +
+'        document.getElementById("locationName").value = name;' +
+'        refreshAllSectionSubheaders();' +
+'      }' +
+'    } catch (e) {}' +
+'  };' +
+'  xhr.send();' +
+'}' +
+'function searchLocation() {' +
+'  var query = document.getElementById("locationSearch").value;' +
+'  query = query ? query.trim() : "";' +
+'  if (!query) return;' +
+'  var statusEl = document.getElementById("locationSearchStatus");' +
+'  statusEl.textContent = "Searching...";' +
+'  var xhr = new XMLHttpRequest();' +
+'  xhr.open("GET", "https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&q=" + encodeURIComponent(query), true);' +
+'  xhr.timeout = 8000;' +
+'  xhr.onload = function () {' +
+'    try {' +
+'      var results = JSON.parse(xhr.responseText);' +
+'      if (results && results.length > 0) {' +
+'        document.getElementById("lat").value = parseFloat(results[0].lat).toFixed(5);' +
+'        document.getElementById("lon").value = parseFloat(results[0].lon).toFixed(5);' +
+'        document.getElementById("locationName").value = shortNameFromAddress(results[0].address) || query;' +
+'        statusEl.textContent = "Found: " + (results[0].display_name || query);' +
+'        refreshAllSectionSubheaders();' +
+'      } else {' +
+'        statusEl.textContent = "No results found.";' +
+'      }' +
+'    } catch (e) {' +
+'      statusEl.textContent = "Search failed.";' +
+'    }' +
+'  };' +
+'  xhr.onerror = function () { statusEl.textContent = "Network error."; };' +
+'  xhr.ontimeout = function () { statusEl.textContent = "Timed out."; };' +
+'  xhr.send();' +
+'}' +
+
+'function packedByteFor(r2,g2,b2) { return 0xC0 | (r2<<4) | (g2<<2) | b2; }' +
+'function chHex(v) { var h = (v*85).toString(16); return h.length<2 ? "0"+h : h; }' +
+'function hexFor(r2,g2,b2) { return "#" + chHex(r2) + chHex(g2) + chHex(b2); }' +
+'function hexFromByte(byte) { return hexFor((byte>>4)&3, (byte>>2)&3, byte&3); }' +
+
+// Runtime copy of the generator-side COLOR_SCHEMES table -- serialized
+// straight from that same array at page-generation time, same "can't
+// drift apart" reasoning as FONT_LOOKUP's own runtime copy. Shared by
+// findPresetById() below and the color preset picker popup further
+// down (matchingPresetId()/renderColorPresetGrid()).
+'var COLOR_SCHEMES = ' + JSON.stringify(COLOR_SCHEMES) + ';' +
+
+'function findPresetById(id) {' +
+'  for (var i = 0; i < COLOR_SCHEMES.length; i++) {' +
+'    if (String(COLOR_SCHEMES[i].id) === String(id)) return COLOR_SCHEMES[i];' +
+'  }' +
+'  return COLOR_SCHEMES[0];' +
+'}' +
+
+'function colorsFor(bgId, textId, accentId) {' +
+'  return {' +
+'    bg: hexFromByte(parseInt(document.getElementById(bgId).value, 10)),' +
+'    text: hexFromByte(parseInt(document.getElementById(textId).value, 10)),' +
+'    accent: hexFromByte(parseInt(document.getElementById(accentId).value, 10))' +
+'  };' +
+'}' +
+'function dayColors() {' +
+'  return colorsFor("customBgValue", "customTextValue", "customAccentValue");' +
+'}' +
+'function nightColors() {' +
+'  return colorsFor("nightCustomBgValue", "nightCustomTextValue", "nightCustomAccentValue");' +
+'}' +
+// The color every font-picker preview (both the masked system-font
+// images and the live Google-Fonts CSS text) paints itself in. This is
+// deliberately NOT derived from the watch's own color scheme -- doing
+// that used to make preview text/images render in whatever hue the
+// day scheme's text role happened to be, which could turn barely
+// legible against the picker's own background. It's the same neutral
+// --text-strong the rest of this settings page's UI text already
+// uses (see .font-picker-preview/-name's own CSS), so previews stay
+// readable and consistent with the page's own light/dark theme
+// (prefers-color-scheme) regardless of what the WATCH's day/night
+// color scheme happens to be.
+'function fontPreviewColor() {' +
+'  return "var(--text-strong)";' +
+'}' +
+
+'function canvasFontFor(previewCss, px, fontId) {' +
+'  var familyMatch = /font-family:\\s*([^;]+);?/.exec(previewCss);' +
+'  var family = familyMatch ? familyMatch[1] : "sans-serif";' +
+'  var weightMatch = /font-weight:\\s*([^;]+);?/.exec(previewCss);' +
+'  var weight = weightMatch ? weightMatch[1].trim() : "400";' +
+'  var boldPrefix = (parseInt(weight, 10) >= 600 || weight === "bold") ? "bold " : "";' +
+'  var italicPrefix = /font-style:\\s*italic/.test(previewCss) ? "italic " : "";' +
+'  var fallback = italicPrefix + boldPrefix + px + "px " + family;' +
+'  if (fontId !== undefined && fontId !== null) {' +
+'    FontManager.ensure(fontId, updatePreview);' +
+'    return FontManager.canvasFont(fontId, px, fallback);' +
+'  }' +
+'  return fallback;' +
+'}' +
+
+// Runtime copy of this file's own top-level esc() -- needed here since
+// renderFontPickerGrid() below builds HTML strings client-side, in the
+// webview\'s own separate JS context, which can\'t reach that generator-
+// side function.
+'function esc(str) {' +
+'  return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");' +
+'}' +
+
+// Runtime copy of the generator-side FONT_LOOKUP table (see its own
+// comment there for what each field means) -- serialized straight
+// from that same array at page-generation time, not hand-duplicated,
+// so the two can never drift apart the way two independently-typed
+// copies could.
+'var FONT_LOOKUP = ' + JSON.stringify(FONT_LOOKUP) + ';' +
+// Live font manager: actual webfont binaries, preview overrides, and best-effort persistent cache.
+fontManagerSource +
+'FontManager.init(FONT_LOOKUP);' +
+// Runtime copy of the generator-side FONT_CATEGORIES (see its own
+// comment in presets-lookups.js) -- drives the font picker's
+// horizontal category filter row below.
+'var FONT_CATEGORIES = ' + JSON.stringify(FONT_CATEGORIES) + ';' +
+// Runtime copy of the constant controlling how many "Example styles"
+// tiles exist -- used only by the Example styles section's own
+// sub-header (computeExamplesSubheader() below); that count never
+// changes at runtime, so this is just a plain baked-in number, same
+// spirit as every other "generator-side data, copied once for the
+// browser" constant on this page.
+'var EXAMPLE_STYLE_COUNT = ' + EXAMPLE_STYLE_COUNT + ';' +
+// Same reasoning as FONT_LOOKUP just above -- serialized straight from
+// the generator-side FONT_PREVIEW_IMAGES (itself just require()'d from
+// the generated src/pkjs/data/generated/font-preview-images.js) rather than
+// hand-duplicated. Empty ({}) whenever no font-preview PNGs have been
+// added yet -- every lookup against it below already handles that
+// gracefully.
+'var FONT_PREVIEW_IMAGES = ' + JSON.stringify(FONT_PREVIEW_IMAGES) + ';' +
+'function fontLookupEntry(id) {' +
+'  id = parseInt(id, 10);' +
+'  for (var i = 0; i < FONT_LOOKUP.length; i++) {' +
+'    if (FONT_LOOKUP[i].id === id) return FONT_LOOKUP[i];' +
+'  }' +
+'  return FONT_LOOKUP[0];' +
+'}' +
+// Client-side twin of the same-named server-side function in
+// config-fonts.js (see its own comment there for the full rule) --
+// closes the same "quoted 'false' is truthy" trap for FONT_LOOKUP's
+// boolean fields (mainClock, small) that parseInt closes for its
+// numeric ones below.
+'function fontFlag(v) {' +
+'  if (v === "false") return false;' +
+'  if (v === "true") return true;' +
+'  return !!v;' +
+'}' +
+// Scales a font's real on-watch bake size (12-48px) down to something
+// that reads clearly inside a compact picker-button preview without
+// the biggest ones (the 48px-baked main clock faces) overflowing it --
+// same relative ordering as the real sizes (a 12px font\'s preview is
+// noticeably smaller than a 48px font\'s), just compressed into a
+// roughly 11-26px on-screen range.
+'function fontPickerPreviewPx(sizePx) {' +
+'  return Math.max(11, Math.min(26, Math.round(sizePx * 0.5)));' +
+'}' +
+
+// One entry per font-picker "role" -- which underlying <select> and
+// trigger button it drives, whether it\'s restricted to FONT_LOOKUP\'s
+// own `mainClock` subset (only the Clock font picker is), whether it
+// gets the "Show incompatible fonts" checkbox (only the pickers that
+// default to hiding ~48px-scale display fonts do -- see FONT_LOOKUP\'s
+// own `small` comment), and what sample text its buttons preview --
+// value depends on the picker\'s own role per the request: a clock
+// reads a time, a corner/edge feature reads a temperature, and the
+// numerals picker reads a number (Roman if that checkbox is on).
+'var FONT_PICKER_ROLES = {' +
+'  cornerFont: { selectId: "cornerFont", triggerId: "cornerFontTrigger", title: "Font", onlyMainClock: false, showIncompatibleToggle: true,' +
+'    previewText: function () { return "-10\\u00b0C"; } },' +
+'  markerTextFont: { selectId: "markerTextFont", triggerId: "markerTextFontTrigger", title: "Font", onlyMainClock: false, showIncompatibleToggle: false,' +
+'    previewText: function () { var roman = document.getElementById("markerTextRoman"); return (roman && roman.checked) ? "XII" : "12"; } }' +
+'};' +
+'var currentFontPickerRole = null;' +
+// Big Digital and the other digital layouts intentionally use different
+// font-id ranges. Keep the last selection for each family so switching
+// between them does not overwrite the user's previous choice. These are
+// persisted settings rather than page-session variables, so the remembered
+// choices survive closing/reopening the settings page as well.
+
+// Font picker category filter state -- shared across all 3 roles
+// (clock/cornerFont/markerTextFont) rather than kept per-role, since
+// the request treats this as one filter UI, not 3 independent ones.
+// Resets to just [\'all\'] every time this script runs, i.e. every
+// settings page load, per the request -- NOT reset just by opening/
+// closing the picker modal within the same page session.
+// fontPickerPreAllCategories remembers whatever combination was
+// active right before the user tapped "All", so tapping "All" a
+// second time can restore it (see toggleFontCategory() below) instead
+// of just leaving "All" stuck on.
+'var fontPickerActiveCategories = ["all"];' +
+'var fontPickerPreAllCategories = [];' +
+
+// A font matches the current filter set if EITHER "All" is active
+// (every font matches, no exceptions -- narrowing only ever happens
+// via the "Show incompatible fonts" checkbox at that point, per the
+// request) OR it satisfies every one of the currently-active
+// category ids (AND, not OR -- selecting more categories narrows the
+// results further, same as any other multi-facet filter). The size
+// filters (Tiny/Small/Medium/Large -- the FONT_CATEGORIES entries
+// carrying a `sizeCategory`) are satisfied by the font's own
+// `sizeCategory` field rather than by its `categories` array; every
+// other id is satisfied by being in that array.
+'function fontCategoryDef(id) {' +
+'  for (var i = 0; i < FONT_CATEGORIES.length; i++) {' +
+'    if (FONT_CATEGORIES[i].id === id) return FONT_CATEGORIES[i];' +
+'  }' +
+'  return null;' +
+'}' +
+'function fontMatchesCategoryFilters(f) {' +
+'  if (fontPickerActiveCategories.indexOf("all") !== -1) return true;' +
+'  var cats = f.categories || [];' +
+'  return fontPickerActiveCategories.every(function (c) {' +
+'    var def = fontCategoryDef(c);' +
+'    if (def && def.sizeCategory) return f.sizeCategory === def.sizeCategory;' +
+'    return cats.indexOf(c) !== -1;' +
+'  });' +
+'}' +
+
+'function renderFontCategoryRow() {' +
+'  var row = document.getElementById("fontPickerCategoryRow");' +
+'  if (!row) return;' +
+'  row.innerHTML = FONT_CATEGORIES.map(function (c) {' +
+'    var active = fontPickerActiveCategories.indexOf(c.id) !== -1;' +
+'    return \'<button type="button" class="font-category-btn\' + (active ? " active" : "") + \'" onclick="toggleFontCategory(\\\'\' + c.id + \'\\\')">\' + esc(c.label) + "</button>";' +
+'  }).join("");' +
+'}' +
+
+// "All" always replaces the whole selection and unselects everything
+// else; tapping it again while it\'s already active restores whatever
+// non-"all" combination was active right before. Any other category
+// button just toggles itself in/out of the current combination and
+// always drops "All" in the process (selecting any other category
+// unselects it, per the request) -- and if that leaves nothing
+// selected at all, falls back to "All" rather than showing zero
+// fonts from an empty filter set.
+'function toggleFontCategory(catId) {' +
+'  if (catId === "all") {' +
+'    if (fontPickerActiveCategories.indexOf("all") !== -1) {' +
+'      fontPickerActiveCategories = fontPickerPreAllCategories.length ? fontPickerPreAllCategories.slice() : ["all"];' +
+'    } else {' +
+'      fontPickerPreAllCategories = fontPickerActiveCategories.slice();' +
+'      fontPickerActiveCategories = ["all"];' +
+'    }' +
+'  } else {' +
+'    var withoutAll = fontPickerActiveCategories.filter(function (c) { return c !== "all"; });' +
+'    var idx = withoutAll.indexOf(catId);' +
+'    if (idx !== -1) withoutAll.splice(idx, 1); else withoutAll.push(catId);' +
+'    fontPickerActiveCategories = withoutAll.length ? withoutAll : ["all"];' +
+'  }' +
+'  renderFontCategoryRow();' +
+'  renderFontPickerGrid();' +
+'}' +
+
+// Builds whatever goes inside a .font-picker-preview cell for one
+// (fontId, role) pair -- a real on-watch rendering (see
+// FONT_PREVIEW_IMAGES's own comment) when one exists, the existing
+// CSS-approximation text otherwise. Shared by updateFontTriggerLabel()
+// and renderFontPickerGrid() below so the two can never fall out of
+// sync on which fonts actually have a real image.
+'function fontPreviewInnerHtml(fontId, role, text) {' +
+'  var images = FONT_PREVIEW_IMAGES[fontId];' +
+'  var src = images && images[role];' +
+'  var color = fontPreviewColor();' +
+'  if (src && !FontManager.customName(fontId)) {' +
+'    var maskCss = "-webkit-mask-image:url(\'" + src + "\'); mask-image:url(\'" + src + "\'); background-color:" + color + ";";' +
+'    return "<span class=\\\"font-preview-img\\\" role=\\\"img\\\" aria-label=\\\"" + esc(text) + "\\\" style=\\\"" + maskCss + "\\\"></span>";' +
+'  }' +
+'  var textStyle = "color:" + color + ";";' +
+'  textStyle = FontManager.previewStyle(fontId, textStyle);' +
+'  return "<span style=\\\"" + textStyle + "\\\">" + esc(text) + "</span>";' +
+'}' +
+
+// Fills one trigger button\'s own preview/name spans from whatever its
+// underlying (now display:none) <select> currently holds -- called
+// after every pick, plus once at page load, so the collapsed trigger
+// always already shows the current font rendered in itself rather
+// than plain placeholder text.
+'function updateFontTriggerLabel(role) {' +
+'  var cfg = FONT_PICKER_ROLES[role];' +
+'  if (!cfg) return;' +
+'  var sel = document.getElementById(cfg.selectId);' +
+'  var trigger = document.getElementById(cfg.triggerId);' +
+'  if (!sel || !trigger) return;' +
+'  var entry = fontLookupEntry(sel.value);' +
+'  FontManager.ensure(entry.id, refreshAllFontTriggerLabels);' +
+'  var preview = trigger.querySelector(".font-picker-preview");' +
+'  var name = trigger.querySelector(".font-picker-name");' +
+'  if (preview) {' +
+'    preview.setAttribute("style", entry.preview + " font-size:" + fontPickerPreviewPx(entry.sizePx) + "px;");' +
+'    preview.innerHTML = fontPreviewInnerHtml(entry.id, role, cfg.previewText());' +
+'  }' +
+'  if (name) name.textContent = entry.label;' +
+'}' +
+'function refreshAllFontTriggerLabels() {' +
+'  Object.keys(FONT_PICKER_ROLES).forEach(updateFontTriggerLabel);' +
+'}' +
+
+'function fontImportTargetId() {' +
+'  var sel = document.getElementById("fontImportTarget");' +
+'  return sel ? parseInt(sel.value, 10) : null;' +
+'}' +
+
+'function updateFontImportStatus() {' +
+'  var id = fontImportTargetId();' +
+'  var status = document.getElementById("fontPickerImportStatus");' +
+'  var clearBtn = document.getElementById("fontPickerClearImportBtn");' +
+'  var name = id === null || isNaN(id) ? null : FontManager.customName(id);' +
+'  if (status) status.textContent = name ? "Preview override: " + name : "";' +
+'  if (clearBtn) clearBtn.style.display = name ? "" : "none";' +
+'}' +
+
+'function triggerFontImport() {' +
+'  var id = fontImportTargetId();' +
+'  if (id === null || isNaN(id)) return;' +
+'  var input = document.getElementById("fontPickerImportInput");' +
+'  if (input) input.click();' +
+'}' +
+
+'function onFontImportSelected() {' +
+'  var id = fontImportTargetId();' +
+'  var input = document.getElementById("fontPickerImportInput");' +
+'  if (id === null || isNaN(id) || !input) return;' +
+'  var status = document.getElementById("fontPickerImportStatus");' +
+'  if (status) status.textContent = "Loading font…";' +
+'  FontManager.importSelected(id, input, function () {' +
+'    refreshAllFontTriggerLabels();' +
+'    renderFontPickerGrid();' +
+'    updatePreview();' +
+'    updateFontImportStatus();' +
+'    if (!FontManager.customName(id) && status) status.textContent = "Couldn\'t load that font file.";' +
+'  });' +
+'}' +
+
+'function clearImportedFont() {' +
+'  var id = fontImportTargetId();' +
+'  if (id === null || isNaN(id)) return;' +
+'  FontManager.clearCustom(id, function () {' +
+'    refreshAllFontTriggerLabels();' +
+'    renderFontPickerGrid();' +
+'    updatePreview();' +
+'    updateFontImportStatus();' +
+'    var status = document.getElementById("fontPickerImportStatus");' +
+'    if (status) status.textContent = "Using the normal preview font.";' +
+'  });' +
+'}' +
+
+'function openFontPicker(role) {' +
+'  currentFontPickerRole = role;' +
+'  var cfg = FONT_PICKER_ROLES[role];' +
+'  document.getElementById("fontPickerTitle").textContent = cfg.title;' +
+'  var incompatibleRow = document.getElementById("fontPickerIncompatibleRow");' +
+'  var showIncompatibleToggle = cfg.showIncompatibleToggle;' +
+'  incompatibleRow.style.display = showIncompatibleToggle ? "" : "none";' +
+'  if (showIncompatibleToggle) {' +
+'    var currentId = document.getElementById(cfg.selectId).value;' +
+'    document.getElementById("fontPickerShowIncompatible").checked = !fontFlag(fontLookupEntry(currentId).small);' +
+'  }' +
+'  updateFontImportStatus();' +
+// Big Digital styles only carry the "bigDigital" category tag, which
+// none of the normal category-filter buttons (modern/bold/etc, shared
+// globally across all 3 roles) match -- a stale non-"all" filter left
+// over from browsing another picker would otherwise show an empty
+// grid here for no reason a user opening THIS picker could see.
+'  renderFontCategoryRow();' +
+'  renderFontPickerGrid();' +
+'  document.getElementById("fontPickerModal").className = "modal-overlay open";' +
+'  scrollFontPickerToSelected();' +
+'}' +
+'function closeFontPicker() {' +
+'  document.getElementById("fontPickerModal").className = "modal-overlay";' +
+'}' +
+// Centers the currently-selected font button in the modal's own
+// scroll area the instant it opens -- read AFTER the "open" class
+// lands above, not before: while the overlay is still display:none
+// (see .modal-overlay's own CSS), the grid has no layout box yet, so
+// clientHeight/offsetTop would all read 0/stale. Manual offset math
+// rather than scrollIntoView()'s own block:"center" option, which
+// isn't consistently supported across the range of embedded WebViews
+// Pebble phones actually ship (same reasoning config-preview.js's own
+// getTintedFontImageCanvas() comment gives for avoiding
+// globalCompositeOperation).
+'function scrollFontPickerToSelected() {' +
+'  var container = document.querySelector("#fontPickerModal .modal-scroll-body");' +
+'  var selected = document.querySelector("#fontPickerGrid .font-picker-btn.selected");' +
+'  if (!container || !selected) return;' +
+'  container.scrollTop = selected.offsetTop - (container.clientHeight + selected.offsetHeight + selected.offsetHeight);' +
+'}' +
+// Rebuilds the grid for whichever role is currently open -- called on
+// open and again whenever "Show incompatible fonts" changes, since
+// that changes which entries even appear rather than just their
+// styling.
+'function fontSizeCategoryLabel(category) {' +
+'  var labels = { XS: "EXTRA SMALL", S: "SMALL", M: "MEDIUM", L: "LARGE", XL: "EXTRA LARGE" };' +
+'  return labels[category] || "";' +
+'}' +
+'function fontSizeCategoryClass(category) {' +
+'  return category === "XS" || category === "S" || category === "M" || category === "L" || category === "XL" ? category.toLowerCase() : "";' +
+'}' +
+// Tag group for a font's picker button: the font's `height` as a plain
+// gray number, a thin divider, then one gray tag pill per entry in its
+// own `categories`, labelled from FONT_CATEGORIES (so 'pebbleos' reads
+// "PebbleOS", not the raw id). Ids with no FONT_CATEGORIES entry (the
+// Big Digital styles' 'bigDigital') and size ids are skipped -- size is
+// already shown by the size label next to it -- and a font left with no
+// tags at all (the Big Digital styles) gets no number/divider either.
+'function fontTagsHtml(f) {' +
+'  var tags = "";' +
+'  (f.categories || []).forEach(function (c) {' +
+'    var def = fontCategoryDef(c);' +
+'    if (!def || def.sizeCategory) return;' +
+'    tags += \'<span class="font-picker-tag">\' + esc(def.label) + "</span>";' +
+'  });' +
+'  if (!tags) return "";' +
+'  var h = Math.round(Number(f.height));' +
+'  return (isFinite(h) ? \'<span class="font-picker-tags-divider"></span><span class="font-picker-height">\' + h + \'</span><span class="font-picker-tags-divider"></span>\' : "") + tags;' +
+'}' +
+'function renderFontPickerGrid() {' +
+'  var cfg = FONT_PICKER_ROLES[currentFontPickerRole];' +
+'  if (!cfg) return;' +
+'  var sel = document.getElementById(cfg.selectId);' +
+'  var currentId = parseInt(sel.value, 10);' +
+'  var showIncompatibleToggle = cfg.showIncompatibleToggle;' +
+'  var showIncompatible = showIncompatibleToggle ? document.getElementById("fontPickerShowIncompatible").checked : true;' +
+'  var previewText = cfg.previewText();' +
+'  var html = "";' +
+// Category filters are just another AND-ed condition alongside the
+// existing onlyMainClock/showIncompatible checks -- "Show incompatible
+// fonts" still wins regardless of category selection (including
+// "All"), exactly per the request: unchecking it hides small:false
+// fonts no matter what categories are active.
+'  var pickerFonts = FONT_LOOKUP.slice().sort(function (a, b) {' +
+'    var byLabel = String(a.label || "").localeCompare(String(b.label || ""), undefined, { sensitivity: "base" });' +
+'    return byLabel || (a.id - b.id);' +
+'  });' +
+'  pickerFonts.forEach(function (f) {' +
+'    if (cfg.onlyMainClock && !fontFlag(f.mainClock)) return;' +
+'    if (!showIncompatible && !fontFlag(f.small) && f.id !== currentId) return;' +
+'    if (!fontMatchesCategoryFilters(f)) return;' +
+'    var previewStyle = f.preview + " font-size:" + fontPickerPreviewPx(f.sizePx) + "px;";' +
+'    var sizeCategory = f.sizeCategory || "";' +
+'    var sizeCategoryLabel = fontSizeCategoryLabel(sizeCategory);' +
+'    var sizeCategoryClass = fontSizeCategoryClass(sizeCategory);' +
+'    var tagsHtml = (sizeCategoryLabel ? \'<span class="font-picker-size font-picker-size-\' + sizeCategoryClass + \'">\' + sizeCategoryLabel + "</span>" : "") + fontTagsHtml(f);' +
+'    html += \'<button type="button" class="font-picker-btn\' + (f.id === currentId ? " selected" : "") + \'" onclick="chooseFontOption(\' + f.id + \')">\' +' +
+'      \'<span class="font-picker-preview" style="\' + previewStyle + \'">\' + fontPreviewInnerHtml(f.id, currentFontPickerRole, previewText) + "</span>" +' +
+'      \'<span class="font-picker-name"><span>\' + esc(f.label) + \'</span>\' + (tagsHtml ? \'<span class="font-picker-tags">\' + tagsHtml + "</span>" : "") + "</span></button>";' +
+'  });' +
+'  document.getElementById("fontPickerGrid").innerHTML = html;' +
+'  document.getElementById("fontPickerEmptyMsg").style.display = html ? "none" : "block";' +
+'  document.getElementById("fontPickerResetFiltersBtn").style.display = html ? "none" : "block";' +
+'}' +
+// Clears the category filter row back to "All" (and, in case the "All"
+// toggle itself is mid-restore, its own remembered pre-All selection
+// too) -- only ever reachable from the "no results" empty-state
+// button, so there's always at least one active filter combination to
+// clear when this runs.
+'function resetFontCategoryFilters() {' +
+'  fontPickerActiveCategories = ["all"];' +
+'  fontPickerPreAllCategories = [];' +
+'  renderFontCategoryRow();' +
+'  renderFontPickerGrid();' +
+'}' +
+'function chooseFontOption(id) {' +
+'  var cfg = FONT_PICKER_ROLES[currentFontPickerRole];' +
+'  if (!cfg) return;' +
+'  var sel = document.getElementById(cfg.selectId);' +
+'  sel.value = id;' +
+'  if (typeof Event === "function") sel.dispatchEvent(new Event("change"));' +
+'  else { var evt = document.createEvent("HTMLEvents"); evt.initEvent("change", true, true); sel.dispatchEvent(evt); }' +
+'  closeFontPicker();' +
+'  refreshAllFontTriggerLabels();' +
+'}' +
+
+// drawSkyLayer through updatePreview (the whole canvas-drawing preview
+// engine) moved to config/config-preview.js (JS9 -- preview engine).
+// It still has to land in the exact same spot in this concatenation
+// chain, since it becomes part of the same embedded <script> tag.
+require('./config/config-preview') +
+
+configBackground.backgroundScript(current) +
+
+// Runtime copy of presets-lookups.js's own CORNER_CATEGORIES --
+// serialized straight from that same canonical array (already
+// filtered for the current auroraEnabled state -- see
+// cornerCategoriesForClient above) rather than hand-duplicated, same
+// pattern as FONT_LOOKUP/COLOR_SCHEMES above. CORNER_PREVIEW_LABELS
+// (used by hasPreviewContent()/drawCornerSlot() below) is derived from
+// it too, right after, instead of being its own separately-maintained
+// list -- see presets-lookups.js's own header comment for why one
+// shared array now covers what used to be 3 independently hand-typed
+// ones (a flat id+label list, a category-grouped id+label copy, and a
+// separate id->preview-text map) that could, and did, drift apart.
+'var CONTENT_SELECT_IDS = ["cornerTL", "cornerTR", "cornerBL", "cornerBR", ' +
+'  "upperMiddleLine1Content", "upperMiddleLine2Content", "bottomMiddleLine1Content", "bottomMiddleLine2Content", ' +
+'  "middleLeftLine1Content", "middleLeftLine2Content", "middleRightLine1Content", "middleRightLine2Content"];' +
+'var CORNER_CATEGORIES = ' + JSON.stringify(cornerCategoriesForClient) + ';' +
+'var CORNER_PREVIEW_LABELS = {};' +
+'CORNER_CATEGORIES.forEach(function (cat) {' +
+'  cat.items.forEach(function (it) {' +
+'    if (it.preview) CORNER_PREVIEW_LABELS[it.id] = it.preview;' +
+'  });' +
+'});' +
+// Primitive-strip preview (Phase 9/10) -- the precomputed per-content chip
+// table (primitiveContentDecompositions above), serialized whole rather
+// than hand-duplicated client-side. See config/primitive-decompose.js's
+// primitiveChipsForContent() for what a chip is and how each entry is
+// derived from that content id's own real transport sequence.
+'var PRIMITIVE_DECOMPOSITIONS = ' + JSON.stringify(primitiveContentDecompositions) + ';' +
+// Phase 9 composer: the palette (grouped, for the reference list) and a
+// flat id->label lookup (for rendering arbitrary typed IDs), same
+// serialize-the-canonical-table pattern as everything else on this page.
+'var PRIMITIVE_PALETTE = ' + JSON.stringify(primitivePalette) + ';' +
+'var PRIMITIVE_LABEL_BY_ID = {};' +
+'PRIMITIVE_PALETTE.forEach(function (g) { g.items.forEach(function (it) { PRIMITIVE_LABEL_BY_ID[it.id] = it.label; }); });' +
+'var PRIMITIVE_TRANSPORT_SEQUENCES = ' + JSON.stringify(primitiveTransportSequences) + ';' +
+'var PRIMITIVE_TRANSPORT_AUX = ' + JSON.stringify(primitiveTransportAux) + ';' +
+'var TIMEZONE_ZONES = ' + JSON.stringify(primitiveTimezoneZones) + ';' +
+// Update 25 introduced FORECAST_SLOTS and the composer's forecast picker
+// but never actually baked this line in -- the composer's PARAM_OPTIONS
+// referenced an undefined global the moment the script ran (caught here,
+// during Phase 10's own end-to-end script-execution test, not by any
+// earlier node --check, which only parses; see this update's notes).
+'var FORECAST_SLOTS = ' + JSON.stringify(primitiveForecastSlots) + ';' +
+'var PRIMITIVE_PREVIEW_TEXT = ' + JSON.stringify(primitivePreviewText) + ';' +
+'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
+'var COMPOSER_MAX = 10;' + // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
+'\n' + composerClientSource + '\n' +
+// Phase 10: PRIMITIVE_DECOMPOSITIONS now has a precomputed entry for every
+// content id (derived server-side from that id's real transport sequence --
+// see primitiveContentDecompositions above), so this is a straight lookup.
+// CORNER_PREVIEW_LABELS is kept only as a defensive last resort (a content
+// id present in CORNER_CATEGORIES but somehow missing here, which
+// shouldn't happen -- see that table's own header) rather than being load-
+// bearing the way it was before Phase 10.
+// Phase 10: the plain string form of a content id's preview -- what the
+// canvas preview and slot-picker buttons show -- built by joining that
+// content id's own real chip text, instead of a separately-authored
+// CORNER_PREVIEW_LABELS string. Falls back to CORNER_PREVIEW_LABELS only
+// when PRIMITIVE_DECOMPOSITIONS has no entry at all (shouldn\'t happen --
+// see primitiveChipsForContent\'s own comment).
+'function primitiveDecompositionText(contentId) {' +
+'  var idNum = parseInt(contentId, 10);' +
+'  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
+'  if (chips && chips.length) return chips.map(function (c) { return c.text; }).join("");' +
+'  return CORNER_PREVIEW_LABELS[idNum] || "";' +
+'}' +
+'function primitiveChipsForContent(contentId) {' +
+'  var idNum = parseInt(contentId, 10);' +
+'  if (idNum === 0) return [];' +
+'  if (PRIMITIVE_DECOMPOSITIONS[idNum]) return PRIMITIVE_DECOMPOSITIONS[idNum];' +
+'  var fallback = CORNER_PREVIEW_LABELS[idNum];' +
+'  return fallback ? [{ kind: "value", text: fallback }] : [];' +
+'}' +
+'function renderSlotEditPrimitiveStrip(contentId) {' +
+'  var strip = document.getElementById("slotEditPrimitives");' +
+'  if (!strip) return;' +
+'  var chips = primitiveChipsForContent(contentId);' +
+'  if (!chips.length) { strip.style.display = "none"; strip.innerHTML = ""; return; }' +
+'  strip.style.display = "flex";' +
+'  strip.innerHTML = chips.map(function (chip) {' +
+'    return "<span class=\'primitive-chip primitive-chip-" + chip.kind + "\'>" + esc(chip.text) + "</span>";' +
+'  }).join("");' +
+'}' +
+'function categoryForContentId(contentId) {' +
+'  var idNum = parseInt(contentId, 10);' +
+'  for (var i = 0; i < CORNER_CATEGORIES.length; i++) {' +
+'    for (var j = 0; j < CORNER_CATEGORIES[i].items.length; j++) {' +
+'      if (CORNER_CATEGORIES[i].items[j].id === idNum) return CORNER_CATEGORIES[i].id;' +
+'    }' +
+'  }' +
+'  return "none";' + // unrecognized id -- fall back rather than leave both dropdowns unset
+'}' +
+'function findCategory(categoryId) {' +
+'  for (var i = 0; i < CORNER_CATEGORIES.length; i++) {' +
+'    if (CORNER_CATEGORIES[i].id === categoryId) return CORNER_CATEGORIES[i];' +
+'  }' +
+'  return CORNER_CATEGORIES[0];' +
+'}' +
+'function categoryItemOptionsHtml(categoryId, selectedContentId) {' +
+'  var items = findCategory(categoryId).items;' +
+'  var html = "";' +
+'  for (var i = 0; i < items.length; i++) {' +
+'    html += "<option value=\\"" + items[i].id + "\\"" + (String(selectedContentId) === String(items[i].id) ? " selected" : "") + ">" + items[i].label + "</option>";' +
+'  }' +
+'  return html;' +
+'}' +
+'var SLOT_DEFS = {' +
+'  cornerTL: { contentId: "cornerTL", colorId: "cornerTLColor", customPrimsId: "cornerTLCustomPrims", btnId: "slotBtn-cornerTL", label: "Top-left", avail: function (a) { return !a.cornersGrayed; } },' +
+'  cornerTR: { contentId: "cornerTR", colorId: "cornerTRColor", customPrimsId: "cornerTRCustomPrims", btnId: "slotBtn-cornerTR", label: "Top-right", avail: function (a) { return !a.cornersGrayed; } },' +
+'  cornerBL: { contentId: "cornerBL", colorId: "cornerBLColor", customPrimsId: "cornerBLCustomPrims", btnId: "slotBtn-cornerBL", label: "Bottom-left", avail: function (a) { return !a.cornersGrayed; } },' +
+'  cornerBR: { contentId: "cornerBR", colorId: "cornerBRColor", customPrimsId: "cornerBRCustomPrims", btnId: "slotBtn-cornerBR", label: "Bottom-right", avail: function (a) { return !a.cornersGrayed; } },' +
+  // upperMiddleLine1/bottomMiddleLine1 are shared by analog's upper/lower
+  // pair and Big Digital's single top-center/bottom-center features. Grid
+  // does not use these two center slots, but the underlying content/color
+  // fields remain shared by the settings model.
+'  upperMiddleLine1: { contentId: "upperMiddleLine1Content", customPrimsId: "upperMiddleLine1CustomPrims", colorId: "upperMiddleLine1Color", btnId: "slotBtn-upperMiddleLine1", label: "Upper-middle, line 1", avail: function (a) { return a.upper; } },' +
+'  upperMiddleLine2: { contentId: "upperMiddleLine2Content", customPrimsId: "upperMiddleLine2CustomPrims", colorId: "upperMiddleLine2Color", btnId: "slotBtn-upperMiddleLine2", label: "Upper-middle, line 2", avail: function (a) { return a.upper; } },' +
+'  bottomMiddleLine1: { contentId: "bottomMiddleLine1Content", customPrimsId: "bottomMiddleLine1CustomPrims", colorId: "bottomMiddleLine1Color", btnId: "slotBtn-bottomMiddleLine1", label: "Bottom-middle, line 1", avail: function (a) { return a.bottom; } },' +
+'  bottomMiddleLine2: { contentId: "bottomMiddleLine2Content", customPrimsId: "bottomMiddleLine2CustomPrims", colorId: "bottomMiddleLine2Color", btnId: "slotBtn-bottomMiddleLine2", label: "Bottom-middle, line 2", avail: function (a) { return a.bottom; } },' +
+'  middleLeftLine1: { contentId: "middleLeftLine1Content", customPrimsId: "middleLeftLine1CustomPrims", colorId: "middleLeftLine1Color", btnId: "slotBtn-middleLeftLine1", label: "Middle-left, line 1", avail: function (a) { return a.left; } },' +
+'  middleLeftLine2: { contentId: "middleLeftLine2Content", customPrimsId: "middleLeftLine2CustomPrims", colorId: "middleLeftLine2Color", btnId: "slotBtn-middleLeftLine2", label: "Middle-left, line 2", avail: function (a) { return a.left; } },' +
+'  middleRightLine1: { contentId: "middleRightLine1Content", customPrimsId: "middleRightLine1CustomPrims", colorId: "middleRightLine1Color", btnId: "slotBtn-middleRightLine1", label: "Middle-right, line 1", avail: function (a) { return a.right; } },' +
+'  middleRightLine2: { contentId: "middleRightLine2Content", customPrimsId: "middleRightLine2CustomPrims", colorId: "middleRightLine2Color", btnId: "slotBtn-middleRightLine2", label: "Middle-right, line 2", avail: function (a) { return a.right; } },' +
+'};' +
+'var CURRENT_SLOT_KEY = null;' +
+'var SLOT_EDITOR_DRAFT_COLOR = 0;' +
+// Procedural marker styles (<3) have all 8 slots and the 4 corners;
+// bitmap styles are each limited to whatever their own artwork
+// actually has room for and (Tally excepted -- its own mask leaves
+// all 4 corners clear) suppress the corners -- and, for the styles
+// whose mask only really has room for upper+bottom, the left/right
+// edges too -- by default, since the mask fills most of the rest of
+// the screen either way. The "Incompatible features" checkbox
+// (bitmapCornerOverride) unlocks all of it at once: corners AND
+// whichever middle edges that style would otherwise leave off, not
+// just the corners.
+'function computeSlotAvailability() {' +
+'  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
+'  var override = document.getElementById("bitmapCornerOverride").checked;' +
+'  var avail = { upper: false, bottom: false, left: false, right: false, cornersGrayed: false };' +
+'    if (markerStyle < 3 || markerStyle > 7) {' +
+'      avail.upper = avail.bottom = avail.left = avail.right = true;' +
+'    } else if (markerStyle === 3 || markerStyle === 4 || markerStyle === 6) {' +
+'      avail.upper = avail.bottom = true; avail.left = avail.right = override; avail.cornersGrayed = !override;' +
+'    } else if (markerStyle === 5) {' +
+'      avail.upper = avail.bottom = avail.left = avail.right = true;' +
+'    } else if (markerStyle === 7) {' +
+'      avail.upper = avail.bottom = avail.left = avail.right = true; avail.cornersGrayed = !override;' +
+'    } else {' +
+'      avail.upper = true; avail.bottom = avail.left = avail.right = override; avail.cornersGrayed = !override;' +
+'    }' +
+'  return avail;' +
+'}' +
+// Updates each slot button\'s label (its example preview value, "OFF",
+// or "N/A") and styling to match current settings -- called on init
+// and whenever bottom-style/marker-style or a slot\'s own content
+// changes.
+'function renderSlotPicker() {' +
+'  var avail = computeSlotAvailability();' +
+'  for (var key in SLOT_DEFS) {' +
+'    var def = SLOT_DEFS[key];' +
+'    var btn = document.getElementById(def.btnId);' +
+'    var baseClass = btn.getAttribute("data-base-class");' +
+'    if (!baseClass) { baseClass = btn.className; btn.setAttribute("data-base-class", baseClass); }' +
+'    btn.style.display = "";' +
+'    if (!def.avail(avail)) {' +
+'      btn.textContent = "N/A";' +
+'      btn.className = baseClass + " slot-na";' +
+'      continue;' +
+'    }' +
+'    var val = parseInt(document.getElementById(def.contentId).value, 10);' +
+// A corner with a custom sequence shows that sequence on its button (same
+// text the watch preview draws), even when its Content is None.
+'    var customEl = def.customPrimsId ? document.getElementById(def.customPrimsId) : null;' +
+'    var customText = (customEl && customEl.value) ? composerPreviewLabel(customEl.value) : \"\";' +
+'    if (customText) {' +
+'      btn.textContent = customText;' +
+'      btn.className = baseClass;' +
+'    } else if (!val || !primitiveDecompositionText(val)) {' +
+'      btn.textContent = "OFF";' +
+'      btn.className = baseClass + " slot-off";' +
+'    } else {' +
+'      btn.textContent = primitiveDecompositionText(val);' +
+'      btn.className = baseClass;' +
+'    }' +
+'    if (document.getElementById(key + "Shake").value === "1" && btn.className.indexOf("slot-off") === -1) btn.textContent += " \u27f3";' +
+'  }' +
+'}' +
+'function setSlotEditorColorGroupVisibility(contentVal) {' +
+'  document.getElementById("slotEditColorGroup").style.display = (contentVal === "0") ? "none" : "flex";' +
+'}' +
+'function setSlotEditorColorButtons(value) {' +
+'  SLOT_EDITOR_DRAFT_COLOR = parseInt(value, 10) || 0;' +
+'  var buttons = document.getElementById("slotEditColorGroup").getElementsByClassName("mode-btn");' +
+'  for (var i = 0; i < buttons.length; i++) {' +
+'    buttons[i].className = "mode-btn" + (i === SLOT_EDITOR_DRAFT_COLOR ? " active" : "");' +
+'  }' +
+'}' +
+'function slotEditorSelectColor(value) {' +
+'  setSlotEditorColorButtons(value);' +
+'}' +
+'function onSlotEditContentChange() {' +
+'  var contentVal = document.getElementById("slotEditContent").value;' +
+'  setSlotEditorColorGroupVisibility(contentVal);' +
+'  renderSlotEditPrimitiveStrip(contentVal);' +
+'}' +
+// Renders the 9 category picker buttons once (their icons/order never
+// change at runtime, unlike Content below which is rebuilt per open) --
+// called once at page init, see the bottom of this script.
+'function renderCategoryButtons() {' +
+'  var group = document.getElementById("slotEditCategoryGroup");' +
+'  group.innerHTML = CORNER_CATEGORIES.map(function (c) {' +
+'    return \'<button type="button" class="category-btn" data-category="\' + c.id + \'" onclick="selectSlotEditCategory(\\\'\' + c.id + \'\\\')" title="\' + c.label + \'">\' + c.icon + \'</button>\';' +
+'  }).join("");' +
+'}' +
+'function updateCategoryButtonActive(categoryId) {' +
+'  var buttons = document.getElementById("slotEditCategoryGroup").getElementsByClassName("category-btn");' +
+'  for (var i = 0; i < buttons.length; i++) {' +
+'    buttons[i].className = "category-btn" + (buttons[i].getAttribute("data-category") === categoryId ? " active" : "");' +
+'  }' +
+'}' +
+'function selectSlotEditCategory(categoryId) {' +
+'  document.getElementById("slotEditCategory").value = categoryId;' +
+'  updateCategoryButtonActive(categoryId);' +
+'  onSlotEditCategoryChange();' +
+'}' +
+// Repopulates the item dropdown to just the newly-chosen category's
+// items whenever the category itself changes -- defaults to that
+// category\'s first item, since the previously-selected content id
+// (from a different category) is never one of the new options.
+// "None" has nothing else to pick, so Content is disabled rather than
+// left showing a single always-selected "None" option to interact with.
+'function onSlotEditCategoryChange() {' +
+'  var categoryId = document.getElementById("slotEditCategory").value;' +
+'  var firstItemId = findCategory(categoryId).items[0].id;' +
+'  var contentSelect = document.getElementById("slotEditContent");' +
+'  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, firstItemId);' +
+'  contentSelect.disabled = (categoryId === "none");' +
+'  document.getElementById("slotEditCategoryHelp").style.display = (categoryId === "timezone") ? "" : "none";' +
+'  onSlotEditContentChange();' +
+'}' +
+// Opens the popup pre-filled with this slot\'s current (already-saved)
+// content/color -- nothing is written back to the real elements until
+// saveSlotEditor() runs, so closing without saving (Cancel, or a tap
+// outside the box) leaves the slot exactly as it was.
+'function openSlotEditor(slotKey) {' +
+'  var def = SLOT_DEFS[slotKey];' +
+'  if (!def) return;' +
+'  CURRENT_SLOT_KEY = slotKey;' +
+'  document.getElementById("slotEditTitle").textContent = def.label;' +
+'  var contentVal = document.getElementById(def.contentId).value;' +
+'  var colorVal = document.getElementById(def.colorId).value;' +
+'  var categoryId = categoryForContentId(contentVal);' +
+'  document.getElementById("slotEditCategory").value = categoryId;' +
+'  updateCategoryButtonActive(categoryId);' +
+'  var contentSelect = document.getElementById("slotEditContent");' +
+'  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, contentVal);' +
+'  contentSelect.disabled = (categoryId === "none");' +
+'  document.getElementById("slotEditCategoryHelp").style.display = (categoryId === "timezone") ? "" : "none";' +
+'  setSlotEditorColorGroupVisibility(contentVal);' +
+'  renderSlotEditPrimitiveStrip(contentVal);' +
+'  setSlotEditorColorButtons(colorVal);' +
+'  composerOpen(def);' +
+'  document.getElementById("slotEditShake").checked = document.getElementById(slotKey + "Shake").value === "1";' +
+'  document.getElementById("slotEditModal").className = "modal-overlay open";' +
+'}' +
+'function closeSlotEditor() {' +
+'  document.getElementById("slotEditModal").className = "modal-overlay";' +
+'  CURRENT_SLOT_KEY = null;' +
+'}' +
+'function saveSlotEditor() {' +
+'  if (!CURRENT_SLOT_KEY) return;' +
+'  var def = SLOT_DEFS[CURRENT_SLOT_KEY];' +
+'  document.getElementById(def.contentId).value = document.getElementById("slotEditContent").value;' +
+'  document.getElementById(def.colorId).value = String(SLOT_EDITOR_DRAFT_COLOR);' +
+'  document.getElementById(CURRENT_SLOT_KEY + "Shake").value = document.getElementById("slotEditShake").checked ? "1" : "0";' +
+'  if (def.customPrimsId) {' +
+'    var committed = composerCommitValue();' +
+'    if (committed === null) return;' + // over-limit/empty: stay open, message already shown
+'    document.getElementById(def.customPrimsId).value = committed;' +
+'  }' +
+'  closeSlotEditor();' +
+'  renderSlotPicker();' +
+'  updateWeatherIconStyleVisibility();' +
+'  updatePreview();' +
+'}' +
+// Weather icon style is now always shown (not gated on any corner/edge
+// slot being set to "Weather icon"/"Temp + weather icon" -- previously
+// tying visibility to that meant the selector went missing for anyone
+// using it on the middle-feature or other content types, or who just
+// wanted to preview it in advance). This still refreshes the trigger
+// button's own preview/label though -- called from saveSlotEditor() plus
+// once at page load, same as before, just no longer touched on slot
+// content specifically.
+'function updateWeatherIconStyleVisibility() {' +
+'  updateWeatherIconStyleTriggerLabel();' +
+'}' +
+
+// ---- collapsible sections + slider step buttons ------------------------
+'function toggleFaqItem(index) {' +
+'  var item = document.querySelectorAll(".faq-item")[index];' +
+'  if (!item) return;' +
+'  item.classList.toggle("open");' +
+'}' +
+'function filterFaq(rawQuery) {' +
+'  var query = String(rawQuery || "").trim().toLowerCase();' +
+'  var items = document.querySelectorAll(".faq-item");' +
+'  var questionMatches = [];' +
+'  var answerMatches = [];' +
+'  for (var i = 0; i < FAQ_ITEMS.length; i++) {' +
+'    var q = FAQ_ITEMS[i][0].toLowerCase();' +
+'    var a = FAQ_ITEMS[i][1].toLowerCase();' +
+'    if (!query || q.indexOf(query) !== -1) questionMatches.push(i);' +
+'    else if (a.indexOf(query) !== -1) answerMatches.push(i);' +
+'  }' +
+'  var matches = query ? (questionMatches.length ? questionMatches : answerMatches) : questionMatches;' +
+'  var visible = {};' +
+'  for (var j = 0; j < matches.length; j++) visible[matches[j]] = true;' +
+'  for (var k = 0; k < items.length; k++) {' +
+'    var idx = parseInt(items[k].getAttribute("data-faq-index"), 10);' +
+'    items[k].style.display = visible[idx] ? "" : "none";' +
+'  }' +
+'  var empty = document.getElementById("faqEmpty");' +
+'  if (empty) empty.style.display = matches.length ? "none" : "block";' +
+'}' +
+// FAQ is static content; keep its section summary intentionally short.
+'function refreshFaqSubheader() {' +
+'  try { setSubheaderText("faq", FAQ_ITEMS.length + " answers about Modern and its settings"); } catch (e) {}' +
+'}' +
+
+'function toggleSection(id) {' +
+'  var body = document.getElementById("section-" + id);' +
+'  var chev = document.getElementById("chev-" + id);' +
+'  var sub = document.getElementById("subhead-" + id);' +
+'  if (!body) return;' +
+'  var isOpen = body.style.display !== "none";' +
+'  body.style.display = isOpen ? "none" : "";' +
+'  if (chev) chev.className = isOpen ? "chevron" : "chevron open";' +
+// The sub-header is only useful while collapsed (a quick summary of
+// what\'s inside); once the section\'s own full controls are visible
+// it\'s redundant, so it disappears on expansion per the request --
+// its text stays computed underneath (refreshAllSectionSubheaders()
+// keeps updating it even while hidden), just not shown.
+'  if (sub) sub.style.display = isOpen ? "" : "none";' +
+'}' +
+// Same idea as toggleSection() above, one level down -- see
+// subsectionLegendHtml()\'s own comment for why Hands style/Indices
+// style get this instead of a full top-level section registration.
+'function toggleSubsection(id) {' +
+'  var body = document.getElementById("subsec-" + id);' +
+'  var chev = document.getElementById("subsecchev-" + id);' +
+'  var sub = document.getElementById("subsubhead-" + id);' +
+'  if (!body) return;' +
+'  var isOpen = body.style.display !== "none";' +
+'  body.style.display = isOpen ? "none" : "";' +
+'  if (chev) chev.className = isOpen ? "chevron" : "chevron open";' +
+'  if (sub) sub.style.display = isOpen ? "" : "none";' +
+'}' +
+// Every longer per-toggle explanation on this page starts hidden;
+// this is the only way to reveal (or re-hide) one. The .help-btn is
+// always its own separate sibling element, never inside the control
+// it explains, specifically so it keeps working -- same onclick,
+// same toggleHelp(id) -- even while that control is disabled.
+'function toggleHelp(id) {' +
+'  var el = document.getElementById(id);' +
+'  if (!el) return;' +
+'  el.style.display = (el.style.display === "none") ? "" : "none";' +
+'}' +
+// Companion to toggleHelp() above, for the 4 section-level intro
+// blurbs instead of per-toggle ones -- see .section-intro\\'s own CSS
+// comment. No id/lookup needed here since the element tapped IS the
+// element whose class changes.
+'function toggleSectionIntro(el) {' +
+'  el.classList.toggle("expanded");' +
+'}' +
+'function stepSlider(id, delta) {' +
+'  var el = document.getElementById(id);' +
+'  if (!el) return;' +
+'  var min = parseFloat(el.min), max = parseFloat(el.max);' +
+'  var v = parseFloat(el.value) + delta;' +
+'  if (!isNaN(min) && v < min) v = min;' +
+'  if (!isNaN(max) && v > max) v = max;' +
+'  el.value = v;' +
+'  if (el.oninput) el.oninput();' +
+'  else if (el.onchange) el.onchange();' +
+'}' +
+
+// Press-and-hold repeat for the +/- slider step buttons. Reads the
+// button's own onclick="stepSlider(\'id\', delta)" text to find which
+// slider and direction it steps, rather than needing separate
+// data attributes on all 20-odd call sites above -- one generic
+// listener covers all of them, present and future. A single tap is
+// left to the browser's normal click (one call to stepSlider); this
+// only starts repeating after a short delay, so a quick tap never
+// double-steps.
+'var SLIDER_HOLD_TIMER = null;' +
+'var SLIDER_HOLD_INTERVAL = null;' +
+'function parseStepSliderArgs(btn) {' +
+'  var attr = btn.getAttribute("onclick") || "";' +
+'  var m = attr.match(/stepSlider\\(\'([^\']+)\',\\s*(-?\\d+)\\)/);' +
+'  return m ? { id: m[1], delta: parseInt(m[2], 10) } : null;' +
+'}' +
+'function stopSliderHold() {' +
+'  if (SLIDER_HOLD_TIMER) { clearTimeout(SLIDER_HOLD_TIMER); SLIDER_HOLD_TIMER = null; }' +
+'  if (SLIDER_HOLD_INTERVAL) { clearInterval(SLIDER_HOLD_INTERVAL); SLIDER_HOLD_INTERVAL = null; }' +
+'}' +
+'function startSliderHold(btn) {' +
+'  var args = parseStepSliderArgs(btn);' +
+'  if (!args) return;' +
+'  stopSliderHold();' +
+'  SLIDER_HOLD_TIMER = setTimeout(function () {' +
+'    SLIDER_HOLD_INTERVAL = setInterval(function () { stepSlider(args.id, args.delta); }, 90);' +
+'  }, 400);' +
+'}' +
+'document.addEventListener("mousedown", function (e) {' +
+'  var btn = e.target.closest && e.target.closest(".slider-step-btn");' +
+'  if (btn) { startSliderHold(btn); e.preventDefault(); }' + // belt-and-suspenders alongside the CSS
+                                                                // user-select:none above -- stops the
+                                                                // press-and-hold repeat from also
+                                                                // starting a text selection drag
+'});' +
+'document.addEventListener("touchstart", function (e) {' +
+'  var btn = e.target.closest && e.target.closest(".slider-step-btn");' +
+'  if (btn) startSliderHold(btn);' +
+'}, { passive: true });' +
+'["mouseup", "mouseleave", "touchend", "touchcancel"].forEach(function (ev) {' +
+'  document.addEventListener(ev, stopSliderHold);' +
+'});' +
+
+// Bitmap markers (Analog) and Big Digital's digit art share ONE
+// underlying setting (CONFIG_BITMAP_MARKER_TRANSPARENT -- see
+// big_digital_display.c's own comment on why reusing it is safe: the two
+// layouts never show at once). Their two checkboxes live in different,
+// mutually-exclusive-visibility parts of the page, so save() can only read
+// one fixed id -- these keep the other one mirrored live on every change,
+// rather than adding a second persisted field and a dual-context shadow
+// like the corner/edge content fields use.
+'function onBitmapMarkerTransparentChange() {' +
+'  updatePreview();' +
+'}' +
+'function onMarkerStyleChange() {' +
+'  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
+// Materialize a built-in preset into the custom marker fields first, so the
+// preview, the Custom editors and the saved settings all see its values.
+'  applyMarkerStylePresetToCustom(val);' +
+'  refreshEditButtonLabels();' +
+'  document.getElementById("customMarkerSection").style.display = (val === "8") ? "" : "none";' +
+'  var isBitmap = (val === "3" || val === "4" || val === "5" || val === "6" || val === "7");' +
+'  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
+'  document.getElementById("bitmapCornerOverrideRow").style.display = (isBitmap && val !== "5") ? "" : "none";' +
+'  updateMarkerStyleButtonLabel();' +
+'  clearGrayedSlotsIfUnavailable();' +
+'  renderSlotPicker();' +
+'  updatePreview();' +
+'}' +
+// The 4 corner content selections -- and, since the "Incompatible
+// features" override now covers them too, left/right middle-edge
+// content -- are off by default (and cleared, not just visually
+// grayed) for bitmap styles whose artwork doesn't leave room for them.
+// Without this, a value picked while a procedural/custom style (or
+// the override) was active would silently keep being sent to the
+// watch even once its slot button shows "N/A", since features_layer.c
+// no longer suppresses any of this itself (see its own note on why
+// that moved here).
+'function clearGrayedSlotsIfUnavailable() {' +
+'  var avail = computeSlotAvailability();' +
+'  if (avail.cornersGrayed) {' +
+'    var cornerIds = ["cornerTL", "cornerTR", "cornerBL", "cornerBR"];' +
+'    for (var i = 0; i < cornerIds.length; i++) { document.getElementById(cornerIds[i]).value = "0"; document.getElementById(cornerIds[i] + "CustomPrims").value = ""; document.getElementById(cornerIds[i] + "Shake").value = "0"; }' +
+'  }' +
+  // middleLeft/RightLineContent are dual-purpose (digital mode's own
+  // side-feature columns reuse these same fields -- see SLOT_DEFS'
+  // own comment), and avail.left/right stay false unconditionally in
+  // digital mode (it tracks its own availability via
+  // avail.digitalLeft/digitalRight instead) -- so this only clears
+  // them in analog mode, where !avail.left/right specifically means
+  // "this bitmap style doesn't support it without the override",
+  // never "wrong mode".
+'  if (!avail.left) {' +
+'    document.getElementById("middleLeftLine1Content").value = "0";' +
+'    document.getElementById("middleLeftLine2Content").value = "0";' +
+'    document.getElementById("middleLeftLine1CustomPrims").value = "";' +
+'    document.getElementById("middleLeftLine2CustomPrims").value = "";' +
+'    document.getElementById("middleLeftLine1Shake").value = "0";' +
+'    document.getElementById("middleLeftLine2Shake").value = "0";' +
+'  }' +
+'  if (!avail.right) {' +
+'    document.getElementById("middleRightLine1Content").value = "0";' +
+'    document.getElementById("middleRightLine2Content").value = "0";' +
+'    document.getElementById("middleRightLine1CustomPrims").value = "";' +
+'    document.getElementById("middleRightLine2CustomPrims").value = "";' +
+'    document.getElementById("middleRightLine1Shake").value = "0";' +
+'    document.getElementById("middleRightLine2Shake").value = "0";' +
+'  }' +
+'}' +
+'function onBitmapCornerOverrideChange() {' +
+'  clearGrayedSlotsIfUnavailable();' +
+'  renderSlotPicker();' +
+'  updatePreview();' +
+'}' +
+
+// ---- custom hour/seconds indices popups --------------------------------
+'var CM_FIELDS = ["Style", "Thickness", "InnerThickness", "InnerEcc", "OuterEcc", "InnerBorder", "OuterBorder", "Translucent", "Color"];' +
+'var CM_CHECKBOX_FIELDS = ["Translucent"];' +
+'function cmHiddenPrefix(kind) { return kind === "hour" ? "customHour" : "customSec"; }' +
+'function cmPopupPrefix(kind) { return kind === "hour" ? "cmHour" : "cmSec"; }' +
+// Serialized straight from presets-lookups.js's MARKER_STYLE_PRESET_FIELDS (bigAnalogMarkerStyle
+// "0"/"1"/"2"/"9"/"10" -> hour/sec ring + numerals field values) -- the one
+// place the None/Braun/Swiss/Classy/Minimal numbers live. Used by BOTH the
+// Indices style picker (applyMarkerStylePresetToCustom() below) and the
+// hour/second editor popups' own preset buttons (MARKER_PRESETS below).
+'var MARKER_STYLE_PRESET_FIELDS = ' + JSON.stringify(MARKER_STYLE_PRESET_FIELDS) + ';' +
+'var MARKER_PRESETS = {' +
+'  hour: {' +
+'    small:   { Style: "1", Thickness: "1", InnerEcc: "0", OuterEcc: "0", InnerBorder: "0", OuterBorder: "100" },' + // legacy
+'    big:     { Style: "2", Thickness: "3", InnerEcc: "0", OuterEcc: "0", InnerBorder: "0", OuterBorder: "100" },' + // legacy
+'  },' +
+'  sec: {' +
+'    small:   { Style: "1", Thickness: "1", InnerEcc: "0", OuterEcc: "0", InnerBorder: "60", OuterBorder: "100" },' + // legacy
+'    big:     { Style: "1", Thickness: "1", InnerEcc: "0", OuterEcc: "0", InnerBorder: "60", OuterBorder: "100" },' + // legacy
+'  }' +
+'};' +
+// The popup presets (minimal/braun/swiss/classy) are derived from that same
+// lookup rather than restated here, so retuning a preset in presets-lookups.js
+// retunes its popup button too. Ring geometry only -- Translucent/Color are
+// deliberately left out, so tapping one of these buttons keeps whatever
+// translucency/color the popup already had, same as before.
+'var MARKER_POPUP_PRESET_STYLE_IDS = { minimal: "10", braun: "1", swiss: "2", classy: "9" };' +
+'var MARKER_POPUP_PRESET_GEOMETRY = ["Style", "Thickness", "InnerThickness", "InnerEcc", "OuterEcc", "InnerBorder", "OuterBorder"];' +
+'Object.keys(MARKER_POPUP_PRESET_STYLE_IDS).forEach(function (name) {' +
+'  var fields = MARKER_STYLE_PRESET_FIELDS[MARKER_POPUP_PRESET_STYLE_IDS[name]];' +
+'  ["hour", "sec"].forEach(function (kind) {' +
+'    var geometry = {};' +
+'    MARKER_POPUP_PRESET_GEOMETRY.forEach(function (f) { geometry[f] = fields[kind][f]; });' +
+'    MARKER_PRESETS[kind][name] = geometry;' +
+'  });' +
+'});' +
+// Picking a built-in Indices style (None/Braun/Swiss/Classy/Minimal) copies
+// its hour ring, second ring AND numerals values into the same
+// customHour*/customSec*/markerText* inputs the Custom style edits -- the
+// picker itself keeps showing the preset (bigAnalogMarkerStyle is
+// untouched), but the watch is sent those values as an ordinary Custom
+// marker (see bigAnalogMarkerStyleCode() in settings-codecs.js), and
+// switching to Custom afterward starts from them.
+// Returns whether styleVal was one of those presets. Runs from
+// onMarkerStyleChange(), i.e. on every pick, on page load, and after an
+// imported/recalled style -- so while a preset is selected the custom
+// fields always equal it (the Custom editors aren't reachable then).
+'function applyMarkerStylePresetToCustom(styleVal) {' +
+'  var fields = MARKER_STYLE_PRESET_FIELDS[styleVal];' +
+'  if (!fields) return false;' +
+'  ["hour", "sec"].forEach(function (kind) {' +
+'    var hp = cmHiddenPrefix(kind);' +
+'    CM_FIELDS.forEach(function (f) {' +
+'      var hidden = document.getElementById(hp + f);' +
+'      if (hidden && fields[kind][f] !== undefined) hidden.value = fields[kind][f];' +
+'    });' +
+'  });' +
+'  applyMarkerTextPresetFields(fields.text);' +
+'  return true;' +
+'}' +
+// The numerals half of the above. The mark-selection masks are a hidden
+// input plus 12 toggle buttons each, so setMarkMask() keeps both in step.
+// Font goes in before Roman since a font that can't do Roman numerals
+// unchecks/disables the box (onMarkerTextFontChange()).
+'function setMarkMask(kind, mask) {' +
+'  document.getElementById(kind === "hour" ? "markerTextHourMask" : "markerTextSecMask").value = String(mask);' +
+'  var m = parseInt(mask, 10) || 0;' +
+'  for (var i = 0; i < 12; i++) {' +
+'    var btn = document.getElementById("markBtn-" + kind + "-" + i);' +
+'    if (btn) btn.className = "mark-btn" + ((m & (1 << i)) ? " active" : "");' +
+'  }' +
+'}' +
+'function applyMarkerTextPresetFields(t) {' +
+'  if (!t) return;' +
+'  document.getElementById("markerTextFont").value = t.Font;' +
+'  document.getElementById("markerTextRoman").checked = t.Roman === "true";' +
+'  document.getElementById("markerTextOffset").value = t.Offset;' +
+'  document.getElementById("markerTextOffsetVal").textContent = t.Offset + "px";' +
+'  setMarkMask("hour", t.HourMask);' +
+'  setMarkMask("sec", t.SecMask);' +
+'  selectModeButton("markerTextTargetGroup", "markerTextTarget", t.Target);' +
+'  onMarkerTextFontChange();' +
+'  onMarkerTextTargetChange();' +
+'  refreshAllFontTriggerLabels();' +
+'}' +
+// A rough approximation of the 3 built-in procedural styles, translated
+// into border-reach percentages (see marker_reach_px() in
+// marker_layer.c) now that a mark's length comes directly from its
+// inner/outer border points rather than a separate slider -- a starting
+// point to tune from, not an exact match. The "second" ring has no real
+// minimal-style equivalent (that style draws no second indices at all),
+// so its "minimal" preset is just a short stub near the outer edge.
+'function updateCustomMarkerValLabels(kind) {' +
+'  var p = cmPopupPrefix(kind);' +
+'  ["Thickness", "InnerThickness", "InnerEcc", "OuterEcc", "InnerBorder", "OuterBorder"].forEach(function (f) {' +
+'    var el = document.getElementById(p + f);' +
+'    var out = document.getElementById(p + f + "Val");' +
+'    if (el && out) out.textContent = el.value + ((f === "Thickness" || f === "InnerThickness") ? "px" : "%");' +
+'  });' +
+'}' +
+// Shows/hides the popup rows that only make sense for a particular
+// Shape choice: the whole geometry section (everything below Shape)
+// when "None" is picked -- there\'s nothing left to configure for a
+// ring that draws nothing at all -- and the Inner thickness row,
+// which only Tapered (style 4) actually reads (see MarkerRingConfig\'s
+// own style/thickness comments in eclipse_data.h). Called from every
+// place that can change Style out from under the popup: a direct tap,
+// re-opening the popup, applying a preset, or copying the other
+// ring\'s config.
+'function updateCustomMarkerRowVisibility(kind) {' +
+'  var p = cmPopupPrefix(kind);' +
+'  var styleEl = document.getElementById(p + "Style");' +
+'  if (!styleEl) return;' +
+'  var isNone = styleEl.value === "none";' +
+'  var isTapered = styleEl.value === "4";' +
+'  var geomWrap = document.getElementById(p + "GeometryWrap");' +
+'  var noneHelp = document.getElementById(p + "NoneHelp");' +
+'  var innerRow = document.getElementById(p + "InnerThicknessRow");' +
+'  var innerHelp = document.getElementById(p + "InnerThicknessHelp");' +
+'  var thicknessHelp = document.getElementById(p + "ThicknessHelp");' +
+'  if (geomWrap) geomWrap.style.display = isNone ? "none" : "";' +
+'  if (noneHelp) noneHelp.style.display = isNone ? "" : "none";' +
+'  if (innerRow) innerRow.style.display = isTapered ? "" : "none";' +
+'  if (innerHelp) innerHelp.style.display = isTapered ? "" : "none";' +
+'  if (thicknessHelp) thicknessHelp.style.display = isTapered ? "none" : "";' +
+'}' +
+'function cmHourStyleChange(val) { onCustomMarkerStyleChange("hour", val); }' +
+'function cmSecStyleChange(val) { onCustomMarkerStyleChange("sec", val); }' +
+'function onCustomMarkerStyleChange(kind, val) {' +
+'  var p = cmPopupPrefix(kind);' +
+'  selectModeButton(p + "StyleGroup", p + "Style", val);' +
+'  updateCustomMarkerRowVisibility(kind);' +
+'}' +
+'function onCustomMarkerSliderInput(kind) {' +
+'  updateCustomMarkerValLabels(kind);' +
+'}' +
+'function onCustomMarkerBorderInput(kind, isInner) {' +
+'  var p = cmPopupPrefix(kind);' +
+'  var innerEl = document.getElementById(p + "InnerBorder"), outerEl = document.getElementById(p + "OuterBorder");' +
+'  var innerVal = parseInt(innerEl.value, 10), outerVal = parseInt(outerEl.value, 10);' +
+'  outerEl.min = innerVal;' +
+'  if (outerVal < innerVal) outerEl.value = innerVal;' +
+'  updateCustomMarkerValLabels(kind);' +
+'}' +
+// Pre-fills the popup from the currently-saved customHour*/customSec*
+// hidden inputs -- nothing is written back until saveCustomMarkerEditor()
+// runs, so Cancel (or tapping outside) leaves the saved config untouched.
+'function openCustomMarkerEditor(kind) {' +
+'  var hp = cmHiddenPrefix(kind), p = cmPopupPrefix(kind);' +
+'  CM_FIELDS.forEach(function (f) {' +
+'    var hidden = document.getElementById(hp + f);' +
+'    var popupEl = document.getElementById(p + f);' +
+'    if (!hidden || !popupEl) return;' +
+'    if (CM_CHECKBOX_FIELDS.indexOf(f) !== -1) { popupEl.checked = hidden.value === "true"; } else { popupEl.value = hidden.value; }' +
+'  });' +
+// A committed thickness of 0 is how "None" is actually represented on
+// the wire (see saveCustomMarkerEditor()\'s own comment) -- the
+// committed Style value alongside it is meaningless in that case, so
+// the draft picker shows None regardless of whatever it happens to be.
+'  if (document.getElementById(hp + "Thickness").value === "0") {' +
+'    document.getElementById(p + "Style").value = "none";' +
+'  }' +
+'  refreshModeButtonGroup(p + "StyleGroup", p + "Style");' +
+'  refreshModeButtonGroup(p + "ColorGroup", p + "Color");' +
+'  document.getElementById(p + "OuterBorder").min = document.getElementById(p + "InnerBorder").value;' +
+'  updateCustomMarkerValLabels(kind);' +
+'  updateCustomMarkerRowVisibility(kind);' +
+'  document.getElementById("customMarkerModal-" + kind).className = "modal-overlay open";' +
+'}' +
+'function closeCustomMarkerEditor(kind) {' +
+'  document.getElementById("customMarkerModal-" + kind).className = "modal-overlay";' +
+'}' +
+// "None" isn\'t a real MarkerRingConfig.style value the watch knows
+// about -- draw_marker_ring() already treats thickness == 0 as "this
+// ring draws nothing at all" (see its own comment in background_layer.c),
+// so that\'s the actual wire representation: Style commits as plain "0"
+// (Dot -- never read once thickness is 0) and Thickness commits as "0",
+// regardless of whatever the sliders were last left at, so re-picking
+// any real shape later starts from a sensible Dot rather than a
+// leftover 0px line.
+'function saveCustomMarkerEditor(kind) {' +
+'  var hp = cmHiddenPrefix(kind), p = cmPopupPrefix(kind);' +
+'  var isNone = document.getElementById(p + "Style").value === "none";' +
+'  CM_FIELDS.forEach(function (f) {' +
+'    var hidden = document.getElementById(hp + f);' +
+'    var popupEl = document.getElementById(p + f);' +
+'    if (!hidden || !popupEl) return;' +
+'    if (isNone && f === "Style") { hidden.value = "0"; return; }' +
+'    if (isNone && f === "Thickness") { hidden.value = "0"; return; }' +
+'    hidden.value = (CM_CHECKBOX_FIELDS.indexOf(f) !== -1) ? String(popupEl.checked) : popupEl.value;' +
+'  });' +
+'  closeCustomMarkerEditor(kind);' +
+'  refreshEditButtonLabels();' +
+'  updatePreview();' +
+'}' +
+'function applyMarkerPreset(kind, name) {' +
+'  var p = cmPopupPrefix(kind);' +
+'  var preset = MARKER_PRESETS[kind][name];' +
+'  if (!preset) return;' +
+'  CM_FIELDS.forEach(function (f) {' +
+'    var el = document.getElementById(p + f);' +
+'    if (!el || preset[f] === undefined) return;' +
+'    if (CM_CHECKBOX_FIELDS.indexOf(f) !== -1) { el.checked = preset[f] === true || preset[f] === "true"; } else { el.value = preset[f]; }' +
+'  });' +
+'  refreshModeButtonGroup(p + "StyleGroup", p + "Style");' +
+'  refreshModeButtonGroup(p + "ColorGroup", p + "Color");' +
+'  document.getElementById(p + "OuterBorder").min = document.getElementById(p + "InnerBorder").value;' +
+'  updateCustomMarkerValLabels(kind);' +
+'  updateCustomMarkerRowVisibility(kind);' +
+'}' +
+// Copies the OTHER ring\'s last-saved (not currently-open-popup-draft)
+// config into this popup\'s controls -- text-marker settings are never
+// touched here, since hour/second numbers already exclude each other.
+'function copyMarkerConfig(kind) {' +
+'  var otherKind = kind === "hour" ? "sec" : "hour";' +
+'  var otherHiddenPrefix = cmHiddenPrefix(otherKind), p = cmPopupPrefix(kind);' +
+'  CM_FIELDS.forEach(function (f) {' +
+'    var src = document.getElementById(otherHiddenPrefix + f);' +
+'    var dst = document.getElementById(p + f);' +
+'    if (!src || !dst) return;' +
+'    if (CM_CHECKBOX_FIELDS.indexOf(f) !== -1) { dst.checked = src.value === "true"; } else { dst.value = src.value; }' +
+'  });' +
+'  if (document.getElementById(otherHiddenPrefix + "Thickness").value === "0") {' +
+'    document.getElementById(p + "Style").value = "none";' +
+'  }' +
+'  refreshModeButtonGroup(p + "StyleGroup", p + "Style");' +
+'  document.getElementById(p + "OuterBorder").min = document.getElementById(p + "InnerBorder").value;' +
+'  updateCustomMarkerValLabels(kind);' +
+'  updateCustomMarkerRowVisibility(kind);' +
+'}' +
+'function selectMarkerTextTarget(val) {' +
+'  selectModeButton("markerTextTargetGroup", "markerTextTarget", val);' +
+'  onMarkerTextTargetChange();' +
+'  refreshEditButtonLabels();' +
+'}' +
+'function onMarkerTextTargetChange() {' +
+'  var val = document.getElementById("markerTextTarget").value;' +
+'  document.getElementById("markerTextOptions").style.display = (val === "0") ? "none" : "";' +
+'  document.getElementById("markerTextHourGrid").style.display = (val === "1") ? "" : "none";' +
+'  document.getElementById("markerTextSecGrid").style.display = (val === "2") ? "" : "none";' +
+'  updatePreview();' +
+'}' +
+'function onMarkerTextFontChange() {' +
+'  var font = document.getElementById("markerTextFont").value;' +
+'  var romanBox = document.getElementById("markerTextRoman");' +
+'  var romanHelp = document.getElementById("markerTextRomanHelp");' +
+'  var incompatible = !fontFlag(fontLookupEntry(font).romanOk);' +
+'  romanBox.disabled = incompatible;' +
+'  if (incompatible) romanBox.checked = false;' +
+'  if (romanHelp) romanHelp.textContent = incompatible ?' +
+'    "Not available with this font -- its glyphs don\'t support Roman numerals correctly." :' +
+'    "Shows I, II, III... instead of 1, 2, 3... -- independent of the font above.";' +
+'  updatePreview();' +
+'}' +
+'function openTextMarkerEditor() {' +
+'  document.getElementById("textMarkerModal").className = "modal-overlay open";' +
+'}' +
+'function closeTextMarkerEditor() {' +
+'  document.getElementById("textMarkerModal").className = "modal-overlay";' +
+'}' +
+'function openCenterCircleEditor() {' +
+'  document.getElementById("centerCircleModal").className = "modal-overlay open";' +
+'}' +
+'function closeCenterCircleEditor() {' +
+'  document.getElementById("centerCircleModal").className = "modal-overlay";' +
+'}' +
+'function openShadowStyleEditor() {' +
+'  document.getElementById("shadowStyleModal").className = "modal-overlay open";' +
+'}' +
+'function closeShadowStyleEditor() {' +
+'  document.getElementById("shadowStyleModal").className = "modal-overlay";' +
+'}' +
+'function toggleMarkBtn(kind, i) {' +
+'  var hiddenId = kind === "hour" ? "markerTextHourMask" : "markerTextSecMask";' +
+'  var hidden = document.getElementById(hiddenId);' +
+'  var mask = parseInt(hidden.value, 10) || 0;' +
+'  var btn = document.getElementById("markBtn-" + kind + "-" + i);' +
+'  var bit = 1 << i;' +
+'  if (mask & bit) { mask &= ~bit; btn.className = "mark-btn"; } else { mask |= bit; btn.className = "mark-btn active"; }' +
+'  hidden.value = String(mask);' +
+'}' +
+
+// ---- custom hour/minute/second hand popups ----------------------------
+'var HE_FIELDS = ["Style", "Width", "Length", "BackOffset", "MiddleOffset", "SecondaryWidth", "Color", "OutlineEnabled", "OutlineColor", "Translucent", "ShadowEnabled", "ShadowDistance", "Hollow", "HollowThickness"];' +
+'var HE_CHECKBOX_FIELDS = ["OutlineEnabled", "Translucent", "ShadowEnabled", "Hollow"];' +
+// Which HandConfig.style values actually use MiddleOffset -- 0-2
+// (dot/triangle/square) ignore it, same as the C side; every other
+// style (3-10) uses it. SecondaryWidth is used by the same set MINUS
+// Leaf (8), which only has a single Width slider (its own peak is
+// always exactly `width` wide -- see hand_layer.c's own comment).
+// Drives updateHandFieldVisibility() below.
+'var HAND_STYLES_WITH_MIDDLE = ["3", "4", "5", "6", "7", "8", "9", "10"];' +
+'var HAND_STYLES_WITH_SECONDARY = ["3", "4", "5", "6", "7", "9", "10"];' +
+'var HAND_COPY_SOURCE = { hour: "min", min: "hour", sec: "min" };' +
+'function heHiddenPrefix(kind) { return kind === "hour" ? "handHour" : (kind === "min" ? "handMin" : "handSec"); }' +
+'function hePopupPrefix(kind) { return "he" + kind.charAt(0).toUpperCase() + kind.slice(1); }' +
+// Runtime copy of presets-lookups.js's own HAND_PRESETS -- serialized
+// straight from that same canonical object (see resources/infographics/
+// hands<n>.png, embedded via scripts/generate-infographics.js as
+// HAND_STYLE_IMAGES, for the matching preview images) rather than
+// hand-duplicated, same pattern as FONT_LOOKUP/COLOR_SCHEMES above.
+// Keyed "1".."9" to match those filenames, each with a display title
+// plus hour/min/sec field sets in the same shape applyHandPresetToKind()
+// below writes into the hidden custom-hand inputs, PLUS a centerCircle
+// and shadow field set applied the same way to the standalone Center
+// circle/Shadow style settings (see applyHandPresetExtras() below) --
+// those two aren't per-hand, but still look like part of "the hand
+// style" to anyone picking a preset, so a preset now sets them too
+// instead of leaving whatever was there before. Picking a preset is a
+// one-shot copy into those same fields the manual "Edit ... hand" /
+// Center circle / Shadow style editors use -- nothing about it is
+// remembered as a distinct "preset" afterward, on this page or on the
+// watch (see hand_layer.h's own comment for why the watch doesn't need
+// to know).
+'var HAND_PRESETS = ' + JSON.stringify(HAND_PRESETS) + ';' +
+'function applyHandPresetToKind(kind, preset) {' +
+'  var hp = heHiddenPrefix(kind);' +
+'  for (var f in preset) {' +
+'    var hidden = document.getElementById(hp + f);' +
+'    if (hidden) hidden.value = preset[f];' +
+'  }' +
+'}' +
+// Center circle/Shadow style aren't per-hand (no heHiddenPrefix() to
+// go through), and 2 of the 4 fields are sliders whose own displayed
+// "Val" span text (see centerCircleModal/shadowStyleModal\'s own HTML)
+// only updates from their oninput handler -- setting .value alone from
+// here wouldn\'t touch that span, so this sets both by hand for those.
+'function applyHandPresetExtras(entry) {' +
+'  if (entry.centerCircle) {' +
+'    if (entry.centerCircle.Radius !== undefined) {' +
+'      document.getElementById("centerCircleRadius").value = entry.centerCircle.Radius;' +
+'      var radiusVal = document.getElementById("centerCircleRadiusVal");' +
+'      if (radiusVal) radiusVal.textContent = entry.centerCircle.Radius + "px";' +
+'    }' +
+'    if (entry.centerCircle.Color !== undefined) document.getElementById("centerCircleColor").value = entry.centerCircle.Color;' +
+'  }' +
+'  if (entry.shadow) {' +
+'    if (entry.shadow.Translucent !== undefined) {' +
+'      document.getElementById("shadowTranslucent").value = entry.shadow.Translucent;' +
+'      refreshModeButtonGroup("shadowTranslucentGroup", "shadowTranslucent");' +
+'    }' +
+'    if (entry.shadow.Angle !== undefined) {' +
+'      document.getElementById("shadowAngle").value = entry.shadow.Angle;' +
+'      var angleVal = document.getElementById("shadowAngleVal");' +
+'      if (angleVal) angleVal.textContent = entry.shadow.Angle + "\\u00b0";' +
+'    }' +
+'  }' +
+'}' +
+// Populates #handStyleGrid with one button per HAND_PRESETS entry --
+// called once up front (see the bottom of this script) rather than
+// inline in the HTML template, since the button list is entirely
+// data-driven off HAND_PRESETS/HAND_STYLE_IMAGES.
+'function renderHandStyleGrid() {' +
+'  var grid = document.getElementById("handStyleGrid");' +
+'  if (!grid) return;' +
+'  var html = "";' +
+'  for (var n = 1; n <= 9; n++) {' +
+'    var entry = HAND_PRESETS[String(n)];' +
+'    if (!entry) continue;' +
+'    var img = HAND_STYLE_IMAGES[String(n)];' +
+'    html += \'<button type="button" class="style-picker-btn" onclick="chooseHandStyle(\' + n + \')">\' +' +
+'      (img ? \'<img src="\' + img + \'" alt="\' + entry.title + \'">\' : \'<span class="style-picker-btn-empty">\' + entry.title + "</span>") +' +
+'      \'<span class="style-picker-btn-cap-top">\' + entry.title + "</span></button>";' +
+'  }' +
+'  grid.innerHTML = html;' +
+'}' +
+'function openHandStyleModal() {' +
+'  document.getElementById("handStyleModal").className = "modal-overlay open";' +
+'}' +
+'function closeHandStyleModal() {' +
+'  document.getElementById("handStyleModal").className = "modal-overlay";' +
+'}' +
+'function chooseHandStyle(n) {' +
+'  var entry = HAND_PRESETS[String(n)];' +
+'  if (!entry) return;' +
+'  applyHandPresetToKind("hour", entry.hour);' +
+'  applyHandPresetToKind("min", entry.min);' +
+'  applyHandPresetToKind("sec", entry.sec);' +
+'  applyHandPresetExtras(entry);' +
+'  closeHandStyleModal();' +
+'  updateHandStyleButtonLabel();' +
+'  refreshEditButtonLabels();' +
+'  updatePreview();' +
+'}' +
+// "Custom" -- same meaning the old dropdown\'s "Custom" option had:
+// leaves the hand fields exactly as they are (the 3 "Edit ... hand"
+// buttons are always available below regardless), just closes the
+// popup without applying any preset. Center circle/shadow are left
+// alone too, for the same reason.
+'function chooseHandStyleCustom() {' +
+'  closeHandStyleModal();' +
+'  updateHandStyleButtonLabel();' +
+'}' +
+// Whether the trigger button reads a preset\'s own name or "Custom" is
+// entirely DERIVED from the 3 hands\' current field values, not a
+// separate remembered flag -- so it stays correct regardless of HOW
+// those values got there (a preset button, a manual "Edit ... hand"
+// change, an imported style JSON) without needing every one of those
+// call sites to separately remember to update/clear some "current
+// preset" state by hand. Deliberately checks only the fields a given
+// preset actually specifies (Style/Width/Length/BackOffset/
+// MiddleOffset/SecondaryWidth/Color -- see HAND_PRESETS\' own entries)
+// rather than every HE_FIELDS entry: those are the fields that define
+// the STYLE itself, whereas Translucent/Outline/Shadow/Hollow are
+// independent finish options layered on top of it, not part of
+// telling one named style apart from another.
+'function handKindMatchesPresetFields(kind, presetFields) {' +
+'  var hp = heHiddenPrefix(kind);' +
+'  for (var f in presetFields) {' +
+'    var el = document.getElementById(hp + f);' +
+'    if (!el || el.value !== String(presetFields[f])) return false;' +
+'  }' +
+'  return true;' +
+'}' +
+'function computeHandStylePresetNumber() {' +
+'  for (var n = 1; n <= 9; n++) {' +
+'    var entry = HAND_PRESETS[String(n)];' +
+'    if (!entry) continue;' +
+'    if (handKindMatchesPresetFields("hour", entry.hour) && handKindMatchesPresetFields("min", entry.min) &&' +
+'        handKindMatchesPresetFields("sec", entry.sec)) {' +
+'      return n;' +
+'    }' +
+'  }' +
+'  return null;' +
+'}' +
+'function computeHandStyleLabel() {' +
+'  var n = computeHandStylePresetNumber();' +
+'  return n ? HAND_PRESETS[String(n)].title : "Custom";' +
+'}' +
+'function updateHandStyleButtonLabel() {' +
+'  var span = document.getElementById("handStyleTriggerLabel");' +
+'  if (span) span.textContent = computeHandStyleLabel();' +
+'}' +
+// Only touches the DOM when the actual HTML differs (same "don't
+// restart CSS state that doesn't need restarting" reasoning as
+// setSubheaderTextById() -- an <img> has nothing to animate, but
+// there's no reason to force a decode/repaint of the same image once
+// a second either).
+'function setPreviewThumbnail(elId, html) {' +
+'  var el = document.getElementById(elId);' +
+'  if (!el || el.innerHTML === html) return;' +
+'  el.innerHTML = html;' +
+'}' +
+// Hands style subsection\'s own collapsed-state thumbnail + sub-header
+// -- the thumbnail is whichever HAND_STYLE_IMAGES preset picture
+// currently matches (the same "derived from the live field values,
+// not a remembered flag" source computeHandStyleLabel() already
+// uses), blank for Custom (no single static picture could represent
+// an arbitrary custom combination). The sub-header adds whether any
+// hand currently has its shadow on, since that's real information the
+// bare style name alone wouldn\'t show.
+'function refreshHandsSubsectionPreview() {' +
+'  var n = computeHandStylePresetNumber();' +
+'  var img = n ? HAND_STYLE_IMAGES[String(n)] : null;' +
+'  setPreviewThumbnail("subsecpreview-hands", img ? (\'<img src="\' + img + \'" alt="">\') : "");' +
+'  var title = n ? HAND_PRESETS[String(n)].title : "Custom";' +
+'  var anyShadow = ["hour", "min", "sec"].some(function (kind) {' +
+'    var el = document.getElementById(heHiddenPrefix(kind) + "ShadowEnabled");' +
+'    return el && el.value === "true";' +
+'  });' +
+'  setSubsubheaderText("hands", title + " hands" + (anyShadow ? ", shadow on" : ""));' +
+'}' +
+// Same idea for Indices style -- the thumbnail is whichever bitmap or
+// procedural-preset picture MARKER_STYLE_TITLES/updateMarkerStyleButtonLabel()
+// already resolve bigAnalogMarkerStyle\'s current value to, blank for
+// Custom (8) and None (0) alike (neither has one static picture to
+// show -- Custom is user-defined per-ring geometry, None draws
+// nothing at all).
+'function refreshIndicesSubsectionPreview() {' +
+'  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
+'  var bmp = MARKER_BITMAP_STYLES.filter(function (s) { return s.value === val; })[0];' +
+'  var img = null, isBitmap = false;' +
+'  if (bmp) { img = MARKER_PREVIEW_IMAGES[val]; isBitmap = true; }' +
+'  else {' +
+'    var preset = MARKER_PRESET_STYLES.filter(function (s) { return s.value === val; })[0];' +
+'    if (preset) img = MARKER_PRESET_IMAGES[preset.image];' +
+'  }' +
+'  setPreviewThumbnail("subsecpreview-indices", img ? (\'<img class="\' + (isBitmap ? "bitmap-marker-img" : "") + \'" src="\' + img + \'" alt="">\') : "");' +
+'  var title = MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom";' +
+'  setSubsubheaderText("indices", val === "0" ? "No indices" : title + " indices");' +
+'}' +
+
+// ---- marker style picker popup -----------------------------------------
+// Unlike hands, markers keep a real "which style" field
+// (bigAnalogMarkerStyle, 0-10 here and in storage) -- this
+// popup is just a friendlier picker for that same hidden <select>,
+// not a replacement for it. The watch itself is only ever sent 3-8
+// though: the 5 presets (0 None, 1 Braun, 2 Swiss, 9 Classy, 10
+// Minimal) are materialized into the Custom marker + numerals fields
+// and sent as 8 -- see
+// applyMarkerStylePresetToCustom() above and bigAnalogMarkerStyleCode()
+// in settings-codecs.js. MARKER_BITMAP_STYLES covers the 5
+// existing bitmap styles (their own thumbnails already exist as
+// MARKER_PREVIEW_IMAGES, generated from the actual watch resource
+// PNGs -- see generate-marker-previews.js); MARKER_PRESET_STYLES
+// covers the 4 ring-preset tiles (None is its own button below the
+// grid, since it has no picture), thumbnails from
+// MARKER_PRESET_IMAGES (generate-infographics.js).
+'var MARKER_BITMAP_STYLES = [' +
+'  { value: "3", title: "Modern" },' +
+'  { value: "4", title: "Shadow" },' +
+'  { value: "5", title: "Tally" },' +
+'  { value: "6", title: "Bell" },' +
+'  { value: "7", title: "Fancy" }' +
+'];' +
+'var MARKER_PRESET_STYLES = [' +
+'  { value: "9", title: "Classy", image: "classy" },' +
+'  { value: "10", title: "Minimal", image: "minimal" },' +
+'  { value: "1", title: "Braun", image: "braun" },' +
+'  { value: "2", title: "Swiss", image: "swiss" }' +
+'];' +
+// Trigger-button label lookup -- every MARKER_BITMAP_STYLES/
+// MARKER_PRESET_STYLES entry\'s own title, plus "8" (Custom, the only
+// value neither array carries since it has no picker button of its
+// own -- see chooseMarkerStyleCustom()).
+'var MARKER_STYLE_TITLES = { "0": "None", "8": "Custom" };' +
+'MARKER_BITMAP_STYLES.concat(MARKER_PRESET_STYLES).forEach(function (s) { MARKER_STYLE_TITLES[s.value] = s.title; });' +
+'function updateMarkerStyleButtonLabel() {' +
+'  var span = document.getElementById("markerStyleTriggerLabel");' +
+'  if (!span) return;' +
+'  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
+'  span.textContent = MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom";' +
+'}' +
+'function renderMarkerStyleGrid() {' +
+'  var grid = document.getElementById("markerStyleGrid");' +
+'  if (!grid) return;' +
+'  var html = "";' +
+'  MARKER_BITMAP_STYLES.forEach(function (s) {' +
+'    var img = MARKER_PREVIEW_IMAGES[s.value];' +
+'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
+'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
+'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
+'  });' +
+'  MARKER_PRESET_STYLES.forEach(function (s) {' +
+'    var img = MARKER_PRESET_IMAGES[s.image];' +
+'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
+'      (img ? \'<img src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
+'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
+'  });' +
+'  grid.innerHTML = html;' +
+'}' +
+'function openMarkerStyleModal() {' +
+'  document.getElementById("markerStyleModal").className = "modal-overlay open";' +
+'}' +
+'function closeMarkerStyleModal() {' +
+'  document.getElementById("markerStyleModal").className = "modal-overlay";' +
+'}' +
+'function chooseMarkerStyle(value) {' +
+'  document.getElementById("bigAnalogMarkerStyle").value = value;' +
+'  onMarkerStyleChange();' +
+'  closeMarkerStyleModal();' +
+'}' +
+// "Custom" -- sets the underlying select to the real custom value (8)
+// so customMarkerSection actually shows, then closes -- same meaning
+// the old dropdown\'s "Custom" option had.
+'function chooseMarkerStyleCustom() {' +
+'  document.getElementById("bigAnalogMarkerStyle").value = "8";' +
+'  onMarkerStyleChange();' +
+'  closeMarkerStyleModal();' +
+'}' +
+'function onShadowAngleInput() {' +
+'  var el = document.getElementById("shadowAngle");' +
+'  var out = document.getElementById("shadowAngleVal");' +
+'  if (el && out) out.textContent = el.value + "\u00b0";' +
+'  updatePreview();' +
+'}' +
+// ---- Style Presets: export/import + 3 quick-recall slots -----------
+// Scoped to exactly the DOM containers the design covers (Style,
+// Colors, Features/\'corners\', Animation) by walking every input/
+// select/textarea with an id inside them -- deliberately NOT a hand-
+// maintained field list, so this never goes stale as fields get added
+// to any of them.
+'var PRESET_SCOPE_IDS = ["section-style", "section-colors", "section-corners", "section-animation"];' +
+'function collectStyleCornersJson() {' +
+'  var obj = {};' +
+'  PRESET_SCOPE_IDS.forEach(function (containerId) {' +
+'    var container = document.getElementById(containerId);' +
+'    if (!container) return;' +
+'    var els = container.querySelectorAll("input[id], select[id], textarea[id]");' +
+'    els.forEach(function (el) {' +
+'      if (el.type === "radio") {' +
+'        if (el.checked) obj[el.name] = el.value;' + // one entry per group (its own name, not each option's own id), only for whichever option is actually checked
+'        return;' +
+'      }' +
+'      obj[el.id] = (el.type === "checkbox") ? el.checked : el.value;' +
+'    });' +
+'  });' +
+'  return obj;' +
+'}' +
+// Sets every id->value pair from a previously-exported (or a preset
+// slot\'s saved) object, then re-runs the same cascade of dependent-UI
+// handlers each field\'s own onchange would have triggered by hand --
+// show/hide rows, slot picker labels, the preview canvas.
+'function applyStyleCornersJson(obj) {' +
+'  Object.keys(obj).forEach(function (id) {' +
+'    var el = document.getElementById(id);' +
+'    if (!el) {' +
+'      var radio = document.querySelector(\'input[name="\' + id + \'"][value="\' + obj[id] + \'"]\');' + // no plain element has this id -- try it as a radio group name instead
+'      if (radio) radio.checked = true;' +
+'      return;' +
+'    }' +
+'    if (el.type === "checkbox") el.checked = !!obj[id]; else el.value = obj[id];' +
+'  });' +
+'  selectVerticalOption("bgAnimModeGroup", "bgAnimMode", document.getElementById("bgAnimMode").value);' +
+'  selectVerticalOption("shakeAnimModeGroup", "shakeAnimMode", document.getElementById("shakeAnimMode").value);' +
+'  bgAfterStyleApplied();' +
+'  onMarkerStyleChange();' +
+'  updateHandStyleButtonLabel();' +
+'  onCornerFontChange();' +
+'  onShowSecondsChange();' +
+'  updateColorRoleButtons();' +
+'  updateColorRoleButtons("night");' +
+'  renderSlotPicker();' +
+'  refreshAllFontTriggerLabels();' +
+'  refreshEditButtonLabels();' +
+'  updatePreview();' +
+'}' +
+'function exportDesignJson() {' +
+'  document.getElementById("presetExportBox").value = JSON.stringify(collectStyleCornersJson(), null, 2);' +
+'}' +
+// navigator.clipboard needs a secure context and isn't guaranteed to
+// exist in every webview Pebble's settings page might run inside --
+// falls back to just selecting the text (same as tapping the box
+// itself already does) so the user can still copy it via the
+// device's own selection menu.
+'function copyExportBoxToClipboard() {' +
+'  var box = document.getElementById("presetExportBox");' +
+'  var status = document.getElementById("presetExportStatus");' +
+'  if (!box.value) exportDesignJson();' +
+'  box.select();' +
+'  if (navigator.clipboard && navigator.clipboard.writeText) {' +
+'    navigator.clipboard.writeText(box.value).then(function () {' +
+'      if (status) status.textContent = "Copied to clipboard.";' +
+'    }, function () {' +
+'      if (status) status.textContent = "Couldn\'t copy automatically -- text is selected, copy it from there.";' +
+'    });' +
+'  } else if (status) {' +
+'    status.textContent = "Couldn\'t copy automatically -- text is selected, copy it from there.";' +
+'  }' +
+'}' +
+'function pasteImportBoxFromClipboard() {' +
+'  var box = document.getElementById("presetImportBox");' +
+'  var status = document.getElementById("presetImportStatus");' +
+'  if (navigator.clipboard && navigator.clipboard.readText) {' +
+'    navigator.clipboard.readText().then(function (text) {' +
+'      box.value = text;' +
+'      if (status) status.textContent = "Pasted -- tap Apply to use it.";' +
+'    }, function () {' +
+'      if (status) status.textContent = "Couldn\'t read the clipboard automatically -- paste into the box by hand instead.";' +
+'    });' +
+'  } else if (status) {' +
+'    status.textContent = "Clipboard access isn\'t available here -- paste into the box by hand instead.";' +
+'  }' +
+'}' +
+'function importDesignJson() {' +
+'  var status = document.getElementById("presetImportStatus");' +
+'  var raw = document.getElementById("presetImportBox").value;' +
+'  var obj;' +
+'  try { obj = JSON.parse(raw); } catch (e) {' +
+'    if (status) status.textContent = "Couldn\'t parse that as JSON.";' +
+'    return;' +
+'  }' +
+'  applyStyleCornersJson(obj);' +
+'  if (status) status.textContent = "Applied.";' +
+'}' +
+// Shared "are you sure?" step -- stashes the action to run and shows
+// the confirm modal; confirmModalYes() runs it (once) and closes;
+// canceling (or tapping outside the box) just closes without running
+// anything. opts is optional: { images: {left, right (optional)},
+// danger: bool, confirmLabel: string } -- images shows the before/
+// after (or, with no `right`, just a single) preview compare row;
+// danger switches the confirm button to its red "destructive action"
+// styling and, together with confirmLabel, is only ever used by the
+// preset delete flow below.
+'var s_pendingConfirmAction = null;' +
+'function showConfirm(title, message, onConfirm, opts) {' +
+'  opts = opts || {};' +
+'  document.getElementById("confirmModalTitle").textContent = title;' +
+'  document.getElementById("confirmModalMessage").textContent = message;' +
+'  var compareRow = document.getElementById("confirmImageCompare");' +
+'  if (opts.images && opts.images.left) {' +
+'    document.getElementById("confirmImageLeft").src = opts.images.left;' +
+'    compareRow.style.display = "flex";' +
+'    var rightImg = document.getElementById("confirmImageRight");' +
+'    var arrow = document.getElementById("confirmImageArrow");' +
+'    if (opts.images.right) {' +
+'      rightImg.src = opts.images.right;' +
+'      rightImg.style.display = "";' +
+'      arrow.style.display = "";' +
+'    } else {' +
+'      rightImg.style.display = "none";' +
+'      arrow.style.display = "none";' +
+'    }' +
+'  } else {' +
+'    compareRow.style.display = "none";' +
+'  }' +
+'  var yesBtn = document.getElementById("confirmModalYesBtn");' +
+'  yesBtn.className = "modal-confirm-btn" + (opts.danger ? " danger" : "");' +
+'  yesBtn.textContent = opts.confirmLabel || "Confirm";' +
+'  s_pendingConfirmAction = onConfirm;' +
+'  document.getElementById("confirmModal").className = "modal-overlay open";' +
+'}' +
+'function closeConfirmModal() {' +
+'  document.getElementById("confirmModal").className = "modal-overlay";' +
+'  s_pendingConfirmAction = null;' +
+'}' +
+'function confirmModalYes() {' +
+'  var action = s_pendingConfirmAction;' +
+'  closeConfirmModal();' +
+'  if (action) action();' +
+'}' +
+// One console-style line per logged attempt (newest first), reading
+// straight from serviceLogsJson's snapshot of that service's own
+// entries -- see servicelog.js's recordAttempt() on the PKJS side for
+// exactly what {t, ok, code, label} holds.
+'function openServiceLog(service, label) {' +
+'  var all = {};' +
+'  try { all = JSON.parse(document.getElementById("serviceLogsJson").value || "{}"); } catch (e) {}' +
+'  document.getElementById("serviceLogModalTitle").textContent = label + " \\u2014 last attempts";' +
+'  var entries = (all[service] && all[service].log) || [];' +
+'  var body = document.getElementById("serviceLogModalBody");' +
+'  body.innerHTML = "";' +
+'  if (entries.length === 0) {' +
+'    var empty = document.createElement("div");' +
+'    empty.className = "help";' +
+'    empty.textContent = "No attempts logged yet.";' +
+'    body.appendChild(empty);' +
+'  } else {' +
+'    entries.slice().reverse().forEach(function (e) {' +
+'      var d = new Date(e.t);' +
+'      var line = document.createElement("div");' +
+'      line.className = "service-log-line";' +
+'      var status = e.ok ? "OK" : ("ERR " + e.code + " - " + e.label);' +
+'      line.textContent = d.toLocaleDateString() + " " + d.toLocaleTimeString() + "  " + label + "  " + status;' +
+'      body.appendChild(line);' +
+'    });' +
+'  }' +
+'  document.getElementById("serviceLogModal").className = "modal-overlay open";' +
+'}' +
+'function closeServiceLogModal() {' +
+'  document.getElementById("serviceLogModal").className = "modal-overlay";' +
+'}' +
+// Snapshots the live preview canvas as a small PNG data URL -- used to
+// remember what a preset looked like at save time, and to show the
+// current design for comparison when applying/saving/deleting one.
+// Never sent to the watch (nothing in this app's AppMessage traffic
+// touches it) -- purely a phone-side round-trip through settings, same
+// as the preset's own JSON blob already is.
+'function capturePreviewImage() {' +
+'  var canvas = document.getElementById("previewCanvas");' +
+'  if (!canvas || !canvas.toDataURL) return "";' +
+'  try { return canvas.toDataURL("image/png"); } catch (e) { return ""; }' +
+'}' +
+'function applyPresetSlot(n) {' +
+'  var jsonEl = document.getElementById("presetSlot" + n + "Json");' +
+'  if (!jsonEl || !jsonEl.value) return;' +
+'  var obj;' +
+'  try { obj = JSON.parse(jsonEl.value); } catch (e) { return; }' +
+'  var name = document.getElementById("presetSlot" + n + "Name").value || ("Preset " + n);' +
+'  var currentImg = capturePreviewImage();' +
+'  var savedImg = document.getElementById("presetSlot" + n + "Image").value;' +
+// Applying: left/red is the current (about to be replaced) design,
+// right/green is the saved preset it's changing into -- see
+// showConfirm()'s own images param comment for the shared red=FROM,
+// green=TO convention both directions use.
+'  showConfirm("Apply preset", \'Apply "\' + name + \'"? This replaces your current Style, Colors, and Features settings.\', function () {' +
+'    applyStyleCornersJson(obj);' +
+'  }, (currentImg && savedImg) ? { images: { left: currentImg, right: savedImg } } : null);' +
+'}' +
+'function savePresetSlot(n) {' +
+'  var jsonEl = document.getElementById("presetSlot" + n + "Json");' +
+'  var imageEl = document.getElementById("presetSlot" + n + "Image");' +
+'  var btn = document.getElementById("presetApplyBtn" + n);' +
+'  var deleteBtn = document.getElementById("presetDeleteBtn" + n);' +
+'  if (!jsonEl) return;' +
+'  var name = document.getElementById("presetSlot" + n + "Name").value || ("Preset " + n);' +
+'  var hadPreset = !!jsonEl.value;' +
+'  var savedImg = imageEl.value;' +
+'  var currentImg = capturePreviewImage();' +
+// Saving: reversed from Apply -- left/red is the EXISTING saved
+// preview about to be overwritten (only shown if there was one),
+// right/green is the current design replacing it.
+'  showConfirm("Save preset", (hadPreset ? \'Overwrite "\' : \'Save your current design into "\') + name + \'"?\' + (hadPreset ? \' This replaces what was saved there.\' : \'\'), function () {' +
+'    jsonEl.value = JSON.stringify(collectStyleCornersJson());' +
+'    imageEl.value = capturePreviewImage();' +
+'    if (btn) btn.disabled = false;' +
+'    if (deleteBtn) deleteBtn.disabled = false;' +
+'    refreshScheduleButton(n);' +
+'  }, (hadPreset && savedImg && currentImg) ? { images: { left: savedImg, right: currentImg } } : null);' +
+'}' +
+'function deletePresetSlot(n) {' +
+'  var jsonEl = document.getElementById("presetSlot" + n + "Json");' +
+'  var imageEl = document.getElementById("presetSlot" + n + "Image");' +
+'  var nameEl = document.getElementById("presetSlot" + n + "Name");' +
+'  var btn = document.getElementById("presetApplyBtn" + n);' +
+'  var deleteBtn = document.getElementById("presetDeleteBtn" + n);' +
+'  if (!jsonEl || !jsonEl.value) return;' +
+'  var name = nameEl.value || ("Preset " + n);' +
+'  var savedImg = imageEl.value;' +
+'  showConfirm("Delete preset", \'Delete "\' + name + \'"? This can\\\'t be undone.\', function () {' +
+'    jsonEl.value = "";' +
+'    imageEl.value = "";' +
+'    nameEl.value = "Preset " + n;' +
+'    if (btn) { btn.textContent = "Preset " + n; btn.disabled = true; }' +
+'    if (deleteBtn) deleteBtn.disabled = true;' +
+// A schedule belongs to the style in the slot, so it goes with it.
+'    document.getElementById("presetSlot" + n + "Schedule").value = "";' +
+'    refreshScheduleButton(n);' +
+'  }, { images: savedImg ? { left: savedImg } : null, danger: true, confirmLabel: "Delete" });' +
+'}' +
+'function startRenamePresetSlot(n) {' +
+'  var btn = document.getElementById("presetApplyBtn" + n);' +
+'  var input = document.getElementById("presetNameInput" + n);' +
+'  var nameEl = document.getElementById("presetSlot" + n + "Name");' +
+'  if (!input || !btn) return;' +
+'  input.value = nameEl ? nameEl.value : ("Preset " + n);' +
+'  btn.style.display = "none";' +
+'  input.style.display = "";' +
+'  input.focus();' +
+'  input.select();' +
+'}' +
+'function commitRenamePresetSlot(n) {' +
+'  var btn = document.getElementById("presetApplyBtn" + n);' +
+'  var input = document.getElementById("presetNameInput" + n);' +
+'  var nameEl = document.getElementById("presetSlot" + n + "Name");' +
+'  if (!input || !btn) return;' +
+'  var newName = input.value.replace(/^\\s+|\\s+$/g, "") || ("Preset " + n);' +
+'  if (nameEl) nameEl.value = newName;' +
+'  btn.textContent = newName;' +
+'  input.style.display = "none";' +
+'  btn.style.display = "";' +
+'}' +
+configPresetSchedule.clientJs(current.scheduleKnownIds) +
+'function onShowSecondsChange() {' +
+'  var box = document.getElementById("showSeconds");' +
+'  var btn = document.getElementById("editSecHandBtn");' +
+'  if (btn) btn.disabled = !(box.checked && !box.disabled);' +
+'  updatePreview();' +
+'}' +
+'function updateHandValLabels(kind) {' +
+'  var p = hePopupPrefix(kind);' +
+'  ["Width", "Length", "BackOffset", "MiddleOffset", "SecondaryWidth", "ShadowDistance", "HollowThickness"].forEach(function (f) {' +
+'    var el = document.getElementById(p + f);' +
+'    var out = document.getElementById(p + f + "Val");' +
+'    if (el && out) out.textContent = el.value + "px";' +
+'  });' +
+'}' +
+// Shows Middle offset for the 8 styles that use it and Secondary
+// width for the 7 that do (see HAND_STYLES_WITH_MIDDLE/
+// HAND_STYLES_WITH_SECONDARY) -- independently, since Leaf uses only
+// the former. The shared help text tags along with Middle offset
+// (the superset of the two).
+'function updateHandFieldVisibility(kind) {' +
+'  var p = hePopupPrefix(kind);' +
+'  var styleEl = document.getElementById(p + "Style");' +
+'  if (!styleEl) return;' +
+'  var showMiddle = HAND_STYLES_WITH_MIDDLE.indexOf(styleEl.value) !== -1;' +
+'  var showSecondary = HAND_STYLES_WITH_SECONDARY.indexOf(styleEl.value) !== -1;' +
+'  ["MiddleOffsetRow", "MiddleSecondaryHelp"].forEach(function (id) {' +
+'    var el = document.getElementById(p + id);' +
+'    if (el) el.style.display = showMiddle ? "" : "none";' +
+'  });' +
+'  var secEl = document.getElementById(p + "SecondaryWidthRow");' +
+'  if (secEl) secEl.style.display = showSecondary ? "" : "none";' +
+'  var diagramImg = document.getElementById(p + "Diagram");' +
+'  if (diagramImg) {' +
+'    var src = HAND_STYLE_DIAGRAM_IMAGES[styleEl.value];' +
+'    diagramImg.style.display = src ? "" : "none";' +
+'    diagramImg.src = src || "";' +
+'  }' +
+'  updateHandStyleIconTriggerLabel(p);' +
+'}' +
+// Fills one editor popup\'s own Shape trigger button from whatever its
+// underlying (now display:none) <select> currently holds -- same
+// "trigger button mirrors a hidden real control" shape
+// updateFontTriggerLabel()/updateColorPresetTriggerLabel() already use
+// for their own pickers. Called from updateHandFieldVisibility() above
+// so it never needs its own separate call site.
+// Fills in the "current status" shown right on each Edit .../Numerals
+// trigger button (see this file's own request/comment) -- one shared
+// function covering all 7 rather than 7 separate single-purpose ones,
+// called after anything that can actually change one of these values:
+// saving a hand/indices editor, applying a hand or marker preset,
+// tapping a Shadow style/Numerals button, dragging the center circle
+// slider, or loading/importing a whole style. A little more than any
+// one call site strictly needs, but safer than trying to track exactly
+// which of the 7 a given change could touch.
+'function customMarkerStyleLabel(val) {' +
+'  return ["Dot", "Line", "Square", "", "Tapered"][parseInt(val, 10)] || "Dot";' +
+'}' +
+'function markerTextTargetLabel(val) {' +
+'  if (val === "1") return "On hours";' +
+'  if (val === "2") return "Every 5s";' +
+'  return "Off";' +
+'}' +
+'function refreshEditButtonLabels() {' +
+'  ["hour", "min", "sec"].forEach(function (kind) {' +
+'    var el = document.getElementById(heHiddenPrefix(kind) + "Style");' +
+'    var span = document.getElementById("hand" + kind.charAt(0).toUpperCase() + kind.slice(1) + "StatusLabel");' +
+'    if (el && span) span.textContent = HAND_STYLE_NAMES[parseInt(el.value, 10)] || "Baton";' +
+'  });' +
+'  var ccSpan = document.getElementById("centerCircleStatusLabel");' +
+'  var ccEl = document.getElementById("centerCircleRadius");' +
+'  if (ccSpan && ccEl) {' +
+'    var ccVal = parseInt(ccEl.value, 10) || 0;' +
+'    ccSpan.textContent = ccVal > 0 ? (ccVal + "px") : "Off";' +
+'  }' +
+'  var shSpan = document.getElementById("shadowStyleStatusLabel");' +
+'  var shEl = document.getElementById("shadowTranslucent");' +
+'  if (shSpan && shEl) shSpan.textContent = shEl.value === "false" ? "Solid" : "Translucent";' +
+'  var anyHandShadow = ["hour", "min", "sec"].some(function (kind) {' +
+'    var el = document.getElementById(heHiddenPrefix(kind) + "ShadowEnabled");' +
+'    return el && el.value === "true";' +
+'  });' +
+'  var shBtn = document.getElementById("shadowStyleTriggerBtn");' +
+'  if (shBtn) shBtn.disabled = !anyHandShadow;' +
+'  ["Hour", "Sec"].forEach(function (kindCap) {' +
+'    var span = document.getElementById("cm" + kindCap + "StatusLabel");' +
+'    var el = document.getElementById("custom" + kindCap + "Style");' +
+'    var thickEl = document.getElementById("custom" + kindCap + "Thickness");' +
+'    if (el && span) span.textContent = (thickEl && thickEl.value === "0") ? "Off" : customMarkerStyleLabel(el.value);' +
+'  });' +
+'  var numSpan = document.getElementById("numeralsStatusLabel");' +
+'  var numEl = document.getElementById("markerTextTarget");' +
+'  if (numSpan && numEl) numSpan.textContent = markerTextTargetLabel(numEl.value);' +
+'}' +
+'function updateHandStyleIconTriggerLabel(p) {' +
+'  var sel = document.getElementById(p + "Style");' +
+'  var trigger = document.getElementById(p + "StyleTrigger");' +
+'  if (!sel || !trigger) return;' +
+'  var preview = trigger.querySelector(".hand-style-icon-preview");' +
+'  var name = trigger.querySelector(".font-picker-name");' +
+'  var src = HAND_STYLE_ICON_IMAGES[sel.value];' +
+'  if (preview) preview.innerHTML = src ? \'<img src="\' + src + \'" alt="">\' : "";' +
+'  if (name) name.textContent = HAND_STYLE_NAMES[parseInt(sel.value, 10)] || "";' +
+'}' +
+'var HAND_STYLE_ICON_PREFIX = null;' +
+'var HAND_STYLE_ICON_KIND = null;' +
+'function openHandStyleIconPicker(p, kind) {' +
+'  HAND_STYLE_ICON_PREFIX = p;' +
+'  HAND_STYLE_ICON_KIND = kind;' +
+'  renderHandStyleIconGrid();' +
+'  document.getElementById("handStyleIconPickerModal").className = "modal-overlay open";' +
+'}' +
+'function closeHandStyleIconPicker() {' +
+'  document.getElementById("handStyleIconPickerModal").className = "modal-overlay";' +
+'}' +
+'function renderHandStyleIconGrid() {' +
+'  var sel = document.getElementById(HAND_STYLE_ICON_PREFIX + "Style");' +
+'  var currentVal = sel ? sel.value : "0";' +
+'  var html = "";' +
+'  for (var i = 0; i < HAND_STYLE_NAMES.length; i++) {' +
+'    var src = HAND_STYLE_ICON_IMAGES[String(i)];' +
+'    var selected = String(i) === String(currentVal);' +
+'    html += \'<button type="button" class="font-picker-btn\' + (selected ? " selected" : "") + \'" onclick="chooseHandStyleIcon(\' + i + \')">\' +' +
+'      \'<span class="font-picker-preview hand-style-icon-preview">\' + (src ? \'<img src="\' + src + \'" alt="">\' : "") + "</span>" +' +
+'      \'<span class="font-picker-name">\' + esc(HAND_STYLE_NAMES[i]) + "</span></button>";' +
+'  }' +
+'  document.getElementById("handStyleIconPickerGrid").innerHTML = html;' +
+'}' +
+'function chooseHandStyleIcon(value) {' +
+'  var sel = document.getElementById(HAND_STYLE_ICON_PREFIX + "Style");' +
+'  if (sel) sel.value = value;' +
+'  closeHandStyleIconPicker();' +
+'  onCustomHandStyleChange(HAND_STYLE_ICON_KIND);' +
+'}' +
+
+// Same shape as the hand-style icon picker just above, for
+// weather_icon_style\'s own 3 options instead of HandConfig.style\'s 11.
+'function updateWeatherIconStyleTriggerLabel() {' +
+'  var sel = document.getElementById("weatherIconStyle");' +
+'  var trigger = document.getElementById("weatherIconStyleTrigger");' +
+'  if (!sel || !trigger) return;' +
+'  var preview = trigger.querySelector(".weather-icon-style-preview");' +
+'  var name = trigger.querySelector(".font-picker-name");' +
+'  var src = WEATHER_ICON_STYLE_PREVIEWS[sel.value];' +
+'  if (preview) preview.innerHTML = src ? \'<img src="\' + src + \'" alt="">\' : "";' +
+'  if (name) name.textContent = WEATHER_ICON_STYLE_NAMES[parseInt(sel.value, 10)] || "";' +
+'}' +
+'function openWeatherIconStylePicker() {' +
+'  renderWeatherIconStylePickerGrid();' +
+'  document.getElementById("weatherIconStylePickerModal").className = "modal-overlay open";' +
+'}' +
+'function closeWeatherIconStylePicker() {' +
+'  document.getElementById("weatherIconStylePickerModal").className = "modal-overlay";' +
+'}' +
+'function renderWeatherIconStylePickerGrid() {' +
+'  var sel = document.getElementById("weatherIconStyle");' +
+'  var currentVal = sel ? sel.value : "1";' +
+'  var html = "";' +
+'  for (var i = 0; i < WEATHER_ICON_STYLE_NAMES.length; i++) {' +
+'    var src = WEATHER_ICON_STYLE_PREVIEWS[String(i)];' +
+'    var selected = String(i) === String(currentVal);' +
+'    html += \'<button type="button" class="font-picker-btn\' + (selected ? " selected" : "") + \'" onclick="chooseWeatherIconStyle(\' + i + \')">\' +' +
+'      \'<span class="font-picker-preview weather-icon-style-preview">\' + (src ? \'<img src="\' + src + \'" alt="">\' : "") + "</span>" +' +
+'      \'<span class="font-picker-name">\' + esc(WEATHER_ICON_STYLE_NAMES[i]) + "</span></button>";' +
+'  }' +
+'  document.getElementById("weatherIconStylePickerGrid").innerHTML = html;' +
+'}' +
+'function chooseWeatherIconStyle(value) {' +
+'  var sel = document.getElementById("weatherIconStyle");' +
+'  if (sel) sel.value = value;' +
+'  closeWeatherIconStylePicker();' +
+'  updateWeatherIconStyleTriggerLabel();' +
+'}' +
+// Shows/hides the Hollow thickness slider based on the Hollow
+// checkbox -- called both on the checkbox's own onchange and once up
+// front when the popup opens/gets prefilled.
+'function updateHandHollowVisibility(kind) {' +
+'  var p = hePopupPrefix(kind);' +
+'  var box = document.getElementById(p + "Hollow");' +
+'  var row = document.getElementById(p + "HollowThicknessRow");' +
+'  if (row) row.style.display = (box && box.checked) ? "" : "none";' +
+'}' +
+'function onHandHollowChange(kind) {' +
+'  updateHandHollowVisibility(kind);' +
+'  updatePreview();' +
+'}' +
+'function onCustomHandStyleChange(kind) {' +
+'  updateHandFieldVisibility(kind);' +
+'  updatePreview();' +
+'}' +
+// Which hand editor popup (if any) is currently open -- null when
+// closed. updatePreview()'s readHandConfig() checks this: for the hand
+// currently being edited, it reads the popup's own draft fields
+// (hePopupPrefix) so the preview reflects every slider drag/checkbox
+// toggle live, per the request; for every other hand (and once this
+// one closes, saved or cancelled), it reads the committed handHour*/
+// handMin*/handSec* hidden fields instead -- which is also exactly
+// what makes Cancel work correctly: an untouched committed value is
+// what the preview falls back to the moment the popup closes without
+// a Save.
+'var s_openHandEditorKind = null;' +
+'function onHandSliderInput(kind) {' +
+'  updateHandValLabels(kind);' +
+'  updatePreview();' +
+'}' +
+// Pre-fills the popup from the currently-saved handHour*/handMin*/
+// handSec* hidden inputs -- nothing is written back until
+// saveHandEditor() runs.
+'function openHandEditor(kind) {' +
+'  s_openHandEditorKind = kind;' +
+'  var hp = heHiddenPrefix(kind), p = hePopupPrefix(kind);' +
+'  HE_FIELDS.forEach(function (f) {' +
+'    var hidden = document.getElementById(hp + f);' +
+'    var popupEl = document.getElementById(p + f);' +
+'    if (!hidden || !popupEl) return;' +
+'    if (HE_CHECKBOX_FIELDS.indexOf(f) !== -1) { popupEl.checked = hidden.value === "true"; } else { popupEl.value = hidden.value; }' +
+'  });' +
+'  updateHandValLabels(kind);' +
+'  updateHandFieldVisibility(kind);' +
+'  updateHandHollowVisibility(kind);' +
+'  document.getElementById("handEditorModal-" + kind).className = "modal-overlay open";' +
+'}' +
+'function closeHandEditor(kind) {' +
+'  s_openHandEditorKind = null;' +
+'  document.getElementById("handEditorModal-" + kind).className = "modal-overlay";' +
+'  updatePreview();' +
+'}' +
+'function saveHandEditor(kind) {' +
+'  s_openHandEditorKind = null;' +
+'  var hp = heHiddenPrefix(kind), p = hePopupPrefix(kind);' +
+'  HE_FIELDS.forEach(function (f) {' +
+'    var hidden = document.getElementById(hp + f);' +
+'    var popupEl = document.getElementById(p + f);' +
+'    if (!hidden || !popupEl) return;' +
+'    hidden.value = (HE_CHECKBOX_FIELDS.indexOf(f) !== -1) ? String(popupEl.checked) : popupEl.value;' +
+'  });' +
+'  closeHandEditor(kind);' +
+'  updateHandStyleButtonLabel();' +
+'  refreshEditButtonLabels();' +
+'  updatePreview();' +
+'}' +
+// Copies the OTHER hand's last-saved settings into this popup's draft
+// controls (not committed until OK) -- direction is fixed per hand, see
+// HAND_COPY_SOURCE: hour<-minute, minute<-hour, second<-minute.
+'function copyHandConfig(kind) {' +
+'  var srcHp = heHiddenPrefix(HAND_COPY_SOURCE[kind]);' +
+'  var p = hePopupPrefix(kind);' +
+'  HE_FIELDS.forEach(function (f) {' +
+'    var src = document.getElementById(srcHp + f);' +
+'    var dst = document.getElementById(p + f);' +
+'    if (!src || !dst) return;' +
+'    if (HE_CHECKBOX_FIELDS.indexOf(f) !== -1) { dst.checked = src.value === "true"; } else { dst.value = src.value; }' +
+'  });' +
+'  updateHandValLabels(kind);' +
+'  updateHandFieldVisibility(kind);' +
+'  updateHandHollowVisibility(kind);' +
+'}' +
+
+'function onCornerFontChange() {' +
+'  renderSlotPicker();' +
+'  updatePreview();' +
+'}' +
+// Falls back to the group's first button (Off, for every current
+// caller) when val doesn't match any button's own data-value -- same
+// reasoning as verticalButtonGroupHtml()'s own comment, but for
+// values arriving after the initial render (a preset being applied
+// via applyStyleCornersJson(), which sets the hidden field\'s value
+// straight from possibly-stale saved JSON before calling this). Also
+// corrects the hidden field itself to the fallback value, not just
+// the highlighted button, so a subsequent Save persists the sane
+// fallback rather than the original invalid string.
+'function selectVerticalOption(groupId, hiddenId, val) {' +
+'  var buttons = document.getElementById(groupId).getElementsByClassName("mode-btn-vertical");' +
+'  var matched = false;' +
+'  for (var i = 0; i < buttons.length; i++) {' +
+'    if (buttons[i].getAttribute("data-value") === val) { matched = true; break; }' +
+'  }' +
+'  if (!matched && buttons.length) val = buttons[0].getAttribute("data-value");' +
+'  document.getElementById(hiddenId).value = val;' +
+'  for (var j = 0; j < buttons.length; j++) {' +
+'    buttons[j].className = "mode-btn-vertical" + (buttons[j].getAttribute("data-value") === val ? " active" : "");' +
+'  }' +
+'  updatePreview();' +
+'}' +
+// Same "hidden field is the real value, buttons just reflect it"
+// mechanics as selectVerticalOption() above, for a modeButtonGroupHtml()
+// row instead of a verticalButtonGroupHtml() one -- shared by every
+// converted dropdown below except Sky style, which needs its own
+// extra step (see selectSkyMode() right after this).
+'function selectModeButton(groupId, hiddenId, val) {' +
+'  document.getElementById(hiddenId).value = val;' +
+'  var buttons = document.getElementById(groupId).getElementsByClassName("mode-btn");' +
+'  for (var i = 0; i < buttons.length; i++) {' +
+'    buttons[i].className = "mode-btn" + (buttons[i].getAttribute("data-value") === val ? " active" : "");' +
+'  }' +
+'}' +
+// For the few places something OTHER than a direct button tap changes
+// one of these hidden fields\' value -- a preset being applied, or a
+// popup being pre-filled from already-saved state on open -- and the
+// button group needs to catch up to reflect it, since setting
+// .value on the hidden input alone (the way any of those already did
+// before the field in question was a plain <select>) doesn\'t touch
+// the buttons\' own "active" class the way a real tap does via
+// selectModeButton() above.
+'function refreshModeButtonGroup(groupId, hiddenId) {' +
+'  var group = document.getElementById(groupId);' +
+'  var hidden = document.getElementById(hiddenId);' +
+'  if (!group || !hidden) return;' +
+'  var buttons = group.getElementsByClassName("mode-btn");' +
+'  for (var i = 0; i < buttons.length; i++) {' +
+'    buttons[i].className = "mode-btn" + (buttons[i].getAttribute("data-value") === hidden.value ? " active" : "");' +
+'  }' +
+'}' +
+'function onOutlineStyleChange(val) {' +
+'  selectModeButton("outlineStyleGroup", "outlineStyle", val);' +
+'  updatePreview();' +
+'}' +
+// Rounds an <input type="time"> element\'s "HH:MM" value to the
+// nearest whole hour (23:xx rounds up to 00:00 the same as any other
+// hour, matching a plain clock-face reading of "closer to midnight
+// than to 11pm"). Used both right when "On full hours" is picked
+// (so a previously-set 8:15 becomes 8:00 immediately) and on every
+// live edit of either time field while that mode stays selected --
+// see onHourlyVibeTimeChange() below.
+'function roundTimeInputToHour(el) {' +
+'  if (!el || !el.value) return;' +
+'  var parts = el.value.split(":");' +
+'  var h = parseInt(parts[0], 10) || 0, m = parseInt(parts[1], 10) || 0;' +
+'  if (m >= 30) h = (h + 1) % 24;' +
+'  el.value = (h < 10 ? "0" : "") + h + ":00";' +
+'}' +
+// Shows the Minutes interval slider only for "Every X minutes",
+// grays out (and, via pointer-events:none from .grayed-out, disables)
+// every sub-option -- pattern, time range, days, override-quiet --
+// when Hourly vibrations is "Off" outright, since none of them mean
+// anything without vibrations happening at all, and snaps both time
+// fields to a whole hour the instant "On full hours" is chosen.
+'function updateHourlyVibeVisibility() {' +
+'  var mode = document.getElementById("hourlyVibeMode").value;' +
+'  var intervalRow = document.getElementById("hourlyVibeIntervalRow");' +
+'  var subOptions = document.getElementById("hourlyVibeSubOptions");' +
+'  var quietRow = document.getElementById("hourlyVibeOverrideQuietRow");' +
+'  if (intervalRow) intervalRow.style.display = (mode === "2") ? "" : "none";' +
+'  if (subOptions) subOptions.className = (mode === "0") ? "grayed-out" : "";' +
+'  if (quietRow) quietRow.className = "checkbox-row" + (mode === "0" ? " grayed-out" : "");' +
+'  if (mode === "1") {' +
+'    roundTimeInputToHour(document.getElementById("hourlyVibeStartTime"));' +
+'    roundTimeInputToHour(document.getElementById("hourlyVibeEndTime"));' +
+'  }' +
+'}' +
+'function onHourlyVibeModeChange(val) {' +
+'  selectVerticalOption("hourlyVibeModeGroup", "hourlyVibeMode", val);' +
+'  updateHourlyVibeVisibility();' +
+'}' +
+'function onHourlyVibeTimeChange(id) {' +
+'  if (document.getElementById("hourlyVibeMode").value === "1") {' +
+'    roundTimeInputToHour(document.getElementById(id));' +
+'  }' +
+'  updatePreview();' +
+'}' +
+// hourlyVibeDaysMask: one bit per day, bit i = HOURLY_VIBE_DAY_LABELS[i]
+// (Sun=bit 0 .. Sat=bit 6), matching struct tm\'s own tm_wday directly
+// -- see that array\'s own comment. Independent toggle, not a "pick
+// one" group, so this flips a single bit rather than calling
+// selectModeButton()/selectVerticalOption().
+'function toggleHourlyVibeDay(bit) {' +
+'  var hidden = document.getElementById("hourlyVibeDaysMask");' +
+'  var mask = parseInt(hidden.value, 10) || 0;' +
+'  mask ^= (1 << bit);' +
+'  hidden.value = String(mask);' +
+'  var btn = document.querySelector(\'.day-toggle-btn[data-bit="\' + bit + \'"]\');' +
+'  if (btn) btn.className = "day-toggle-btn" + ((mask & (1 << bit)) ? " active" : "");' +
+'  updatePreview();' +
+'}' +
+'function selectShadowTranslucent(val) {' +
+'  selectModeButton("shadowTranslucentGroup", "shadowTranslucent", val);' +
+'  refreshEditButtonLabels();' +
+'  updatePreview();' +
+'}' +
+'function onAnalogStyleChange() { updatePreview(); }' +
+
+'function updateColorRoleButtons(scheme) {' +
+'  var colors = scheme === "night" ? nightColors() : dayColors();' +
+'  var prefix = scheme === "night" ? "swatchNight" : "swatch";' +
+'  document.getElementById(prefix + "Main").style.background = colors.text;' +
+'  document.getElementById(prefix + "Accent").style.background = colors.accent;' +
+'  document.getElementById(prefix + "Bg").style.background = colors.bg;' +
+'  updateColorPresetTriggerLabel(scheme);' +
+'}' +
+
+'function hexToByte(hex) {' +
+'  var r = parseInt(hex.substr(1, 2), 16), g = parseInt(hex.substr(3, 2), 16), b = parseInt(hex.substr(5, 2), 16);' +
+'  function to2bit(v) { return Math.round(v / 85); }' +
+'  return packedByteFor(to2bit(r), to2bit(g), to2bit(b));' +
+'}' +
+
+// ---- Color preset picker -------------------------------------------
+// A preset\'s own `label` is already written as "<Main> on <Background>"
+// (optionally followed by ", <Accent> accent" when the accent differs
+// from the main color -- see COLOR_SCHEMES\' own comment) -- these two
+// helpers split that one string back into the two separate pieces this
+// popup shows on its own two lines, rather than duplicating the accent
+// name a second time by showing the label\'s full text verbatim on line
+// 1 as well as again on line 2.
+'function mainColorPhrase(label) {' +
+'  var idx = label.indexOf(",");' +
+'  return idx === -1 ? label : label.substring(0, idx);' +
+'}' +
+'function accentColorName(label) {' +
+'  var m = /,\\s*(.+?)\\s+accent$/.exec(label);' +
+'  if (m) return m[1];' +
+'  var m2 = /^(.+?)\\s+on\\s+/.exec(label);' +
+'  return m2 ? m2[1] : label;' +
+'}' +
+// The one preset (if any) whose 3 colors exactly match the current
+// ones -- null means none do, i.e. the current colors are genuinely
+// custom. Used both to mark that one button "selected" in the popup
+// and to decide what the trigger button itself should say.
+'function matchingPresetId(colors) {' +
+'  for (var i = 0; i < COLOR_SCHEMES.length; i++) {' +
+'    var s = COLOR_SCHEMES[i];' +
+'    if (s.bg.toLowerCase() === colors.bg.toLowerCase() && s.text.toLowerCase() === colors.text.toLowerCase() && s.accent.toLowerCase() === colors.accent.toLowerCase()) {' +
+'      return s.id;' +
+'    }' +
+'  }' +
+'  return null;' +
+'}' +
+// Mirrors whatever the popup itself would show for the currently
+// active entry (a matching preset\'s own two lines, or the "Custom: ..."
+// pair when nothing matches) -- called from updateColorRoleButtons()
+// above, so it\'s always in sync with the swatches without needing its
+// own separate call site at every place colors can change.
+'function updateColorPresetTriggerLabel(scheme) {' +
+'  var colors = scheme === "night" ? nightColors() : dayColors();' +
+'  var trigger = document.getElementById(scheme === "night" ? "nightSchemePresetTrigger" : "colorSchemePresetTrigger");' +
+'  if (!trigger) return;' +
+'  var mainLine = trigger.querySelector(".color-preset-main-line");' +
+'  var accentLine = trigger.querySelector(".color-preset-accent-line");' +
+'  trigger.style.background = colors.bg;' +
+'  var matchId = matchingPresetId(colors);' +
+'  if (matchId !== null) {' +
+'    var preset = findPresetById(matchId);' +
+'    if (mainLine) { mainLine.textContent = mainColorPhrase(preset.label); mainLine.style.color = preset.text; }' +
+'    if (accentLine) { accentLine.textContent = accentColorName(preset.altLabel); accentLine.style.color = preset.accent; }' +
+'  } else {' +
+'    if (mainLine) { mainLine.textContent = "Custom"; mainLine.style.color = colors.text; }' +
+'    if (accentLine) { accentLine.textContent = "Accent color"; accentLine.style.color = colors.accent; }' +
+'  }' +
+'}' +
+'var CURRENT_PRESET_SCHEME = "day";' +
+'var SHOW_ALL_COLOR_PRESETS = false;' +
+'function openColorPresetPicker(scheme) {' +
+'  CURRENT_PRESET_SCHEME = scheme || "day";' +
+'  var nightEnabled = document.getElementById("nightEnabled");' +
+'  SHOW_ALL_COLOR_PRESETS = nightEnabled ? !nightEnabled.checked : false;' +
+'  document.getElementById("colorPresetPickerTitle").textContent = (scheme === "night") ? "Night color preset" : "Color preset";' +
+'  var showAll = document.getElementById("showAllColorPresets");' +
+'  if (showAll) showAll.checked = SHOW_ALL_COLOR_PRESETS;' +
+'  renderColorPresetGrid();' +
+'  document.getElementById("colorPresetPickerModal").className = "modal-overlay open";' +
+'}' +
+'function closeColorPresetPicker() {' +
+'  document.getElementById("colorPresetPickerModal").className = "modal-overlay";' +
+'}' +
+// One button per COLOR_SCHEMES entry, colored in that preset\'s own
+// background, plus one final "Custom" button (see this file\'s own
+// request/comment above) showing whatever the current colors actually
+// are -- not a separate footer action, just the last item in the same
+// list. Re-run whenever the popup opens and whenever it matters which
+// entry counts as "selected" -- which is only ever "which one, if any,
+// matches the current colors", so there\'s nothing else to invalidate
+// this on.
+'function renderColorPresetGrid() {' +
+'  var scheme = CURRENT_PRESET_SCHEME;' +
+'  var colors = scheme === "night" ? nightColors() : dayColors();' +
+'  var matchId = matchingPresetId(colors);' +
+'  var html = "";' +
+'  COLOR_SCHEMES.forEach(function (s) {' +
+'    if (!SHOW_ALL_COLOR_PRESETS && s.mode && s.mode !== "both" && s.mode !== scheme) return;' +
+'    var selected = matchId !== null && String(matchId) === String(s.id);' +
+'    html += \'<button type="button" class="color-preset-btn\' + (selected ? " selected" : "") + \'" style="background:\' + s.bg + \';" onclick="chooseColorPreset(\' + s.id + \')">\' +' +
+'      \'<span class="color-preset-main-line" style="color:\' + s.text + \';">\' + esc(s.label) + "</span>" +' +
+'      \'<span class="color-preset-accent-line" style="color:\' + s.accent + \';">\' + esc(s.altLabel) + "</span></button>";' +
+'  });' +
+'  var customSelected = matchId === null;' +
+'  html += \'<button type="button" class="color-preset-btn\' + (customSelected ? " selected" : "") + \'" style="background:\' + colors.bg + \';" onclick="chooseColorPreset(null)">\' +' +
+'    \'<span class="color-preset-main-line" style="color:\' + colors.text + \';">(Custom)Main color</span>\' +' +
+'    \'<span class="color-preset-accent-line" style="color:\' + colors.accent + \';">Accent color</span></button>\';' +
+'  document.getElementById("colorPresetPickerGrid").innerHTML = html;' +
+'}' +
+'function onShowAllColorPresetsToggle() {' +
+'  var checkbox = document.getElementById("showAllColorPresets");' +
+'  SHOW_ALL_COLOR_PRESETS = !!(checkbox && checkbox.checked);' +
+'  renderColorPresetGrid();' +
+'}' +
+// null id means "Custom" was tapped -- same as tapping outside the
+// popup, that just closes it without touching any colors (there\'s
+// nothing to "apply" -- the current colors already are what they are).
+'function chooseColorPreset(id) {' +
+'  var scheme = CURRENT_PRESET_SCHEME;' +
+'  closeColorPresetPicker();' +
+'  if (id === null || id === undefined) return;' +
+'  var preset = findPresetById(id);' +
+'  document.getElementById(customHiddenIdFor("text", scheme)).value = hexToByte(preset.text);' +
+'  document.getElementById(customHiddenIdFor("accent", scheme)).value = hexToByte(preset.accent);' +
+'  document.getElementById(customHiddenIdFor("bg", scheme)).value = hexToByte(preset.bg);' +
+'  updateColorRoleButtons(scheme);' +
+'  if (scheme !== "night") updatePreview();' +
+'}' +
+
+'var CURRENT_PICKER_ROLE = null;' +
+'var CURRENT_PICKER_SCHEME = "day";' +
+'function openColorPicker(role, scheme) {' +
+'  CURRENT_PICKER_ROLE = role;' +
+'  CURRENT_PICKER_SCHEME = scheme || "day";' +
+'  var titles = { text: "Pick main color", accent: "Pick accent color", bg: "Pick background color" };' +
+'  document.getElementById("colorPickerTitle").textContent = titles[role] || "Pick a color";' +
+'  renderHexColorGrid();' +
+'  document.getElementById("colorPickerModal").className = "modal-overlay open";' +
+'}' +
+'function closeColorPicker() {' +
+'  document.getElementById("colorPickerModal").className = "modal-overlay";' +
+'  CURRENT_PICKER_ROLE = null;' +
+'}' +
+'function goBack() {' +
+'  document.location = getQueryParam("return_to", "pebblejs://close#");' +
+'}' +
+'var donateSkyRaf = 0;' +
+'var donateSkyStart = 0;' +
+'var DONATE_SKY_PERIOD_MS = 14000;' +
+'var DONATE_SKY_STOPS = [' +
+'  { p: 0.00, top: [185,229,244], bottom: [233,244,223] },' +
+'  { p: 0.30, top: [159,200,216], bottom: [209,220,203] },' +
+'  { p: 0.36, top: [102,117,132], bottom: [139,139,130] },' +
+'  { p: 0.42, top: [48,53,65], bottom: [68,67,74] },' +
+'  { p: 0.46, top: [23,26,40], bottom: [36,35,51] },' +
+'  { p: 0.58, top: [23,26,40], bottom: [36,35,51] },' +
+'  { p: 0.64, top: [48,53,65], bottom: [68,67,74] },' +
+'  { p: 0.70, top: [102,117,132], bottom: [139,139,130] },' +
+'  { p: 0.76, top: [159,200,216], bottom: [209,220,203] },' +
+'  { p: 1.00, top: [185,229,244], bottom: [233,244,223] }' +
+'];' +
+'function donateSkyEase(t) {' +
+'  t = Math.max(0, Math.min(1, t));' +
+'  return t * t * (3 - 2 * t);' +
+'}' +
+'function donateSkyColor(a, b, t) {' +
+'  t = donateSkyEase(t);' +
+'  return [Math.round(a[0] + (b[0] - a[0]) * t), Math.round(a[1] + (b[1] - a[1]) * t), Math.round(a[2] + (b[2] - a[2]) * t)];' +
+'}' +
+'function donateSkyCss(c) { return "rgb(" + c[0] + ", " + c[1] + ", " + c[2] + ")"; }' +
+'function donateSkyFrame(ts) {' +
+'  var header = document.querySelector("#donateModal .donate-header");' +
+'  if (!header || document.getElementById("donateModal").className.indexOf("open") < 0) { donateSkyRaf = 0; return; }' +
+'  if (!donateSkyStart) donateSkyStart = ts;' +
+'  var phase = ((ts - donateSkyStart) % DONATE_SKY_PERIOD_MS) / DONATE_SKY_PERIOD_MS;' +
+'  var a = DONATE_SKY_STOPS[0], b = DONATE_SKY_STOPS[DONATE_SKY_STOPS.length - 1];' +
+'  for (var i = 0; i < DONATE_SKY_STOPS.length - 1; i++) {' +
+'    if (phase >= DONATE_SKY_STOPS[i].p && phase <= DONATE_SKY_STOPS[i + 1].p) { a = DONATE_SKY_STOPS[i]; b = DONATE_SKY_STOPS[i + 1]; break; }' +
+'  }' +
+'  var span = b.p - a.p || 1;' +
+'  var local = (phase - a.p) / span;' +
+'  header.style.setProperty("--donate-sky-top", donateSkyCss(donateSkyColor(a.top, b.top, local)));' +
+'  header.style.setProperty("--donate-sky-bottom", donateSkyCss(donateSkyColor(a.bottom, b.bottom, local)));' +
+'  donateSkyRaf = window.requestAnimationFrame(donateSkyFrame);' +
+'}' +
+'function startDonateSkyAnimation() {' +
+'  if (donateSkyRaf) window.cancelAnimationFrame(donateSkyRaf);' +
+'  donateSkyStart = 0;' +
+'  donateSkyRaf = window.requestAnimationFrame(donateSkyFrame);' +
+'}' +
+'function stopDonateSkyAnimation() {' +
+'  if (donateSkyRaf) window.cancelAnimationFrame(donateSkyRaf);' +
+'  donateSkyRaf = 0;' +
+'  donateSkyStart = 0;' +
+'}' +
+'function openDonateModal() {' +
+'  document.getElementById("donateModal").className = "modal-overlay open";' +
+'  startDonateSkyAnimation();' +
+'}' +
+'function closeDonateModal() {' +
+'  document.getElementById("donateModal").className = "modal-overlay";' +
+'  stopDonateSkyAnimation();' +
+'}' +
+// The bar's own height varies by device (font scaling, safe-area
+// insets) and is capped at 25vh by CSS, so this measures it after
+// layout rather than assuming a fixed value, and pushes the
+// scrollable content down by exactly that much so nothing starts out
+// hidden underneath it.
+'var aboutLogoTapCount = 0;' +
+'var aboutLogoTapResetTimer = 0;' +
+'function tapAboutLogo() {' +
+'  var logo = document.getElementById("aboutEasterEggLogo");' +
+'  if (logo) {' +
+'    logo.classList.remove("logo-tap-effect");' +
+// offsetWidth is an HTMLElement-only property -- reading it on an
+// SVGElement (this used to be an <img>, now an inline <svg>) is
+// unreliable across webviews and doesn't dependably force the reflow
+// this needs between removing and re-adding the class, so the very
+// first tap plays fine (nothing to restart) but every tap after that
+// silently no-ops (the class never actually left the element from the
+// browser's point of view). getBoundingClientRect() forces the same
+// style/layout flush but is a plain Element method, defined the same
+// way for SVG and HTML elements, so the restart is reliable either way.
+'    void logo.getBoundingClientRect();' +
+'    logo.classList.add("logo-tap-effect");' +
+'  }' +
+'  aboutLogoTapCount++;' +
+'  if (aboutLogoTapResetTimer) window.clearTimeout(aboutLogoTapResetTimer);' +
+'  if (aboutLogoTapCount >= 10) {' +
+'    aboutLogoTapCount = 0;' +
+'    var body = document.body;' +
+'    if (body.classList.contains("retro-easter-egg")) {' +
+'      body.classList.remove("retro-easter-egg");' +
+'      body.classList.add("liquid-glass-easter-egg");' +
+'    } else if (body.classList.contains("liquid-glass-easter-egg")) {' +
+'      body.classList.remove("liquid-glass-easter-egg");' +
+'    } else {' +
+'      body.classList.add("retro-easter-egg");' +
+'    }' +
+'    var logo = document.getElementById("aboutEasterEggLogo");' +
+'    if (logo) {' +
+'      logo.classList.remove("retro-easter-flash");' +
+'      void logo.getBoundingClientRect();' +
+'      logo.classList.add("retro-easter-flash");' +
+'    }' +
+'    return;' +
+'  }' +
+'  aboutLogoTapResetTimer = window.setTimeout(function() {' +
+'    aboutLogoTapCount = 0;' +
+'    aboutLogoTapResetTimer = 0;' +
+'  }, 2200);' +
+'}' +
+'function openAboutModal(button) {' +
+'  var modal = document.getElementById("aboutModal");' +
+'  var box = modal ? modal.querySelector(".about-modal-box") : null;' +
+'  if (!modal || !box) return;' +
+'  var rect = button ? button.getBoundingClientRect() : null;' +
+'  var originX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;' +
+'  var originY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;' +
+'  box.style.setProperty("--about-dx", (originX - window.innerWidth / 2) + "px");' +
+'  box.style.setProperty("--about-dy", (originY - window.innerHeight / 2) + "px");' +
+'  modal.className = "modal-overlay open";' +
+'}' +
+'function closeAboutModal() {' +
+'  document.getElementById("aboutModal").className = "modal-overlay";' +
+'}' +
+'function adjustTopBarSpacing() {' +
+'  var bar = document.getElementById("topBar");' +
+'  if (!bar) return;' +
+'  document.body.style.paddingTop = bar.offsetHeight + "px";' +
+'}' +
+'window.addEventListener("load", adjustTopBarSpacing);' +
+'window.addEventListener("resize", adjustTopBarSpacing);' +
+'function customHiddenIdFor(role, scheme) {' +
+'  var prefix = scheme === "night" ? "night" : "";' +
+'  if (role === "text") return prefix ? "nightCustomTextValue" : "customTextValue";' +
+'  if (role === "accent") return prefix ? "nightCustomAccentValue" : "customAccentValue";' +
+'  return prefix ? "nightCustomBgValue" : "customBgValue";' +
+'}' +
+
+// Converts 0-255 RGB to HSL (h in degrees 0-360, s/l 0-1) -- used to
+// arrange the wheel by hue, the way a real color wheel reads.
+// Exact layout of Pebble's real color-picker tool (developer.rebble.io/
+// guides/tools-and-resources/color-picker/), extracted directly from
+// its SVG: each hexagon's pixel center was converted to axial (q, r)
+// hex-grid coordinates (pointy-top orientation -- flat left/right
+// sides, pointed top/bottom vertices, unlike the flat-top approximation
+// used before), and matched to its packed color byte. The shape isn't
+// a simple symmetric hexagon; flood-filling from outside the shape\'s
+// bounding box found exactly 5 cells fully enclosed by colored
+// neighbors on all sides but not themselves colored -- those are the
+// genuine hollow gaps, listed separately below.
+'var PEBBLE_WHEEL_POSITIONS = [' +
+'{q:-5,r:2,b:239},{q:-4,r:1,b:223},{q:-3,r:-1,b:222},{q:-3,r:0,b:206},{q:-3,r:1,b:207},{q:-3,r:3,b:219},{q:-3,r:4,b:199},{q:-2,r:-4,b:238},{q:-2,r:-3,b:221},{q:-2,r:-2,b:205},{q:-2,r:-1,b:201},{q:-2,r:0,b:202},{q:-2,r:2,b:203},{q:-2,r:3,b:195},{q:-2,r:4,b:215},{q:-2,r:5,b:235},{q:-1,r:-3,b:204},{q:-1,r:-2,b:200},{q:-1,r:-1,b:217},{q:-1,r:0,b:218},{q:-1,r:1,b:198},{q:-1,r:2,b:194},{q:-1,r:3,b:211},{q:-1,r:4,b:214},{q:0,r:-4,b:220},{q:0,r:-2,b:216},{q:0,r:-1,b:196},{q:0,r:0,b:197},{q:0,r:2,b:193},{q:0,r:3,b:210},{q:0,r:4,b:227},{q:0,r:5,b:231},{q:1,r:-5,b:237},{q:1,r:-4,b:236},{q:1,r:-2,b:233},{q:1,r:-1,b:212},{q:1,r:2,b:209},{q:1,r:3,b:226},{q:1,r:4,b:230},{q:2,r:-2,b:232},{q:2,r:1,b:208},{q:2,r:2,b:225},{q:2,r:3,b:243},{q:2,r:4,b:247},{q:3,r:-3,b:252},{q:3,r:-2,b:248},{q:3,r:-1,b:228},{q:3,r:0,b:229},{q:3,r:1,b:224},{q:3,r:2,b:242},{q:3,r:3,b:246},{q:3,r:4,b:251},{q:4,r:-5,b:254},{q:4,r:-4,b:253},{q:4,r:-3,b:249},{q:4,r:-2,b:244},{q:4,r:-1,b:240},{q:4,r:0,b:241},{q:5,r:-1,b:245},{q:6,r:-5,b:234},{q:6,r:-4,b:192},{q:6,r:-2,b:250},{q:7,r:-5,b:255},{q:7,r:-4,b:213}' +
+'];' +
+'var PEBBLE_WHEEL_HOLLOW = [{q:0,r:1},{q:1,r:0},{q:1,r:1},{q:2,r:-1},{q:2,r:0}];' +
+
+'function renderHexColorGrid() {' +
+'  var container = document.getElementById("hexColorGrid");' +
+'  container.innerHTML = "";' +
+'  var hiddenId = customHiddenIdFor(CURRENT_PICKER_ROLE, CURRENT_PICKER_SCHEME);' +
+'  var selected = parseInt(document.getElementById(hiddenId).value, 10);' +
+'  var size = 15;' +
+'  var centerX = 130, centerY = 127.5;' + // must match .hex-grid's fixed CSS width/height
+'  function place(q, r) {' +
+'    return {' +
+'      x: centerX + size * Math.sqrt(3) * (q + r / 2),' +
+'      y: centerY + size * 1.5 * r' +
+'    };' +
+'  }' +
+'  for (var i = 0; i < PEBBLE_WHEEL_POSITIONS.length; i++) {' +
+'    var pos = PEBBLE_WHEEL_POSITIONS[i];' +
+'    var pt = place(pos.q, pos.r);' +
+'    var sw = document.createElement("div");' +
+'    sw.style.left = pt.x + "px";' +
+'    sw.style.top = pt.y + "px";' +
+'    sw.className = "hex-swatch" + (pos.b === selected ? " selected" : "");' +
+'    sw.style.background = hexFromByte(pos.b);' +
+'    sw.onclick = (function (byte) { return function () { pickColor(byte); }; })(pos.b);' +
+'    container.appendChild(sw);' +
+'  }' +
+'  for (var j = 0; j < PEBBLE_WHEEL_HOLLOW.length; j++) {' +
+'    var hp = PEBBLE_WHEEL_HOLLOW[j];' +
+'    var hpt = place(hp.q, hp.r);' +
+'    var hsw = document.createElement("div");' +
+'    hsw.style.left = hpt.x + "px";' +
+'    hsw.style.top = hpt.y + "px";' +
+'    hsw.className = "hex-swatch hollow";' +
+'    container.appendChild(hsw);' +
+'  }' +
+'}' +
+'function pickColor(byte) {' +
+'  if (!CURRENT_PICKER_ROLE) return;' +
+'  var scheme = CURRENT_PICKER_SCHEME;' +
+'  document.getElementById(customHiddenIdFor(CURRENT_PICKER_ROLE, scheme)).value = byte;' +
+'  closeColorPicker();' +
+'  updateColorRoleButtons(scheme);' +
+'  if (scheme !== "night") updatePreview();' +
+'}' +
+'function onNightToggle() {' +
+'  document.getElementById("nightSchemeSettings").style.display = document.getElementById("nightEnabled").checked ? "block" : "none";' +
+'  updateSchemeActiveHighlight();' +
+'}' +
+
+// Rough "is it night" approximation for the day/night color highlight
+// below -- a plain local-clock-hours check, not the watch\'s own real
+// sun-altitude/civil-twilight test (get_active_color_scheme() in
+// pebble-eclipse-watch.c), since that needs a location and a real
+// astronomy calculation this page has no reason to duplicate just for
+// a visual hint. Good enough to avoid the actual confusion this
+// feature is for (editing colors that silently do nothing because
+// they\'re not the active set right now) without claiming to be exact.
+'function isNightNowApprox() {' +
+'  var h = new Date().getHours();' +
+'  return h < 6 || h >= 20;' +
+'}' +
+// Marks both day and night color subsections with which one is
+// actually in effect right now (see .scheme-active-badge\'s own
+// comment -- purely informational, nothing here is disabled): green
+// "Active now" on the one in effect, red "Not active now" on the
+// other. Only meaningful once night colors are actually turned on --
+// with only one set of colors there\'s nothing to disambiguate, so
+// both badges stay hidden.
+'function updateSchemeActiveHighlight() {' +
+'  var dayBadge = document.getElementById("daySchemeActiveBadge");' +
+'  var nightBadge = document.getElementById("nightSchemeActiveBadge");' +
+'  if (!document.getElementById("nightEnabled").checked) {' +
+'    dayBadge.style.display = "none";' +
+'    nightBadge.style.display = "none";' +
+'    return;' +
+'  }' +
+'  var isNight = isNightNowApprox();' +
+'  dayBadge.style.display = "";' +
+'  nightBadge.style.display = "";' +
+'  dayBadge.textContent = isNight ? "Not active now" : "Active now";' +
+'  dayBadge.classList.toggle("inactive", isNight);' +
+'  nightBadge.textContent = isNight ? "Active now" : "Not active now";' +
+'  nightBadge.classList.toggle("inactive", !isNight);' +
+'}' +
+
+// save()/getQueryParam() moved to config/config-runtime.js (JS8 --
+// config-runtime slice). Lands in the exact same spot in this
+// concatenation chain, since it becomes part of the same embedded
+// <script> tag.
+require('./config/config-runtime') +
+
+// ---- section sub-headers -------------------------------------------
+// One compute*Subheader() function per collapsible section, each
+// returning the one-line summary text (or, for Colors, an HTML
+// fragment with its own 3 color dots) shown under that section's
+// title while it's collapsed -- see sectionLegendHtml() near the top
+// of this file for the markup itself and toggleSection() above for
+// why it disappears on expansion. setSubheaderText()/Html() below
+// just push a function's return value into that section's own
+// #subhead-<id> span; refreshAllSectionSubheaders() calls the whole
+// set together. None of these mutate anything -- purely read the same
+// DOM fields every other part of this page already treats as the
+// source of truth (hidden inputs, checkboxes, selects), so a
+// sub-header can never show something Save wouldn\'t actually send.
+// Rests at the normal, fully-readable (untranslated) position first --
+// long enough to actually read it -- then scrolls left at a constant
+// speed until the text has fully exited past the left edge of the
+// (clipped, overflow:hidden) container, then jumps straight back to
+// that same readable resting position and repeats. Every subheader's
+// pause is the same 5s regardless of how long its text is or how far
+// it has to travel to fully exit, but CSS keyframe percentages are
+// static, not computable from a duration -- so one shared keyframes
+// rule can't give elements with different total durations the same
+// 5s pause out of each one's own 100%. Each call that actually needs
+// to (re)start sliding therefore gets its own freshly-generated
+// @keyframes rule sized to its own pause-fraction, named uniquely via
+// a simple counter -- old rules from a subheader whose text later
+// changes are just never referenced again rather than being cleaned
+// up, which for at most a few dozen short-lived rules across a whole
+// settings-page session is not worth the bookkeeping to avoid.
+'var s_slideKeyframeCounter = 0;' +
+'function applySubheadSlide(outerEl) {' +
+'  var inner = outerEl.firstElementChild;' +
+'  if (!inner) return;' +
+'  inner.style.animation = "none";' +
+'  var overflow = inner.scrollWidth - outerEl.clientWidth;' +
+'  if (overflow > 2) {' +
+'    var pauseSec = 5;' +
+'    var scrollSec = Math.max(2, inner.scrollWidth / 45);' +
+'    var totalSec = pauseSec + scrollSec;' +
+'    var pausePct = (pauseSec / totalSec * 100).toFixed(2);' +
+// document.getElementById("mainStyle").sheet, not
+// document.styleSheets[0] -- the Google Fonts <link rel="stylesheet">
+// above this page's own <style id="mainStyle"> tag is a real
+// stylesheet at index 0 once it loads, and a cross-origin stylesheet's
+// cssRules throws a SecurityError under the same-origin policy even
+// when it loaded successfully, so reaching for "whichever sheet is
+// first" would work by accident locally and break for real users.
+'    var name = "subheadSlide" + (s_slideKeyframeCounter++);' +
+'    var sheet = document.getElementById("mainStyle").sheet;' +
+'    sheet.insertRule(' +
+'      "@keyframes " + name + " { 0% { transform: translateX(0); } " +' +
+'      pausePct + "% { transform: translateX(0); } " +' +
+'      "100% { transform: translateX(" + (-inner.scrollWidth) + "px); } }",' +
+'      sheet.cssRules.length' +
+'    );' +
+'    inner.style.animation = name + " " + totalSec.toFixed(2) + "s linear infinite";' +
+'  }' +
+'}' +
+// elId-based core, shared by setSubheaderText()/setSubheaderHtml()
+// (section sub-headers, id="subhead-<x>") and setSubsubheaderText()
+// (Hands style/Indices style\'s own nested sub-headers, id="subsubhead-<x>")
+// below -- same element shape/behavior either way, just a different
+// id prefix depending which one\'s calling in.
+'function setSubheaderTextById(elId, text) {' +
+'  var el = document.getElementById(elId);' +
+'  if (!el) return;' +
+'  var inner = el.firstElementChild;' +
+// Unchanged from last time -- leave the DOM (and any already-running
+// slide animation) alone. refreshAllSectionSubheaders() recomputes
+// every section's text once a second regardless of whether anything
+// actually changed; without this check, applySubheadSlide() below
+// would tear down and recreate the animation on every single call,
+// which restarts it from its own 0% keyframe (a fresh 5s readable
+// pause) the same as recreating the element would -- with a ~1s
+// refresh interval, that reset would fire far faster than the
+// animation could ever get past its own opening pause, so it would
+// never actually be seen sliding at all.
+'  if (inner && inner.textContent === text) return;' +
+'  el.innerHTML = "";' +
+'  inner = document.createElement("span");' +
+'  inner.className = "subhead-sub-inner";' +
+'  inner.textContent = text;' +
+'  el.appendChild(inner);' +
+'  applySubheadSlide(el);' +
+'}' +
+'function setSubheaderHtmlById(elId, html) {' +
+'  var el = document.getElementById(elId);' +
+'  if (!el) return;' +
+'  var inner = el.firstElementChild;' +
+'  if (inner && inner.innerHTML === html) return;' + // see setSubheaderTextById()'s own comment on why this guard exists
+'  el.innerHTML = \'<span class="subhead-sub-inner">\' + html + "</span>";' +
+'  applySubheadSlide(el);' +
+'}' +
+'function setSubheaderText(id, text) { setSubheaderTextById("subhead-" + id, text); }' +
+'function setSubheaderHtml(id, html) { setSubheaderHtmlById("subhead-" + id, html); }' +
+'function setSubsubheaderText(id, text) { setSubheaderTextById("subsubhead-" + id, text); }' +
+'function computeStyleSubheader() {' +
+'  var markerEl = document.getElementById("bigAnalogMarkerStyle");' +
+'  var markerPart = markerEl && markerEl.selectedIndex >= 0 ? markerEl.options[markerEl.selectedIndex].text : "analog clock";' +
+'  return markerPart + bgSubheaderPart();' +
+'}' +
+// The only sub-header rendered as HTML rather than plain text -- the
+// 3 small color dots (see .subhead-dot) need real background-color
+// styling, not just words. dayColors()/nightColors()/isNightNowApprox()
+// are all existing helpers this page already uses for the color-role
+// swatches and the "Active now" badge above.
+'function computeColorsSubheaderHtml() {' +
+'  var nightEnabled = document.getElementById("nightEnabled").checked;' +
+'  var label, colors;' +
+'  if (!nightEnabled) {' +
+'    label = "one set: ";' +
+'    colors = dayColors();' +
+'  } else if (isNightNowApprox()) {' +
+'    label = "night mode: ";' +
+'    colors = nightColors();' +
+'  } else {' +
+'    label = "day mode: ";' +
+'    colors = dayColors();' +
+'  }' +
+'  function dot(hex) { return \'<span class="subhead-dot" style="background:\' + hex + \';"></span>\'; }' +
+'  return esc(label) + dot(colors.text) + dot(colors.accent) + dot(colors.bg);' +
+'}' +
+// Independent of save()'s own dualCtxVal()/avail logic (that one
+// decides what gets PERSISTED for each context; this one just counts
+// what's visibly active in the CURRENT one) but built from the same
+// computeSlotAvailability() call and the same per-slot usable checks,
+// so the two can never disagree about which slots count as "on" right
+// now.
+'function countActiveFeatures() {' +
+'  var avail = computeSlotAvailability();' +
+'  function val(id) { return parseInt(document.getElementById(id).value, 10) || 0; }' +
+// A slot counts when it has content OR a custom sequence (id + "CustomPrims"
+// for corners; the "Content" suffix swapped for it on edge slots).
+'  function hasCustom(id) {' +
+'    var el = document.getElementById(id.replace(/Content$/, "") + "CustomPrims");' +
+'    return !!(el && el.value);' +
+'  }' +
+'  function edgeActive(id, usable) {' +
+'    return usable && (val(id) !== 0 || hasCustom(id));' +
+'  }' +
+'  var count = 0;' +
+'  if (!avail.cornersGrayed) {' +
+'    ["cornerTL", "cornerTR", "cornerBL", "cornerBR"].forEach(function (id) { if (val(id) !== 0 || hasCustom(id)) count++; });' +
+'  }' +
+'  if (edgeActive("upperMiddleLine1Content", avail.upper)) count++;' +
+'  if (edgeActive("upperMiddleLine2Content", avail.upper)) count++;' +
+'  if (edgeActive("bottomMiddleLine1Content", avail.bottom)) count++;' +
+'  if (edgeActive("bottomMiddleLine2Content", avail.bottom)) count++;' +
+'  if (edgeActive("middleLeftLine1Content", avail.left)) count++;' +
+'  if (edgeActive("middleLeftLine2Content", avail.left)) count++;' +
+'  if (edgeActive("middleRightLine1Content", avail.right)) count++;' +
+'  if (edgeActive("middleRightLine2Content", avail.right)) count++;' +
+'  return count;' +
+'}' +
+'function computeFeaturesSubheader() {' +
+'  var count = countActiveFeatures();' +
+'  if (count === 0) return "No features active";' +
+'  var fontId = parseInt(document.getElementById("cornerFont").value, 10);' +
+'  var fontName = fontLookupEntry(fontId).label;' +
+'  return count + " feature" + (count === 1 ? "" : "s") + " active in " + fontName;' +
+'}' +
+'function computeAnimationSubheader() {' +
+'  var parts = [];' +
+'  if (document.getElementById("startupClockAnimMode").value === "1") parts.push("animated clock on start");' +
+'  if (document.getElementById("bgAnimMode").value === "1") parts.push("indices on start");' +
+'  if (document.getElementById("shakeAnimMode").value === "1") parts.push("smooth second hand on shake");' +
+'  if (!parts.length) return "No animations active";' +
+'  var s = parts.join(", ");' +
+'  return s.charAt(0).toUpperCase() + s.slice(1);' +
+'}' +
+'function computePresetsSubheader() {' +
+'  var used = 0;' +
+'  for (var n = 1; n <= 6; n++) {' +
+'    var el = document.getElementById("presetSlot" + n + "Json");' +
+'    if (el && el.value) used++;' +
+'  }' +
+'  return used + " out of 6 presets used";' +
+'}' +
+'function computeWeatherSubheader() {' +
+'  var tempUnit = document.getElementById("tempUnit").value;' +
+'  var tempLabel = tempUnit === "F" ? "Fahrenheit" : tempUnit === "K" ? "Kelvin" : "Celsius";' +
+'  var wind = document.getElementById("windSpeedUnit").value;' +
+'  var windLabel = wind === "mph" ? "imperial" : wind === "kn" ? "nautical" : "metric";' +
+'  var aqi = document.getElementById("aqiUnit").value;' +
+'  var aqiLabel = aqi === "1" ? "European" : "US";' +
+'  return tempLabel + " temp. units with " + windLabel + " and " + aqiLabel + " air quality";' +
+'}' +
+'function computeLocationSubheader() {' +
+'  if (document.getElementById("autoLoc").checked) return "Use phone location";' +
+'  var nameEl = document.getElementById("locationName");' +
+'  var name = nameEl ? nameEl.value : "";' +
+'  if (name) return "Use " + name;' +
+'  var lat = document.getElementById("lat").value;' +
+'  var lon = document.getElementById("lon").value;' +
+'  if (!lat && !lon) return "Use phone location";' +
+'  return "Use lat: " + lat + ", long: " + lon;' +
+'}' +
+'function computeOtherSubheader() {' +
+'  var mode = document.getElementById("hourlyVibeMode").value;' +
+'  if (mode === "0") return "Hourly vibrations off";' +
+'  var when = mode === "1" ? "on full hours" : (document.getElementById("hourlyVibeIntervalMin").value + " min interval");' +
+'  return "Hourly vibrations: " + when;' +
+'}' +
+'function computeUpdatesSubheader() {' +
+'  var mins = document.getElementById("updateMins").value;' +
+'  var saver = document.getElementById("batterySaverEnabled").checked;' +
+'  return mins + " minute interval, battery preserver " + (saver ? "on" : "off");' +
+'}' +
+'function formatTestDateTime(val) {' +
+'  if (!val) return null;' +
+'  var parts = val.split("T");' +
+'  if (parts.length < 2) return val;' +
+'  var dateParts = parts[0].split("-");' +
+'  if (dateParts.length !== 3) return val;' +
+'  var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];' +
+'  var y = dateParts[0], m = parseInt(dateParts[1], 10) - 1, d = parseInt(dateParts[2], 10);' +
+'  return d + " " + (months[m] || "") + " " + y + " " + parts[1];' +
+'}' +
+'function computeDebugSubheader() {' +
+'  var testOn = document.getElementById("testMode").checked;' +
+'  var overridePart = testOn ? ("Override: " + (formatTestDateTime(document.getElementById("testDateTime").value) || "not set")) : "Override: off";' +
+'  var boxesOn = document.getElementById("drawDebug").checked;' +
+'  var boxesPart = testOn ? "bounding boxes enabled, ": "bounding boxes disabled, ";' +
+'  var lastPart = "last: none yet";' +
+'  try {' +
+'    var log = JSON.parse(document.getElementById("rawMessageLogJson").value || "[]");' +
+'    if (log.length) {' +
+'      var last = log[log.length - 1];' +
+'      var d = new Date(last.t);' +
+'      function pad(n, len) { var s = String(n); while (s.length < (len || 2)) s = "0" + s; return s; }' +
+'      lastPart = "last " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()) + "." + pad(d.getMilliseconds(), 3);' +
+'    }' +
+'  } catch (e) {}' +
+'  return overridePart + ", " + boxesPart + lastPart;' +
+'}' +
+// Called on init, after every click/change/input anywhere on the page
+// (see the delegated listeners below -- cheaper and far less fragile
+// than hunting down every individual onclick/onchange handler that
+// could affect one of these), and once a second alongside the
+// existing preview/scheme-highlight timer (for the Colors day/night
+// split and the Debug section\'s own last-message clock, both of which
+// can go stale purely from time passing, not from any click).
+// Each section wrapped in its own try/catch so one section\'s bug
+// (or a not-yet-rendered field, e.g. during the very first call before
+// every element exists) can\'t blank out every other section\'s
+// sub-header.
+'function refreshAllSectionSubheaders() {' +
+'  try { setSubheaderText("examples", EXAMPLE_STYLE_COUNT + " styles available"); } catch (e) {}' +
+'  try { setSubheaderText("style", computeStyleSubheader()); } catch (e) {}' +
+'  try { refreshHandsSubsectionPreview(); } catch (e) {}' +
+'  try { refreshIndicesSubsectionPreview(); } catch (e) {}' +
+'  try { setSubheaderHtml("colors", computeColorsSubheaderHtml()); } catch (e) {}' +
+'  try { setSubheaderText("corners", computeFeaturesSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("animation", computeAnimationSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("presets", computePresetsSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("weather", computeWeatherSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("location", computeLocationSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("updates", computeUpdatesSubheader()); } catch (e) {}' +
+'  try { setSubheaderText("other", computeOtherSubheader()); } catch (e) {}' +
+'  try { refreshFaqSubheader(); } catch (e) {}' +
+'  try { setSubheaderText("testing", computeDebugSubheader()); } catch (e) {}' +
+'}' +
+// A single delegated hook per event type instead of threading
+// refreshAllSectionSubheaders() into every existing onclick/onchange/
+// oninput handler on the page (mode-btn taps, slider drags, modal
+// confirms, preset apply, example-style apply, etc. -- there are
+// dozens). Bubbling means each of these fires AFTER whatever inline
+// handler the actual target element already has, so the DOM is
+// already up to date by the time this runs.
+'document.addEventListener("click", refreshAllSectionSubheaders);' +
+'document.addEventListener("change", refreshAllSectionSubheaders);' +
+'document.addEventListener("input", refreshAllSectionSubheaders);' +
+
+'updateColorRoleButtons("day");' +
+'updateColorRoleButtons("night");' +
+'  (function () {' +
+'    var loader = document.getElementById("startupLoader");' +
+'    var bar = document.getElementById("startupProgressBar");' +
+'    var percent = document.getElementById("startupProgressPercent");' +
+'    var subtitle = document.getElementById("startupLoaderSubtitle");' +
+'    var progress = 0;' +
+'    function setStartupProgress(value, text) {' +
+'      progress = Math.max(progress, Math.min(100, value));' +
+'      if (bar) bar.style.width = progress + "%";' +
+'      if (percent) percent.textContent = Math.round(progress) + "%";' +
+'      if (subtitle && text) subtitle.textContent = text;' +
+'    }' +
+'    window.__modernStartupProgress = setStartupProgress;' +
+'    setStartupProgress(12, "Building the settings page…");' +
+'    requestAnimationFrame(function () { setStartupProgress(28, "Building the settings page…"); });' +
+'  })();' +
+'bgInit();' +
+'onMarkerStyleChange();' +
+'updateHourlyVibeVisibility();' +
+'if (window.__modernStartupProgress) window.__modernStartupProgress(42, "Preparing controls…");' +
+'updateHandStyleButtonLabel();' +
+'refreshAllFontTriggerLabels();' +
+'updateFontImportStatus();' +
+'refreshEditButtonLabels();' +
+'renderHandStyleGrid();' +
+'renderMarkerStyleGrid();' +
+'if (window.__modernStartupProgress) window.__modernStartupProgress(62, "Preparing previews…");' +
+'renderCategoryButtons();' +
+'updateWeatherIconStyleVisibility();' +
+'adjustTopBarSpacing();' +
+'if (window.__modernStartupProgress) window.__modernStartupProgress(78, "Finishing layout…");' +
+'if (document.fonts && document.fonts.ready) {' +
+'  document.fonts.ready.then(function () {' +
+'    updatePreview();' +
+'    if (window.__modernStartupProgress) window.__modernStartupProgress(94, "Finalizing preview…");' +
+'    setTimeout(function () {' +
+'      if (window.__modernStartupProgress) window.__modernStartupProgress(100, "Ready");' +
+'      var loader = document.getElementById("startupLoader");' +
+'      if (loader) {' +
+'        loader.classList.add("hidden");' +
+'        setTimeout(function () { loader.style.display = "none"; }, 380);' +
+'      }' +
+'    }, 180);' +
+'  });' +
+'} else {' +
+'  if (window.__modernStartupProgress) window.__modernStartupProgress(94, "Finalizing preview…");' +
+'  setTimeout(function () {' +
+'    if (window.__modernStartupProgress) window.__modernStartupProgress(100, "Ready");' +
+'    var loader = document.getElementById("startupLoader");' +
+'    if (loader) {' +
+'      loader.classList.add("hidden");' +
+'      setTimeout(function () { loader.style.display = "none"; }, 380);' +
+'    }' +
+'  }, 180);' +
+'}' +
+'updateSchemeActiveHighlight();' +
+'refreshAllSectionSubheaders();' +
+// One-shot only -- if manual location is already on and coordinates
+// are present but nothing's cached yet (e.g. an existing install
+// updating into this feature for the first time, or lat/lon set some
+// other way than the Search box/blur handler above), resolve a name
+// once now rather than leaving the Location sub-header stuck showing
+// raw coordinates forever.
+'if (!document.getElementById("autoLoc").checked && document.getElementById("lat").value && document.getElementById("lon").value && !document.getElementById("locationName").value) {' +
+'  reverseGeocodeAndCacheLocationName();' +
+'}' +
+'setInterval(function () { updatePreview(); updateSchemeActiveHighlight(); refreshAllSectionSubheaders(); }, 1000);' +
+'</script>' +
+'</body></html>';
+}
+
+module.exports = { buildConfigHtml: buildConfigHtml };
