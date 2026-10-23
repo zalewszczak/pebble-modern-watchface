@@ -5,11 +5,13 @@
 #include "../data/hand_types.h"
 
 
+// `thick_outline` widens the hand outline (set when the features use the
+// "thick" outline style, WatchData.outline_style == 2).
 // Draw a configured hand with fixed-point geometry and optional effects.
 void hand_layer_draw(GContext *ctx, GPoint center, int32_t angle, const HandConfig *cfg,
                       GColor main_color, GColor accent_color, GColor bg_color,
                       bool shadow_translucent_style, uint16_t shadow_angle_deg,
-                      uint16_t length_scale_1000);
+                      uint16_t length_scale_1000, bool thick_outline);
 
 
 // Draw the center pivot using the selected color scheme.

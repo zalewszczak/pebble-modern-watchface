@@ -13,5 +13,6 @@ void layout_controller_unload(void);
 void layout_controller_handle_unobstructed(AnimationProgress progress);
 
 Layer *layout_controller_dial_layer(void);
+Layer *layout_controller_bg_progress_layer(void);
 Layer *layout_controller_hands_layer(void);
 Layer *layout_controller_features_layer(void);

@@ -10,6 +10,9 @@ typedef enum {
   COMMS_CHANGE_LAYOUT   = 1u << 0,
   // Feature values and layout are recomputed for every decoded message.
   COMMS_CHANGE_FEATURES = 1u << 1,
+  // Only the background-image transfer progress changed: redraw the progress
+  // bar, nothing else (and in particular do not persist settings).
+  COMMS_CHANGE_BG_PROGRESS = 1u << 2,
 } CommsChangeFlags;
 
 typedef void (*CommsDataAppliedHandler)(CommsChangeFlags changes, void *context);

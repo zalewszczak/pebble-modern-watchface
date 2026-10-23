@@ -8,7 +8,9 @@ uint32_t bg_image_signature(const WatchData *d) {
     return 0x10000u | d->custom_bg_preset;
   }
   if (d->custom_bg_mode == 2) {
-    return bg_image_store_stamp() ^ 0x20000000u; // 0x2... = "uploaded"; the stamp is never 0 when present
+    // 0x2... = "uploaded"; the slot's stamp is 0 while that slot is empty or
+    // still being transferred, and changes when its image is replaced.
+    return (bg_image_store_stamp(d->custom_bg_preset) ^ 0x20000000u) + d->custom_bg_preset;
   }
   return 0;
 }
@@ -30,8 +32,8 @@ void bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
     graphics_draw_bitmap_in_rect(ctx, bm, dest);
     gbitmap_destroy(bm);
   } else if (d->custom_bg_mode == 2) {
-    if (bg_image_store_stamp() == 0) return; // nothing (complete) in storage yet
-    if (!bg_image_store_draw(ctx, bounds, origin)) {
+    if (bg_image_store_stamp(d->custom_bg_preset) == 0) return; // slot empty / not received yet
+    if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) {
       status_label_set("BG: image failed", GColorRed, false);
     }
   }

@@ -142,11 +142,12 @@ typedef struct {
 
   // Custom background image drawn behind the markers. 0 = off (plain
   // background colour), 1 = predefined image number custom_bg_preset (a
-  // bitmap resource, see generated/background_presets.h), 2 = the user's
-  // uploaded image the phone transferred into persistent storage (see
+  // bitmap resource, see generated/background_presets.h), 2 = one of the
+  // user's uploaded images, user slot custom_bg_preset (1-9), which the phone
+  // transferred into persistent storage ahead of time (see
   // rendering/dial/bg_image_store.h).
   uint8_t custom_bg_mode;
-  uint8_t custom_bg_preset; // 1-based predefined image number for mode 1.
+  uint8_t custom_bg_preset; // 1-based predefined image number (mode 1) or user slot 1-9 (mode 2).
 
   MarkerRingConfig custom_hour_marker;
   MarkerRingConfig custom_second_marker;

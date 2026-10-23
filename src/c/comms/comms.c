@@ -3,6 +3,7 @@
 #include "./comms_decoder.h"
 #include "../generated/message_key_index.h"
 #include "../rendering/dial/bg_image_store.h"
+#include "../rendering/dial/bg_progress.h"
 
 #define STARTUP_REQUEST_DELAY_MS 3000
 
@@ -46,9 +47,16 @@ static void request_update(void) {
   DictionaryIterator *iter;
   if (app_message_outbox_begin(&iter) != APP_MSG_OK) return;
   dict_write_uint8(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_REQUEST_UPDATE, 1);
-  // Tell the phone which uploaded background image (if any) is stored here, so
-  // it can send it again when it is missing or out of date.
-  dict_write_uint32(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_BG_IMG_STAMP, bg_image_store_stamp());
+  // Tell the phone which uploaded background images (if any) are stored here:
+  // nine little-endian uint32 stamps, user slot 1 first, 0 = empty slot. The
+  // phone sends whatever is missing or out of date.
+  uint8_t stamps[BG_IMG_SLOTS * 4];
+  for (uint8_t slot = 1; slot <= BG_IMG_SLOTS; slot++) {
+    uint32_t v = bg_image_store_stamp(slot);
+    uint8_t *p = &stamps[(slot - 1) * 4];
+    p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); p[2] = (uint8_t)(v >> 16); p[3] = (uint8_t)(v >> 24);
+  }
+  dict_write_data(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_BG_IMG_STAMP, stamps, sizeof(stamps));
   app_message_outbox_send();
 }
 
@@ -71,6 +79,48 @@ static void startup_request_delay_callback(void *context) {
 // Background-image transfer messages carry only BG_IMG_* keys. They go
 // straight to persistent storage and skip the settings/feature pipeline (and
 // the WatchData save) entirely, so streaming an image costs almost nothing.
+//
+// BEGIN payload (15 bytes, little endian):
+//   stamp u32 | chunks u16 | w u16 | h u16 | slot u8 | batch_total u16 | batch_done u16
+// chunks == 0 && stamp == 0 means "empty this slot" (no DATA/END follow).
+// batch_total / batch_done are chunk counts of the whole sync (several images
+// may follow one another) and only drive the progress bar.
+// END payload: stamp u32.
+//
+// If the phone goes away mid-transfer the bar must not stay forever: any
+// BG_IMG message re-arms this timer, and when it fires the transfer is dropped.
+#define BG_TRANSFER_TIMEOUT_MS 20000
+static AppTimer *s_bg_timeout_timer = NULL;
+
+static void notify_progress(void) {
+  if (s_data_applied) s_data_applied(COMMS_CHANGE_BG_PROGRESS, s_data_context);
+}
+
+static void bg_transfer_timeout(void *context) {
+  (void)context;
+  s_bg_timeout_timer = NULL;
+  bg_image_store_abort();
+  bg_progress_finish();
+  notify_progress();
+}
+
+static void bg_transfer_arm_timeout(void) {
+  if (s_bg_timeout_timer) app_timer_cancel(s_bg_timeout_timer);
+  s_bg_timeout_timer = app_timer_register(BG_TRANSFER_TIMEOUT_MS, bg_transfer_timeout, NULL);
+}
+
+static void bg_transfer_disarm_timeout(void) {
+  if (s_bg_timeout_timer) {
+    app_timer_cancel(s_bg_timeout_timer);
+    s_bg_timeout_timer = NULL;
+  }
+}
+
+static uint32_t read_le32(const uint8_t *b) {
+  return (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+}
+static uint16_t read_le16(const uint8_t *b) { return (uint16_t)(b[0] | (b[1] << 8)); }
+
 // Returns true if the message was one of them.
 static bool handle_bg_image_message(DictionaryIterator *iter) {
   const uint32_t base = MESSAGE_KEY_MESSAGE_TYPE;
@@ -79,26 +129,49 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
   Tuple *end = dict_find(iter, base + MK_BG_IMG_END);
   if (!begin && !data && !end) return false;
 
-  if (begin && begin->length >= 10) {
+  bool redraw_dial = false;
+
+  if (begin && begin->length >= 15) {
     const uint8_t *b = begin->value->data;
-    uint32_t stamp = (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
-    uint16_t chunks = (uint16_t)(b[4] | (b[5] << 8));
-    uint16_t w = (uint16_t)(b[6] | (b[7] << 8));
-    uint16_t h = (uint16_t)(b[8] | (b[9] << 8));
-    bg_image_store_begin(stamp, chunks, w, h);
+    uint32_t stamp = read_le32(b);
+    uint16_t chunks = read_le16(b + 4), w = read_le16(b + 6), h = read_le16(b + 8);
+    uint8_t slot = b[10];
+    uint16_t batch_total = read_le16(b + 11), batch_done = read_le16(b + 13);
+    if (stamp == 0 && chunks == 0) {
+      bg_image_store_clear(slot);
+      redraw_dial = true; // the selected slot may just have been emptied
+      if (!bg_progress_active()) bg_transfer_disarm_timeout();
+    } else {
+      if (!bg_progress_active()) bg_progress_start(batch_total, batch_done);
+      else bg_progress_set_done(batch_done);
+      bg_image_store_begin(slot, stamp, chunks, w, h);
+      bg_transfer_arm_timeout();
+    }
   }
   if (data) {
     Tuple *index = dict_find(iter, base + MK_BG_IMG_INDEX);
-    if (index) bg_image_store_write(index->value->uint16, data->value->data, data->length);
-  }
-  if (end && end->length >= 4) {
-    const uint8_t *b = end->value->data;
-    uint32_t stamp = (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
-    if (bg_image_store_commit(stamp) && s_data_applied) {
-      // Redraw so the dial rebuilds its background cache from the new image.
-      s_data_applied(COMMS_CHANGE_NONE, s_data_context);
+    if (index) {
+      bg_image_store_write(index->value->uint16, data->value->data, data->length);
+      bg_progress_update(bg_image_store_pending_progress());
+      bg_transfer_arm_timeout();
     }
   }
+  if (end && end->length >= 4) {
+    uint16_t chunks = bg_image_store_pending_chunks();
+    if (bg_image_store_commit(read_le32(end->value->data))) {
+      bg_progress_update(chunks);
+      redraw_dial = true; // the dial rebuilds its background cache if this slot is in use
+    }
+    // The next image of the batch (if any) sends its own BEGIN with the new
+    // batch_done; if this was the last one, the bar is finished.
+    if (bg_progress_permille() >= 1000) {
+      bg_progress_finish();
+      bg_transfer_disarm_timeout();
+    }
+  }
+
+  if (redraw_dial && s_data_applied) s_data_applied(COMMS_CHANGE_NONE, s_data_context);
+  notify_progress();
   return true;
 }
 
@@ -129,6 +202,7 @@ void comms_init(WatchData *data, CommsDataAppliedHandler handler, void *context)
 }
 
 void comms_deinit(void) {
+  bg_transfer_disarm_timeout();
   if (s_startup_timer) {
     app_timer_cancel(s_startup_timer);
     s_startup_timer = NULL;

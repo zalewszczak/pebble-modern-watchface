@@ -110,8 +110,15 @@ static void window_unload(Window *window) {
 static void comms_data_applied(CommsChangeFlags changes, void *context) {
   (void)context;
 
+  if (changes == COMMS_CHANGE_BG_PROGRESS) {
+    Layer *progress = layout_controller_bg_progress_layer();
+    if (progress) layer_mark_dirty(progress);
+    return;
+  }
+
   if (changes & COMMS_CHANGE_LAYOUT) layout_controller_apply();
   if (layout_controller_dial_layer()) dial_layer_set_data(layout_controller_dial_layer(), &s_data);
+  if (layout_controller_bg_progress_layer()) layer_mark_dirty(layout_controller_bg_progress_layer());
   if (layout_controller_hands_layer()) layer_mark_dirty(layout_controller_hands_layer());
   if (layout_controller_features_layer() && (changes & COMMS_CHANGE_FEATURES)) {
     features_layer_set_data(layout_controller_features_layer(), &s_data);

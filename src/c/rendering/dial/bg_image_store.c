@@ -1,8 +1,18 @@
 #include "./bg_image_store.h"
 #include <string.h>
 
-#define PERSIST_KEY_BG_HEADER 200
-#define PERSIST_KEY_BG_CHUNK_BASE 300
+// Persist key layout. Slot headers: 201..209. Chunks: every slot owns a block
+// of BG_CHUNK_KEY_SPAN keys (a full 200x228 image needs 135, the largest
+// accepted image 302), so slot s chunk c lives at 1000 + s * 400 + c.
+#define PERSIST_KEY_BG_HEADER_BASE 200
+#define PERSIST_KEY_BG_CHUNK_BASE 1000
+#define BG_CHUNK_KEY_SPAN 400
+
+static uint32_t header_key(uint8_t slot) { return PERSIST_KEY_BG_HEADER_BASE + slot; }
+static uint32_t chunk_key(uint8_t slot, uint16_t chunk) {
+  return PERSIST_KEY_BG_CHUNK_BASE + (uint32_t)slot * BG_CHUNK_KEY_SPAN + chunk;
+}
+static bool slot_ok(uint8_t slot) { return slot >= 1 && slot <= BG_IMG_SLOTS; }
 
 typedef struct __attribute__((packed)) {
   uint32_t stamp;
@@ -11,10 +21,12 @@ typedef struct __attribute__((packed)) {
   uint16_t chunks;
 } BgHeader;
 
-static bool s_header_loaded;
-static BgHeader s_header;       // valid when s_header.stamp != 0
-static BgHeader s_pending;      // transfer in progress
-static uint16_t s_old_chunks;   // chunk count of the image being replaced
+static bool s_loaded[BG_IMG_SLOTS + 1];
+static BgHeader s_header[BG_IMG_SLOTS + 1]; // valid when .stamp != 0
+static BgHeader s_pending;                   // transfer in progress
+static uint8_t s_pending_slot;               // 0 = none
+static uint16_t s_pending_written;           // highest chunk index written + 1
+static uint16_t s_old_chunks;                // chunk count of the image being replaced
 
 static uint16_t expected_chunks(uint16_t w, uint16_t h) {
   uint32_t groups = ((uint32_t)w * h + 3) / 4;
@@ -22,82 +34,119 @@ static uint16_t expected_chunks(uint16_t w, uint16_t h) {
   return (uint16_t)((bytes + BG_IMG_CHUNK_BYTES - 1) / BG_IMG_CHUNK_BYTES);
 }
 
-static void load_header(void) {
-  if (s_header_loaded) return;
-  s_header_loaded = true;
-  memset(&s_header, 0, sizeof(s_header));
+static void load_header(uint8_t slot) {
+  if (!slot_ok(slot) || s_loaded[slot]) return;
+  s_loaded[slot] = true;
+  memset(&s_header[slot], 0, sizeof(BgHeader));
   BgHeader h;
-  if (persist_exists(PERSIST_KEY_BG_HEADER) &&
-      persist_get_size(PERSIST_KEY_BG_HEADER) == (int)sizeof(h) &&
-      persist_read_data(PERSIST_KEY_BG_HEADER, &h, sizeof(h)) == (int)sizeof(h) &&
+  if (persist_exists(header_key(slot)) &&
+      persist_get_size(header_key(slot)) == (int)sizeof(h) &&
+      persist_read_data(header_key(slot), &h, sizeof(h)) == (int)sizeof(h) &&
       h.stamp != 0 && h.w != 0 && h.h != 0 && h.chunks == expected_chunks(h.w, h.h)) {
-    s_header = h;
+    s_header[slot] = h;
   }
 }
 
-uint32_t bg_image_store_stamp(void) {
-  load_header();
-  return s_header.stamp;
+uint32_t bg_image_store_stamp(uint8_t slot) {
+  if (!slot_ok(slot)) return 0;
+  load_header(slot);
+  return s_header[slot].stamp;
 }
 
-bool bg_image_store_begin(uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h) {
-  load_header();
-  s_old_chunks = s_header.chunks;
+void bg_image_store_stamps(uint32_t out[BG_IMG_SLOTS]) {
+  for (uint8_t s = 1; s <= BG_IMG_SLOTS; s++) out[s - 1] = bg_image_store_stamp(s);
+}
+
+static void delete_chunks(uint8_t slot, uint16_t from, uint16_t to) {
+  for (uint16_t i = from; i < to; i++) {
+    if (persist_exists(chunk_key(slot, i))) persist_delete(chunk_key(slot, i));
+  }
+}
+
+void bg_image_store_clear(uint8_t slot) {
+  if (!slot_ok(slot)) return;
+  load_header(slot);
+  if (s_pending_slot == slot) bg_image_store_abort();
+  uint16_t n = s_header[slot].chunks;
+  if (persist_exists(header_key(slot))) persist_delete(header_key(slot));
+  memset(&s_header[slot], 0, sizeof(BgHeader));
+  delete_chunks(slot, 0, n);
+}
+
+uint8_t bg_image_store_pending_slot(void) { return s_pending_slot; }
+uint16_t bg_image_store_pending_progress(void) { return s_pending_slot ? s_pending_written : 0; }
+uint16_t bg_image_store_pending_chunks(void) { return s_pending_slot ? s_pending.chunks : 0; }
+
+void bg_image_store_abort(void) {
+  memset(&s_pending, 0, sizeof(s_pending));
+  s_pending_slot = 0;
+  s_pending_written = 0;
+}
+
+bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h) {
+  bg_image_store_abort();
+  if (!slot_ok(slot)) return false;
+  load_header(slot);
+  s_old_chunks = s_header[slot].chunks;
   // Drop the header first: a transfer that dies half-way must never leave a
   // header pointing at a mix of old and new chunks.
-  if (persist_exists(PERSIST_KEY_BG_HEADER)) persist_delete(PERSIST_KEY_BG_HEADER);
-  memset(&s_header, 0, sizeof(s_header));
-  memset(&s_pending, 0, sizeof(s_pending));
+  if (persist_exists(header_key(slot))) persist_delete(header_key(slot));
+  memset(&s_header[slot], 0, sizeof(BgHeader));
   if (stamp == 0 || w == 0 || h == 0 || (uint32_t)w * h > BG_IMG_MAX_PIXELS ||
-      chunks != expected_chunks(w, h)) return false;
+      chunks != expected_chunks(w, h) || chunks > BG_CHUNK_KEY_SPAN) return false;
   s_pending.stamp = stamp;
   s_pending.w = w;
   s_pending.h = h;
   s_pending.chunks = chunks;
+  s_pending_slot = slot;
+  s_pending_written = 0;
   return true;
 }
 
 bool bg_image_store_write(uint16_t first_chunk, const uint8_t *data, uint16_t len) {
-  if (s_pending.stamp == 0) return false;
+  if (s_pending_slot == 0 || s_pending.stamp == 0) return false;
   bool ok = true;
   uint16_t chunk = first_chunk;
   while (len > 0) {
     if (chunk >= s_pending.chunks) return false;
     uint16_t n = len < BG_IMG_CHUNK_BYTES ? len : BG_IMG_CHUNK_BYTES;
-    if (persist_write_data(PERSIST_KEY_BG_CHUNK_BASE + chunk, data, n) != (int)n) ok = false;
+    if (persist_write_data(chunk_key(s_pending_slot, chunk), data, n) != (int)n) ok = false;
     data += n;
     len -= n;
     chunk++;
   }
-  if (!ok) memset(&s_pending, 0, sizeof(s_pending)); // abandon; commit will fail
+  if (chunk > s_pending_written) s_pending_written = chunk;
+  if (!ok) bg_image_store_abort(); // abandon; commit will fail
   return ok;
 }
 
 bool bg_image_store_commit(uint32_t stamp) {
-  if (s_pending.stamp == 0 || s_pending.stamp != stamp) return false;
+  if (s_pending_slot == 0 || s_pending.stamp == 0 || s_pending.stamp != stamp) return false;
+  const uint8_t slot = s_pending_slot;
   BgHeader h = s_pending;
-  memset(&s_pending, 0, sizeof(s_pending));
+  bg_image_store_abort();
   uint32_t total_bytes = (((uint32_t)h.w * h.h + 3) / 4) * 3;
   for (uint16_t i = 0; i < h.chunks; i++) {
     int want = (i + 1 < h.chunks) ? BG_IMG_CHUNK_BYTES
                                   : (int)(total_bytes - (uint32_t)i * BG_IMG_CHUNK_BYTES);
-    if (!persist_exists(PERSIST_KEY_BG_CHUNK_BASE + i) ||
-        persist_get_size(PERSIST_KEY_BG_CHUNK_BASE + i) != want) return false;
+    if (!persist_exists(chunk_key(slot, i)) ||
+        persist_get_size(chunk_key(slot, i)) != want) return false;
   }
   // A smaller image replacing a larger one leaves the tail chunks behind.
-  for (uint16_t i = h.chunks; i < s_old_chunks; i++) {
-    if (persist_exists(PERSIST_KEY_BG_CHUNK_BASE + i)) persist_delete(PERSIST_KEY_BG_CHUNK_BASE + i);
-  }
+  delete_chunks(slot, h.chunks, s_old_chunks);
   s_old_chunks = 0;
-  if (persist_write_data(PERSIST_KEY_BG_HEADER, &h, sizeof(h)) != (int)sizeof(h)) return false;
-  s_header = h;
+  if (persist_write_data(header_key(slot), &h, sizeof(h)) != (int)sizeof(h)) return false;
+  s_header[slot] = h;
+  s_loaded[slot] = true;
   return true;
 }
 
-bool bg_image_store_draw(GContext *ctx, GRect bounds, GPoint origin) {
-  load_header();
-  if (s_header.stamp == 0) return false;
-  const int16_t w = (int16_t)s_header.w, h = (int16_t)s_header.h;
+bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origin) {
+  if (!slot_ok(slot)) return false;
+  load_header(slot);
+  const BgHeader hdr = s_header[slot];
+  if (hdr.stamp == 0) return false;
+  const int16_t w = (int16_t)hdr.w, h = (int16_t)hdr.h;
 
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   if (!fb) return false;
@@ -126,8 +175,8 @@ bool bg_image_store_draw(GContext *ctx, GRect bounds, GPoint origin) {
   bool ok = true;
   uint8_t buf[BG_IMG_CHUNK_BYTES];
 
-  for (uint16_t c = 0; c < s_header.chunks && pixel < total && ok; c++) {
-    int n = persist_read_data(PERSIST_KEY_BG_CHUNK_BASE + c, buf, sizeof(buf));
+  for (uint16_t c = 0; c < hdr.chunks && pixel < total && ok; c++) {
+    int n = persist_read_data(chunk_key(slot, c), buf, sizeof(buf));
     if (n <= 0 || (n % 3) != 0) { ok = false; break; }
     for (int i = 0; i + 2 < n && pixel < total; i += 3) {
       uint8_t b0 = buf[i], b1 = buf[i + 1], b2 = buf[i + 2];
