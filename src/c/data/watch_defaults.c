@@ -6,14 +6,25 @@
 #define COLOR_WHITE 0xFF
 #define COLOR_BLACK 0xC0
 
+// Feature content ids (same numbering as the settings page's feature picker).
+#define FEATURE_DEFAULT_LOGO_BAR 17          // Pebble logo with battery bar
+#define FEATURE_DEFAULT_DAY_OF_MONTH 22      // "11"
+#define FEATURE_DEFAULT_WEEKDAY_SHORT 23     // "MON"
+#define FEATURE_DEFAULT_TEMP_WEATHER_ICON 32 // temperature + weather icon
+
+// Font id 14 in fonts/font_lookup.c: Digital Dream.
+#define FONT_ID_DIGITAL_DREAM 14
+
 // Same ranges the phone's settings codecs produce; keep in sync with
 // src/pkjs/settings/settings-codecs.js defaults.
-static HandConfig default_hand(uint8_t style, uint8_t width, uint8_t length, uint8_t color) {
+static HandConfig default_hand(uint8_t style, uint8_t width, uint8_t length,
+                               int8_t back_offset, uint8_t color) {
   HandConfig h;
   memset(&h, 0, sizeof(h));
   h.style = style;
   h.width = width;
   h.length = length;
+  h.back_offset = back_offset;
   h.secondary_width = 6;
   h.color = color;
   h.hollow_thickness = 1;
@@ -24,11 +35,18 @@ static HandConfig default_hand(uint8_t style, uint8_t width, uint8_t length, uin
 void watch_defaults_apply(WatchData *d) {
   memset(d, 0, sizeof(*d));
 
-  d->bottom_middle_line1_content = 105; // long date + sunrise/sunset
+  // Features: logo bar on top, weather icon + temperature at the bottom,
+  // weekday (upper right) and day of month (lower right) in the corners.
+  // Corner order is TL, TR, BL, BR (see feature_layout.c).
+  d->upper_middle_line1_content = FEATURE_DEFAULT_LOGO_BAR;
+  d->bottom_middle_line1_content = FEATURE_DEFAULT_TEMP_WEATHER_ICON;
+  d->corner_content[1] = FEATURE_DEFAULT_WEEKDAY_SHORT;
+  d->corner_content[3] = FEATURE_DEFAULT_DAY_OF_MONTH;
 
-  d->custom_bg = COLOR_WHITE;
-  d->custom_text = COLOR_BLACK;
-  d->custom_accent = COLOR_BLACK;
+  // White main and accent colors on a black background.
+  d->custom_bg = COLOR_BLACK;
+  d->custom_text = COLOR_WHITE;
+  d->custom_accent = COLOR_WHITE;
   d->night_custom_bg = COLOR_BLACK;
   d->night_custom_text = COLOR_WHITE;
   d->night_custom_accent = COLOR_WHITE;
@@ -36,17 +54,20 @@ void watch_defaults_apply(WatchData *d) {
   d->shake_seconds = 3;
   d->startup_clock_anim_mode = 1;
   d->outline_style = 1;
-  d->corner_font = 1;
+  d->corner_font = FONT_ID_DIGITAL_DREAM;
   d->icon_style = 1;
   d->daily_step_goal = 10000;
 
   d->shadow_translucent = true;
   d->shadow_angle_deg = 120;
 
-  d->hand_hour = default_hand(1, 12, 51, 0);
-  d->hand_minute = default_hand(1, 18, 78, 0);
-  d->hand_second = default_hand(0, 2, 85, 1);
-  d->center_circle_radius = 3;
+  // The "Modern" hand preset (pkjs/presets-lookups.js HAND_PRESETS["3"]):
+  // main-color hour/minute hands, accent-color second hand and center circle.
+  d->hand_hour = default_hand(2, 6, 51, 10, 0);
+  d->hand_minute = default_hand(2, 6, 78, 10, 0);
+  d->hand_second = default_hand(2, 2, 85, 10, 1);
+  d->center_circle_radius = 4;
+  d->center_circle_color = 1; // accent
 
   // The Modern bitmap dial.
   d->big_analog_marker_style = 3;
