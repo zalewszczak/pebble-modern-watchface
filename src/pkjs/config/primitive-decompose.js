@@ -69,9 +69,9 @@ function icon(text) { return { kind: 'icon', text: text }; }
 // the same transport tables as everything else.
 var ATOMIC_DECOMPOSITIONS = {
   // feature_value_composite.c case 101 (sleep-data-available branch)
-  101: [icon('sleep'), value('23:45'), slash(), value('07:20')],
+  101: [icon('(sleep)'), value('23:45'), slash(), value('07:20')],
   // feature_value_composite.c case 104 (sleep-data-available branch)
-  104: [icon('bed'), value('23:45'), icon('wake'), value('07:20')]
+  104: [icon('(bed)'), value('23:45'), icon('(wake)'), value('07:20')]
 };
 
 // primitiveKindForId()/paramPrimitiveLabel()/chipsFromSequence() and the

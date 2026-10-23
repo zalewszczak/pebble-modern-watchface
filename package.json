@@ -758,6 +758,51 @@
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_STORM",
           "file": "images/fullcolor/weather_storm.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_1",
+          "file": "backgrounds/1.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_2",
+          "file": "backgrounds/2.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_3",
+          "file": "backgrounds/3.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_4",
+          "file": "backgrounds/4.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_5",
+          "file": "backgrounds/5.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_6",
+          "file": "backgrounds/6.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_7",
+          "file": "backgrounds/7.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_8",
+          "file": "backgrounds/8.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_9",
+          "file": "backgrounds/9.png"
         }
       ]
     }

@@ -171,6 +171,7 @@ Quick reference (details for each are in their own section below):
 | `generate-infographics.js` | Node | Hand-style picker pictures, hand-editor explainer diagrams |
 | `generate-preset-previews.js` | Node + `sharp` | Procedural marker-preset pictures (none/minimal/small/big) |
 | `generate-example-style-previews.js` | Node | Example style gallery preview images |
+| `generate-preview-icons.js` | Node | Copies the real icon PNGs used by the preview's example features (`resources/images/{simple,hollow,fullcolor}/*.png`, listed in `src/pkjs/config/preview-icons.js`) into `src/pkjs/data/generated/preview-icon-images.js`. The settings preview then draws these instead of `(text)` placeholders, tinted/outlined like the watch does, following the Icons style and outline settings. Missing PNGs just keep the placeholder. |
 | `generate-font-previews.js` | Node | Real on-watch renderings for the font picker (Gothic/Bitham/LECO) |
 | `generate_hand_style_icons.py` | Python 3 + Pillow | Renders the 11 hand-style shape icons |
 | `generate-hand-style-icons.js` | Node | Bakes those 11 icons for the hand-style picker popup |

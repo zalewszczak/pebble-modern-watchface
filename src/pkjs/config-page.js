@@ -122,6 +122,9 @@ var HAND_STYLE_ICON_IMAGES = require('./data/generated/hand-style-icon-images');
 // value, nearest-neighbor upscaled to stay crisp -- see
 // scripts/generate-weather-icon-previews.js for how these get made.
 var WEATHER_ICON_STYLE_PREVIEWS = require('./data/generated/weather-icon-style-previews');
+// Real icon art for the live preview's feature slots (see scripts/generate-preview-icons.js).
+var PREVIEW_ICON_IMAGES = require('./data/generated/preview-icon-images');
+var PREVIEW_ICON_TOKENS = require('./config/preview-icons').PREVIEW_ICON_TOKENS;
 
 // "Example styles" grid (first section on the settings page) -- each
 // numbered slot pairs a screenshot (resources/example-styles/<n>.png,
@@ -2030,6 +2033,8 @@ configPresetSchedule.modalHtml +
 'var HAND_STYLE_ICON_IMAGES = ' + JSON.stringify(HAND_STYLE_ICON_IMAGES) + ';' +
 'var FAQ_ITEMS = ' + JSON.stringify(FAQ_ITEMS) + ';' +
 'var WEATHER_ICON_STYLE_PREVIEWS = ' + JSON.stringify(WEATHER_ICON_STYLE_PREVIEWS) + ';' +
+'var PREVIEW_ICON_IMAGES = ' + JSON.stringify(PREVIEW_ICON_IMAGES) + ';' +
+'var PREVIEW_ICON_TOKENS = ' + JSON.stringify(PREVIEW_ICON_TOKENS) + ';' +
 // Matches weather_icon_style\'s own <option> list exactly.
 'var WEATHER_ICON_STYLE_NAMES = ["Simple", "Hollow", "Full color"];' +
 // Matches the Shape <option> list\'s own order/values exactly (see
