@@ -56,9 +56,17 @@ static void feature_controller_recompute_slot_value(FeatureSlot *slot, int slot_
                                                             data->edge_line_primitive_aux[slot_index],
                                                             data, now, t, slot->color_mode, main_color, accent_color);
     }
-    if (!built_from_transport) {
+    bool tight = false;
+    if (built_from_transport) {
+      // Bit n of the mask: corner n (0-3), or edge/middle slot n-4 (0-7), is a
+      // user-built sequence (see message-encoder.js customPrimsMask()).
+      uint16_t mask = (uint16_t)(data->custom_prims_mask_lo | ((uint16_t)data->custom_prims_mask_hi << 8));
+      if (slot_index >= SLOT_CORNER_TL && slot_index <= SLOT_CORNER_BR) tight = (mask >> (slot_index - SLOT_CORNER_TL)) & 1u;
+      else if (slot_index >= SLOT_UPPER_L1 && slot_index <= SLOT_RIGHT_L2) tight = (mask >> (4 + slot_index)) & 1u;
+    } else {
       primitive_bridge_build(&slot->primitives, slot);
     }
+    slot->primitives.tight = tight;
     if (slot->primitives.count > 0) {
       primitive_layout_compute(&slot->primitives, slot, font, font_h);
     }

@@ -330,6 +330,16 @@ function edgeLinesBytes() {
 // sequence (and its own aux bytes); every other slot derives its sequence
 // from its REAL content id (not the placeholder edgeLinesBytes() may have
 // substituted, which only exists to activate the slot).
+// Bit n set = slot n is a user-built sequence: corners TL,TR,BL,BR are bits
+// 0-3, edge/middle slots (SLOT_UPPER_L1..SLOT_RIGHT_L2) are bits 4-11. The
+// watch lays those out with no automatic gaps between elements.
+function customPrimsMask() {
+  var mask = 0;
+  ['CONFIG_CORNER_TL_CUSTOM_PRIMS', 'CONFIG_CORNER_TR_CUSTOM_PRIMS', 'CONFIG_CORNER_BL_CUSTOM_PRIMS', 'CONFIG_CORNER_BR_CUSTOM_PRIMS']
+    .forEach(function (k, i) { if (parseCustomPrimsSetting(getSetting(k, '')).ids.length) mask |= (1 << i); });
+  edgeCustomPrims().forEach(function (c, i) { if (c.ids.length) mask |= (1 << (4 + i)); });
+  return mask;
+}
 function edgeLinePrimitiveIdsBytes() {
   var contentIds = edgeContentCodesRaw();
   var customs = edgeCustomPrims();
@@ -419,7 +429,8 @@ function populateSettingsFields(dict) {
     hourlyVibeOverrideQuietCode(),
     bgImageSync.modeCode(), bgImageSync.presetCode(),
     borderWeatherModeCode(), borderWeatherPxCode(),
-    borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode()
+    borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
+    customPrimsMask() & 255, (customPrimsMask() >> 8) & 255
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per

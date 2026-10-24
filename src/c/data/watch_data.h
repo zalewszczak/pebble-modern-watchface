@@ -160,6 +160,10 @@ typedef struct {
   uint8_t border_weather_scheme;
   uint8_t border_weather_shake;
   uint8_t border_weather_semi;
+  // Bit mask of feature slots built by the user from elements (corners 0-3,
+  // edge/middle slots 4-11); those lay out with no automatic gaps.
+  uint8_t custom_prims_mask_lo;
+  uint8_t custom_prims_mask_hi;
   uint8_t custom_bg_preset; // 1-based predefined image number (mode 1) or user slot 1-9 (mode 2).
 
   MarkerRingConfig custom_hour_marker;

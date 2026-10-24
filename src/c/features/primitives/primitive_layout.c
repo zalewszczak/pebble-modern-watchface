@@ -26,7 +26,8 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
     PrimitiveInstance *p = &feature->items[i];
     if (p->kind == PRIMITIVE_KIND_ICON) {
       p->width = FEATURE_ICON_WIDTH;
-      advance[i] = feature_icons_plus_gap_width(p->icon_kind);
+      // User-built sequences add no automatic gap after an icon.
+      advance[i] = feature->tight ? FEATURE_ICON_WIDTH : feature_icons_plus_gap_width(p->icon_kind);
     } else {
       const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
       GSize sz = graphics_text_layout_get_content_size(
@@ -34,7 +35,17 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
           GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
       p->width = sz.w + 2;
       advance[i] = p->width + 5;
+      if (feature->tight) {
+        // Exactly the glyph run: any spacing is a Space element the user added.
+        advance[i] = sz.w;
+        if (p->kind == PRIMITIVE_KIND_SPACE) {
+          int16_t min_space = (font_h * 3) / 10;
+          if (min_space < 3) min_space = 3;
+          if (advance[i] < min_space) advance[i] = min_space;
+        }
+      }
     }
+    if (feature->tight) continue; // the punctuation tightening below is for built-in features
     // Punctuation and units sit tight: nothing between an element and a
     // following closer/unit/dot/comma, nothing after an opening parenthesis.
     if (p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] == '(') advance[i] -= 5;

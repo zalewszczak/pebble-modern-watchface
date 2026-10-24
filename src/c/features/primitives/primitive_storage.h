@@ -42,6 +42,7 @@ typedef struct {
 
 typedef struct {
   uint8_t count;
+  bool tight;          // user-built sequence: no automatic gaps, spacing comes only from Space elements
   int16_t total_width; // Section 11: computed once, not recomputed every frame
   PrimitiveInstance items[PRIMITIVE_FEATURE_MAX];
 } PrimitiveFeature;
