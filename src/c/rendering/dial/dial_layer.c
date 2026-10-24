@@ -6,6 +6,7 @@
 #include "./dial_cache.h"
 #include "../../data/watch_ui.h"
 #include "../../input/input.h"
+#include "../status/status_label.h"
 
 typedef struct {
   WatchData *data;
@@ -13,6 +14,8 @@ typedef struct {
   uint16_t anim_elapsed_ms;
   MarkerLayerState markers;
   DialCache cache;
+  bool bg_ok;             // the last static draw managed to draw the background image
+  uint8_t bg_fail_streak; // consecutive rebuilds where it did not
 } DialState;
 
 // ---- static content --------------------------------------------------------
@@ -71,7 +74,7 @@ static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoi
   graphics_context_set_fill_color(ctx, bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  bg_image_draw(ctx, d, bounds, origin);
+  state->bg_ok = bg_image_draw(ctx, d, bounds, origin);
   // Below the indices, above the background image.
   if (border_on) weather_border_draw(ctx, border, bounds, origin);
 
@@ -120,6 +123,22 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
 
   if (dial_cache_failed(&state->cache, sig)) return; // out of memory earlier: stay uncached
 
+  // The background image could not be drawn (a transient out-of-memory or
+  // storage hiccup): do not freeze that into the cache, and do not flash an
+  // error either -- just draw again next frame. Only a failure that keeps
+  // repeating is reported.
+  if (!state->bg_ok) {
+    marker_layer_release_resources(&state->markers);
+    if (state->bg_fail_streak < 255) state->bg_fail_streak++;
+    if (state->bg_fail_streak < 4) {
+      layer_mark_dirty(layer);
+    } else if (state->bg_fail_streak == 4) {
+      status_label_set("BG: image failed", GColorRed, false);
+    }
+    return;
+  }
+  state->bg_fail_streak = 0;
+
   // The drawing resources are not needed again until the next rebuild; free
   // them BEFORE allocating the cache so the cache has the room.
   marker_layer_release_resources(&state->markers);
@@ -133,6 +152,8 @@ Layer *dial_layer_create(GRect frame) {
   state->data = NULL;
   state->anim_active = false;
   state->anim_elapsed_ms = 0;
+  state->bg_ok = true;
+  state->bg_fail_streak = 0;
   marker_layer_init(&state->markers);
   dial_cache_init(&state->cache);
   layer_set_update_proc(layer, dial_update_proc);

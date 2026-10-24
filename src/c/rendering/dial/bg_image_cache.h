@@ -10,7 +10,9 @@
 // Draws the selected image (predefined resource, or the uploaded one from
 // persistent storage) centred in `bounds`. `origin` is the layer's screen
 // position. Does nothing when the feature is off.
-void bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin);
+// Returns false only when an image was supposed to be drawn but could not be
+// (out of memory, storage read problem); the caller retries instead of caching.
+bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin);
 
 // Identifies what bg_image_draw() would draw (0 = nothing), for the cache
 // signature: changes whenever the selected image changes.

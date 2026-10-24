@@ -1,6 +1,5 @@
 #include "./bg_image_cache.h"
 #include "./bg_image_store.h"
-#include "../status/status_label.h"
 #include "../../generated/background_presets.h"
 
 uint32_t bg_image_signature(const WatchData *d) {
@@ -15,15 +14,12 @@ uint32_t bg_image_signature(const WatchData *d) {
   return 0;
 }
 
-void bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin) {
+bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin) {
   if (d->custom_bg_mode == 1) {
     uint32_t res_id = bg_preset_resource_id(d->custom_bg_preset);
-    if (res_id == 0) return; // that predefined image is not in this build
+    if (res_id == 0) return true; // that predefined image is not in this build
     GBitmap *bm = gbitmap_create_with_resource(res_id);
-    if (!bm) {
-      status_label_set("BG: image failed", GColorRed, false);
-      return;
-    }
+    if (!bm) return false;
     GRect b = gbitmap_get_bounds(bm);
     GRect dest = GRect(bounds.origin.x + (bounds.size.w - b.size.w) / 2,
                        bounds.origin.y + (bounds.size.h - b.size.h) / 2,
@@ -32,9 +28,8 @@ void bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
     graphics_draw_bitmap_in_rect(ctx, bm, dest);
     gbitmap_destroy(bm);
   } else if (d->custom_bg_mode == 2) {
-    if (bg_image_store_stamp(d->custom_bg_preset) == 0) return; // slot empty / not received yet
-    if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) {
-      status_label_set("BG: image failed", GColorRed, false);
-    }
+    if (bg_image_store_stamp(d->custom_bg_preset) == 0) return true; // slot empty / not received yet
+    if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) return false;
   }
+  return true;
 }
