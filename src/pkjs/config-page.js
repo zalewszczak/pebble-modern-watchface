@@ -258,6 +258,7 @@ var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOption
 // handEditorModalHtml all moved to config/config-hands.js
 // (configuration architecture extraction, JS8 fifth slice).
 var configBackground = require('./config/config-background');
+var configBorder = require('./config/config-border');
 var configHands = require('./config/config-hands');
 var handHiddenInputsHtml = configHands.handHiddenInputsHtml;
 var HAND_COPY_SOURCE = configHands.HAND_COPY_SOURCE;
@@ -1095,6 +1096,7 @@ configPresetSchedule.css +
 '  .slot-middle-right-l1 { right: 6px; top: calc(50% - 15px); transform: translateY(-50%); }' +
 '  .slot-middle-right-l2 { right: 6px; top: calc(50% + 15px); transform: translateY(-50%); }' +
     configBackground.backgroundCss() +
+    configBorder.borderCss() +
 '</style></head>' +
 '<body>' +
 
@@ -1511,7 +1513,18 @@ configPresetSchedule.modalHtml +
 '      </div>' +
 '    </div>' +
 
-    configBackground.backgroundSectionHtml(current) +
+'    <div class="subsection">' +
+      subsectionLegendHtml('background', 'Background style') +
+'      <div class="subsection-body" id="subsec-background" style="display:none;">' +
+        configBackground.backgroundSectionHtml(current) +
+'      </div>' +
+'    </div>' +
+'    <div class="subsection">' +
+      subsectionLegendHtml('border', 'Border style') +
+'      <div class="subsection-body" id="subsec-border" style="display:none;">' +
+        configBorder.borderSectionHtml(current) +
+'      </div>' +
+'    </div>' +
 
 '  </fieldset>' +
 
@@ -2732,6 +2745,7 @@ fontManagerSource +
 require('./config/config-preview') +
 
 configBackground.backgroundScript(current) +
+configBorder.borderScript() +
 
 // Runtime copy of presets-lookups.js's own CORNER_CATEGORIES --
 // serialized straight from that same canonical array (already
@@ -3843,6 +3857,7 @@ configBackground.backgroundScript(current) +
 '  selectVerticalOption("bgAnimModeGroup", "bgAnimMode", document.getElementById("bgAnimMode").value);' +
 '  selectVerticalOption("shakeAnimModeGroup", "shakeAnimMode", document.getElementById("shakeAnimMode").value);' +
 '  bgAfterStyleApplied();' +
+'  borderAfterStyleApplied();' +
 '  onMarkerStyleChange();' +
 '  updateHandStyleButtonLabel();' +
 '  onCornerFontChange();' +
@@ -5087,6 +5102,8 @@ require('./config/config-runtime') +
 '  try { setSubheaderText("style", computeStyleSubheader()); } catch (e) {}' +
 '  try { refreshHandsSubsectionPreview(); } catch (e) {}' +
 '  try { refreshIndicesSubsectionPreview(); } catch (e) {}' +
+'  try { refreshBackgroundSubsectionPreview(); } catch (e) {}' +
+'  try { refreshBorderSubsectionPreview(); } catch (e) {}' +
 '  try { setSubheaderHtml("colors", computeColorsSubheaderHtml()); } catch (e) {}' +
 '  try { setSubheaderText("corners", computeFeaturesSubheader()); } catch (e) {}' +
 '  try { setSubheaderText("animation", computeAnimationSubheader()); } catch (e) {}' +
@@ -5128,6 +5145,7 @@ require('./config/config-runtime') +
 '    requestAnimationFrame(function () { setStartupProgress(28, "Building the settings page…"); });' +
 '  })();' +
 'bgInit();' +
+'borderInit();' +
 'onMarkerStyleChange();' +
 'updateHourlyVibeVisibility();' +
 'if (window.__modernStartupProgress) window.__modernStartupProgress(42, "Preparing controls…");' +

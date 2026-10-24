@@ -111,6 +111,8 @@ var FIELD_MAP = {
   cornerBRShake: ['CONFIG_CORNER_BR_SHAKE', 's'],
   useCustomBg: ['CONFIG_USE_CUSTOM_BG', 'b'],
   bgSource: ['CONFIG_BG_SOURCE', 's'],
+  borderWeatherMode: ['CONFIG_BORDER_WEATHER_MODE', 's'],
+  borderWeatherPx: ['CONFIG_BORDER_WEATHER_PX', 's'],
   customHourStyle: ['CONFIG_CUSTOM_HOUR_STYLE', 's'],
   customHourThickness: ['CONFIG_CUSTOM_HOUR_THICKNESS', 's'],
   customHourInnerThickness: ['CONFIG_CUSTOM_HOUR_INNER_THICKNESS', 's'],

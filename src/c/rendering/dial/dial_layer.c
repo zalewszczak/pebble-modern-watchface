@@ -2,6 +2,7 @@
 #include "./dial_animation.h"
 #include "./marker_layer.h"
 #include "./bg_image_cache.h"
+#include "./weather_border.h"
 #include "./dial_cache.h"
 #include "../../data/watch_ui.h"
 
@@ -41,7 +42,8 @@ static uint32_t sig_bytes(uint32_t h, const void *p, size_t n) {
 }
 
 static uint32_t dial_static_signature(const WatchData *d, GSize size,
-                                      GColor bg, GColor main_color, GColor accent_color) {
+                                      GColor bg, GColor main_color, GColor accent_color,
+                                      const WeatherBorderLook *border, bool border_on) {
   uint32_t h = 2166136261u;
   h = sig_mix(h, ((uint32_t)size.w << 16) | (uint16_t)size.h);
   h = sig_mix(h, ((uint32_t)bg.argb << 16) | ((uint32_t)main_color.argb << 8) | accent_color.argb);
@@ -56,16 +58,21 @@ static uint32_t dial_static_signature(const WatchData *d, GSize size,
   h = sig_mix(h, ((uint32_t)d->marker_text.hour_mask << 16) | d->marker_text.second_mask);
   // Custom background image (selection, or the uploaded image's stamp).
   h = sig_mix(h, bg_image_signature(d));
+  // Weather border (colours already fold in the current hour and the forecast).
+  h = sig_mix(h, border_on ? weather_border_signature(border) : 0);
   return h ? h : 1u;
 }
 
 static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoint origin,
                              const WatchData *d, GColor bg, GColor main_color, GColor accent_color,
+                             const WeatherBorderLook *border, bool border_on,
                              bool animating, int32_t progress_1000) {
   graphics_context_set_fill_color(ctx, bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   bg_image_draw(ctx, d, bounds, origin);
+  // Below the indices, above the background image.
+  if (border_on) weather_border_draw(ctx, border, bounds, origin);
 
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
   marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
@@ -83,16 +90,19 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
   GColor bg, main_color, accent_color;
   watch_ui_get_active_color_scheme(d, time(NULL), &bg, &main_color, &accent_color);
 
+  WeatherBorderLook border;
+  bool border_on = weather_border_compute(d, time(NULL), &border);
+
   // The launch animation moves the indices every frame, so it cannot be cached.
   bool animating = state->anim_active && d->bg_anim_mode == 1;
   if (animating) {
     int32_t progress_1000 = ((int32_t)state->anim_elapsed_ms * 1000) / DIAL_ANIMATION_DURATION_MS;
     if (progress_1000 > 1000) progress_1000 = 1000;
-    dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, true, progress_1000);
+    dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on, true, progress_1000);
     return;
   }
 
-  uint32_t sig = dial_static_signature(d, bounds.size, bg, main_color, accent_color);
+  uint32_t sig = dial_static_signature(d, bounds.size, bg, main_color, accent_color, &border, border_on);
 
   // Fast path: nothing static changed -> one blit.
   if (dial_cache_valid(&state->cache, sig, bounds.size) &&
@@ -103,7 +113,7 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
   // Rebuild: draw everything once, then snapshot it. The old cache is freed
   // first so two full-layer bitmaps never coexist.
   dial_cache_release(&state->cache);
-  dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, false, 1000);
+  dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on, false, 1000);
 
   if (dial_cache_failed(&state->cache, sig)) return; // out of memory earlier: stay uncached
 

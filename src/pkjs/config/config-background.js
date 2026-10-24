@@ -70,14 +70,18 @@ function backgroundSectionHtml(current) {
   } else {
     presetHtml = '<div class="help">No predefined backgrounds yet.</div>';
   }
+  // Returns only the INNER content: config-page.js wraps it in the same
+  // collapsible subsection (subsectionLegendHtml + .subsection-body) that
+  // Hands style and Indices style use.
   return '' +
-'    <div class="checkbox-row subsection" id="useCustomBgRow">' +
+'    <div class="help">Choose what is drawn behind the indices: the plain background color, one of the predefined images, or your own photos.</div>' +
+'    <div class="checkbox-row" id="useCustomBgRow">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + ' onchange="onUseCustomBgChange()">' +
 '      <label for="useCustomBg" style="margin:0;">Use custom background</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-useCustomBg\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-useCustomBg" style="display:none;">Draws an image behind the indices instead of the plain background color. Pick one of the predefined images, or add your own photo: it is cropped to the watch screen, converted to 64 colors, and sent to the watch when you press Save (this can take around 20 seconds).</div>' +
-'    <div id="bgPanel" class="subsection" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
+'    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
 '      <div class="bg-subtitle">Predefined</div>' +
 '      ' + presetHtml +
@@ -421,6 +425,18 @@ var CLIENT_BODY =
 '    }\n' +
 '  }\n' +
 '  host.innerHTML = html;\n' +
+'}\n' +
+'// Collapsed-header thumbnail + sub-header for the Background style subsection.\n' +
+'function refreshBackgroundSubsectionPreview() {\n' +
+'  var box = bgEl("useCustomBg");\n' +
+'  var html = "", title = "Plain background color";\n' +
+'  if (box && box.checked) {\n' +
+'    var s = bgParseSource();\n' +
+'    if (s.kind === "u" && bgSlotHas(s.n)) { var u = bgSlotThumbUrl(s.n); if (u) html = \'<img src="\' + u + \'" alt="">\'; title = "My image " + s.n; }\n' +
+'    else if (s.kind === "p") { var im = bgEl("bgPresetImg-" + s.n); if (im) html = \'<img src="\' + im.getAttribute("src") + \'" alt="">\'; title = "Predefined background " + s.n; }\n' +
+'  }\n' +
+'  setPreviewThumbnail("subsecpreview-background", html);\n' +
+'  setSubsubheaderText("background", title);\n' +
 '}\n' +
 'function bgRefresh() {\n' +
 '  bgSyncUi();\n' +

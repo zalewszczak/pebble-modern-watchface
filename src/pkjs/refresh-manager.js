@@ -458,7 +458,8 @@ function refreshAndSend(force, resendOnSkip) {
                     aqiUs: aqi.aqiUs, aqiEu: aqi.aqiEu, altitudeMeters: altitudeMeters,
                     auroraKpX10: (typeof aurora.kp === 'number') ? Math.round(aurora.kp * 10) : null,
                     auroraErrorCode: auroraErrorCode,
-                    forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition
+                    forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition,
+                    forecastCloudPct: snapshot.forecastCloudPct
                   }
                 });
                 markRefreshDone(lat, lon);

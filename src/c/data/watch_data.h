@@ -151,6 +151,10 @@ typedef struct {
   // transferred into persistent storage ahead of time (see
   // rendering/dial/bg_image_store.h).
   uint8_t custom_bg_mode;
+  // Weather border drawn into the cached background, below the indices:
+  // 0 = off, 1 = conditions, 2 = temperature; thickness 2-40 px.
+  uint8_t border_weather_mode;
+  uint8_t border_weather_px;
   uint8_t custom_bg_preset; // 1-based predefined image number (mode 1) or user slot 1-9 (mode 2).
 
   MarkerRingConfig custom_hour_marker;
@@ -267,6 +271,8 @@ typedef struct {
   // structurally the same data.
   int16_t forecast_temp_c[FORECAST_SLOT_COUNT];
   uint8_t forecast_condition[FORECAST_SLOT_COUNT];
+  // Cloud cover 0-100 % per forecast slot (hours only; used by the weather border).
+  uint8_t forecast_cloud_pct[FORECAST_SLOT_COUNT];
   // Phase 7: PKJS-computed icon categories, same as weather_icon_category
   // above but one per forecast index, gated on forecast_temp_display[idx]
   // (see feature_value_weather.c's case 87-95).

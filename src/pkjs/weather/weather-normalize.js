@@ -322,6 +322,7 @@ function weatherConditionColorByte(conditionCode, cloudPct, rainChancePct) {
 }
 
 module.exports = {
+  SEVEN_STOP_GRADIENT_STOPS: SEVEN_STOP_GRADIENT_STOPS,
   conditionFromWmoCode: conditionFromWmoCode,
   formatTempDisplay: formatTempDisplay,
   apparentTempC: apparentTempC,

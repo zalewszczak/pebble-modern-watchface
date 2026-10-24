@@ -140,7 +140,8 @@
       "FORECAST_TEMP_DISPLAY_11",
       "FORECAST_TEMP_DISPLAY_12",
       "FORECAST_TEMP_DISPLAY_13",
-      "FORECAST_TEMP_DISPLAY_14"
+      "FORECAST_TEMP_DISPLAY_14",
+      "FORECAST_CLOUD"
     ],
     "resources": {
       "media": [

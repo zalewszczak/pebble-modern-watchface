@@ -142,6 +142,8 @@ Pebble.addEventListener('showConfiguration', function () {
     cornerBRShake: getSetting('CONFIG_CORNER_BR_SHAKE', '0'),
     useCustomBg: getSetting('CONFIG_USE_CUSTOM_BG', 'false') === 'true',
     bgSource: getSetting('CONFIG_BG_SOURCE', 'p:1'),
+    borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
+    borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     bgSlots: bgImageSync.getSlots(),
     bitmapMarkerTransparent: getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true',
     // Browser-side only -- the watch never needs this. By the time
@@ -457,6 +459,8 @@ Pebble.addEventListener('webviewclosed', function (e) {
   setSetting('CONFIG_CORNER_BR_SHAKE', settings.CONFIG_CORNER_BR_SHAKE === '1' ? '1' : '0');
   setSetting('CONFIG_USE_CUSTOM_BG', settings.CONFIG_USE_CUSTOM_BG ? 'true' : 'false');
   setSetting('CONFIG_BG_SOURCE', settings.CONFIG_BG_SOURCE || 'p:1');
+  setSetting('CONFIG_BORDER_WEATHER_MODE', (settings.CONFIG_BORDER_WEATHER_MODE === '1' || settings.CONFIG_BORDER_WEATHER_MODE === '2') ? settings.CONFIG_BORDER_WEATHER_MODE : '0');
+  setSetting('CONFIG_BORDER_WEATHER_PX', String(Math.max(2, Math.min(40, parseInt(settings.CONFIG_BORDER_WEATHER_PX, 10) || 8))));
   bgImageSync.applySlotUpdates(settings.CONFIG_BG_SLOT_UPDATES);
   setSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', settings.CONFIG_BITMAP_MARKER_TRANSPARENT ? 'true' : 'false');
   setSetting('CONFIG_BITMAP_CORNER_OVERRIDE', settings.CONFIG_BITMAP_CORNER_OVERRIDE ? 'true' : 'false');

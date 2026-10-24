@@ -44,6 +44,8 @@ void watch_defaults_apply(WatchData *d) {
   d->corner_content[3] = FEATURE_DEFAULT_DAY_OF_MONTH;
 
   // White main and accent colors on a black background.
+  d->border_weather_mode = 0;
+  d->border_weather_px = 8;
   d->custom_bg = COLOR_BLACK;
   d->custom_text = COLOR_WHITE;
   d->custom_accent = COLOR_WHITE;

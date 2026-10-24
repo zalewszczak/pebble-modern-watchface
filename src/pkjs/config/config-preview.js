@@ -925,6 +925,7 @@ module.exports =
 '  ctx.fillStyle = colors.bg;' +
 '  ctx.fillRect(0, 0, w, h);' +
 '  drawCustomBackgroundPreview(ctx, w, h);' +
+'  drawWeatherBorderPreview(ctx, w, h);' +
 '  var markerStyleVal = document.getElementById("bigAnalogMarkerStyle").value;' +
 '  var markerStyleInt = parseInt(markerStyleVal, 10);' +
 '  var markerImageDrawn = (markerStyleInt >= 3 && markerStyleInt <= 7) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, colors.text);' +

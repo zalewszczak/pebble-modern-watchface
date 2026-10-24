@@ -15,7 +15,7 @@ static AppTimer *s_shake_anim_timer = NULL;
 static bool s_shake_anim_active = false;
 static AppTimer *s_shake_features_timer = NULL;
 static bool s_shake_features_active = false;
-static uint32_t s_shake_anim_elapsed_ms = 0;
+static int64_t s_shake_anim_start_ms = 0;
 static uint32_t s_shake_anim_duration_ms = 3000;
 
 // Shared compass heading state.  Pebble reports counter-clockwise angles;
@@ -167,11 +167,20 @@ static void maybe_start_compass_feature(void) {
   compass_heading_service_ensure();
 }
 
+static int64_t shake_now_ms(void) {
+  time_t sec;
+  uint16_t ms;
+  time_ms(&sec, &ms);
+  return (int64_t)sec * 1000 + ms;
+}
+
 static void shake_anim_timer_callback(void *data) {
   (void)data;
-  s_shake_anim_elapsed_ms += SHAKE_ANIM_FRAME_MS;
+  // Use wall-clock time: frames render slower than SHAKE_ANIM_FRAME_MS, so
+  // counting nominal frame lengths made the animation outlast the slider.
+  int64_t elapsed = shake_now_ms() - s_shake_anim_start_ms;
 
-  bool still_active = s_shake_anim_elapsed_ms < s_shake_anim_duration_ms;
+  bool still_active = elapsed < (int64_t)s_shake_anim_duration_ms;
   if (!still_active) {
     s_shake_anim_active = false;
     s_shake_anim_timer = NULL;
@@ -207,7 +216,7 @@ static void maybe_start_shake_features(void) {
 static void maybe_start_shake_animation(void) {
   if (s_data->shake_anim_mode == 0) return;
   s_shake_anim_active = true;
-  s_shake_anim_elapsed_ms = 0;
+  s_shake_anim_start_ms = shake_now_ms();
   uint8_t seconds = s_data->shake_seconds > 0 ? s_data->shake_seconds : 3;
   s_shake_anim_duration_ms = (uint32_t)seconds * 1000;
   if (s_shake_anim_timer) app_timer_cancel(s_shake_anim_timer);

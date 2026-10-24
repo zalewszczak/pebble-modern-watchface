@@ -55,6 +55,8 @@ var shadowTranslucentCode = settingsCodecs.shadowTranslucentCode;
 var shadowAngleCode = settingsCodecs.shadowAngleCode;
 var bigAnalogMarkerStyleCode = settingsCodecs.bigAnalogMarkerStyleCode;
 var bitmapMarkerTransparentCode = settingsCodecs.bitmapMarkerTransparentCode;
+var borderWeatherModeCode = settingsCodecs.borderWeatherModeCode;
+var borderWeatherPxCode = settingsCodecs.borderWeatherPxCode;
 var drawFeaturesBeneathHandsCode = settingsCodecs.drawFeaturesBeneathHandsCode;
 var clampInt = settingsCodecs.clampInt;
 var customMarkerStyleCode = settingsCodecs.customMarkerStyleCode;
@@ -412,7 +414,8 @@ function populateSettingsFields(dict) {
     weatherIconStyleCode(), aqiUnitCode(), altitudeUnitCode(),
     batterySaverEnabledCode(), bitmapMarkerTransparentCode(), drawDebugCode(),
     hourlyVibeOverrideQuietCode(),
-    bgImageSync.modeCode(), bgImageSync.presetCode()
+    bgImageSync.modeCode(), bgImageSync.presetCode(),
+    borderWeatherModeCode(), borderWeatherPxCode()
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per
@@ -661,6 +664,12 @@ function extraWeatherFieldsDict(extra) {
       forecastColorBytes.push(tempGradientColorByte(c));
     });
     dict['FORECAST_TEMP_COLORS'] = forecastColorBytes;
+  }
+  if (extra.forecastCloudPct) {
+    // Per-hour cloud cover (0-100) for the weather border.
+    dict['FORECAST_CLOUD'] = extra.forecastCloudPct.map(function (c) {
+      return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0;
+    });
   }
   if (extra.forecastCondition) {
     dict['FORECAST_CONDITION'] = extra.forecastCondition.map(function (c) {

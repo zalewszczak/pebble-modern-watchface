@@ -462,6 +462,16 @@ function startupClockAnimModeCode() {
 }
 // 0=off, 1=animate the markers in. The old "planets" option (1) is gone, so
 // an old stored 2 ("markers") maps to 1 and an old stored 1 to off.
+// Weather border: 0=off, 1=conditions, 2=temperature; thickness 2-40 px.
+function borderWeatherModeCode() {
+  var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
+  return (v === 1 || v === 2) ? v : 0;
+}
+function borderWeatherPxCode() {
+  var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_PX', '8'), 10);
+  if (isNaN(v)) v = 8;
+  return Math.max(2, Math.min(40, v));
+}
 function bgAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_BG_ANIM_MODE', '0'), 10);
   return v === 2 ? 1 : 0;
@@ -613,6 +623,8 @@ module.exports = {
   shadowAngleCode: shadowAngleCode,
   bigAnalogMarkerStyleCode: bigAnalogMarkerStyleCode,
   bitmapMarkerTransparentCode: bitmapMarkerTransparentCode,
+  borderWeatherModeCode: borderWeatherModeCode,
+  borderWeatherPxCode: borderWeatherPxCode,
   drawFeaturesBeneathHandsCode: drawFeaturesBeneathHandsCode,
   clampInt: clampInt,
   customMarkerStyleCode: customMarkerStyleCode,

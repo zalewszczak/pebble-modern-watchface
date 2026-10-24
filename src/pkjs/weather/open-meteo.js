@@ -64,7 +64,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
     cloudAltitudePct: 50, uvIndexMax: null, uvIndexCurrent: null, rainChancePct: null, humidityPct: null, windSpeedKmh: null,
     currentCloudPct: null, windDirDeg: null, dewPointC: null, pressureHpa: null, pressureTrend: 0,
     forecastTempC: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
-    forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    forecastCloudPct: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   };
   xhrGetJSON(url, 8000, function (err, json) {
     if (err) return cb(err, emptyExtras);
@@ -158,6 +159,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       // day slots to keep the original indices stable).
       var forecastTempC = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
       var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var forecastCloudPct = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var hourlyCloud = json.hourly.cloudcover;
       var hourlyTemps = json.hourly.temperature_2m;
       for (var fh = 0; fh < 12; fh++) {
         var fIdx = nowIdx + 1 + fh;
@@ -165,6 +168,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         if (hourlyTemps && typeof hourlyTemps[fIdx] === 'number') {
           forecastTempC[slot] = Math.round(hourlyTemps[fIdx]);
         }
+        if (hourlyCloud && typeof hourlyCloud[fIdx] === 'number') forecastCloudPct[slot] = hourlyCloud[fIdx];
         if (hourlyCodes && hourlyCodes.length > fIdx) {
           forecastCondition[slot] = conditionFromWmoCode(hourlyCodes[fIdx]);
         }
@@ -212,7 +216,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         rainChancePct: rainChancePct, humidityPct: humidityPct, windSpeedKmh: windSpeedKmh,
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
-        forecastTempC: forecastTempC, forecastCondition: forecastCondition
+        forecastTempC: forecastTempC, forecastCondition: forecastCondition,
+        forecastCloudPct: forecastCloudPct
       });
     } catch (e) {
       cb(e, emptyExtras);
