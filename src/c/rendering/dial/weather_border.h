@@ -9,17 +9,26 @@
 // (at 14:20 the 3 o'clock sector is 15:00, i.e. +1 h, and 2 o'clock is +12 h).
 // Drawn into the dial's static cache below the indices, so it costs nothing
 // per tick.
+//
+// Styles (border_weather_mode): 1 conditions, 2 temperature, 3 rain chance,
+// 4 all three as stripes (outer = temperature, middle = rain chance,
+// inner = conditions). Each style has three colour schemes
+// (border_weather_scheme 0-2).
 
-// Per-sector colours. Two ARGB bytes per sector so overcast can be a 50 %
-// checker of two grays (the 64-colour palette has only two mid grays);
-// 0 = transparent (nothing drawn).
+#define WEATHER_BORDER_MAX_LAYERS 3
+
+// Per-sector colours for each stripe. Two ARGB bytes per sector so overcast
+// can be a 50 % checker of two grays (the 64-colour palette has only two mid
+// grays); 0 = transparent (nothing drawn). Layer 0 is the outermost stripe.
 typedef struct {
-  uint8_t c0[12];
-  uint8_t c1[12];
-  uint8_t px;
+  uint8_t c0[WEATHER_BORDER_MAX_LAYERS][12];
+  uint8_t c1[WEATHER_BORDER_MAX_LAYERS][12];
+  uint8_t layers;  // 1 or 3
+  uint8_t px;      // total thickness
+  uint8_t semi;    // draw only every other pixel
 } WeatherBorderLook;
 
-// Returns false when the border is off (or has no data at all).
+// Returns false when the border is off.
 bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *out);
 
 // Hash of everything weather_border_compute() produced, for the cache signature.

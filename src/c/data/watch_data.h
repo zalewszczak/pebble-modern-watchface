@@ -152,9 +152,14 @@ typedef struct {
   // rendering/dial/bg_image_store.h).
   uint8_t custom_bg_mode;
   // Weather border drawn into the cached background, below the indices:
-  // 0 = off, 1 = conditions, 2 = temperature; thickness 2-40 px.
+  // 0 = off, 1 = conditions, 2 = temperature, 3 = rain chance, 4 = all three
+  // as stripes; thickness 2-40 px; colour scheme 0-2; shake = only while the
+  // "show on shake" window is open; semi = every other pixel (checkerboard).
   uint8_t border_weather_mode;
   uint8_t border_weather_px;
+  uint8_t border_weather_scheme;
+  uint8_t border_weather_shake;
+  uint8_t border_weather_semi;
   uint8_t custom_bg_preset; // 1-based predefined image number (mode 1) or user slot 1-9 (mode 2).
 
   MarkerRingConfig custom_hour_marker;
@@ -271,8 +276,11 @@ typedef struct {
   // structurally the same data.
   int16_t forecast_temp_c[FORECAST_SLOT_COUNT];
   uint8_t forecast_condition[FORECAST_SLOT_COUNT];
-  // Cloud cover 0-100 % per forecast slot (hours only; used by the weather border).
-  uint8_t forecast_cloud_pct[FORECAST_SLOT_COUNT];
+  // Weather border (hour slots only): detailed class 0 clear, 1 partly,
+  // 2 overcast, 3 fog, 4 drizzle, 5 rain, 6 heavy rain, 7 snow, 8 thunder,
+  // 9 sleet; and rain chance 0-100 %.
+  uint8_t forecast_wx[FORECAST_SLOT_COUNT];
+  uint8_t forecast_rain_pct[FORECAST_SLOT_COUNT];
   // Phase 7: PKJS-computed icon categories, same as weather_icon_category
   // above but one per forecast index, gated on forecast_temp_display[idx]
   // (see feature_value_weather.c's case 87-95).

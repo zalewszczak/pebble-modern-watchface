@@ -7,6 +7,7 @@
 
 var xhrGetJSON = require('./http').xhrGetJSON;
 var conditionFromWmoCode = require('./weather-normalize').conditionFromWmoCode;
+var weatherDetailClass = require('./weather-normalize').weatherDetailClass;
 
 // Average hourly cloud-cover (%) across the hours spanning
 // [fromDate, toDate], from Open-Meteo's hourly forecast.
@@ -54,7 +55,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
   var url = 'https://api.open-meteo.com/v1/forecast' +
             '?latitude=' + encodeURIComponent(lat) +
             '&longitude=' + encodeURIComponent(lon) +
-            '&hourly=cloudcover,weathercode,cloudcover_low,cloudcover_mid,cloudcover_high,relativehumidity_2m,dewpoint_2m,surface_pressure,temperature_2m,uv_index' +
+            '&hourly=cloudcover,weathercode,cloudcover_low,cloudcover_mid,cloudcover_high,precipitation_probability,relativehumidity_2m,dewpoint_2m,surface_pressure,temperature_2m,uv_index' +
             '&daily=sunrise,sunset,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max,weathercode' +
             '&current_weather=true' +
             '&timezone=auto' +
@@ -65,7 +66,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
     currentCloudPct: null, windDirDeg: null, dewPointC: null, pressureHpa: null, pressureTrend: 0,
     forecastTempC: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
     forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    forecastCloudPct: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    forecastWx: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    forecastRainPct: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   };
   xhrGetJSON(url, 8000, function (err, json) {
     if (err) return cb(err, emptyExtras);
@@ -159,7 +161,9 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       // day slots to keep the original indices stable).
       var forecastTempC = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
       var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-      var forecastCloudPct = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var forecastWx = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var forecastRainPct = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var hourlyRain = json.hourly.precipitation_probability;
       var hourlyCloud = json.hourly.cloudcover;
       var hourlyTemps = json.hourly.temperature_2m;
       for (var fh = 0; fh < 12; fh++) {
@@ -168,7 +172,10 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         if (hourlyTemps && typeof hourlyTemps[fIdx] === 'number') {
           forecastTempC[slot] = Math.round(hourlyTemps[fIdx]);
         }
-        if (hourlyCloud && typeof hourlyCloud[fIdx] === 'number') forecastCloudPct[slot] = hourlyCloud[fIdx];
+        var fCloud = (hourlyCloud && typeof hourlyCloud[fIdx] === 'number') ? hourlyCloud[fIdx] : 0;
+        if (hourlyCodes && hourlyCodes.length > fIdx) forecastWx[slot] = weatherDetailClass(hourlyCodes[fIdx], fCloud);
+        else forecastWx[slot] = weatherDetailClass(-1, fCloud);
+        if (hourlyRain && typeof hourlyRain[fIdx] === 'number') forecastRainPct[slot] = Math.max(0, Math.min(100, Math.round(hourlyRain[fIdx])));
         if (hourlyCodes && hourlyCodes.length > fIdx) {
           forecastCondition[slot] = conditionFromWmoCode(hourlyCodes[fIdx]);
         }
@@ -217,7 +224,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
         forecastTempC: forecastTempC, forecastCondition: forecastCondition,
-        forecastCloudPct: forecastCloudPct
+        forecastWx: forecastWx, forecastRainPct: forecastRainPct
       });
     } catch (e) {
       cb(e, emptyExtras);

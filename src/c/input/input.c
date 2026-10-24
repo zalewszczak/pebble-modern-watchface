@@ -202,7 +202,8 @@ static void shake_features_timer_callback(void *data) {
 // Opens (or extends) the window during which "show on shake" features are
 // visible; it lasts as long as the shake animation does (shake_seconds).
 static void maybe_start_shake_features(void) {
-  if (s_data->shake_only_mask == 0) return;
+  bool border_on_shake = s_data->border_weather_mode != 0 && s_data->border_weather_shake;
+  if (s_data->shake_only_mask == 0 && !border_on_shake) return;
   uint8_t seconds = s_data->shake_seconds > 0 ? s_data->shake_seconds : 3;
   bool was_active = s_shake_features_active;
   s_shake_features_active = true;

@@ -14,6 +14,25 @@ function conditionFromWmoCode(code) {
   return 0;
 }
 
+// Detailed per-hour weather class for the watch's weather border:
+// 0 clear, 1 partly cloudy, 2 overcast, 3 fog, 4 drizzle, 5 rain, 6 heavy
+// rain, 7 snow, 8 thunderstorm, 9 sleet / freezing rain. Clear / partly /
+// overcast come from the cloud cover when the WMO code itself says nothing
+// about precipitation or fog.
+function weatherDetailClass(code, cloudPct) {
+  if (code === 45 || code === 48) return 3;
+  if (code === 51 || code === 53 || code === 55) return 4;
+  if (code === 56 || code === 57 || code === 66 || code === 67) return 9;
+  if (code === 65 || code === 82) return 6;
+  if (code === 61 || code === 63 || code === 80 || code === 81) return 5;
+  if ((code >= 71 && code <= 77) || code === 85 || code === 86) return 7;
+  if (code === 95 || code === 96 || code === 99) return 8;
+  var c = (typeof cloudPct === 'number' && !isNaN(cloudPct)) ? cloudPct : 0;
+  if (c < 20) return 0;
+  if (c < 60) return 1;
+  return 2;
+}
+
 // ---- display-value formatting (Feature Primitive Refactor, Phase 7) ------
 //
 // Moves the current-temperature unit conversion out of the watch
@@ -323,6 +342,7 @@ function weatherConditionColorByte(conditionCode, cloudPct, rainChancePct) {
 
 module.exports = {
   SEVEN_STOP_GRADIENT_STOPS: SEVEN_STOP_GRADIENT_STOPS,
+  weatherDetailClass: weatherDetailClass,
   conditionFromWmoCode: conditionFromWmoCode,
   formatTempDisplay: formatTempDisplay,
   apparentTempC: apparentTempC,

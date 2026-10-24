@@ -81,6 +81,9 @@ module.exports =
 '    CONFIG_BG_SOURCE: document.getElementById("bgSource").value,' +
 '    CONFIG_BORDER_WEATHER_MODE: document.getElementById("borderWeatherMode").value,' +
 '    CONFIG_BORDER_WEATHER_PX: document.getElementById("borderWeatherPx").value,' +
+'    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +
+'    CONFIG_BORDER_WEATHER_SHAKE: document.getElementById("borderWeatherShake").checked,' +
+'    CONFIG_BORDER_WEATHER_SEMI: document.getElementById("borderWeatherSemi").checked,' +
 '    CONFIG_BG_SLOT_UPDATES: (typeof bgSlotUpdates === "object" && bgSlotUpdates) ? bgSlotUpdates : {},' +
 '    CONFIG_BITMAP_CORNER_OVERRIDE: document.getElementById("bitmapCornerOverride").checked,' +
 '    CONFIG_DRAW_FEATURES_BENEATH_HANDS: document.getElementById("drawFeaturesBeneathHands").checked,' +

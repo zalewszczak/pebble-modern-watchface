@@ -141,7 +141,8 @@
       "FORECAST_TEMP_DISPLAY_12",
       "FORECAST_TEMP_DISPLAY_13",
       "FORECAST_TEMP_DISPLAY_14",
-      "FORECAST_CLOUD"
+      "FORECAST_WX",
+      "FORECAST_RAIN"
     ],
     "resources": {
       "media": [

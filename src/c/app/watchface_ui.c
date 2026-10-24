@@ -52,6 +52,8 @@ static void input_animation_frame_handler(void *context) {
 
 static void input_shake_features_changed_handler(void *context) {
   (void)context;
+  // The weather border (in the dial's cached background) may be shake-only.
+  if (layout_controller_dial_layer()) layer_mark_dirty(layout_controller_dial_layer());
   Layer *features = layout_controller_features_layer();
   if (!features) return;
   features_layer_refresh_values(features); // values of hidden slots were not kept fresh

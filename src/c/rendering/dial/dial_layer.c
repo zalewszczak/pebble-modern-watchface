@@ -5,6 +5,7 @@
 #include "./weather_border.h"
 #include "./dial_cache.h"
 #include "../../data/watch_ui.h"
+#include "../../input/input.h"
 
 typedef struct {
   WatchData *data;
@@ -92,6 +93,8 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
 
   WeatherBorderLook border;
   bool border_on = weather_border_compute(d, time(NULL), &border);
+  // "Only on shake": visible just while the show-on-shake window is open.
+  if (border_on && d->border_weather_shake && !input_shake_features_active()) border_on = false;
 
   // The launch animation moves the indices every frame, so it cannot be cached.
   bool animating = state->anim_active && d->bg_anim_mode == 1;

@@ -138,7 +138,8 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
 // Applied only for valid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP_VALID[] = {
   { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), FORECAST_SLOT_COUNT },
-  { MK_FORECAST_CLOUD, 1, offsetof(WatchData, forecast_cloud_pct), FORECAST_SLOT_COUNT },
+  { MK_FORECAST_WX, 1, offsetof(WatchData, forecast_wx), FORECAST_SLOT_COUNT },
+  { MK_FORECAST_RAIN, 1, offsetof(WatchData, forecast_rain_pct), FORECAST_SLOT_COUNT },
   { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), FORECAST_SLOT_COUNT },
   { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), FORECAST_SLOT_COUNT },
   { MK_PLANET_RISE, 4, offsetof(WatchData, planet_rise), PLANET_COUNT * 4 },
@@ -204,6 +205,9 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, custom_bg_preset),
   offsetof(WatchData, border_weather_mode),
   offsetof(WatchData, border_weather_px),
+  offsetof(WatchData, border_weather_scheme),
+  offsetof(WatchData, border_weather_shake),
+  offsetof(WatchData, border_weather_semi),
 };
 
 // Group 2 (4 fields): cloud/visibility readout + its gradient colors.

@@ -465,8 +465,14 @@ function startupClockAnimModeCode() {
 // Weather border: 0=off, 1=conditions, 2=temperature; thickness 2-40 px.
 function borderWeatherModeCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
+  return (v >= 1 && v <= 4) ? v : 0;
+}
+function borderWeatherSchemeCode() {
+  var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'), 10);
   return (v === 1 || v === 2) ? v : 0;
 }
+function borderWeatherShakeCode() { return getSetting('CONFIG_BORDER_WEATHER_SHAKE', 'false') === 'true' ? 1 : 0; }
+function borderWeatherSemiCode() { return getSetting('CONFIG_BORDER_WEATHER_SEMI', 'false') === 'true' ? 1 : 0; }
 function borderWeatherPxCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_PX', '8'), 10);
   if (isNaN(v)) v = 8;
@@ -625,6 +631,9 @@ module.exports = {
   bitmapMarkerTransparentCode: bitmapMarkerTransparentCode,
   borderWeatherModeCode: borderWeatherModeCode,
   borderWeatherPxCode: borderWeatherPxCode,
+  borderWeatherSchemeCode: borderWeatherSchemeCode,
+  borderWeatherShakeCode: borderWeatherShakeCode,
+  borderWeatherSemiCode: borderWeatherSemiCode,
   drawFeaturesBeneathHandsCode: drawFeaturesBeneathHandsCode,
   clampInt: clampInt,
   customMarkerStyleCode: customMarkerStyleCode,
