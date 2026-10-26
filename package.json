@@ -876,6 +876,106 @@
           "type": "bitmap",
           "name": "BG_PRESET_17",
           "file": "backgrounds/17.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_18",
+          "file": "backgrounds/18.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_19",
+          "file": "backgrounds/19.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_20",
+          "file": "backgrounds/20.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_21",
+          "file": "backgrounds/21.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_22",
+          "file": "backgrounds/22.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_23",
+          "file": "backgrounds/23.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_24",
+          "file": "backgrounds/24.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_25",
+          "file": "backgrounds/25.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_26",
+          "file": "backgrounds/26.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_27",
+          "file": "backgrounds/27.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_28",
+          "file": "backgrounds/28.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_29",
+          "file": "backgrounds/29.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_30",
+          "file": "backgrounds/30.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_31",
+          "file": "backgrounds/31.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_32",
+          "file": "backgrounds/32.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_33",
+          "file": "backgrounds/33.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_34",
+          "file": "backgrounds/34.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_35",
+          "file": "backgrounds/35.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_36",
+          "file": "backgrounds/36.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_37",
+          "file": "backgrounds/37.png"
         }
       ]
     }
