@@ -105,8 +105,13 @@ function backgroundModalHtml() {
 '        <button type="button" class="marker-edit-btn" onclick="bgEdChooseFile()">Choose image</button>' +
 '        <button type="button" class="marker-edit-btn" onclick="bgEdReset()">Reset</button>' +
 '      </div>' +
-'      <input type="file" id="bgEdFile" accept="image/*" style="display:none;" onchange="bgEdFileChosen(this)">' +
+'      <input type="file" id="bgEdFile" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,.jpg,.jpeg,.png,.webp,.gif,.bmp" style="display:none;" onchange="bgEdFileChosen(this)">' +
 '      <div class="help" id="bgEdMsg"></div>' +
+'      <div class="bg-ed-row">' +
+'        <input type="url" id="bgEdUrl" placeholder="...or paste an image web address" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1; min-width:0;">' +
+'        <button type="button" class="marker-edit-btn" style="flex:0 0 auto;" onclick="bgEdLoadUrl()">Load</button>' +
+'      </div>' +
+'      <div class="help">If the photo picker misbehaves (for example with "Take photo"), pick from your library only, or load a picture from a web address (the site has to allow it; an image you can open in the browser usually works). You can also paste an image.</div>' +
 '      <label for="bgEdZoom">Zoom <span class="val" id="bgEdZoomVal">100%</span></label>' +
 '      <input type="range" id="bgEdZoom" min="100" max="400" step="1" value="100" disabled oninput="bgEdZoomSlider(this.value)">' +
 '      <div class="help">Drag to move the image, pinch or scroll to zoom.</div>' +
@@ -629,6 +634,32 @@ var CLIENT_BODY =
 '  };\n' +
 '  img.src = url;\n' +
 '}\n' +
+'function bgEdLoadUrl() {\n' +
+'  var inp = bgEl("bgEdUrl");\n' +
+'  var u = inp ? inp.value.replace(/^\\s+|\\s+$/g, "") : "";\n' +
+'  if (!u) { bgEdMessage("Type or paste the web address of an image first."); return; }\n' +
+'  if (!window.fetch) { bgEdMessage("This browser cannot load images from a web address."); return; }\n' +
+'  bgEdMessage("Downloading image...");\n' +
+'  fetch(u, { mode: "cors" }).then(function (r) {\n' +
+'    if (!r.ok) throw new Error("HTTP " + r.status);\n' +
+'    return r.blob();\n' +
+'  }).then(function (b) {\n' +
+'    bgEdLoadFile(b);\n' +
+'  }).catch(function () {\n' +
+'    bgEdMessage("Could not download that image (the site may not allow it). Save it to your photos and pick it from the library instead.");\n' +
+'  });\n' +
+'}\n' +
+'function bgEdPaste(e) {\n' +
+'  if (!bgEd.open) return;\n' +
+'  var items = e.clipboardData && e.clipboardData.items;\n' +
+'  if (!items) return;\n' +
+'  for (var i = 0; i < items.length; i++) {\n' +
+'    if (items[i].type && items[i].type.indexOf("image/") === 0) {\n' +
+'      var f = items[i].getAsFile();\n' +
+'      if (f) { e.preventDefault(); bgEdLoadFile(f); return; }\n' +
+'    }\n' +
+'  }\n' +
+'}\n' +
 'function bgEdClose() {\n' +
 '  bgEd.open = false;\n' +
 '  bgEd.src = null; bgEd.mips = null; bgEd.raw = null; bgEd.out = null; bgEd.vals = null;\n' +
@@ -720,6 +751,7 @@ var CLIENT_BODY =
 '  var stage = bgEl("bgEdStage");\n' +
 '  stage.addEventListener("dragover", function (e) { e.preventDefault(); });\n' +
 '  stage.addEventListener("drop", bgEdDrop);\n' +
+'  document.addEventListener("paste", bgEdPaste);\n' +
 '}\n';
 
 var CSS_TEXT =
