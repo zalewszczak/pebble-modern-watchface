@@ -39,22 +39,28 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
           text, font, GRect(0, 0, 200, font_h + 10),
           GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
       p->width = sz.w + 2;
-      advance[i] = p->width + 5;
-      if (feature->tight) {
-        // Exactly the glyph run: any spacing is a Space element the user added.
-        advance[i] = sz.w;
-        if (p->kind == PRIMITIVE_KIND_SPACE) {
-          int16_t min_space = (font_h * 3) / 10;
-          if (min_space < 3) min_space = 3;
-          if (advance[i] < min_space) advance[i] = min_space;
-        }
+      // Text runs sit directly against their neighbours: spacing comes only
+      // from Space elements (so "MON 9/24" is drawn as "MON 9/24"). The one
+      // automatic gap, before an icon, is added below.
+      advance[i] = sz.w;
+      if (p->kind == PRIMITIVE_KIND_SPACE) {
+        int16_t min_space = (font_h * 3) / 10;
+        if (min_space < 3) min_space = 3;
+        if (advance[i] < min_space) advance[i] = min_space;
       }
     }
-    if (feature->tight) continue; // the punctuation tightening below is for built-in features
-    // Punctuation and units sit tight: nothing between an element and a
-    // following closer/unit/dot/comma, nothing after an opening parenthesis.
-    if (p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] == '(') advance[i] -= 5;
-    if (i > 0 && p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] != '(') advance[i - 1] = (advance[i - 1] >= 5) ? advance[i - 1] - 5 : 0;
+  }
+  if (!feature->tight) {
+    // Text followed by an icon keeps the icon gap (icons carry their own
+    // trailing gap, see feature_icons_plus_gap_width()).
+    for (int i = 0; i < feature->count; i++) {
+      if (feature->items[i].kind == PRIMITIVE_KIND_ICON || advance[i] == 0) continue;
+      for (int j = i + 1; j < feature->count; j++) {
+        if (advance[j] == 0) continue;
+        if (feature->items[j].kind == PRIMITIVE_KIND_ICON) advance[i] += 7;
+        break;
+      }
+    }
   }
   // Spacers at the end (before nothing, or before only empty elements) would
   // just push the visible text off centre.

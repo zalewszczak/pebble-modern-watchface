@@ -129,8 +129,8 @@ module.exports =
 '}' +
 
 'function previewLabelSegments(label, fontPx) {' +
-// "\\uE000" marks the watch's automatic gap between the elements of a
-// built-in feature (2 px padding + 5 px, about 0.4 em of the feature font).
+// "\\uE000" marks the watch's one automatic gap in a built-in feature: next
+// to an icon (about 0.4 em of the feature font). Text runs sit flush.
 '  var parts = label.split(/(\\([A-Za-z]+\\)|\\uE000)/);' +
 '  var iconPx = Math.max(8, Math.round(fontPx * 1.15));' +
 '  var out = [];' +

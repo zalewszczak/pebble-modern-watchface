@@ -941,6 +941,8 @@ configPresetSchedule.css +
 '  .primitive-chip-icon { background: var(--btn-bg); color: var(--text-faint); border: 1px dashed var(--border); font-style: italic; }' +
 '  .primitive-chip-space, .primitive-chip-slash { background: none; color: var(--text-faint); padding: 3px 2px; font-weight: 700; }' +
 '  #slotEditModal .modal-box { overflow-y: auto; }' +
+// The box is a column flexbox; without this the overflow-hidden button group (min-height 0) is squashed to ~2px when the content is tall (custom builder open).
+'  #slotEditModal .modal-box > * { flex-shrink: 0; }' +
 // The live preview stays pinned to the top of the popup while the rest scrolls.
 '  .slot-preview { position: sticky; top: -16px; z-index: 3; background: var(--card-bg); margin: 0 -16px 8px; padding: 8px 16px 8px; border-bottom: 1px solid var(--border-light); }' +
 '  .slot-preview-canvas { display: block; width: 100%; height: 64px; border-radius: 10px; border: 1px solid var(--border); }' +
@@ -2809,7 +2811,7 @@ configBorder.borderScript() +
 'function primitiveDecompositionText(contentId, forPreview) {' +
 '  var idNum = parseInt(contentId, 10);' +
 '  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
-'  if (chips && chips.length) return chips.map(function (c) { return c.text; }).join(forPreview ? "\\uE000" : "");' +
+'  if (chips && chips.length) return chips.map(function (c, i) { var gap = forPreview && i > 0 && (c.kind === "icon" || chips[i - 1].kind === "icon"); return (gap ? "\\uE000" : "") + c.text; }).join("");' +
 '  return CORNER_PREVIEW_LABELS[idNum] || "";' +
 '}' +
 'function primitiveChipsForContent(contentId) {' +
