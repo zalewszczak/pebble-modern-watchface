@@ -5,7 +5,7 @@
 #include <pebble.h>
 
 // Number of predefined background images compiled into this build.
-#define BG_PRESET_COUNT 15
+#define BG_PRESET_COUNT 16
 
 // Resource id of predefined background <n> (1-based, the number in the PNG
 // file name), or 0 when there is no such image.
@@ -23,6 +23,7 @@ static inline uint32_t bg_preset_resource_id(uint8_t n) {
     case 10: return RESOURCE_ID_BG_PRESET_10;
     case 12: return RESOURCE_ID_BG_PRESET_12;
     case 13: return RESOURCE_ID_BG_PRESET_13;
+    case 14: return RESOURCE_ID_BG_PRESET_14;
     case 15: return RESOURCE_ID_BG_PRESET_15;
     case 16: return RESOURCE_ID_BG_PRESET_16;
     case 17: return RESOURCE_ID_BG_PRESET_17;

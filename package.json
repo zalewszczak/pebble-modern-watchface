@@ -859,6 +859,11 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_14",
+          "file": "backgrounds/14.png"
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_15",
           "file": "backgrounds/15.png"
         },
