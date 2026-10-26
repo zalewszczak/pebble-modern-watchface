@@ -10,7 +10,7 @@
 // C consolidated 86 individual settings AppMessage keys (HAND_HOUR_*,
 // CUSTOM_HOUR_*/CUSTOM_SEC_*, MARKER_TEXT_*, the edge-line content/color
 // keys, and the CUSTOM_*/NIGHT_CUSTOM_* color keys) into 5 packed-byte-
-// array keys -- HANDS, MARKER_RINGS, EDGE_LINES, MARKER_TEXT, COLORS.
+// array keys -- HANDS, MARKER_RINGS, EDGE_LINE_COLOR_MODE, MARKER_TEXT, COLORS.
 // See handsBytes()/markerRingsBytes()/edgeLinesBytes()/markerTextBytes()/
 // colorsBytes() in index.js, and apply_consolidated_fields() in
 // comms_decoder.c for the watch side.
@@ -35,7 +35,7 @@
 //     (it was 9; 9 is Classy now). Stored value and saved snapshots remapped.
 // 4 = Modern: digital layouts, sky rendering, flights and sky styles removed;
 //     the cached full dict (old key set / blob layout) is discarded.
-var SETTINGS_KEY_SCHEMA_VERSION = 4; // 1 = pre-consolidation (86 individual keys), 2 = HANDS/MARKER_RINGS/EDGE_LINES/MARKER_TEXT/COLORS, 3 = marker style renumbering, 4 = Modern
+var SETTINGS_KEY_SCHEMA_VERSION = 4; // 1 = pre-consolidation (86 individual keys), 2 = HANDS/MARKER_RINGS/EDGE_LINE_COLOR_MODE/MARKER_TEXT/COLORS, 3 = marker style renumbering, 4 = Modern
 (function migrateSettingsKeySchema() {
   try {
     var stored = parseInt(localStorage.getItem('SETTINGS_KEY_SCHEMA_VERSION'), 10);

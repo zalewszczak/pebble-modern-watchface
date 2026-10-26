@@ -1,38 +1,14 @@
-// ---- primitive-strip preview + primitive-sequence transport (Feature ----
-// Primitive Refactor, Phases 3 and 9) --------------------------------------
+// Primitive-strip preview and phone-side feature compiler.
 //
-// Two related things live in this file:
+// Feature IDs exist only in settings and this module. Before communication,
+// every selectable feature is compiled into a bounded primitive-ID sequence
+// plus auxiliary parameters. The watch receives no feature/content IDs and
+// has no legacy content resolver or rendering fallback.
 //
-// 1. The **primitive-strip preview** (Phase 9): shows the person picking a
-//    content id what it actually decomposes into on the watch, mirroring
-//    feature_value_weather.c/feature_value_time.c/feature_value_composite.c's
-//    Phase 8 decompositions chip-for-chip. Every ATOMIC_DECOMPOSITIONS entry
-//    has a comment pointing at the C case it mirrors, so the two stay in
-//    sync by inspection.
-//
-// 2. **Real primitive-sequence transport** (Phase 3), for corner AND
-//    edge/middle slots: PRIMITIVE_TRANSPORT_CONTENT_IDS lists which content
-//    ids get their primitive sequence actually *sent* to the watch as
-//    numeric primitive IDs (see primitiveIdSequenceForContent() below and
-//    comms/message-encoder.js's use of it), rather than the watch deriving
-//    primitives locally from a legacy content number (primitive_bridge.c).
-//    Content id 105 is the one remaining gap versus ATOMIC_DECOMPOSITIONS
-//    above -- see that constant's own comment for why (a resolver gap, not
-//    a color-ownership one -- that question was resolved: every primitive
-//    resolves its own color, decided by whoever decided its value, "down
-//    to primitives" -- see primitive_resolver.c's own header and
-//    IMPLEMENTATION_NOTES.md's Phase 3 update for the full principle).
-//
-// 3. **The composable palette** (Phase 9): PRIMITIVE_PALETTE lists every
-//    primitive a person can build a custom sequence from -- deliberately
-//    only the ones primitive_resolver.c actually resolves, grouped and
-//    labeled for the picker UI (config-page.js).
-//
-// A chip is {kind, text}. kind is 'label' (a constant glyph like "H"/"WK"),
-// 'value' (a data-driven primitive -- the example text is illustrative,
-// matching CORNER_CATEGORIES' own "preview" field for that content id),
-// 'space' or 'slash' (a universal spacer primitive, Section 4), or 'icon'
-// (a static icon primitive; text is a short label, not real icon art).
+// PRIMITIVE_PALETTE below exposes only IDs supported by primitive_resolver.c.
+// The preview uses the same sequence tables that the message encoder sends.
+// Dynamic values (time, battery, health, weather and astronomy) are resolved
+// by generic primitive handlers on the watch or supplied by PKJS as data.
 
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
@@ -49,55 +25,12 @@ function space() { return { kind: 'space', text: ' ' }; }
 function slash() { return { kind: 'slash', text: '/' }; }
 function icon(text) { return { kind: 'icon', text: text }; }
 
-// Each entry mirrors one feature_value_*_compute() case exactly, in
-// primitive order. Example values come from that content id's own
-// CORNER_CATEGORIES "preview" string (see presets-lookups.js), split at
-// the same points the C decomposition splits its own composed string.
+// The feature-to-sequence table below is the phone-side compiler source of
+// truth. Preview chips are derived from these same sequences later in this
+// module, so the UI and wire payload cannot drift independently.
 //
-// Phase 10: previews now consume the same primitive sequences the watch
-// gets, instead of a hand-authored chip table mirroring the C decomposition
-// (that table and the real transport tables could, and eventually would,
-// drift -- see Update 8-10's original version of this comment, which is
-// what this replaces). ATOMIC_DECOMPOSITIONS below keeps exactly the two
-// content ids with no transport sequence at all -- Update 24's call: their
-// legacy chip sequence LENGTH varies with whether sleep data exists, which
-// a fixed transported sequence can't express. Every other content id's
-// chips are derived from PRIMITIVE_TRANSPORT_SEQUENCES/AUX (further down
-// this file) plus PRIMITIVE_PREVIEW_TEXT, via chipsFromSequence() below --
-// including the timezone (44-62) and forecast (87-95) clusters, which no
-// longer need a special-cased chip builder now that they resolve through
-// the same transport tables as everything else.
-var ATOMIC_DECOMPOSITIONS = {
-  // feature_value_composite.c case 101 (sleep-data-available branch)
-  101: [icon('(sleep)'), value('23:45'), slash(), value('07:20')],
-  // feature_value_composite.c case 104 (sleep-data-available branch)
-  104: [icon('(bed)'), value('23:45'), icon('(wake)'), value('07:20')]
-};
-
-// primitiveKindForId()/paramPrimitiveLabel()/chipsFromSequence() and the
-// real primitiveChipsForContent() that uses them are defined further down
-// this file, after PRIMITIVE_TRANSPORT_SEQUENCES/AUX (which they depend on)
-// and TIMEZONE_ZONES/FORECAST_SLOTS exist.
-
-// ---- Phase 3: real primitive-sequence transport -------------------------
-//
-// Numeric primitive-ID sequences (see config/primitive-ids-generated.js,
-// generated from the canonical C enum) for the content ids the watch's
-// primitive_resolver.c actually knows how to resolve every primitive of --
-// see that file's own header for exactly which primitive IDs it covers
-// and why the set below is smaller than ATOMIC_DECOMPOSITIONS above.
-//
-// content 4's sequence deliberately always uses the 5-primitive form (with
-// an explicit space between the high and low halves) regardless of what
-// color_mode the slot currently has -- the legacy watch code used a
-// different, space-less 4-primitive form specifically for COLOR mode (see
-// feature_value_weather.c's case 4), but a transmitted sequence is fixed
-// at content-selection time and can't vary with a setting that changes
-// independently later. The watch's feature_value_resolve_flat_color()
-// dispatch (MONO/ACC/PILL/COLOR) still applies per primitive either way,
-// so this is a cosmetic-only difference (a slightly different gap width),
-// not a functional one -- documented in IMPLEMENTATION_NOTES.md's Phase 3
-// update too.
+// Numeric primitive IDs are generated from the C primitive enum. Every
+// selectable feature is represented here; zero is reserved for an empty slot.
 var PRIMITIVE_TRANSPORT_SEQUENCES = {
   4: [PRIM.PRIM_LABEL_HIGH_PREFIX, PRIM.PRIM_TEMP_HIGH_TEXT, PRIM.PRIM_SPACE, PRIM.PRIM_LABEL_LOW_PREFIX, PRIM.PRIM_TEMP_LOW_TEXT],
   12: [PRIM.PRIM_WEEKDAY_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH],
@@ -129,10 +62,10 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
         PRIM.PRIM_MONTH_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_LABEL_WK_PREFIX, PRIM.PRIM_WEEK_NUMBER],
 
   // Health/status cluster (all watch-runtime, no color-ownership conflicts
-  // -- see feature_value_health_compute() and primitive_resolver.c's own
+  // -- see the former health feature-value path and primitive_resolver.c's own
   // per-case comments). Each is icon+text (or icon-only/text-only) exactly
-  // as feature_value_helpers.c's feature_value_slot_set()/
-  // feature_value_set_icon_segment()+feature_value_set_text_segment()
+  // as the former segment helper's legacy slot setter/
+  // legacy segment setters
   // pairs already produce, so no further decomposition was needed --
   // these were already atomic in Phase 8's sense.
   1: [PRIM.PRIM_HEART_RATE_ICON, PRIM.PRIM_HEART_RATE_VALUE],
@@ -149,8 +82,12 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   41: [PRIM.PRIM_SLEEP_QUALITY_ICON, PRIM.PRIM_SLEEP_QUALITY_PCT],
   42: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT],
   43: [PRIM.PRIM_WAKE_TIME_ICON, PRIM.PRIM_WAKE_TIME_TEXT],
+  // Fixed primitive-only equivalents for legacy composites 101 and 104.
+  // When sleep data is unavailable, individual resolvers render their N/A state.
+  101: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT, PRIM.PRIM_SLASH, PRIM.PRIM_WAKE_TIME_TEXT],
+  104: [PRIM.PRIM_SLEEP_TOTAL_ICON, PRIM.PRIM_SLEEP_TOTAL_TEXT, PRIM.PRIM_SLEEP_RESTFUL_TEXT, PRIM.PRIM_SLEEP_QUALITY_PCT],
 
-  // Weather singles (feature_value_weather.c cases 73/74/75/77) -- each a
+  // Weather singles (legacy weather feature code cases 73/74/75/77) -- each a
   // distinct primitive ID from content 4/32/76's, so no conflict with the
   // temperature cluster above.
   73: [PRIM.PRIM_CURRENT_TEMP_ONLY_TEXT],
@@ -284,12 +221,8 @@ for (var fcContentId = 87; fcContentId <= 95; fcContentId++) {
 var PRIMITIVE_SEQUENCE_SLOT_COUNT = 10; // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
 var PRIMITIVE_TRANSPORT_CONTENT_IDS = Object.keys(PRIMITIVE_TRANSPORT_SEQUENCES).map(Number);
 
-// Zero-padded to PRIMITIVE_SEQUENCE_SLOT_COUNT bytes (PRIM_ID_NONE == 0 is
-// the watch's own "sequence ends here, or was never sent" signal -- see
-// eclipse_data.h's corner_primitive_ids and primitive_transport.c). A
-// content id not in PRIMITIVE_TRANSPORT_SEQUENCES returns all zeros, which
-// tells the watch to fall back to primitive_bridge.c's legacy content-
-// based path for that slot, exactly as if this feature didn't exist.
+// Zero-padded to PRIMITIVE_SEQUENCE_SLOT_COUNT bytes. Primitive ID zero
+// terminates a sequence and an all-zero sequence means the slot is disabled.
 function primitiveIdSequenceForContent(contentId) {
   var seq = PRIMITIVE_TRANSPORT_SEQUENCES[parseInt(contentId, 10)] || [];
   var out = seq.slice(0, PRIMITIVE_SEQUENCE_SLOT_COUNT);
@@ -736,20 +669,14 @@ function chipsFromSequence(ids, aux) {
   return chips;
 }
 
-// One chip per non-zero primitive in a content id's own transport sequence
-// (trimmed of the all-zero padding primitiveIdSequenceForContent() adds).
-// Falls back to ATOMIC_DECOMPOSITIONS for the two content ids with no
-// transport sequence, then to that content's own CORNER_CATEGORIES
-// preview/label for anything left uncovered (there shouldn't be any --
-// see this file's own header -- but an accurate single chip beats a blank
-// preview if the transport table and CORNER_CATEGORIES ever do drift).
+// One chip per non-zero primitive in the phone-compiled sequence. Content
+// IDs are only local compiler inputs and never cross the wire.
 function primitiveChipsForContent(contentId) {
   var id = parseInt(contentId, 10);
   if (id === 0) return [];
   if (PRIMITIVE_TRANSPORT_SEQUENCES[id]) {
     return chipsFromSequence(primitiveIdSequenceForContent(id), primitiveAuxSequenceForContent(id));
   }
-  if (ATOMIC_DECOMPOSITIONS[id]) return ATOMIC_DECOMPOSITIONS[id];
   var item = CONTENT_ITEM_BY_ID[id];
   if (!item) return [];
   return [value(item.preview || item.label)];
@@ -765,7 +692,6 @@ module.exports = {
   chipsFromSequence: chipsFromSequence,
   primitiveKindForId: primitiveKindForId,
   paramPrimitiveLabel: paramPrimitiveLabel,
-  ATOMIC_DECOMPOSITIONS: ATOMIC_DECOMPOSITIONS,
   PRIMITIVE_TRANSPORT_CONTENT_IDS: PRIMITIVE_TRANSPORT_CONTENT_IDS,
   PRIMITIVE_TRANSPORT_SEQUENCES: PRIMITIVE_TRANSPORT_SEQUENCES,
   PRIMITIVE_TRANSPORT_AUX: PRIMITIVE_TRANSPORT_AUX,

@@ -153,7 +153,7 @@ static void compass_feature_timer_callback(void *data) {
 }
 
 static void maybe_start_compass_feature(void) {
-  if (!feature_controller_content_in_use(s_data, 85)) return;
+  if (!feature_controller_primitive_in_use(s_data, PRIM_COMPASS_DIR_TEXT)) return;
   // A new compass presentation starts from the next sensor reading rather
   // than inheriting a stale heading from a previous activation.
   s_compass_heading_has_reading = false;

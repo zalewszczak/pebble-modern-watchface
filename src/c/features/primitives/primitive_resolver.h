@@ -1,22 +1,17 @@
 #pragma once
 
 // Phase 3 (primitive value transport): given a primitive ID alone -- no
-// "content" number, no RenderSegment -- resolves what that primitive
-// should currently show. This is the missing piece the legacy content-
-// dispatch system never needed: feature_value_*_compute() always went
-// content -> (a fixed sequence of) segments in one pass, so no code ever
-// had to answer "what does primitive X show right now" in isolation.
+// "content" number, no legacy render segment -- resolves what that primitive
+// should currently show. Feature IDs and composition are phone-side concerns;
+// this resolver operates on one primitive at a time.
 //
-// Deliberately NOT complete: only the primitive IDs used by the initial
-// primitive-transport-enabled content set are covered (see
-// primitive_transport.h and IMPLEMENTATION_NOTES.md's Phase 3 update for
-// exactly which and why). Returns false for anything else so the caller
-// can fall back to the legacy content-based path -- never guesses.
+// The resolver covers the primitive IDs exposed by the phone compiler and
+// custom primitive palette. Unknown IDs are rejected; there is no fallback.
 //
 // Each primitive resolves its OWN best color (Section 31), independent of
-// whatever content id a legacy caller might have built it from -- see
+// the phone-side feature selection -- see
 // primitive_transport.c for how that composes with the slot's color_mode
-// (feature_value_resolve_flat_color already does the MONO/ACC/PILL/COLOR
+// (feature_color_resolve_flat already does the MONO/ACC/PILL/COLOR
 // dispatch; this only ever supplies the "COLOR mode" candidate).
 
 #include <pebble.h>
@@ -31,12 +26,12 @@ typedef struct {
   int16_t aux;
   bool aux_flag;
   GColor dynamic_color; // this primitive's own candidate for COLOR mode
-  // Some legacy cases (sleep/bed-wake time's "N/A" branches) render an
+  // Some primitive fallback cases (sleep/bed-wake time's "N/A" branches) render an
   // always-gray fallback that bypasses color_mode entirely -- not even
   // COLOR mode is the exception to it, unlike every other dynamic color in
   // this codebase. Setting this true tells primitive_transport.c to use
   // dynamic_color as the final color directly, skipping
-  // feature_value_resolve_flat_color()'s MONO/ACC/PILL/COLOR dispatch.
+  // feature_color_resolve_flat()'s MONO/ACC/PILL/COLOR dispatch.
   // False (the default/common case) for everything else.
   bool force_color;
   // Legacy astronomy/composite cases passed main_color (not a graded color)
@@ -44,7 +39,7 @@ typedef struct {
   // slot's main color", resolved in primitive_transport.c where main_color
   // is known.
   bool dynamic_is_main;
-  // Compass icon only (legacy content 85): in COLOR mode it needs two
+  // Compass icon only (compass primitive): in COLOR mode it needs two
   // colors at once -- accent for the north arrow, main for the other three.
   // Every other mode: one flat color for both.
   bool two_tone_accent_main;

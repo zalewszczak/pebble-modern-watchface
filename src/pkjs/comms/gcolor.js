@@ -8,7 +8,7 @@
 // Packs an 8-bit RGB triple (always fully opaque here) into the one-byte
 // GColor8 wire format the C side already reads via a raw struct-field
 // assignment (eclipse_ui.c's eclipse_ui_color_from_packed(), and
-// feature_value_helpers.c's feature_value_color_from_packed()): 2 bits each
+// the watch's generic packed-color conversion): 2 bits each
 // for alpha/red/green/blue, alpha=3 (opaque), each color channel truncated
 // (not rounded) to its top 2 bits -- (channel >> 6). This is the same wire
 // format the SETTINGS custom-color fields already use (see

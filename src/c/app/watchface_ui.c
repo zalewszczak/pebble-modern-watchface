@@ -61,7 +61,7 @@ static void input_shake_features_changed_handler(void *context) {
 
 static void input_compass_feature_refresh_handler(void *context) {
   (void)context;
-  if (layout_controller_features_layer()) features_layer_refresh_content(layout_controller_features_layer(), 85);
+  if (layout_controller_features_layer()) features_layer_refresh_primitive(layout_controller_features_layer(), PRIM_COMPASS_DIR_TEXT);
 }
 
 const InputCallbacks *watchface_ui_input_callbacks(void) {

@@ -20,7 +20,6 @@ void feature_render_draw_text_content_only(GContext *ctx, const char *text, GFon
                                            GTextOverflowMode overflow, GTextAlignment alignment,
                                            GColor color);
 
-void feature_render_resolve_segment_offsets(FeatureSlot *slot, GFont font, int16_t font_h);
 
 void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *slot,
                               GFont font, int16_t font_h, int16_t font_offset,

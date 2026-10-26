@@ -1,16 +1,11 @@
 #include <string.h>
 #include "./watch_defaults.h"
 #include "./watch_ui.h"
+#include "../features/primitives/primitive_ids.h"
 
 // Packed GColor8 values.
 #define COLOR_WHITE 0xFF
 #define COLOR_BLACK 0xC0
-
-// Feature content ids (same numbering as the settings page's feature picker).
-#define FEATURE_DEFAULT_LOGO_BAR 17          // Pebble logo with battery bar
-#define FEATURE_DEFAULT_DAY_OF_MONTH 22      // "11"
-#define FEATURE_DEFAULT_WEEKDAY_SHORT 23     // "MON"
-#define FEATURE_DEFAULT_TEMP_WEATHER_ICON 32 // temperature + weather icon
 
 // Font id 14 in fonts/font_lookup.c: Digital Dream.
 #define FONT_ID_DIGITAL_DREAM 14
@@ -35,13 +30,14 @@ static HandConfig default_hand(uint8_t style, uint8_t width, uint8_t length,
 void watch_defaults_apply(WatchData *d) {
   memset(d, 0, sizeof(*d));
 
-  // Features: logo bar on top, weather icon + temperature at the bottom,
-  // weekday (upper right) and day of month (lower right) in the corners.
-  // Corner order is TL, TR, BL, BR (see feature_layout.c).
-  d->upper_middle_line1_content = FEATURE_DEFAULT_LOGO_BAR;
-  d->bottom_middle_line1_content = FEATURE_DEFAULT_TEMP_WEATHER_ICON;
-  d->corner_content[1] = FEATURE_DEFAULT_WEEKDAY_SHORT;
-  d->corner_content[3] = FEATURE_DEFAULT_DAY_OF_MONTH;
+  // Primitive-only default feature sequences. Slot identity and feature IDs
+  // are phone-local; these are the exact instructions the renderer consumes.
+  d->edge_line_primitive_ids[0][0] = PRIM_BATTERY_LOGO_ICON;
+  d->edge_line_primitive_ids[2][0] = PRIM_WEATHER_CONDITION_ICON;
+  d->edge_line_primitive_ids[2][1] = PRIM_CURRENT_TEMP_TEXT;
+  d->corner_primitive_ids[1][0] = PRIM_WEEKDAY_SHORT_UPPER;
+  d->corner_primitive_ids[3][0] = PRIM_DAY_OF_MONTH;
+  for (int i = 0; i < 8; i++) d->edge_line_color_mode[i] = 0;
 
   // White main and accent colors on a black background.
   d->border_weather_mode = 0;

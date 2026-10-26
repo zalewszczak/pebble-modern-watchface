@@ -1,7 +1,7 @@
 #include "./primitive_transport.h"
 #include "./primitive_catalogue.h"
 #include "./primitive_resolver.h"
-#include "../feature_value_helpers.h"
+#include "../feature_color_helpers.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -27,7 +27,6 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
     PrimitiveInstance *p = &out->items[n];
     p->id = id;
     p->kind = r.kind;
-    p->source = primitive_catalogue_source_for(id);
     p->refresh_class = primitive_catalogue_refresh_class_for(id);
     p->aux = r.aux;
     p->aux_flag = r.aux_flag;
@@ -36,7 +35,7 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
     } else {
       snprintf(p->text, sizeof(p->text), "%s", r.text);
     }
-    // feature_value_resolve_flat_color already implements the MONO/ACC/
+    // feature_color_resolve_flat already implements the MONO/ACC/
     // PILL/COLOR dispatch every legacy compute function uses -- COLOR mode
     // gets this primitive's own resolved color, every other mode ignores
     // it in favor of main/accent. Same function, same behavior, just
@@ -46,8 +45,8 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
     // that's always gray, not just in COLOR mode).
     GColor dyn = r.dynamic_is_main ? main_color : r.dynamic_color;
     p->color = r.force_color ? r.dynamic_color
-             : feature_value_resolve_flat_color(color_mode, dyn, main_color, accent_color);
-    // Legacy feature_value_set_*_segment() always set color2 = color; this
+             : feature_color_resolve_flat(color_mode, dyn, main_color, accent_color);
+    // The old segment helpers set color2 = color; this
     // path memset()s to 0 (transparent), which would break any icon that
     // reads color2. Same default here; only the compass overrides it.
     p->color2 = p->color;

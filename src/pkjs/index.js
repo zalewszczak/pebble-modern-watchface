@@ -149,13 +149,9 @@ Pebble.addEventListener('showConfiguration', function () {
     borderWeatherSemi: getSetting('CONFIG_BORDER_WEATHER_SEMI', 'false') === 'true',
     bgSlots: bgImageSync.getSlots(),
     bitmapMarkerTransparent: getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true',
-    // Browser-side only -- the watch never needs this. By the time
-    // corner_content[] reaches it, the settings page has already
-    // either cleared those slots to 0 (override off) or left the
-    // user's real picks in place (override on); features_layer.c just
-    // draws whatever content id it's given either way. Persisted the
-    // same way as every other setting (getSetting/setSetting) purely
-    // so the checkbox itself doesn't reset every time the page reopens.
+    // Browser-side only -- the watch never needs feature IDs. The settings
+    // page compiles the selected corner features to primitive sequences
+    // before sending them. Persisted here so the checkbox survives reopening.
     bitmapCornerOverride: getSetting('CONFIG_BITMAP_CORNER_OVERRIDE', 'false') === 'true',
     drawFeaturesBeneathHands: getSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'false') === 'true',
     customHourStyle: getSetting('CONFIG_CUSTOM_HOUR_STYLE', '0'),

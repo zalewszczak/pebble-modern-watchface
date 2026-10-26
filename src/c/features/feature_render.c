@@ -1,5 +1,4 @@
 #include "./feature_render.h"
-#include "./feature_icons.h"
 #include "../input/input.h"
 #include "./feature_icon_assets.h"
 #include "./primitives/primitive_renderer.h"
@@ -49,56 +48,13 @@ void feature_render_draw_text_outlined(GContext *ctx, const char *text, GFont fo
   feature_render_draw_text_content_only(ctx, text, font, box, overflow, alignment, color);
 }
 
-void feature_render_resolve_segment_offsets(FeatureSlot *slot, GFont font, int16_t font_h) {
-  int16_t box_w = CORNER_BOX_W;
-  int16_t advance[MAX_RENDER_SEGMENTS];
-  int16_t total_w = 0;
-
-  for (int i = 0; i < slot->segment_count; i++) {
-    RenderSegment *seg = &slot->segments[i];
-    if (seg->is_icon) {
-      seg->width = FEATURE_ICON_WIDTH;
-      advance[i] = feature_icons_plus_gap_width(seg->icon_kind);
-    } else {
-      GSize sz = graphics_text_layout_get_content_size(
-          seg->text, font, GRect(0, 0, 200, font_h + 10),
-          GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
-      seg->width = sz.w + 2;
-      advance[i] = seg->width + 5;
-    }
-    total_w += advance[i];
-  }
-
-  if (total_w > box_w) {
-    if (slot->is_middle) {
-      if (slot->is_left) {
-        total_w = box_w;
-      }
-    } else if (!slot->is_left && !slot->is_edge) {
-      total_w -= total_w - box_w;
-    }
-  }
-
-  int16_t start_x = slot->center_horizontal ? (box_w - total_w) / 2
-                    : (!slot->is_left ? box_w - total_w : 0);
-  int16_t x = start_x;
-  for (int i = 0; i < slot->segment_count; i++) {
-    slot->segments[i].x_offset = x;
-    x += advance[i];
-  }
-}
-
 void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *slot,
                               GFont font, int16_t font_h, int16_t font_offset,
                               uint8_t outline_style, uint8_t icon_style,
                               bool draw_debug) {
   if (!slot->active) return;
   if (slot->shake_only && !input_shake_features_active()) return;
-  if (slot->use_primitive_pipeline) {
-    if (slot->primitives.count == 0) return;
-  } else if (slot->segment_count == 0) {
-    return;
-  }
+  if (slot->primitives.count == 0) return;
 
   int16_t box_w = CORNER_BOX_W;
   int16_t box_x = slot->center_horizontal
@@ -124,32 +80,6 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
 
   uint8_t effective_outline_style = slot->allow_outline ? outline_style : 0;
 
-  if (slot->use_primitive_pipeline) {
-    primitive_renderer_draw_feature(ctx, box_x, box_y, CORNER_ROW_H, &slot->primitives, slot,
-                                    font, font_h, font_offset, outline_style, icon_style, draw_debug);
-    return;
-  }
-
-  for (int i = 0; i < slot->segment_count; i++) {
-    const RenderSegment *seg = &slot->segments[i];
-    int16_t seg_x = box_x + seg->x_offset;
-    if (seg->is_icon) {
-      feature_icons_draw_render_icon(ctx, seg->icon_kind, seg->icon_extra, seg->icon_flag,
-                                     seg->color, seg->color2, seg_x, box_y, CORNER_ROW_H,
-                                     effective_outline_style, icon_style, draw_debug);
-    } else {
-      int16_t box_h = font_h + font_offset + 2;
-      GRect bounding_box = GRect(seg_x, box_y + (CORNER_ROW_H - box_h) / 2 - 1,
-                                 seg->width + 2, box_h);
-      feature_render_draw_text_outlined(ctx, seg->text, font, bounding_box,
-                                        GTextOverflowModeTrailingEllipsis,
-                                        GTextAlignmentLeft, seg->color,
-                                        effective_outline_style);
-      if (draw_debug) {
-        graphics_context_set_stroke_width(ctx, 1);
-        graphics_context_set_stroke_color(ctx, GColorGreen);
-        graphics_draw_rect(ctx, bounding_box);
-      }
-    }
-  }
+  primitive_renderer_draw_feature(ctx, box_x, box_y, CORNER_ROW_H, &slot->primitives, slot,
+                                  font, font_h, font_offset, effective_outline_style, icon_style, draw_debug);
 }

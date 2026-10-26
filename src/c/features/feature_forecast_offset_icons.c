@@ -22,7 +22,7 @@
 //
 // Index 0-5 = "+1h" through "+6h" (features_layer.c content ids 87-92),
 // 6-8 = "+1 day" through "+3 days" (content ids 93-95), 9-14 = "+7h" through "+12h" -- both computed as
-// content-87 by feature_value_weather.c, the same index forecast_temp_c/
+// content-87 by legacy weather feature code, the same index forecast_temp_c/
 // forecast_condition in watch_data.h already use for this same data.
 #define FORECAST_ICON(n) { RESOURCE_ID_ICON_FORECAST_##n, RESOURCE_ID_ICON_FORECAST_##n, RESOURCE_ID_ICON_FORECAST_##n }
 static const IconResourceSet FORECAST_OFFSET_ICON_SETS[15] = {

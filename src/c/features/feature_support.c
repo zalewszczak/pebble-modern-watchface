@@ -56,14 +56,6 @@ uint8_t feature_count_visible_planets(const WatchData *d, time_t now) {
   return count;
 }
 
-// Treat a weather value as stale only after repeated failed refreshes.
-// Keep the last valid weather state during short-lived fetch failures.
-bool feature_weather_should_show_error(const WatchData *data) {
-  if (data->weather_error_code == 0) return false;
-  if (!data->weather_ever_valid) return true;
-  return data->weather_error_streak >= 10;
-}
-
 const char *feature_weather_short_condition_text(uint8_t weather_condition, uint8_t cloud_pct) {
   switch (weather_condition) {
     case 1: return "Fog";

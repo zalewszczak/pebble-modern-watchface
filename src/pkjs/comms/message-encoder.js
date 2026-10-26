@@ -293,10 +293,21 @@ function markerRingsBytes() {
   );
 }
 
-// EDGE_LINES: 16 bytes, in the exact order watch_data.h declares the
-// 16 upper/bottom/middle_left/middle_right line1/line2 content+color_mode
-// fields (a truly contiguous run in the struct, hence a plain memcpy target).
-function edgeContentCodesRaw() {
+// EDGE_LINE_COLOR_MODE is eight color-mode bytes in slot order. Feature identity is
+// phone-local: only compiled primitive sequences cross the wire.
+function edgeLinesBytes() {
+  return [
+    settingsCodecs.upperMiddleLine1ColorModeCode(), settingsCodecs.upperMiddleLine2ColorModeCode(),
+    settingsCodecs.bottomMiddleLine1ColorModeCode(), settingsCodecs.bottomMiddleLine2ColorModeCode(),
+    settingsCodecs.middleLeftLine1ColorModeCode(), settingsCodecs.middleLeftLine2ColorModeCode(),
+    settingsCodecs.middleRightLine1ColorModeCode(), settingsCodecs.middleRightLine2ColorModeCode()
+  ];
+}
+function edgeCustomPrims() {
+  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting);
+}
+// Selected feature IDs are local settings inputs only; these values are never sent.
+function edgeFeatureCodesRaw() {
   return [
     settingsCodecs.upperMiddleLine1ContentCode(), settingsCodecs.upperMiddleLine2ContentCode(),
     settingsCodecs.bottomMiddleLine1ContentCode(), settingsCodecs.bottomMiddleLine2ContentCode(),
@@ -304,27 +315,6 @@ function edgeContentCodesRaw() {
     settingsCodecs.middleRightLine1ContentCode(), settingsCodecs.middleRightLine2ContentCode()
   ];
 }
-// Phase 9 composer, edge/middle slots (IMPLEMENTATION_NOTES.md Update 23):
-// per-slot {ids, aux} custom sequences, [] when the slot has none / isn't
-// visible in the current layout.
-function edgeCustomPrims() {
-  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting);
-}
-function edgeLinesBytes() {
-  var customs = settingsCodecs.edgeCustomPrimsStrings();
-  var content = settingsCodecs.edgeEffectiveContentCodes(edgeContentCodesRaw(), customs);
-  return [
-    content[0], settingsCodecs.upperMiddleLine1ColorModeCode(),
-    content[1], settingsCodecs.upperMiddleLine2ColorModeCode(),
-    content[2], settingsCodecs.bottomMiddleLine1ColorModeCode(),
-    content[3], settingsCodecs.bottomMiddleLine2ColorModeCode(),
-    content[4], settingsCodecs.middleLeftLine1ColorModeCode(),
-    content[5], settingsCodecs.middleLeftLine2ColorModeCode(),
-    content[6], settingsCodecs.middleRightLine1ColorModeCode(),
-    content[7], settingsCodecs.middleRightLine2ColorModeCode()
-  ];
-}
-
 // EDGE_LINE_PRIMITIVE_IDS / _AUX: 80 bytes each (8 slots * 10), in slot order
 // (SLOT_UPPER_L1..SLOT_RIGHT_L2). A slot with a custom sequence sends that
 // sequence (and its own aux bytes); every other slot derives its sequence
@@ -333,7 +323,7 @@ function edgeLinesBytes() {
 // Bit n set = slot n is a user-built sequence: corners TL,TR,BL,BR are bits
 // 0-3, edge/middle slots (SLOT_UPPER_L1..SLOT_RIGHT_L2) are bits 4-11. The
 // watch lays those out with no automatic gaps between elements.
-function customPrimsMask() {
+function primitiveTightMask() {
   var mask = 0;
   ['CONFIG_CORNER_TL_CUSTOM_PRIMS', 'CONFIG_CORNER_TR_CUSTOM_PRIMS', 'CONFIG_CORNER_BL_CUSTOM_PRIMS', 'CONFIG_CORNER_BR_CUSTOM_PRIMS']
     .forEach(function (k, i) { if (parseCustomPrimsSetting(getSetting(k, '')).ids.length) mask |= (1 << i); });
@@ -341,14 +331,14 @@ function customPrimsMask() {
   return mask;
 }
 function edgeLinePrimitiveIdsBytes() {
-  var contentIds = edgeContentCodesRaw();
+  var contentIds = edgeFeatureCodesRaw();
   var customs = edgeCustomPrims();
   return contentIds.reduce(function (acc, contentId, i) {
     return acc.concat(customs[i].ids.length ? normalizePrimitiveSequence(customs[i].ids) : primitiveIdSequenceForContent(contentId));
   }, []);
 }
 function edgeLinePrimitiveAuxBytes() {
-  var contentIds = edgeContentCodesRaw();
+  var contentIds = edgeFeatureCodesRaw();
   var customs = edgeCustomPrims();
   return contentIds.reduce(function (acc, contentId, i) {
     return acc.concat(customs[i].ids.length ? normalizePrimitiveAux(customs[i].aux) : primitiveAuxSequenceForContent(contentId));
@@ -406,12 +396,12 @@ function populateSettingsFields(dict) {
   dict['MARKER_RINGS'] = markerRingsBytes();
   dict['MARKER_TEXT'] = markerTextBytes();
   dict['HANDS'] = handsBytes();
-  dict['EDGE_LINES'] = edgeLinesBytes();
+  dict['EDGE_LINE_COLOR_MODE'] = edgeLinesBytes(); // primitive-only slot color modes
   dict['EDGE_LINE_PRIMITIVE_IDS'] = edgeLinePrimitiveIdsBytes();
   dict['EDGE_LINE_PRIMITIVE_AUX'] = edgeLinePrimitiveAuxBytes();
   dict['BG_ANIM_MODE'] = bgAnimModeCode();
   dict['SHAKE_ANIM_MODE'] = shakeAnimModeCode();
-  dict['CORNER_CONTENT'] = cornerContentBytes();
+  // Legacy CORNER_CONTENT is never emitted: feature IDs stay on the phone.
   dict['CORNER_COLOR_MODE'] = cornerColorModeBytes();
   // Phase 13 (IMPLEMENTATION_NOTES.md Update 34): 23 scattered settings
   // bytes packed into one wire blob instead of 23 separate AppMessage keys
@@ -430,7 +420,7 @@ function populateSettingsFields(dict) {
     bgImageSync.modeCode(), bgImageSync.presetCode(),
     borderWeatherModeCode(), borderWeatherPxCode(),
     borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
-    customPrimsMask() & 255, (customPrimsMask() >> 8) & 255
+    primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per
@@ -451,8 +441,8 @@ function populateSettingsFields(dict) {
     getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),
     getSetting('CONFIG_CORNER_BR_CUSTOM_PRIMS', '')
   ].map(parseCustomPrimsSetting); // {ids, aux} -- ids empty means "no custom sequence"
-  var cornerContentIdsForPrims = cornerContentBytes();
-  dict['CORNER_PRIMITIVE_IDS'] = cornerContentIdsForPrims.reduce(function (acc, contentId, idx) {
+  var cornerFeatureIds = cornerContentBytes(); // local-only input to the compiler
+  dict['CORNER_PRIMITIVE_IDS'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
     var custom = cornerCustomPrimsSettings[idx];
     return acc.concat(custom.ids.length ? normalizePrimitiveSequence(custom.ids) : primitiveIdSequenceForContent(contentId));
   }, []);
@@ -460,7 +450,7 @@ function populateSettingsFields(dict) {
   // gating -- see EDGE_LINE_PRIMITIVE_AUX's comment above. A custom
   // sequence now carries its own aux bytes (e.g. the zone index chosen in
   // the composer for a time-zone primitive).
-  dict['CORNER_PRIMITIVE_AUX'] = cornerContentIdsForPrims.reduce(function (acc, contentId, idx) {
+  dict['CORNER_PRIMITIVE_AUX'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
     var custom = cornerCustomPrimsSettings[idx];
     return acc.concat(custom.ids.length ? normalizePrimitiveAux(custom.aux) : primitiveAuxSequenceForContent(contentId));
   }, []);
@@ -671,7 +661,7 @@ function extraWeatherFieldsDict(extra) {
     // universal "nothing to show yet" signal, so no special-casing needed
     // here. The watch checks its own -128 sentinel on forecast_temp_c[idx]
     // before ever looking at these anyway (same belt-and-suspenders
-    // ordering as altitude's N/A case -- see feature_value_weather.c).
+    // ordering as altitude's N/A case -- see the primitive resolver).
     var forecastUnitCode = tempUnitCode();
     var forecastColorBytes = [];
     extra.forecastTempC.forEach(function (c, i) {
@@ -697,7 +687,7 @@ function extraWeatherFieldsDict(extra) {
     });
     // Same category function as WEATHER_ICON_CATEGORY above, with the same
     // neutral 50% cloud guess the watch always used for forecast icons
-    // (no per-hour cloud forecast is fetched -- see feature_value_weather.c's
+    // (no per-hour cloud forecast is fetched -- see the primitive resolver's
     // own comment on this).
     dict['FORECAST_ICON_CATEGORIES'] = extra.forecastCondition.map(function (c) {
       return weatherIconCategory(typeof c === 'number' ? c : 0, 50);

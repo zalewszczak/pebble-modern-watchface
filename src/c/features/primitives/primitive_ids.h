@@ -11,7 +11,7 @@
 // Where the same primitive appears at different parametrizations (timezone
 // index, forecast-hour index, moon phase percent...) it stays one ID and the
 // parametrization travels in the primitive instance's `aux`/`aux_flag` fields,
-// the same pattern the existing RenderSegment.icon_extra/icon_flag already use.
+// the same pattern the existing legacy render segment.icon_extra/icon_flag already use.
 //
 // Grouped by logical function per Section 3's suggested file layout; kept in
 // one header for now since the catalogue is still small enough to review as a

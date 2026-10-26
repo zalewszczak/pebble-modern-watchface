@@ -10,7 +10,7 @@ var MSG_TYPE = {
   WEATHER: 1,     // current conditions, forecast, air quality, altitude
   ASTRONOMY: 2,   // sun/planet rise/set, moon phase, Saturn rings
   SKY_EFFECTS: 3, // aurora, meteor shower, ISS pass
-  FEATURES: 4,    // corner/edge content-slot selection + what feeds them
+  FEATURES: 4,    // primitive sequences and slot color modes
   SETTINGS: 5     // look & feel: hands, markers, colors, units, vibes
 };
 
@@ -62,8 +62,8 @@ var KEY_TYPE_MAP = (function () {
   ]);
 
   assign(MSG_TYPE.FEATURES, [
-    'CORNER_CONTENT', 'CORNER_COLOR_MODE', 'CORNER_PRIMITIVE_IDS', 'CORNER_PRIMITIVE_AUX',
-    'EDGE_LINES', 'EDGE_LINE_PRIMITIVE_IDS', 'EDGE_LINE_PRIMITIVE_AUX', 'DAILY_STEP_GOAL'
+    'CORNER_COLOR_MODE', 'CORNER_PRIMITIVE_IDS', 'CORNER_PRIMITIVE_AUX',
+    'EDGE_LINE_COLOR_MODE', 'EDGE_LINE_PRIMITIVE_IDS', 'EDGE_LINE_PRIMITIVE_AUX', 'DAILY_STEP_GOAL'
   ]);
 
   assign(MSG_TYPE.SETTINGS, [

@@ -3,8 +3,8 @@
 #include "../power/battery_saver.h"
 #include "../features/feature_controller.h"
 
-// Feature content IDs that require per-second updates.
-static const uint8_t SECOND_PRECISION_CONTENT_IDS[] = { 63, 69, 70, 71, 72 };
+// Primitive IDs that require per-second updates.
+static const PrimitiveId SECOND_PRECISION_PRIMITIVES[] = { PRIM_TIME_HMS, PRIM_SECOND, PRIM_SECOND_PAD, PRIM_SECOND_TENS, PRIM_SECOND_ONES };
 
 static const WatchData *s_data;
 static TimeServiceTickHandler s_tick_handler;
@@ -15,8 +15,8 @@ static bool s_unit_is_seconds;
 static bool needs_second_precision(void) {
   if (s_data->show_seconds) return true;
 
-  for (size_t i = 0; i < sizeof(SECOND_PRECISION_CONTENT_IDS); i++) {
-    if (feature_controller_content_in_use(s_data, SECOND_PRECISION_CONTENT_IDS[i])) return true;
+  for (size_t i = 0; i < sizeof(SECOND_PRECISION_PRIMITIVES) / sizeof(SECOND_PRECISION_PRIMITIVES[0]); i++) {
+    if (feature_controller_primitive_in_use(s_data, SECOND_PRECISION_PRIMITIVES[i])) return true;
   }
 
   return false;

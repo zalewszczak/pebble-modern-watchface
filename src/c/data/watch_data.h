@@ -50,53 +50,15 @@ typedef struct {
   uint8_t humidity_pct;     // current relative humidity.
   int16_t wind_speed_kmh;  // current wind speed.
 
-  // Corner feature content and color modes.
-  uint8_t corner_content[4];
+  // Primitive-only feature configuration. Content/feature IDs are resolved
+  // on the phone and never stored or interpreted by the watch.
   uint8_t corner_color_mode[4];
-  // Phase 3 (primitive value transport): PKJS-computed primitive-ID
-  // sequence per corner slot, PRIM_ID_NONE (0)-terminated. Only sent for
-  // content ids config/primitive-decompose.js's PRIMITIVE_TRANSPORT_CONTENT_IDS
-  // lists; index 0 == PRIM_ID_NONE means "not sent this way, use
-  // corner_content[i] via the legacy path instead" -- see
-  // primitive_transport.c and feature_controller.c. 10 must match
-  // PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h) -- not included
-  // directly here to keep this data-layer file independent of features/.
   uint8_t corner_primitive_ids[4][10];
-  // Per-position parameter for the sequence above (currently only
-  // meaningful for the timezone cluster's zone index -- see
-  // primitive_resolver.h's own comment on why a zone index, not a raw UTC
-  // offset). Every other primitive ignores its own aux byte, so this is
-  // simply 0 wherever corner_primitive_ids[i] isn't a timezone primitive.
   uint8_t corner_primitive_aux[4][10];
-  uint16_t daily_step_goal; // app-local step goal.
-
-  // Phase 3, extended to edge/middle slots: PKJS-computed primitive-ID
-  // sequence per edge/middle slot, same shape and same PRIM_ID_NONE-means-
-  // "not sent this way" convention as corner_primitive_ids below. Index
-  // order matches feature_slot.h's slot enum exactly (SLOT_UPPER_L1=0
-  // .. SLOT_RIGHT_L2=7), the same order upper_middle_line1_content etc.
-  // below are declared in and EDGE_LINES already relies on -- see
-  // feature_controller.c and comms_decoder.c.
+  uint16_t daily_step_goal;
+  uint8_t edge_line_color_mode[8];
   uint8_t edge_line_primitive_ids[8][10];
-  uint8_t edge_line_primitive_aux[8][10]; // see corner_primitive_aux above
-
-  // Edge slots around the dial (contiguous run: copied from one wire blob).
-  uint8_t upper_middle_line1_content;
-  uint8_t upper_middle_line1_color_mode;
-  uint8_t upper_middle_line2_content;
-  uint8_t upper_middle_line2_color_mode;
-  uint8_t bottom_middle_line1_content;
-  uint8_t bottom_middle_line1_color_mode;
-  uint8_t bottom_middle_line2_content;
-  uint8_t bottom_middle_line2_color_mode;
-  uint8_t middle_left_line1_content;
-  uint8_t middle_left_line1_color_mode;
-  uint8_t middle_left_line2_content;
-  uint8_t middle_left_line2_color_mode;
-  uint8_t middle_right_line1_content;
-  uint8_t middle_right_line1_color_mode;
-  uint8_t middle_right_line2_content;
-  uint8_t middle_right_line2_color_mode;
+  uint8_t edge_line_primitive_aux[8][10];
 
   // Day color scheme, stored as packed Pebble color values.
   uint8_t custom_bg;
@@ -160,10 +122,10 @@ typedef struct {
   uint8_t border_weather_scheme;
   uint8_t border_weather_shake;
   uint8_t border_weather_semi;
-  // Bit mask of feature slots built by the user from elements (corners 0-3,
-  // edge/middle slots 4-11); those lay out with no automatic gaps.
-  uint8_t custom_prims_mask_lo;
-  uint8_t custom_prims_mask_hi;
+  // Bit mask of slots using explicit tight primitive spacing (corner bits 0-3,
+  // edge/middle bits 4-11).
+  uint8_t primitive_tight_mask_lo;
+  uint8_t primitive_tight_mask_hi;
   uint8_t custom_bg_preset; // 1-based predefined image number (mode 1) or user slot 1-9 (mode 2).
 
   MarkerRingConfig custom_hour_marker;
@@ -183,7 +145,7 @@ typedef struct {
   // cloud_cover_pct. No natural "not sent yet" value exists in 0-6, so this
   // is only trusted when current_temp_display is also non-empty (both are
   // sent together, gated on weatherOk, in message-encoder.js) -- see
-  // feature_value_weather.c's cases 31/32/76.
+  // legacy weather feature code's cases 31/32/76.
   uint8_t weather_icon_category;
 
   // Color-ownership principle (see IMPLEMENTATION_NOTES.md's Phase 3
@@ -198,18 +160,9 @@ typedef struct {
 
   int16_t weather_temp_c;  // current temperature in Celsius.
 
-  // Phase 7 (Feature Primitive Refactor) proof-of-concept: PKJS-formatted,
-  // display-ready current temperature (already unit-converted per the
-  // user's CONFIG_TEMP_UNIT setting -- see weather-normalize.js's
-  // formatTempDisplay()), consumed by feature_value_weather_compute()'s
-  // content-32 case instead of calling feature_rules_convert_temp() on
-  // weather_temp_c. weather_temp_c itself stays -- every other weather
-  // content id (5, 73, 76, 87-95, ...) still computes its own display value
-  // on the watch and hasn't been migrated in this pass (see
-  // IMPLEMENTATION_NOTES.md). Empty string means "PKJS hasn't sent this
-  // yet" (e.g. immediately after install before the first weather push, or
-  // an older phone-app build); the watch falls back to computing it locally
-  // in that case rather than showing nothing.
+  // PKJS-formatted display-ready current temperature. The primitive resolver
+  // prefers this unit-converted value when present and can use raw weather data
+  // as a local fallback before the first successful phone update.
   char current_temp_display[8];
   char temp_high_display[8];  // Phase 7: PKJS-formatted high temp (content 4, 74, 76).
   char temp_low_display[8];   // Phase 7: PKJS-formatted low temp (content 4, 75, 76).
@@ -219,7 +172,7 @@ typedef struct {
   // SETTINGS custom-color fields, see watch_ui.c's
   // watch_ui_color_from_packed()), one per *_display field above. Only
   // meaningful when the paired *_display string is non-empty -- see
-  // feature_value_weather.c's temp_display_and_color(). Computed by
+  // legacy weather feature code's temp_display_and_color(). Computed by
   // weather-normalize.js's tempGradientColorByte(), a verbatim port of
   // feature_colors_seven_stop_gradient(), so the watch no longer needs that
   // function (or the raw Celsius value) at all for these four cases.
@@ -232,9 +185,9 @@ typedef struct {
   // *_display (text) / *_color (packed GColor8, empty display = "PKJS
   // hasn't sent one yet") pattern as above. dew_point_display has no
   // matching color field -- content 37 never used a dynamic gradient (see
-  // feature_value_weather.c). altitude_display/_color are only ever sent
+  // legacy weather feature code). altitude_display/_color are only ever sent
   // for the "available" case -- see weather-normalize.js's
-  // formatAltitudeDisplay() and feature_value_weather.c's case 38 for why
+  // formatAltitudeDisplay() and legacy weather feature code's case 38 for why
   // the N/A sentinel stays watch-side.
   char uv_daily_display[6];
   uint8_t uv_daily_color;
@@ -264,7 +217,7 @@ typedef struct {
   // one 9-byte packed-color blob (same wire shape forecast_condition[]
   // already uses). Same empty-string fallback signal as everywhere else,
   // but the N/A sentinel on forecast_temp_c[idx] itself is still checked
-  // FIRST on the watch regardless -- see feature_value_weather.c.
+  // FIRST on the watch regardless -- see legacy weather feature code.
   char forecast_temp_display[FORECAST_SLOT_COUNT][6];
   uint8_t forecast_temp_color[FORECAST_SLOT_COUNT];
 
@@ -287,7 +240,7 @@ typedef struct {
   uint8_t forecast_rain_pct[FORECAST_SLOT_COUNT];
   // Phase 7: PKJS-computed icon categories, same as weather_icon_category
   // above but one per forecast index, gated on forecast_temp_display[idx]
-  // (see feature_value_weather.c's case 87-95).
+  // (see legacy weather feature code's case 87-95).
   uint8_t forecast_icon_category[FORECAST_SLOT_COUNT];
   char location_name[32];  // reverse-geocoded place name.
 
@@ -306,7 +259,7 @@ typedef struct {
 
   uint8_t saturn_ring_open_pct; // 0-100 ring opening.
   // Phase 7: PKJS-formatted "Rings N%" (case 81 has no dynamic color, so no
-  // matching *_color field -- see feature_value_time.c).
+  // matching *_color field -- see legacy time feature code).
   char saturn_rings_display[10];
 
   uint8_t moon_phase_pct;  // illuminated fraction, 0-100.
@@ -330,7 +283,7 @@ typedef struct {
   // Phase 7: PKJS-formatted "name or N/A" (case 80's own active/inactive
   // logic, replicated PKJS-side) + gradient color. Only consulted after the
   // watch's own error_code check, same as everywhere else in this cluster
-  // -- see feature_value_time.c.
+  // -- see legacy time feature code.
   char meteor_display[16];
   uint8_t meteor_color;
 
@@ -342,7 +295,7 @@ typedef struct {
   // Aurora data and display settings.
   uint8_t aurora_kp_x10;    // Kp index ×10.
   // Phase 7: PKJS-formatted "Kp N.N" + gradient color, same pattern as
-  // everything else in this file -- see feature_value_time.c's case 84.
+  // everything else in this file -- see legacy time feature code's case 84.
   char aurora_kp_display[8];
   uint8_t aurora_kp_color;
 

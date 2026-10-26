@@ -520,7 +520,7 @@ function cornerFontCode() {
 // the same transmission-time zeroing the content codes above do; the stored
 // value itself is never touched.
 //
-// Order is EDGE_LINES' / eclipse_data.h's slot order (SLOT_UPPER_L1 ..
+// Order is EDGE_LINE_COLOR_MODE's slot order (SLOT_UPPER_L1 ..
 // SLOT_RIGHT_L2).
 var EDGE_CUSTOM_PRIMS_SLOTS = [
   { key: 'CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS', dual: true, edge: 'upper' },
@@ -542,21 +542,6 @@ function edgeCustomPrimsStrings() {
     return String(getSetting(def.key, '') || '');
   });
 }
-// Line-2 slots (and every edge slot's layout) are activated on the watch by
-// their CONTENT id being non-zero (feature_layout.c's has_line2 checks), so a
-// slot whose Content is None but which has a custom sequence must still send
-// a non-zero content byte. This placeholder is never what's shown: the watch
-// tries the transported primitive sequence first and only falls back to the
-// content-derived path if that sequence can't resolve. "Day of month" is the
-// cheapest, dependency-free content, so a fallback degrades to something
-// harmless rather than blank or wrong data.
-var EDGE_CUSTOM_PLACEHOLDER_CONTENT = 22;
-function edgeEffectiveContentCodes(contentCodes, customStrings) {
-  return contentCodes.map(function (id, i) {
-    return (id === 0 && customStrings[i]) ? EDGE_CUSTOM_PLACEHOLDER_CONTENT : id;
-  });
-}
-
 function cornerContentBytes() {
   var keys = ['CONFIG_CORNER_TL', 'CONFIG_CORNER_TR', 'CONFIG_CORNER_BL', 'CONFIG_CORNER_BR'];
   return keys.map(function (k) {
@@ -608,7 +593,6 @@ function shakeOnlyMaskCode() {
 module.exports = {
   shakeOnlyMaskCode: shakeOnlyMaskCode,
   edgeCustomPrimsStrings: edgeCustomPrimsStrings,
-  edgeEffectiveContentCodes: edgeEffectiveContentCodes,
   EDGE_CUSTOM_PRIMS_SLOTS: EDGE_CUSTOM_PRIMS_SLOTS,
   clampFontId: clampFontId,
   tempUnitCode: tempUnitCode,

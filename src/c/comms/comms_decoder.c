@@ -127,7 +127,6 @@ _Static_assert(sizeof(time_t) == 4, "PLANET_RISE/SET wire format assumes a 4-byt
 
 // Applied to every message, including invalid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP[] = {
-  { MK_CORNER_CONTENT, 1, offsetof(WatchData, corner_content), 4 },
   { MK_CORNER_COLOR_MODE, 1, offsetof(WatchData, corner_color_mode), 4 },
   { MK_CORNER_PRIMITIVE_IDS, 1, offsetof(WatchData, corner_primitive_ids), 40 }, // 4 * 10, see watch_data.h
   { MK_CORNER_PRIMITIVE_AUX, 1, offsetof(WatchData, corner_primitive_aux), 40 },
@@ -208,8 +207,8 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, border_weather_scheme),
   offsetof(WatchData, border_weather_shake),
   offsetof(WatchData, border_weather_semi),
-  offsetof(WatchData, custom_prims_mask_lo),
-  offsetof(WatchData, custom_prims_mask_hi),
+  offsetof(WatchData, primitive_tight_mask_lo),
+  offsetof(WatchData, primitive_tight_mask_hi),
 };
 
 // Group 2 (4 fields): cloud/visibility readout + its gradient colors.
@@ -267,7 +266,8 @@ static const uint8_t FORECAST_TEMP_DISPLAY_KEYS[FORECAST_SLOT_COUNT] = {
 };
 
 // Consolidated settings fields use fixed wire layouts.
-// HANDS, MARKER_RINGS, and EDGE_LINES can be copied directly; MARKER_TEXT and COLORS are packed.
+// HANDS, MARKER_RINGS, and EDGE_LINE_COLOR_MODE use fixed byte layouts;
+// MARKER_TEXT and COLORS are unpacked field-by-field.
 _Static_assert(sizeof(HandConfig) == 14, "HANDS wire format assumes a 14-byte HandConfig");
 _Static_assert(sizeof(MarkerRingConfig) == 8, "MARKER_RINGS wire format assumes an 8-byte MarkerRingConfig");
 
@@ -285,9 +285,9 @@ static void apply_consolidated_fields(DictionaryIterator *iter, WatchData *d) {
     memcpy(&d->custom_hour_marker, t->value->data, 2 * sizeof(MarkerRingConfig));
   }
 
-  // EDGE_LINES: 16 content/color-mode bytes in WatchData declaration order.
-  if ((t = dict_find(iter, base + MK_EDGE_LINES)) && t->length >= 16) {
-    memcpy(&d->upper_middle_line1_content, t->value->data, 16);
+  // EDGE_LINE_COLOR_MODE is a primitive-only payload: eight color-mode bytes, one per slot.
+  if ((t = dict_find(iter, base + MK_EDGE_LINE_COLOR_MODE)) && t->length >= 8) {
+    memcpy(d->edge_line_color_mode, t->value->data, 8);
   }
 
   // MARKER_TEXT: target, font, signed offset, two little-endian masks, Roman-numeral flag.

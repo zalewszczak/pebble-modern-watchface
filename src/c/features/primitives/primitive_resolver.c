@@ -1,7 +1,7 @@
 #include "./primitive_resolver.h"
 #include "../feature_colors.h"
 #include "../feature_rules.h"
-#include "../feature_value_helpers.h"
+#include "../feature_color_helpers.h"
 #include "../feature_health.h"
 #include "../feature_icons.h"
 #include "../feature_timezone.h"
@@ -140,7 +140,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     if (resolve_builder_extra(id, aux_in, data, now, t, out, &extra_ok)) return extra_ok;
   }
   // Every currently-covered date/time primitive shares this one gradient
-  // (the same one feature_value_date_compute() uses for every content id
+  // (the same one legacy date computation() uses for every content id
   // enabled for transport so far -- see primitive_transport.h) -- computed
   // once here rather than per-case, since date/time cases below all want
   // the same value.
@@ -165,7 +165,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       out->dynamic_color = date_c;
       return true;
 
-    // ---- clock cluster (feature_value_date_compute's plain time/second
+    // ---- clock cluster (legacy date computation's plain time/second
     // cases, content 18/63-72/86) -- all watch-runtime, read straight off
     // `t`/`now`. Color rules copied 1:1 from the legacy switch.
     case PRIM_TIME_HM:
@@ -296,7 +296,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->temp_high_display[0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->temp_high_display);
-        c = feature_value_color_from_packed(data->temp_high_color);
+        c = feature_color_from_packed(data->temp_high_color);
       } else {
         snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_high_c, data->temp_unit));
         c = feature_colors_seven_stop_gradient(data->temp_high_c, -10, 40);
@@ -309,7 +309,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->temp_low_display[0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->temp_low_display);
-        c = feature_value_color_from_packed(data->temp_low_color);
+        c = feature_color_from_packed(data->temp_low_color);
       } else {
         snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_low_c, data->temp_unit));
         c = feature_colors_seven_stop_gradient(data->temp_low_c, -10, 40);
@@ -352,7 +352,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->current_temp_display[0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->current_temp_display);
-        c = feature_value_color_from_packed(data->current_temp_color);
+        c = feature_color_from_packed(data->current_temp_color);
       } else {
         snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->weather_temp_c, data->temp_unit));
         c = feature_colors_seven_stop_gradient(data->weather_temp_c, -10, 40);
@@ -365,7 +365,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->current_temp_display[0] != '\0') {
         category = data->weather_icon_category;
-        c = feature_value_color_from_packed(data->weather_icon_color);
+        c = feature_color_from_packed(data->weather_icon_color);
       } else {
         category = feature_icons_weather_category(data->weather_condition, data->cloud_cover_pct);
         c = data->valid
@@ -377,7 +377,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- weather cluster (feature_value_weather_compute, content
+    // ---- weather cluster (primitive weather-value resolution, content
     // 5/6/7/8/9/14/15/34/35/36/37/38/87-97/107) -- PKJS-supplied display
     // string when present, watch-side fallback otherwise. Color rules
     // copied 1:1 from the legacy switch; every case is force_color-free
@@ -395,7 +395,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->uv_daily_display[0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->uv_daily_display);
-        c = feature_value_color_from_packed(data->uv_daily_color);
+        c = feature_color_from_packed(data->uv_daily_color);
       } else {
         uint8_t uv = data->uv_index_x10 / 10;
         snprintf(num, sizeof(num), "UV%d", uv);
@@ -409,7 +409,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->uv_current_display[0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->uv_current_display);
-        c = feature_value_color_from_packed(data->uv_current_color);
+        c = feature_color_from_packed(data->uv_current_color);
       } else {
         uint8_t uv = data->uv_index_current_x10 / 10;
         snprintf(num, sizeof(num), "UV%d", uv);
@@ -424,7 +424,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->rain_chance_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->rain_chance_display);
-        c = feature_value_color_from_packed(data->rain_chance_color);
+        c = feature_color_from_packed(data->rain_chance_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d%%", data->rain_chance_pct);
         c = feature_colors_white_to_turquoise_gradient(data->rain_chance_pct, 0, 100);
@@ -439,7 +439,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->humidity_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->humidity_display);
-        c = feature_value_color_from_packed(data->humidity_color);
+        c = feature_color_from_packed(data->humidity_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d%%", data->humidity_pct);
         c = feature_colors_white_to_turquoise_gradient(data->humidity_pct, 0, 100);
@@ -454,7 +454,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->wind_speed_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->wind_speed_display);
-        c = feature_value_color_from_packed(data->wind_speed_color);
+        c = feature_color_from_packed(data->wind_speed_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d", feature_rules_convert_wind(data->wind_speed_kmh, data->wind_speed_unit));
         c = feature_colors_white_to_turquoise_gradient(data->wind_speed_kmh, 0, 60);
@@ -469,7 +469,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->vis_score_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->vis_score_display);
-        c = feature_value_color_from_packed(data->vis_score_color);
+        c = feature_color_from_packed(data->vis_score_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d%%", data->vis_score_pct);
         uint8_t equiv_cloud_pct = 100 - data->vis_score_pct;
@@ -485,7 +485,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->cloud_cover_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->cloud_cover_display);
-        c = feature_value_color_from_packed(data->cloud_cover_color);
+        c = feature_color_from_packed(data->cloud_cover_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d%%", data->cloud_cover_pct);
         c = feature_colors_overcast_gray_gradient(data->cloud_cover_pct < OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : data->cloud_cover_pct);
@@ -500,7 +500,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->pressure_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->pressure_display);
-        c = feature_value_color_from_packed(data->pressure_color);
+        c = feature_color_from_packed(data->pressure_color);
       } else {
         snprintf(buf2, sizeof(buf2), "%d hPa", data->pressure_hpa);
         c = feature_colors_seven_stop_gradient(data->pressure_hpa, 970, 1050);
@@ -525,7 +525,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->aqi_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->aqi_display);
-        c = feature_value_color_from_packed(data->aqi_color);
+        c = feature_color_from_packed(data->aqi_color);
       } else {
         bool use_eu = (data->aqi_unit == 1);
         uint16_t aqi_value = use_eu ? data->aqi_eu : data->aqi_us;
@@ -559,7 +559,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       }
       if (data->altitude_display[0] != '\0') {
         snprintf(buf2, sizeof(buf2), "%s", data->altitude_display);
-        c = feature_value_color_from_packed(data->altitude_color);
+        c = feature_color_from_packed(data->altitude_color);
       } else {
         if (data->altitude_unit == 1) {
           int32_t feet = ((int32_t)data->altitude_m * 328) / 100;
@@ -591,7 +591,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       GColor c;
       if (data->forecast_temp_display[aux_in][0] != '\0') {
         snprintf(num, sizeof(num), "%s", data->forecast_temp_display[aux_in]);
-        c = feature_value_color_from_packed(data->forecast_temp_color[aux_in]);
+        c = feature_color_from_packed(data->forecast_temp_color[aux_in]);
       } else {
         snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->forecast_temp_c[aux_in], data->temp_unit));
         c = feature_colors_seven_stop_gradient(data->forecast_temp_c[aux_in], -10, 40);
@@ -623,7 +623,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- health/status cluster (feature_value_health_compute) ----------
+    // ---- health/status cluster (primitive health-value resolution) ----------
     // All watch-runtime (Section 2.1): read straight from Pebble's own
     // services, no PKJS round-trip. Each icon/text pair below is used by
     // exactly one canonical color rule across every content id currently
@@ -656,7 +656,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       }
       // PRIM_STEP_GOAL_PCT: content 3's own pct can exceed 100% (shown
       // uncapped up to 999), unlike the icon color above which clamps at
-      // 100 -- same as feature_value_health_compute()'s case 3.
+      // 100 -- same as primitive health-value resolution()'s case 3.
       if (pct > 999) pct = 999;
       char pbuf[16];
       snprintf(pbuf, sizeof(pbuf), "%d%%", (int)pct);
@@ -678,7 +678,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     case PRIM_BLUETOOTH_ICON:
     case PRIM_BLUETOOTH_STATUS_TEXT: {
       // Always its own dynamic color, ignoring color_mode entirely -- see
-      // feature_value_health_compute()'s case 20/78 comment; hence
+      // primitive health-value resolution()'s case 20/78 comment; hence
       // force_color rather than leaving this to the usual dispatch.
       bool connected = connection_service_peek_pebble_app_connection();
       GColor c = connected ? GColorFromRGB(64, 224, 208) : GColorFromRGB(255, 0, 0);
@@ -729,7 +729,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         return true;
       }
       // N/A: always gray, bypassing color_mode entirely -- see
-      // feature_value_health_compute()'s case 39/40 comment.
+      // primitive health-value resolution()'s case 39/40 comment.
       if (is_icon) { resolve_icon(out, icon_kind, 0, false, GColorLightGray); }
       else { resolve_text(out, "N/A", GColorLightGray); }
       out->force_color = true;
@@ -778,7 +778,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- weather singles (feature_value_weather.c cases 73/74/75/77) ---
+    // ---- weather singles (legacy weather feature code cases 73/74/75/77) ---
     // Each is a distinct primitive ID from content 4/32/76's *_TEXT
     // primitives (no color-ownership conflict -- see
     // IMPLEMENTATION_NOTES.md), so these are safe to resolve independently.
@@ -792,7 +792,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       if (id == PRIM_CURRENT_TEMP_ONLY_TEXT) {
         if (data->current_temp_display[0] != '\0') {
           snprintf(num, sizeof(num), "%s", data->current_temp_display);
-          dyn = feature_value_color_from_packed(data->current_temp_color);
+          dyn = feature_color_from_packed(data->current_temp_color);
         } else {
           snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->weather_temp_c, data->temp_unit));
           dyn = feature_colors_seven_stop_gradient(data->weather_temp_c, -10, 40);
@@ -801,7 +801,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         prefix = "H ";
         if (data->temp_high_display[0] != '\0') {
           snprintf(num, sizeof(num), "%s", data->temp_high_display);
-          dyn = feature_value_color_from_packed(data->temp_high_color);
+          dyn = feature_color_from_packed(data->temp_high_color);
         } else {
           snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_high_c, data->temp_unit));
           dyn = feature_colors_seven_stop_gradient(data->temp_high_c, -10, 40);
@@ -810,7 +810,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         prefix = "L ";
         if (data->temp_low_display[0] != '\0') {
           snprintf(num, sizeof(num), "%s", data->temp_low_display);
-          dyn = feature_value_color_from_packed(data->temp_low_color);
+          dyn = feature_color_from_packed(data->temp_low_color);
         } else {
           snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_low_c, data->temp_unit));
           dyn = feature_colors_seven_stop_gradient(data->temp_low_c, -10, 40);
@@ -819,7 +819,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         prefix = "FL ";
         if (data->feels_like_display[0] != '\0') {
           snprintf(num, sizeof(num), "%s", data->feels_like_display);
-          dyn = feature_value_color_from_packed(data->feels_like_color);
+          dyn = feature_color_from_packed(data->feels_like_color);
         } else {
           int16_t temp_c = feature_rules_apparent_temp_c(data->weather_temp_c, data->wind_speed_kmh, data->humidity_pct);
           snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(temp_c, data->temp_unit));
@@ -832,7 +832,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- timezone cluster (feature_value_timezone_compute) --------------
+    // ---- timezone cluster (legacy timezone computation) --------------
     // aux_in is the zone index (feature_timezone_get()'s own index space,
     // 0-18) rather than a raw UTC offset -- see primitive_resolver.h's own
     // comment on why: reusing feature_timezone_get()/
@@ -878,7 +878,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- astronomy cluster (feature_value_astro_compute, content 11/13/16/79-85) ----
+    // ---- astronomy cluster (the previous astronomy feature path, content 11/13/16/79-85) ----
     // Values are either PKJS-supplied display strings (moon, meteor, Saturn,
     // aurora -- Update 6) or watch-runtime selections over PKJS data
     // (sun event, planets visible, next planet rise -- time-dependent and
@@ -946,7 +946,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         out->force_color = true;
       } else if (data->meteor_display[0] != '\0') {
         // Legacy assigns the PKJS-graded color directly (no color_mode dispatch).
-        resolve_text(out, data->meteor_display, feature_value_color_from_packed(data->meteor_color));
+        resolve_text(out, data->meteor_display, feature_color_from_packed(data->meteor_color));
         out->force_color = true;
       } else if (data->meteor_intensity > 0 && data->meteor_shower_name[0] != '\0') {
         resolve_text(out, data->meteor_shower_name, feature_colors_meteor_intensity_gradient(data->meteor_intensity));
@@ -1029,7 +1029,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         out->force_color = true;
       } else if (data->aurora_kp_display[0] != '\0') {
         snprintf(abuf, sizeof(abuf), "%s", data->aurora_kp_display);
-        c = feature_value_color_from_packed(data->aurora_kp_color);
+        c = feature_color_from_packed(data->aurora_kp_color);
       } else {
         snprintf(abuf, sizeof(abuf), "Kp %d.%d", data->aurora_kp_x10 / 10, data->aurora_kp_x10 % 10);
         c = feature_colors_white_to_red_gradient(data->aurora_kp_x10);
@@ -1064,6 +1064,6 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     }
 
     default:
-      return false; // not covered yet -- caller falls back to the legacy content path
+      return false; // invalid/unsupported primitive; there is no legacy fallback
   }
 }
