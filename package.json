@@ -841,6 +841,36 @@
           "type": "bitmap",
           "name": "BG_PRESET_9",
           "file": "backgrounds/9.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_10",
+          "file": "backgrounds/10.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_12",
+          "file": "backgrounds/12.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_13",
+          "file": "backgrounds/13.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_15",
+          "file": "backgrounds/15.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_16",
+          "file": "backgrounds/16.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_17",
+          "file": "backgrounds/17.png"
         }
       ]
     }

@@ -137,7 +137,7 @@ module.exports = {
       "stepGoal": "10000",
       "drawFeaturesBeneathHands": true,
       "startupClockAnimMode": "1",
-      "bgAnimMode": "2",
+      "bgAnimMode": "1",
       "shakeAnimMode": "1",
       "shakeLabelSeconds": "8"
     }

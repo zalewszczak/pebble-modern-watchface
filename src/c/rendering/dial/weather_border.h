@@ -11,8 +11,8 @@
 // per tick.
 //
 // Styles (border_weather_mode): 1 conditions, 2 temperature, 3 rain chance,
-// 4 all three as stripes (outer = temperature, middle = rain chance,
-// inner = conditions). Each style has three colour schemes
+// 4 all three as stripes (outer = temperature, middle = conditions,
+// inner = rain chance). Each style has three colour schemes
 // (border_weather_scheme 0-2).
 
 #define WEATHER_BORDER_MAX_LAYERS 3

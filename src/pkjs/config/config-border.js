@@ -157,8 +157,8 @@ function borderScript() {
 '    hours[sec] = h;\n' +
 '    if (mode === 4) {\n' +
 '      layers[0][sec] = borderFillTemp(BORDER_SAMPLE_TEMP[i], scheme);\n' +
-'      layers[1][sec] = borderFillRain(BORDER_SAMPLE_RAIN[i], scheme);\n' +
-'      layers[2][sec] = borderFillConditions(BORDER_SAMPLE_WX[i], scheme);\n' +
+'      layers[1][sec] = borderFillConditions(BORDER_SAMPLE_WX[i], scheme);\n' +
+'      layers[2][sec] = borderFillRain(BORDER_SAMPLE_RAIN[i], scheme);\n' +
 '    } else if (mode === 1) layers[0][sec] = borderFillConditions(BORDER_SAMPLE_WX[i], scheme);\n' +
 '    else if (mode === 2) layers[0][sec] = borderFillTemp(BORDER_SAMPLE_TEMP[i], scheme);\n' +
 '    else layers[0][sec] = borderFillRain(BORDER_SAMPLE_RAIN[i], scheme);\n' +
@@ -251,7 +251,7 @@ function borderScript() {
 '  var lg = document.getElementById("borderLegend");\n' +
 '  if (lg) {\n' +
 '    if (mode === 4) {\n' +
-'      lg.innerHTML = \'<div class="sub">Outer: temperature</div>\' + borderLegendFor(2, scheme) + \'<div class="sub">Middle: rain chance</div>\' + borderLegendFor(3, scheme) + \'<div class="sub">Inner: conditions</div>\' + borderLegendFor(1, scheme);\n' +
+'      lg.innerHTML = \'<div class="sub">Outer: temperature</div>\' + borderLegendFor(2, scheme) + \'<div class="sub">Middle: conditions</div>\' + borderLegendFor(1, scheme) + \'<div class="sub">Inner: rain chance</div>\' + borderLegendFor(3, scheme);\n' +
 '    } else lg.innerHTML = borderLegendFor(mode, scheme);\n' +
 '  }\n' +
 '  var ht = document.getElementById("borderHelpText");\n' +
@@ -289,7 +289,7 @@ function borderScript() {
 '    warn.style.display = mode === 4 ? "" : "none";\n' +
 '    var per = Math.max(1, Math.floor(borderPx() / 3));\n' +
 '    warn.style.color = borderPx() < 18 ? "#d93025" : "";\n' +
-'    warn.textContent = "Note: this draws three stripes (outside: temperature, middle: rain chance, inside: conditions), each a third of the thickness, so the border has to be thicker to be readable - at least 18 px. Currently " + borderPx() + " px = " + per + " px per stripe." + (borderPx() < 18 ? " Increase the thickness." : "");\n' +
+'    warn.textContent = "Note: this draws three stripes (outside: temperature, middle: conditions, inside: rain chance), each a third of the thickness, so the border has to be thicker to be readable - at least 18 px. Currently " + borderPx() + " px = " + per + " px per stripe." + (borderPx() < 18 ? " Increase the thickness." : "");\n' +
 '  }\n' +
 '}\n' +
 'function onBorderWeatherChange() {\n' +

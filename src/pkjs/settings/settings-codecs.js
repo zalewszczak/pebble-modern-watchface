@@ -480,7 +480,8 @@ function borderWeatherPxCode() {
 }
 function bgAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_BG_ANIM_MODE', '0'), 10);
-  return v === 2 ? 1 : 0;
+  // The settings page stores 0 (Off) or 1 (Indices); older builds stored 2.
+  return (v === 1 || v === 2) ? 1 : 0;
 }
 // 0=off, 1=shake runs the smooth second hand. The old "Planet seek" (2) is
 // gone; old stored 1 and 3 ("both") keep the smooth second hand.

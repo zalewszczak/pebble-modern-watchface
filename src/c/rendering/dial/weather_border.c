@@ -122,8 +122,8 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
     if (d->forecast_temp_c[slot] <= -128) continue; // no data: stay transparent
     if (mode == 4) {
       fill_temperature(d, scheme, slot, &out->c0[0][sector], &out->c1[0][sector]); // outer
-      fill_rain(d, scheme, slot, &out->c0[1][sector], &out->c1[1][sector]);        // middle
-      fill_conditions(d, scheme, slot, &out->c0[2][sector], &out->c1[2][sector]);  // inner
+      fill_conditions(d, scheme, slot, &out->c0[1][sector], &out->c1[1][sector]);  // middle
+      fill_rain(d, scheme, slot, &out->c0[2][sector], &out->c1[2][sector]);        // inner
     } else if (mode == 1) {
       fill_conditions(d, scheme, slot, &out->c0[0][sector], &out->c1[0][sector]);
     } else if (mode == 2) {
