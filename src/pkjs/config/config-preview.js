@@ -56,7 +56,7 @@ module.exports =
 // None.
 '  var customEl = document.getElementById(contentId.replace(/Content$/, \"\") + \"CustomPrims\");' +
 '  var label = (customEl && customEl.value) ? composerPreviewLabel(customEl.value) : \"\";' +
-'  if (!label) label = primitiveDecompositionText(content);' +
+'  if (!label) label = primitiveDecompositionText(content, true);' +
 '  if (!label) return;' +
 '  var mode = parseInt(colorEl.value, 10);' +
 '  var color = colors.text, alpha = 1;' +
@@ -75,6 +75,7 @@ module.exports =
 '  var total = 0, i;' +
 '  for (i = 0; i < segs.length; i++) {' +
 '    if (segs[i].icon) { segs[i].width = segs[i].icon.width; }' +
+'    else if (segs[i].gap) { segs[i].width = segs[i].gap; }' +
 '    else { segs[i].width = ctx.measureText(segs[i].text).width; }' +
 '    total += segs[i].width;' +
 '  }' +
@@ -128,12 +129,15 @@ module.exports =
 '}' +
 
 'function previewLabelSegments(label, fontPx) {' +
-'  var parts = label.split(/(\\([A-Za-z]+\\))/);' +
+// "\\uE000" marks the watch's automatic gap between the elements of a
+// built-in feature (2 px padding + 5 px, about 0.4 em of the feature font).
+'  var parts = label.split(/(\\([A-Za-z]+\\)|\\uE000)/);' +
 '  var iconPx = Math.max(8, Math.round(fontPx * 1.15));' +
 '  var out = [];' +
 '  for (var i = 0; i < parts.length; i++) {' +
 '    var p = parts[i];' +
 '    if (!p) continue;' +
+'    if (p === "\\uE000") { out.push({ text: "", gap: Math.round(fontPx * 0.4) }); continue; }' +
 '    var m = /^\\(([A-Za-z]+)\\)$/.exec(p);' +
 '    var ic = m ? previewIconForToken(m[1], iconPx) : null;' +
 '    if (ic) out.push({ icon: ic });' +

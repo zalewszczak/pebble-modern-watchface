@@ -331,7 +331,7 @@ function composerClientBody() {
     var customOn = document.getElementById("slotEditCustomPrimsToggle").checked;
     if (customOn) return composerPreviewLabel(composerSerialize(COMPOSER.items));
     var contentVal = document.getElementById("slotEditContent").value;
-    return parseInt(contentVal, 10) ? primitiveDecompositionText(contentVal) : "";
+    return parseInt(contentVal, 10) ? primitiveDecompositionText(contentVal, true) : "";
   }
 
   function renderSlotEditPreview() {
@@ -395,7 +395,7 @@ function composerClientBody() {
       var segs = previewLabelSegments(label, px);
       var total = 0, i;
       for (i = 0; i < segs.length; i++) {
-        segs[i].width = segs[i].icon ? segs[i].icon.width : ctx.measureText(segs[i].text).width;
+        segs[i].width = segs[i].icon ? segs[i].icon.width : (segs[i].gap || ctx.measureText(segs[i].text).width);
         total += segs[i].width;
       }
       var x0 = Math.max(6, (cssW - total) / 2);

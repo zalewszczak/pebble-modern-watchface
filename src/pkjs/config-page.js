@@ -2806,10 +2806,10 @@ configBorder.borderScript() +
 // CORNER_PREVIEW_LABELS string. Falls back to CORNER_PREVIEW_LABELS only
 // when PRIMITIVE_DECOMPOSITIONS has no entry at all (shouldn\'t happen --
 // see primitiveChipsForContent\'s own comment).
-'function primitiveDecompositionText(contentId) {' +
+'function primitiveDecompositionText(contentId, forPreview) {' +
 '  var idNum = parseInt(contentId, 10);' +
 '  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
-'  if (chips && chips.length) return chips.map(function (c) { return c.text; }).join("");' +
+'  if (chips && chips.length) return chips.map(function (c) { return c.text; }).join(forPreview ? "\\uE000" : "");' +
 '  return CORNER_PREVIEW_LABELS[idNum] || "";' +
 '}' +
 'function primitiveChipsForContent(contentId) {' +

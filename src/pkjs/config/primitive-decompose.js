@@ -245,8 +245,8 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
 
 // Timezone cluster (content 44-62): the one case in this table where a
 // primitive needs a per-position *parameter*, not just an ID -- which of
-// the 19 zones. Every entry uses the identical 5-primitive shape (abbr,
-// space, time, space, am/pm); PRIM_TIMEZONE_AMPM resolves to an empty,
+// the 19 zones. Every entry uses the identical 3-primitive shape (abbr,
+// time, am/pm; the automatic gap between elements is the only spacing); PRIM_TIMEZONE_AMPM resolves to an empty,
 // zero-width primitive in 24h clock style rather than being included or
 // omitted conditionally, since the sequence itself can't react to a
 // runtime setting once sent -- see primitive_resolver.c's own comment.
@@ -255,7 +255,7 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
 // the zone-index arithmetic to drift.
 for (var tzContentId = 44; tzContentId <= 62; tzContentId++) {
   PRIMITIVE_TRANSPORT_SEQUENCES[tzContentId] = [
-    PRIM.PRIM_TIMEZONE_ABBR, PRIM.PRIM_SPACE, PRIM.PRIM_TIMEZONE_TIME, PRIM.PRIM_SPACE, PRIM.PRIM_TIMEZONE_AMPM
+    PRIM.PRIM_TIMEZONE_ABBR, PRIM.PRIM_TIMEZONE_TIME, PRIM.PRIM_TIMEZONE_AMPM
   ];
 }
 
@@ -268,7 +268,7 @@ for (var tzContentId = 44; tzContentId <= 62; tzContentId++) {
 var PRIMITIVE_TRANSPORT_AUX = {};
 for (var tzAuxContentId = 44; tzAuxContentId <= 62; tzAuxContentId++) {
   var zoneIdx = tzAuxContentId - 44; // matches feature_timezone_get()'s own index space
-  PRIMITIVE_TRANSPORT_AUX[tzAuxContentId] = [zoneIdx, 0, zoneIdx, 0, zoneIdx, 0, 0, 0, 0, 0];
+  PRIMITIVE_TRANSPORT_AUX[tzAuxContentId] = [zoneIdx, zoneIdx, zoneIdx, 0, 0, 0, 0, 0, 0, 0];
 }
 
 // Content 87-95 (Update 25): each is [PRIM_FORECAST_OFFSET_ICON,

@@ -28,6 +28,11 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
       p->width = FEATURE_ICON_WIDTH;
       // User-built sequences add no automatic gap after an icon.
       advance[i] = feature->tight ? FEATURE_ICON_WIDTH : feature_icons_plus_gap_width(p->icon_kind);
+    } else if ((p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) && p->text[0] == '\0') {
+      // Empty text (e.g. the AM/PM part of a world clock in 24 h style) takes no room at all.
+      p->width = 0;
+      advance[i] = 0;
+      continue;
     } else {
       const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
       GSize sz = graphics_text_layout_get_content_size(
@@ -50,6 +55,14 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
     // following closer/unit/dot/comma, nothing after an opening parenthesis.
     if (p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] == '(') advance[i] -= 5;
     if (i > 0 && p->kind == PRIMITIVE_KIND_PUNCT && p->text[0] != '(') advance[i - 1] = (advance[i - 1] >= 5) ? advance[i - 1] - 5 : 0;
+  }
+  // Spacers at the end (before nothing, or before only empty elements) would
+  // just push the visible text off centre.
+  for (int i = feature->count - 1; i >= 0 && !feature->tight; i--) {
+    PrimitiveInstance *p = &feature->items[i];
+    if (advance[i] == 0) continue;
+    if (p->kind == PRIMITIVE_KIND_SPACE) { advance[i] = 0; continue; }
+    break;
   }
   for (int i = 0; i < feature->count; i++) total_w += advance[i];
 
