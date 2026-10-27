@@ -75,7 +75,9 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
   if (slot->draw_pill) {
     graphics_context_set_fill_color(ctx, slot->pill_bg);
     // Hug the content: pill spans the laid-out feature width plus padding.
-    const int16_t pad = 7;
+    // Horizontal padding per side: rounded ends (~7px) plus an 8px buffer so
+    // icons on the left and text overhang on the right are never clipped.
+    const int16_t pad = 15;
     int16_t content_w = slot->primitives.total_width;
     if (content_w > box_w) content_w = box_w;
     int16_t pill_x = box_x + slot->primitives.items[0].x_offset - pad;
