@@ -971,6 +971,106 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
+          "file": "weatherbg/baroque_beach/clear_sky_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
+          "file": "weatherbg/baroque_beach/clear_sky_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
+          "file": "weatherbg/baroque_beach/partly_cloudy_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
+          "file": "weatherbg/baroque_beach/partly_cloudy_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
+          "file": "weatherbg/baroque_beach/overcast_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
+          "file": "weatherbg/baroque_beach/overcast_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
+          "file": "weatherbg/baroque_beach/fog_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
+          "file": "weatherbg/baroque_beach/fog_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
+          "file": "weatherbg/baroque_beach/drizzle_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
+          "file": "weatherbg/baroque_beach/drizzle_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
+          "file": "weatherbg/baroque_beach/rain_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
+          "file": "weatherbg/baroque_beach/rain_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
+          "file": "weatherbg/baroque_beach/heavy_rain_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
+          "file": "weatherbg/baroque_beach/heavy_rain_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
+          "file": "weatherbg/baroque_beach/snow_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
+          "file": "weatherbg/baroque_beach/snow_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
+          "file": "weatherbg/baroque_beach/thunderstorm_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
+          "file": "weatherbg/baroque_beach/thunderstorm_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
+          "file": "weatherbg/baroque_beach/sleet_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
+          "file": "weatherbg/baroque_beach/sleet_night.png"
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
           "file": "weatherbg/manhattan/clear_sky_day.png"
         },
