@@ -32,6 +32,11 @@ typedef enum {
 // layout, kept so saved settings keep their meaning), 9-14 = 7-12 hours ahead.
 #define FORECAST_SLOT_COUNT 15
 
+// Pebble plugin data slots (see pkjs/plugins/plugin-manager.js): each slot holds
+// the latest text of one plugin data source, NUL-terminated.
+#define PLUGIN_SLOT_COUNT 12
+#define PLUGIN_TEXT_LEN 16
+
 typedef struct {
   // Payload/status state.
   bool valid;              // true after a valid payload has been received.
@@ -105,6 +110,7 @@ typedef struct {
   uint8_t big_analog_marker_style;
 
   bool bitmap_marker_transparent; // draw the bitmap marker with a translucent tint.
+  bool bitmap_marker_invert;      // blend the bitmap marker into the background as a black/white contrast colour.
 
   // Custom background image drawn behind the markers. 0 = off (plain
   // background colour), 1 = predefined image number custom_bg_preset (a
@@ -137,6 +143,8 @@ typedef struct {
 
   uint8_t cloud_cover_pct; // current cloud cover.
   uint8_t vis_score_pct;   // visibility percentage.
+  char plugin_text[PLUGIN_SLOT_COUNT][PLUGIN_TEXT_LEN];
+  uint8_t weather_wx_now; // detailed class of the current weather (see forecast_wx); drives the weather background.
   uint8_t weather_condition; // 0=clear/cloudy, 1=fog, 2=rain, 3=snow, 4=storm.
 
   // Phase 7 (icon selection, Section 4's "static icon" concept): PKJS-

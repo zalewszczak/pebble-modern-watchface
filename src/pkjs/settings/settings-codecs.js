@@ -136,6 +136,7 @@ function bigAnalogMarkerStyleCode() {
 // bigAnalogHandsTransparentCode() above (that one used to double as
 // this too, which meant toggling hand transparency also silently
 // dimmed the markers whether or not that's what was wanted).
+function bitmapMarkerInvertCode() { return getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true' ? 1 : 0; }
 function bitmapMarkerTransparentCode() { return getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true' ? 1 : 0; }
 
 // Whether the corners/edges feature overlay draws underneath the
@@ -614,6 +615,7 @@ module.exports = {
   shadowAngleCode: shadowAngleCode,
   bigAnalogMarkerStyleCode: bigAnalogMarkerStyleCode,
   bitmapMarkerTransparentCode: bitmapMarkerTransparentCode,
+  bitmapMarkerInvertCode: bitmapMarkerInvertCode,
   borderWeatherModeCode: borderWeatherModeCode,
   borderWeatherPxCode: borderWeatherPxCode,
   borderWeatherSchemeCode: borderWeatherSchemeCode,

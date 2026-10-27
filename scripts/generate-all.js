@@ -42,7 +42,8 @@ var STEPS = [
   { label: 'generate-preset-previews.js', command: 'node scripts/generate-preset-previews.js' },
   { label: 'generate-example-style-previews.js', command: 'node scripts/generate-example-style-previews.js' },
   { label: 'generate-preview-icons.js (real icon PNGs for the settings preview)', command: 'node scripts/generate-preview-icons.js' },
-  { label: 'generate-backgrounds.js (predefined custom backgrounds: settings page + C resource table + package.json media)', command: 'node scripts/generate-backgrounds.js' }
+  { label: 'generate-backgrounds.js (predefined custom backgrounds: settings page + C resource table + package.json media)', command: 'node scripts/generate-backgrounds.js' },
+  { label: 'generate-weather-backgrounds.js (weather background styles: settings page + C resource table + package.json media)', command: 'node scripts/generate-weather-backgrounds.js' }
 ];
 
 var PROJECT_ROOT = path.join(SCRIPTS_DIR, '..');

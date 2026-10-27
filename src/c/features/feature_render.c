@@ -74,7 +74,21 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
 
   if (slot->draw_pill) {
     graphics_context_set_fill_color(ctx, slot->pill_bg);
-    graphics_fill_rect(ctx, GRect(box_x, box_y, box_w, CORNER_ROW_H),
+    // Hug the content: pill spans the laid-out feature width plus padding.
+    const int16_t pad = 7;
+    int16_t content_w = slot->primitives.total_width;
+    if (content_w > box_w) content_w = box_w;
+    int16_t pill_x = box_x + slot->primitives.items[0].x_offset - pad;
+    int16_t pill_w = content_w + 2 * pad;
+    if (pill_w < CORNER_ROW_H) {
+      pill_x -= (CORNER_ROW_H - pill_w) / 2;
+      pill_w = CORNER_ROW_H;
+    }
+    if (pill_x < bounds.origin.x) pill_x = bounds.origin.x;
+    if (pill_x + pill_w > bounds.origin.x + bounds.size.w) {
+      pill_x = bounds.origin.x + bounds.size.w - pill_w;
+    }
+    graphics_fill_rect(ctx, GRect(pill_x, box_y, pill_w, CORNER_ROW_H),
                        CORNER_ROW_H / 2, GCornersAll);
   }
 

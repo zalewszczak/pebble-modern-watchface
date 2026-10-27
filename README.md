@@ -665,3 +665,62 @@ number, chosen per source image so the result lands close to
 `TARGET_HEIGHT` (a constant near the top of the script) -- tweak that
 constant, not the source PNGs, if the previews come out too small or
 large next to the option names.
+
+## Pebble plugins, live settings, weather background, inverted indices
+
+### Plugins (`src/pkjs/plugins/`, `weather/weather-source.js`)
+
+Newer Pebble apps expose *plugins* (data sources: weather, battery, ...) to PKJS via
+`Pebble.enumeratePlugins()` / `Pebble.subscribeToSource()`. Everything is feature-detected;
+on an older app (or with plugins switched off) the settings page says "Plugins are not enabled",
+disables the plugin dropdown and the weather-source select, and weather keeps using Open-Meteo.
+
+- **Weather source** (Weather section): *Pebble weather plugin (default)* or *Open-Meteo*
+  (`CONFIG_WEATHER_SOURCE`). With the plugin, temperature, high/low, condition, UV and rain chance come
+  from `weather/location` (first saved location); wind, humidity, pressure, cloud cover and the forecast
+  arrays are still taken from Open-Meteo because the plugin does not provide them. Any plugin failure
+  falls back to plain Open-Meteo.
+- **Features -> puzzle category "Plugins"**: lists every text-capable property the installed plugins
+  offer (one entry per plugin/category/item/property). Picking one assigns it one of 12 watch text slots
+  (content ids 200-211, `CONFIG_PLUGIN_SLOTS`); slots no feature uses are freed on save.
+- **Build custom feature**: group *Plugins* -> *Plugin data* with a source picker (primitive
+  `PRIM_PLUGIN_TEXT`, aux = slot). Watch side: `WatchData.plugin_text[12][16]`, wire key `PLUGIN_TEXTS`,
+  resolver case in `primitive_resolver.c`. `plugins/plugin-manager.js` subscribes to the assigned sources
+  and pushes changed texts (debounced) to the watch.
+- Values are shown as plain text: shortText first, else numeric value + unit, timestamp (HH:MM),
+  boolean (On/Off), longText. Instances: the first one is used.
+
+### Bundled settings page + live changes
+
+`package.json` has `"configPage": "config.html"`. Apps that support it open `config.html` (a tiny
+bootstrap) which fetches the real page from PKJS in chunks (`plugins/config-bridge.js`, message type
+`page`) and writes it into the document; the page then sends settings changes to PKJS as you edit
+(debounced polling, `liveTick()` in `config/config-runtime.js`) and PKJS applies them exactly like a Save
+(`applySettingsObject()` in `index.js`), so the watch follows live. In that mode the Save bar becomes
+"Send to watch now" (also does a forced refresh when used from "Force refresh now") and the top Back
+button is hidden (use the app's own back).
+Older apps ignore `configPage` and use the legacy `showConfiguration` / `webviewclosed` flow (unchanged).
+
+**Packaging:** plain `pebble build` does not put `config.html` into the pbw. Build with
+`scripts/pack-plugin-pbw.py` from the coredevices/mobileapp repo (it runs `pebble build` and adds the
+bundled page); without it the legacy flow is used.
+
+### Weather background
+
+Settings -> Style -> Background: "Weather background" (mutually exclusive with "Use custom
+background"; enabling it also switches on the night colour scheme) with a *Style* dropdown. Each folder in
+`resources/weatherbg/<style>/` is a style, holding `<condition>_<day|night>.png` (200x228) for the 10
+conditions `clear_sky, partly_cloudy, overcast, fog, drizzle, rain, heavy_rain, snow, thunderstorm,
+sleet`. Run `node scripts/generate-weather-backgrounds.js` (part of `generate-all.js`) after adding a
+style; it writes `src/c/generated/weather_backgrounds.h`, `pkjs/data/generated/weather-backgrounds.js`
+and the `WEATHERBG_*` media entries in `package.json`. The watch (`bg_image_cache.c`, background mode 3)
+picks the image from `weather_wx_now` (new key `WEATHER_WX_NOW`) and day/night from sunrise/sunset;
+missing images fall back to the other time of day, then clear sky.
+`resources/weatherbg/manhattan` holds procedurally rendered stand-ins
+(`scripts/render-manhattan-weatherbg.py`); overwrite the PNGs with real images of the same names.
+
+### Inverted indices
+
+Checkbox *Inverted blend* under the bitmap indices options (`CONFIG_BITMAP_MARKER_INVERT`): indices are
+drawn as black or white, whichever contrasts with the pixels underneath (`marker_bitmap_draw_inverted()`);
+combined with *Semi transparent* the effect is halved.

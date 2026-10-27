@@ -932,7 +932,14 @@ module.exports =
 '  drawWeatherBorderPreview(ctx, w, h);' +
 '  var markerStyleVal = document.getElementById("bigAnalogMarkerStyle").value;' +
 '  var markerStyleInt = parseInt(markerStyleVal, 10);' +
-'  var markerImageDrawn = (markerStyleInt >= 3 && markerStyleInt <= 7) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, colors.text);' +
+'  var markerTint = colors.text;' +
+'  var invEl = document.getElementById("bitmapMarkerInvert");' +
+'  if (invEl && invEl.checked) {' +
+'    var bgRgb = hexToRgb(colors.bg);' +
+'    var bgLum = bgRgb ? (0.3 * bgRgb.r + 0.59 * bgRgb.g + 0.11 * bgRgb.b) : 0;' +
+'    markerTint = bgLum > 127 ? "#000000" : "#FFFFFF";' +
+'  }' +
+'  var markerImageDrawn = (markerStyleInt >= 3 && markerStyleInt <= 7) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, markerTint);' +
 '  drawBigAnalogPreview(ctx, colors, now, showSeconds, w, h, markerImageDrawn);' +
 '  drawCornersAndEdges(ctx, w, h, colors, h);' +
 '}' +

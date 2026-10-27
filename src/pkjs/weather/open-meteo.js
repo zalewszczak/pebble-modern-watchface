@@ -67,6 +67,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
     forecastTempC: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
     forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     forecastWx: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    wxNow: 0,
     forecastRainPct: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
   };
   xhrGetJSON(url, 8000, function (err, json) {
@@ -94,6 +95,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       // disagree with the current-hour reading.
       var currentCloudPct = (typeof hourlyClouds[nowIdx] === 'number') ? Math.round(hourlyClouds[nowIdx]) : null;
 
+      var wxNow = weatherDetailClass((hourlyCodes.length > nowIdx && typeof hourlyCodes[nowIdx] === 'number') ? hourlyCodes[nowIdx] : -1,
+        (typeof currentCloudPct === 'number') ? currentCloudPct : 0);
       var condition = 0;
       if (hourlyCodes.length > 0) {
         condition = conditionFromWmoCode(hourlyCodes[nowIdx]);
@@ -224,7 +227,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
         forecastTempC: forecastTempC, forecastCondition: forecastCondition,
-        forecastWx: forecastWx, forecastRainPct: forecastRainPct
+        forecastWx: forecastWx, forecastRainPct: forecastRainPct, wxNow: wxNow
       });
     } catch (e) {
       cb(e, emptyExtras);

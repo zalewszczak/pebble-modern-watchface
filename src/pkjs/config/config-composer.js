@@ -43,9 +43,10 @@ function composerClientBody() {
   // adds 'forecast' alongside 'timezone'): which option list backs the
   // picker and what its row is labelled.
   var PARAM_OPTIONS = { timezone: TIMEZONE_ZONES, forecast: FORECAST_SLOTS };
-  var PARAM_ROW_LABEL = { timezone: "Zone", forecast: "Forecast slot" };
+  var PARAM_ROW_LABEL = { timezone: "Zone", forecast: "Forecast slot", plugin: "Plugin data source" };
   function composerParamShortLabel(param, aux) {
     if (param === "timezone") return composerZoneShortLabel(aux);
+    if (param === "plugin") return pluginSlotLabel(aux);
     var opts = PARAM_OPTIONS[param] || [];
     var o = null;
     for (var i = 0; i < opts.length; i++) { if (opts[i].index === aux) { o = opts[i]; break; } }
@@ -206,7 +207,10 @@ function composerClientBody() {
   function composerOnSelZoneChange() {
     var s = COMPOSER.selected;
     if (s < 0) return;
-    COMPOSER.items[s].aux = parseInt(document.getElementById("composerSelZone").value, 10) || 0;
+    var selPal2 = composerFindPaletteItem(COMPOSER.items[s].id);
+    var newAux = composerParamValueToAux(selPal2 ? selPal2.param : "", document.getElementById("composerSelZone").value);
+    if (newAux < 0) { composerSetError(pluginUnavailableText()); composerRender(); return; }
+    COMPOSER.items[s].aux = newAux;
     composerRender();
   }
 
@@ -231,7 +235,22 @@ function composerClientBody() {
   }
 
   // ---- add-from-palette ------------------------------------------------
+  // Plugin data sources are listed from what the Pebble app reports (see
+  // config-plugins.js); a source not yet assigned a watch slot is offered as
+  // "c<catalogue index>" and gets its slot only when actually chosen.
+  function composerParamValueToAux(param, value) {
+    if (param === "plugin") return pluginAuxFromValue(value);
+    return parseInt(value, 10) || 0;
+  }
+
   function composerFillParamSelect(sel, param) {
+    if (param === "plugin") {
+      var popts = pluginParamOptions();
+      sel.innerHTML = popts.length ? popts.map(function (o) {
+        return "<option value=\"" + o.value + "\">" + esc(o.label) + "</option>";
+      }).join("") : "<option value=\"\">" + esc(pluginUnavailableText()) + "</option>";
+      return;
+    }
     var opts = PARAM_OPTIONS[param] || [];
     sel.innerHTML = opts.map(function (o) {
       return "<option value=\"" + o.index + "\">" + esc(o.label) + "</option>";
@@ -277,7 +296,10 @@ function composerClientBody() {
     var pal = composerFindPaletteItem(id);
     if (!pal) return;
     var aux = 0;
-    if (pal.param) aux = parseInt(document.getElementById("composerAddZone").value, 10) || 0;
+    if (pal.param) {
+      aux = composerParamValueToAux(pal.param, document.getElementById("composerAddZone").value);
+      if (aux < 0) { composerSetError(pluginUnavailableText()); return; }
+    }
     COMPOSER.items.push({ id: id, aux: aux });
     COMPOSER.selected = COMPOSER.items.length - 1;
     composerSetError("");

@@ -125,6 +125,13 @@ static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchDat
       resolve_punct(out, data->altitude_unit == 1 ? "ft" : "m", GColorWhite);
       out->dynamic_is_main = true;
       return true;
+    case PRIM_PLUGIN_TEXT: {
+      if (aux_in >= PLUGIN_SLOT_COUNT) return false;
+      const char *txt = data->plugin_text[aux_in];
+      resolve_text(out, txt[0] ? txt : "--", GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    }
     default:
       (void)aux_in;
       return false;

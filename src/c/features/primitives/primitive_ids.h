@@ -211,5 +211,8 @@ typedef enum {
   PRIM_PRESSURE_UNIT_TEXT,      // "hPa"
   PRIM_ALTITUDE_UNIT_TEXT,      // "m" / "ft"
 
+  // Pebble plugin data (PKJS-supplied text, aux = plugin slot 0..PLUGIN_SLOT_COUNT-1).
+  PRIM_PLUGIN_TEXT,
+
   PRIM_ID_COUNT,
 } PrimitiveId;

@@ -52,7 +52,7 @@ static uint32_t dial_static_signature(const WatchData *d, GSize size,
   h = sig_mix(h, ((uint32_t)size.w << 16) | (uint16_t)size.h);
   h = sig_mix(h, ((uint32_t)bg.argb << 16) | ((uint32_t)main_color.argb << 8) | accent_color.argb);
   // Marker style and everything the rings / numerals / bitmap tint read.
-  h = sig_mix(h, ((uint32_t)d->big_analog_marker_style << 8) | (d->bitmap_marker_transparent ? 1u : 0u) |
+  h = sig_mix(h, ((uint32_t)d->big_analog_marker_style << 8) | (d->bitmap_marker_transparent ? 1u : 0u) | (d->bitmap_marker_invert ? 4u : 0u) |
                  (d->draw_debug ? 2u : 0u));
   h = sig_bytes(h, &d->custom_hour_marker, sizeof(d->custom_hour_marker));
   h = sig_bytes(h, &d->custom_second_marker, sizeof(d->custom_second_marker));
@@ -79,6 +79,7 @@ static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoi
   if (border_on) weather_border_draw(ctx, border, bounds, origin);
 
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
+  state->markers.draw_origin = origin;
   marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
                     animating, progress_1000, d->draw_debug);
 }

@@ -258,6 +258,7 @@ var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOption
 // handEditorModalHtml all moved to config/config-hands.js
 // (configuration architecture extraction, JS8 fifth slice).
 var configBackground = require('./config/config-background');
+var configPlugins = require('./config/config-plugins');
 var configBorder = require('./config/config-border');
 var configHands = require('./config/config-hands');
 var handHiddenInputsHtml = configHands.handHiddenInputsHtml;
@@ -1112,7 +1113,7 @@ configPresetSchedule.css +
 '<div id="topBar">' +
 '  <div class="top-bar-left">' +
 '    <div class="top-bar-actions">' +
-'      <button type="button" class="back-btn" onclick="goBack()">&lsaquo; Back</button>' +
+(current.liveMode ? '' : '      <button type="button" class="back-btn" onclick="goBack()">&lsaquo; Back</button>') +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
 '    </div>' +
@@ -1504,6 +1505,10 @@ configPresetSchedule.modalHtml +
 '        <input type="checkbox" id="bitmapMarkerTransparent" ' + (current.bitmapMarkerTransparent ? 'checked' : '') + ' onchange="onBitmapMarkerTransparentChange()">' +
 '        <label for="bitmapMarkerTransparent" style="margin:0;">Semi transparent markers (see the background through them)</label>' +
 '      </div>' +
+'      <div class="checkbox-row" id="bitmapMarkerInvertRow" style="margin-top:8px;' + (isBitmapMarkerStyle ? '' : ' display:none;') + '">' +
+'        <input type="checkbox" id="bitmapMarkerInvert" ' + (current.bitmapMarkerInvert ? 'checked' : '') + ' onchange="updatePreview()">' +
+'        <label for="bitmapMarkerInvert" style="margin:0;">Inverted blend (markers turn black or white for contrast with the background)</label>' +
+'      </div>' +
 '      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face. Custom lets you edit them.</div>' +
 
 '      <div id="customMarkerSection" style="' + (current.bigAnalogMarkerStyle === '8' ? '' : 'display:none;') + '">' +
@@ -1828,6 +1833,7 @@ configPresetSchedule.modalHtml +
 '    <div class="section-body" id="section-weather" style="display:none;">' +
 '    <div class="subsection"></div>' +
 '    <div class="help section-intro" onclick="toggleSectionIntro(this)">Cloud cover is always pulled from Open-Meteo (no signup needed). Optionally add an OpenWeatherMap API key to average in a second forecast.</div>' +
+    configPlugins.weatherSourceHtml(current) +
 '    <label for="owmKey">OpenWeatherMap API key (optional)</label>' +
 '    <input type="text" id="owmKey" placeholder="leave blank to skip" value="' + esc(current.owmKey) + '">' +
 
@@ -2048,7 +2054,9 @@ configPresetSchedule.modalHtml +
 '    </div>' +
 '  </fieldset>' +
 
-'  <div class="save-bar"><button onclick="save()">Save</button></div>' +
+(current.liveMode
+  ? '  <div class="save-bar"><div id="liveStatus" class="help" style="text-align:center; margin:0 0 6px;">Live</div><button onclick="save()">Send to watch now</button></div>'
+  : '  <div class="save-bar"><button onclick="save()">Save</button></div>') +
 
 '<script>' +
 'var MARKER_PREVIEW_IMAGES = ' + JSON.stringify(MARKER_PREVIEW_IMAGES) + ';' +
@@ -2159,9 +2167,7 @@ configPresetSchedule.modalHtml +
 '    alert("Not valid JSON -- fix the text before sending:\\n\\n" + e.message);' +
 '    return;' +
 '  }' +
-'  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
-'  var payload = { CONFIG_SEND_FULL_KEYSET: true, CONFIG_FULL_KEYSET_DATA: text };' +
-'  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
+'  phoneAction({ CONFIG_SEND_FULL_KEYSET: true, CONFIG_FULL_KEYSET_DATA: text });' +
 '}' +
 // 8-point compass label for the wind-direction slider's live readout
 // -- same +22/45 bucketing as the watch\'s own compass-arrow feature
@@ -2213,9 +2219,7 @@ configPresetSchedule.modalHtml +
 '}' +
 'function sendFakeWeatherToWatch() {' +
 '  var dict = buildFakeWeatherDict();' +
-'  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
-'  var payload = { CONFIG_SEND_FAKE_WEATHER: true, CONFIG_FAKE_WEATHER_DATA: JSON.stringify(dict) };' +
-'  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
+'  phoneAction({ CONFIG_SEND_FAKE_WEATHER: true, CONFIG_FAKE_WEATHER_DATA: JSON.stringify(dict) });' +
 '}' +
 // Boils a Nominatim `address` object (city/town/village/... + country)
 // down to the short "City, Country" form the Location sub-header shows
@@ -2793,6 +2797,8 @@ configBorder.borderScript() +
 'var FORECAST_SLOTS = ' + JSON.stringify(primitiveForecastSlots) + ';' +
 'var PRIMITIVE_PREVIEW_TEXT = ' + JSON.stringify(primitivePreviewText) + ';' +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
+'var PRIM_PLUGIN_TEXT_ID = ' + primitiveIds.PRIM_PLUGIN_TEXT + ';' +
+configPlugins.pluginScript(current) +
 'var COMPOSER_MAX = 10;' + // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
 '\n' + composerClientSource + '\n' +
 // Phase 10: PRIMITIVE_DECOMPOSITIONS now has a precomputed entry for every
@@ -2847,6 +2853,7 @@ configBorder.borderScript() +
 '  return CORNER_CATEGORIES[0];' +
 '}' +
 'function categoryItemOptionsHtml(categoryId, selectedContentId) {' +
+'  if (categoryId === "plugins") return pluginItemOptionsHtml(selectedContentId);' +
 '  var items = findCategory(categoryId).items;' +
 '  var html = "";' +
 '  for (var i = 0; i < items.length; i++) {' +
@@ -2930,7 +2937,7 @@ configBorder.borderScript() +
 '      btn.textContent = "OFF";' +
 '      btn.className = baseClass + " slot-off";' +
 '    } else {' +
-'      btn.textContent = primitiveDecompositionText(val);' +
+'      btn.textContent = (val >= PLUGIN_CONTENT_FIRST && val < PLUGIN_CONTENT_FIRST + PLUGIN_SLOT_COUNT) ? pluginButtonText(val) : primitiveDecompositionText(val);' +
 '      btn.className = baseClass;' +
 '    }' +
 '    if (document.getElementById(key + "Shake").value === "1" && btn.className.indexOf("slot-off") === -1) btn.textContent += " \u27f3";' +
@@ -2952,6 +2959,7 @@ configBorder.borderScript() +
 '  renderSlotEditPreview();' +
 '}' +
 'function onSlotEditContentChange() {' +
+'  pluginResolveContentSelect(document.getElementById("slotEditContent"));' +
 '  var contentVal = document.getElementById("slotEditContent").value;' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
 '  renderSlotEditPrimitiveStrip(contentVal);' +
@@ -2987,9 +2995,9 @@ configBorder.borderScript() +
 '  var categoryId = document.getElementById("slotEditCategory").value;' +
 '  var firstItemId = findCategory(categoryId).items[0].id;' +
 '  var contentSelect = document.getElementById("slotEditContent");' +
-'  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, firstItemId);' +
-'  contentSelect.disabled = (categoryId === "none");' +
-'  document.getElementById("slotEditCategoryHelp").style.display = (categoryId === "timezone") ? "" : "none";' +
+'  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, categoryId === "plugins" ? "" : firstItemId);' +
+'  contentSelect.disabled = slotEditContentDisabled(categoryId);' +
+'  slotEditCategoryHelpUpdate(categoryId);' +
 '  onSlotEditContentChange();' +
 '}' +
 // Opens the popup pre-filled with this slot\'s current (already-saved)
@@ -3008,8 +3016,8 @@ configBorder.borderScript() +
 '  updateCategoryButtonActive(categoryId);' +
 '  var contentSelect = document.getElementById("slotEditContent");' +
 '  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, contentVal);' +
-'  contentSelect.disabled = (categoryId === "none");' +
-'  document.getElementById("slotEditCategoryHelp").style.display = (categoryId === "timezone") ? "" : "none";' +
+'  contentSelect.disabled = slotEditContentDisabled(categoryId);' +
+'  slotEditCategoryHelpUpdate(categoryId);' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
 '  renderSlotEditPrimitiveStrip(contentVal);' +
 '  setSlotEditorColorButtons(colorVal);' +
@@ -3201,6 +3209,7 @@ configBorder.borderScript() +
 '  document.getElementById("customMarkerSection").style.display = (val === "8") ? "" : "none";' +
 '  var isBitmap = (val === "3" || val === "4" || val === "5" || val === "6" || val === "7");' +
 '  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
+'  document.getElementById("bitmapMarkerInvertRow").style.display = isBitmap ? "" : "none";' +
 '  document.getElementById("bitmapCornerOverrideRow").style.display = (isBitmap && val !== "5") ? "" : "none";' +
 '  updateMarkerStyleButtonLabel();' +
 '  clearGrayedSlotsIfUnavailable();' +
@@ -3730,7 +3739,7 @@ configBorder.borderScript() +
 '    var preset = MARKER_PRESET_STYLES.filter(function (s) { return s.value === val; })[0];' +
 '    if (preset) img = MARKER_PRESET_IMAGES[preset.image];' +
 '  }' +
-'  setPreviewThumbnail("subsecpreview-indices", img ? (\'<img class="\' + (isBitmap ? "bitmap-marker-img" : "") + \'" src="\' + img + \'" alt="">\') : "");' +
+'  setPreviewThumbnail("subsecpreview-indices", img ? (\'<img class="\' + "bitmap-marker-img" + \'" src="\' + img + \'" alt="">\') : "");' +
 '  var title = MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom";' +
 '  setSubsubheaderText("indices", val === "0" ? "No indices" : title + " indices");' +
 '}' +
@@ -3789,7 +3798,7 @@ configBorder.borderScript() +
 '  MARKER_PRESET_STYLES.forEach(function (s) {' +
 '    var img = MARKER_PRESET_IMAGES[s.image];' +
 '    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
-'      (img ? \'<img src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
+'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
 '      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
 '  });' +
 '  grid.innerHTML = html;' +
@@ -5159,6 +5168,7 @@ require('./config/config-runtime') +
 'renderMarkerStyleGrid();' +
 'if (window.__modernStartupProgress) window.__modernStartupProgress(62, "Preparing previews…");' +
 'renderCategoryButtons();' +
+'liveInit();' +
 'updateWeatherIconStyleVisibility();' +
 'adjustTopBarSpacing();' +
 'if (window.__modernStartupProgress) window.__modernStartupProgress(78, "Finishing layout…");' +

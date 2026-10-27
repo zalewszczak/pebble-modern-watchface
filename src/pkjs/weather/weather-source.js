@@ -1,0 +1,127 @@
+// ---- weather data source: Pebble weather plugin (default) or Open-Meteo ---------------
+//
+// CONFIG_WEATHER_SOURCE: 'plugin' (default) | 'openmeteo'.
+//
+// With 'plugin', the Pebble app's own weather plugin (weather/location, the
+// first saved location) supplies the headline values: temperature, high/low,
+// condition, UV and chance of rain. The plugin does not offer wind, humidity,
+// pressure, dew point, cloud cover or the hourly/daily forecast arrays, so
+// Open-Meteo is still queried for those and the plugin values are laid over
+// the result. If the plugin is unavailable (old Pebble app, plugins switched
+// off, no weather location, timeout) the Open-Meteo snapshot is used as-is, so
+// weather keeps working exactly like before.
+
+var weather = require('./weather');
+var pluginManager = require('../plugins/plugin-manager');
+var getSetting = require('../settings/settings').getSetting;
+
+var PLUGIN_TIMEOUT_MS = 6000;
+var PROPS = ['temperature', 'high', 'low', 'condition_code', 'uv_index', 'precipitation'];
+
+function numberOf(payloads) {
+  if (!payloads) return null;
+  var nv = payloads.numericValue;
+  if (nv && typeof nv.value === 'number') {
+    var v = nv.value;
+    if (nv.unit && /F/i.test(nv.unit)) v = (v - 32) * 5 / 9;
+    return v;
+  }
+  var txt = payloads.shortText && payloads.shortText.text;
+  if (typeof txt === 'string') {
+    var m = /-?[0-9]+(\.[0-9]+)?/.exec(txt);
+    if (m) {
+      var n = parseFloat(m[0]);
+      return /F\s*$/i.test(txt) ? (n - 32) * 5 / 9 : n;
+    }
+  }
+  return null;
+}
+
+function textOf(payloads) {
+  if (!payloads) return '';
+  var k = payloads.longText || payloads.shortText;
+  return (k && typeof k.text === 'string') ? k.text : '';
+}
+
+// Plugin condition_code -> { wx: detailed class (see weatherDetailClass), cond: condition enum }.
+var CODE_MAP = {
+  sun: { wx: 0, cond: 0 },
+  partly_cloudy: { wx: 1, cond: 0 },
+  cloudy: { wx: 2, cond: 0 },
+  light_rain: { wx: 4, cond: 2 },
+  heavy_rain: { wx: 6, cond: 2 },
+  light_snow: { wx: 7, cond: 3 },
+  heavy_snow: { wx: 7, cond: 3 },
+  rain_and_snow: { wx: 9, cond: 2 }
+};
+
+// Reads the plugin once. cb(err, { tempC, tempHighC, tempLowC, uv, rainPct, code })
+function fetchPluginWeather(cb) {
+  if (!pluginManager.hasApi()) return cb(new Error('plugins not available'));
+  var done = false, handle = null, timer = null;
+  function finish(err, value) {
+    if (done) return;
+    done = true;
+    if (timer) clearTimeout(timer);
+    if (handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { /* ignore */ } }
+    cb(err, value);
+  }
+  timer = setTimeout(function () { finish(new Error('weather plugin timed out')); }, PLUGIN_TIMEOUT_MS);
+  try {
+    handle = Pebble.subscribeToSource({
+      category: 'weather',
+      item: 'location',
+      properties: PROPS,
+      onData: function (env) {
+        var inst = env && env.instances && env.instances[0];
+        if (!inst || !inst.properties) return finish(new Error('no weather location in the Pebble app'));
+        var p = inst.properties;
+        var temp = numberOf(p.temperature);
+        if (temp === null) return finish(new Error('weather plugin has no temperature'));
+        finish(null, {
+          tempC: temp, tempHighC: numberOf(p.high), tempLowC: numberOf(p.low),
+          uv: numberOf(p.uv_index), rainPct: numberOf(p.precipitation),
+          code: textOf(p.condition_code).trim().toLowerCase()
+        });
+      },
+      onError: function (err) { finish(new Error('weather plugin: ' + ((err && err.code) || 'error'))); }
+    });
+    if (done && handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { /* ignore */ } }
+  } catch (e) {
+    finish(e);
+  }
+}
+
+function overlay(snap, p) {
+  var out = {};
+  Object.keys(snap).forEach(function (k) { out[k] = snap[k]; });
+  out.tempC = p.tempC;
+  if (p.tempHighC !== null) out.tempHighC = p.tempHighC;
+  if (p.tempLowC !== null) out.tempLowC = p.tempLowC;
+  if (p.uv !== null) { out.uvIndexMax = p.uv; out.uvIndexCurrent = p.uv; }
+  if (p.rainPct !== null) out.rainChancePct = Math.max(0, Math.min(100, p.rainPct));
+  var mapped = CODE_MAP[p.code];
+  if (mapped) { out.wxNow = mapped.wx; out.condition = mapped.cond; }
+  return out;
+}
+
+function useWeatherPlugin() {
+  return getSetting('CONFIG_WEATHER_SOURCE', 'plugin') === 'plugin' && pluginManager.hasApi();
+}
+
+// Same signature as weather.getWeatherSnapshot(lat, lon, now, cb(err, snapshot)).
+function getSnapshot(lat, lon, now, cb) {
+  if (!useWeatherPlugin()) return weather.getWeatherSnapshot(lat, lon, now, cb);
+  fetchPluginWeather(function (perr, p) {
+    weather.getWeatherSnapshot(lat, lon, now, function (err, snap) {
+      if (perr) {
+        console.log('modern: weather plugin not used (' + perr.message + '), using Open-Meteo');
+        return cb(err, snap);
+      }
+      console.log('modern: weather from the Pebble weather plugin' + (err ? ' (Open-Meteo extras unavailable)' : ''));
+      cb(null, overlay(snap, p));
+    });
+  });
+}
+
+module.exports = { getSnapshot: getSnapshot, fetchPluginWeather: fetchPluginWeather, useWeatherPlugin: useWeatherPlugin };

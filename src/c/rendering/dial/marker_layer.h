@@ -13,6 +13,7 @@ typedef struct {
   bool bitmap_tinted;
   GColor bitmap_tint_color;
   bool bitmap_tint_transparent;
+  GPoint draw_origin; // layer origin in the frame buffer (needed by the invert blend)
   FontSlot text_font_slot;
 } MarkerLayerState;
 

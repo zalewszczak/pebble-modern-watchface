@@ -4,7 +4,7 @@
 
 #define PERSIST_KEY_DATA_BASE 1
 #define PERSIST_CHUNK_SIZE 200
-#define PERSIST_CHUNK_COUNT 12
+#define PERSIST_CHUNK_COUNT 16 // 3200 bytes: room for the plugin text slots
 
 // Stores the struct size alongside the data. Persisted blobs written by a
 // build with a different WatchData layout (including any release that

@@ -19,6 +19,8 @@ var enqueueFlatDict = messageQueue.enqueueFlatDict;
 var refreshManager = require('./refresh-manager');
 var refreshAndSend = refreshManager.refreshAndSend;
 var scheduleRefresh = refreshManager.scheduleRefresh;
+var pluginManager = require('./plugins/plugin-manager');
+var configBridge = require('./plugins/config-bridge');
 var startBatterySaverHourlyCheck = refreshManager.startBatterySaverHourlyCheck;
 
 // ---- scheduled My styles ------------------------------------------------
@@ -47,6 +49,8 @@ function serveScheduledStyle() {
 
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
+  // Plugin sources: subscribe to whatever the user assigned and push values as they change.
+  pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
   // Catch up on anything that came due while PKJS was not running (phone
   // off, watch on another app). Done first so the refresh below already
   // sends the applied style.
@@ -97,8 +101,9 @@ Pebble.addEventListener('appmessage', function (e) {
   }
 });
 
-Pebble.addEventListener('showConfiguration', function () {
-  var html = configPage.buildConfigHtml({
+// Everything the settings page needs to show its current state.
+function buildCurrent() {
+  return {
     autoLoc: getSetting('CONFIG_AUTO_LOC', 'true') !== 'false',
     lat: getSetting('CONFIG_LAT', ''),
     lon: getSetting('CONFIG_LON', ''),
@@ -142,6 +147,8 @@ Pebble.addEventListener('showConfiguration', function () {
     cornerBRShake: getSetting('CONFIG_CORNER_BR_SHAKE', '0'),
     useCustomBg: getSetting('CONFIG_USE_CUSTOM_BG', 'false') === 'true',
     bgSource: getSetting('CONFIG_BG_SOURCE', 'p:1'),
+    useWeatherBg: getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
+    weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
     borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
     borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     borderWeatherScheme: getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'),
@@ -149,6 +156,7 @@ Pebble.addEventListener('showConfiguration', function () {
     borderWeatherSemi: getSetting('CONFIG_BORDER_WEATHER_SEMI', 'false') === 'true',
     bgSlots: bgImageSync.getSlots(),
     bitmapMarkerTransparent: getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true',
+    bitmapMarkerInvert: getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true',
     // Browser-side only -- the watch never needs feature IDs. The settings
     // page compiles the selected corner features to primitive sequences
     // before sending them. Persisted here so the checkbox survives reopening.
@@ -335,8 +343,18 @@ Pebble.addEventListener('showConfiguration', function () {
     presetSlot4Schedule: getSetting('CONFIG_PRESET_4_SCHEDULE', ''),
     presetSlot5Schedule: getSetting('CONFIG_PRESET_5_SCHEDULE', ''),
     presetSlot6Schedule: getSetting('CONFIG_PRESET_6_SCHEDULE', ''),
-    scheduleKnownIds: scheduledStyle.knownIds()
-  });
+    scheduleKnownIds: scheduledStyle.knownIds(),
+    // Pebble plugins: what the phone app offers (or why it does not), the
+    // sources assigned to the watch's plugin slots, and the weather source.
+    pluginCatalogue: pluginManager.readCatalogue(),
+    pluginSlots: pluginManager.getSlots(),
+    weatherSource: getSetting('CONFIG_WEATHER_SOURCE', 'plugin')
+  };
+}
+
+// Legacy flow (older Pebble apps, or when no bundled page is configured).
+Pebble.addEventListener('showConfiguration', function () {
+  var html = configPage.buildConfigHtml(buildCurrent());
   // Classic no-server config page: the whole thing is a data: URI, no
   // hosting required. The page reads a `return_to` query param that
   // the runtime appends (falling back to pebblejs://close# per
@@ -364,6 +382,12 @@ Pebble.addEventListener('webviewclosed', function (e) {
     console.log('modern: failed to parse settings response: ' + err.message);
     return;
   }
+  applySettingsObject(settings);
+});
+
+// Applies a settings object from the page -- either handed over when the legacy
+// page closes (above) or sent live by the bundled page (see plugins/config-bridge.js).
+function applySettingsObject(settings) {
 
   // Debug-only direct send (see config-page.js's "full keyset" window
   // and its own Send button): takes exactly the -- possibly hand-
@@ -458,6 +482,8 @@ Pebble.addEventListener('webviewclosed', function (e) {
   setSetting('CONFIG_CORNER_BR_SHAKE', settings.CONFIG_CORNER_BR_SHAKE === '1' ? '1' : '0');
   setSetting('CONFIG_USE_CUSTOM_BG', settings.CONFIG_USE_CUSTOM_BG ? 'true' : 'false');
   setSetting('CONFIG_BG_SOURCE', settings.CONFIG_BG_SOURCE || 'p:1');
+  setSetting('CONFIG_USE_WEATHER_BG', settings.CONFIG_USE_WEATHER_BG ? 'true' : 'false');
+  setSetting('CONFIG_WEATHER_BG_STYLE', settings.CONFIG_WEATHER_BG_STYLE || '');
   setSetting('CONFIG_BORDER_WEATHER_MODE', (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) ? settings.CONFIG_BORDER_WEATHER_MODE : '0');
   setSetting('CONFIG_BORDER_WEATHER_SCHEME', (settings.CONFIG_BORDER_WEATHER_SCHEME === '1' || settings.CONFIG_BORDER_WEATHER_SCHEME === '2') ? settings.CONFIG_BORDER_WEATHER_SCHEME : '0');
   setSetting('CONFIG_BORDER_WEATHER_SHAKE', settings.CONFIG_BORDER_WEATHER_SHAKE ? 'true' : 'false');
@@ -465,6 +491,7 @@ Pebble.addEventListener('webviewclosed', function (e) {
   setSetting('CONFIG_BORDER_WEATHER_PX', String(Math.max(2, Math.min(40, parseInt(settings.CONFIG_BORDER_WEATHER_PX, 10) || 8))));
   bgImageSync.applySlotUpdates(settings.CONFIG_BG_SLOT_UPDATES);
   setSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', settings.CONFIG_BITMAP_MARKER_TRANSPARENT ? 'true' : 'false');
+  setSetting('CONFIG_BITMAP_MARKER_INVERT', settings.CONFIG_BITMAP_MARKER_INVERT ? 'true' : 'false');
   setSetting('CONFIG_BITMAP_CORNER_OVERRIDE', settings.CONFIG_BITMAP_CORNER_OVERRIDE ? 'true' : 'false');
   setSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', settings.CONFIG_DRAW_FEATURES_BENEATH_HANDS ? 'true' : 'false');
   setSetting('CONFIG_CUSTOM_HOUR_STYLE', settings.CONFIG_CUSTOM_HOUR_STYLE || '0');
@@ -622,6 +649,9 @@ Pebble.addEventListener('webviewclosed', function (e) {
   setSetting('CONFIG_HOURLY_VIBE_END_TIME', settings.CONFIG_HOURLY_VIBE_END_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', settings.CONFIG_HOURLY_VIBE_DAYS_MASK || '127');
   setSetting('CONFIG_HOURLY_VIBE_OVERRIDE_QUIET', settings.CONFIG_HOURLY_VIBE_OVERRIDE_QUIET === false ? 'false' : 'true');
+  if (settings.CONFIG_WEATHER_SOURCE) setSetting('CONFIG_WEATHER_SOURCE', settings.CONFIG_WEATHER_SOURCE === 'openmeteo' ? 'openmeteo' : 'plugin');
+  // Plugin data slots: store the page's list and (re)subscribe to those sources.
+  if (settings.CONFIG_PLUGIN_SLOTS !== undefined) pluginManager.setSlots(settings.CONFIG_PLUGIN_SLOTS);
 
   // The clock font / weather-readout toggle / colors are purely
   // cosmetic and phone-local -- send them immediately rather than
@@ -654,4 +684,11 @@ Pebble.addEventListener('webviewclosed', function (e) {
   // That was a real bug: resendOnSkip used to be unconditional on
   // every skip, which is exactly what made it fire here too.
   refreshAndSend(!!settings.CONFIG_FORCE_REFRESH, false);
-});
+}
+
+// Bundled settings page (newer Pebble apps): serves the page and takes live changes.
+configBridge.install(function () {
+  var current = buildCurrent();
+  current.liveMode = true;
+  return configPage.buildConfigHtml(current);
+}, applySettingsObject, pluginManager);

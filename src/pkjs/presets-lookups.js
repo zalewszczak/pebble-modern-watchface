@@ -814,6 +814,73 @@ var CORNER_CATEGORIES = [
         "preview": "82% (bt)(spkr)"
       }
     ]
+  },
+  {
+    "id": "plugins",
+    "label": "Plugins",
+    "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 4.5a1.8 1.8 0 0 1 3.6 0V6H18a1 1 0 0 1 1 1v3.4h-1.5a1.8 1.8 0 0 0 0 3.6H19V18a1 1 0 0 1-1 1h-3.4v-1.5a1.8 1.8 0 0 0-3.6 0V19H7a1 1 0 0 1-1-1v-4H4.5a1.8 1.8 0 0 1 0-3.6H6V7a1 1 0 0 1 1-1h3z\"/></svg>",
+    "items": [
+      {
+        "id": 200,
+        "label": "Plugin data 1",
+        "preview": "12.3"
+      },
+      {
+        "id": 201,
+        "label": "Plugin data 2",
+        "preview": "12.3"
+      },
+      {
+        "id": 202,
+        "label": "Plugin data 3",
+        "preview": "12.3"
+      },
+      {
+        "id": 203,
+        "label": "Plugin data 4",
+        "preview": "12.3"
+      },
+      {
+        "id": 204,
+        "label": "Plugin data 5",
+        "preview": "12.3"
+      },
+      {
+        "id": 205,
+        "label": "Plugin data 6",
+        "preview": "12.3"
+      },
+      {
+        "id": 206,
+        "label": "Plugin data 7",
+        "preview": "12.3"
+      },
+      {
+        "id": 207,
+        "label": "Plugin data 8",
+        "preview": "12.3"
+      },
+      {
+        "id": 208,
+        "label": "Plugin data 9",
+        "preview": "12.3"
+      },
+      {
+        "id": 209,
+        "label": "Plugin data 10",
+        "preview": "12.3"
+      },
+      {
+        "id": 210,
+        "label": "Plugin data 11",
+        "preview": "12.3"
+      },
+      {
+        "id": 211,
+        "label": "Plugin data 12",
+        "preview": "12.3"
+      }
+    ]
   }
 ];
 

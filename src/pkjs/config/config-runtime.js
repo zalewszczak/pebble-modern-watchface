@@ -28,7 +28,7 @@
 //   rationale.
 
 module.exports =
-'function save(forceRefresh) {' +
+'function collectSettings(forceRefresh) {' +
 '  var mins = parseInt(document.getElementById("updateMins").value, 10);' +
 '  if (isNaN(mins) || mins < 5) mins = 20;' +
 '  var showSecondsVal = document.getElementById("showSeconds").checked;' +
@@ -65,6 +65,7 @@ module.exports =
 '    CONFIG_SHADOW_ANGLE: document.getElementById("shadowAngle").value,' +
 '    CONFIG_BIG_ANALOG_MARKER_STYLE: document.getElementById("bigAnalogMarkerStyle").value,' +
 '    CONFIG_BITMAP_MARKER_TRANSPARENT: document.getElementById("bitmapMarkerTransparent").checked,' +
+'    CONFIG_BITMAP_MARKER_INVERT: document.getElementById("bitmapMarkerInvert").checked,' +
 '    CONFIG_UPPER_MIDDLE_LINE1_SHAKE: document.getElementById("upperMiddleLine1Shake").value,' +
 '    CONFIG_UPPER_MIDDLE_LINE2_SHAKE: document.getElementById("upperMiddleLine2Shake").value,' +
 '    CONFIG_BOTTOM_MIDDLE_LINE1_SHAKE: document.getElementById("bottomMiddleLine1Shake").value,' +
@@ -79,6 +80,8 @@ module.exports =
 '    CONFIG_CORNER_BR_SHAKE: document.getElementById("cornerBRShake").value,' +
 '    CONFIG_USE_CUSTOM_BG: document.getElementById("useCustomBg").checked,' +
 '    CONFIG_BG_SOURCE: document.getElementById("bgSource").value,' +
+'    CONFIG_USE_WEATHER_BG: document.getElementById("useWeatherBg").checked,' +
+'    CONFIG_WEATHER_BG_STYLE: document.getElementById("weatherBgStyle").value,' +
 '    CONFIG_BORDER_WEATHER_MODE: document.getElementById("borderWeatherMode").value,' +
 '    CONFIG_BORDER_WEATHER_PX: document.getElementById("borderWeatherPx").value,' +
 '    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +
@@ -254,8 +257,83 @@ module.exports =
 // settings and let the normal refresh cadence pick up anything that
 // actually needs new data -- never itself persisted via setSetting.
 '  settings.CONFIG_FORCE_REFRESH = !!forceRefresh;' +
+// Pebble plugins: weather source (kept as stored while the select is disabled) and
+// the watch's plugin slot assignment, freed of sources no feature uses any more.
+'  var wsEl = document.getElementById("weatherSource");' +
+'  settings.CONFIG_WEATHER_SOURCE = wsEl ? (wsEl.disabled ? wsEl.getAttribute("data-stored") : wsEl.value) : "plugin";' +
+'  pluginGcSlots();' +
+'  settings.CONFIG_PLUGIN_SLOTS = JSON.stringify(PLUGIN_SLOTS);' +
+'  return settings;' +
+'}' +
+'function save(forceRefresh) {' +
+'  var settings = collectSettings(forceRefresh);' +
+'  if (LIVE.active) { liveSend(settings, true); return; }' +
 '  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
 '  document.location = returnTo + encodeURIComponent(JSON.stringify(settings));' +
+'}' +
+// Debug sends (full keyset / fake weather) and "back": navigate in the legacy flow,
+// message PKJS in the live one.
+'function phoneAction(payload) {' +
+'  if (LIVE.active) { return Pebble.sendMessage("pkjs", { type: "action", payload: payload }).then(function () { liveStatus("Sent"); }, function () { liveStatus("Not sent: no connection to the phone app", true); }); }' +
+'  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
+'  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
+'}' +
+// ---- live mode: changes go to the phone (and on to the watch) as they happen -------
+//
+// Only when this page was opened by a Pebble app that bundles settings pages and
+// offers Pebble.sendMessage (LIVE_MODE is baked in by PKJS, which only builds the
+// page that way when serving it over that bridge). Every 800 ms the settings are
+// collected; once they have stopped changing for one tick and differ from what was
+// last sent, they are sent. Polling instead of listening to events catches every
+// programmatic change too (style presets, pickers, sliders).
+'var LIVE = { active: false, last: "", seen: "", busy: false, timer: null };' +
+'function liveStatus(text, isError) {' +
+'  var el = document.getElementById("liveStatus");' +
+'  if (!el) return;' +
+'  el.textContent = text;' +
+'  el.style.color = isError ? "#d9822b" : "";' +
+'}' +
+'function liveJson(settings) {' +
+'  var copy = {};' +
+'  for (var k in settings) if (k !== "CONFIG_FORCE_REFRESH" && k !== "CONFIG_BG_SLOT_UPDATES") copy[k] = settings[k];' +
+'  copy.__bg = Object.keys(settings.CONFIG_BG_SLOT_UPDATES || {}).join(",");' +
+'  return JSON.stringify(copy);' +
+'}' +
+'function liveSend(settings, force) {' +
+'  if (LIVE.busy) return;' +
+'  LIVE.busy = true;' +
+'  var json = liveJson(settings);' +
+'  var sentBg = {};' +
+'  for (var bk in (settings.CONFIG_BG_SLOT_UPDATES || {})) sentBg[bk] = true;' +
+'  liveStatus("Sending\u2026");' +
+'  Pebble.sendMessage("pkjs", { type: "settings", settings: settings }).then(function (reply) {' +
+'    LIVE.busy = false;' +
+'    if (reply && reply.ok === false) { liveStatus("Phone app reported an error", true); return; }' +
+'    LIVE.last = json;' +
+'    if (typeof bgSlotUpdates === "object") { for (var k in sentBg) delete bgSlotUpdates[k]; }' +
+'    liveStatus(force ? "Sent to the watch" : "Live \u2013 changes are sent to the watch");' +
+'  }, function () {' +
+'    LIVE.busy = false;' +
+'    liveStatus("Could not reach the phone app \u2013 will retry", true);' +
+'  });' +
+'}' +
+'function liveTick() {' +
+'  if (!LIVE.active || LIVE.busy) return;' +
+'  var settings;' +
+'  try { settings = collectSettings(false); } catch (e) { return; }' +
+'  var json = liveJson(settings);' +
+'  if (json === LIVE.last) { LIVE.seen = json; return; }' +
+'  if (json !== LIVE.seen) { LIVE.seen = json; return; }' +
+'  liveSend(settings, false);' +
+'}' +
+'function liveInit() {' +
+'  if (typeof LIVE_MODE === "undefined" || !LIVE_MODE) return;' +
+'  if (typeof Pebble === "undefined" || typeof Pebble.sendMessage !== "function") return;' +
+'  LIVE.active = true;' +
+'  try { LIVE.last = liveJson(collectSettings(false)); } catch (e) { LIVE.last = ""; }' +
+'  LIVE.seen = LIVE.last;' +
+'  liveStatus("Live \u2013 changes are sent to the watch");' +
+'  LIVE.timer = setInterval(liveTick, 800);' +
 '}' +
 'function getQueryParam(name, defaultValue) {' +
 '  var query = location.search.substring(1);' +

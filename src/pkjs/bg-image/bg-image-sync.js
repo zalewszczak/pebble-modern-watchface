@@ -77,6 +77,16 @@ function applySlotUpdates(updates) {
 // What the watch should show: { mode: 0|1|2, preset, data, stamp }.
 function selection() {
   var none = { mode: 0, preset: 0, data: null, stamp: 0 };
+  // Weather background: mode 3, preset = 1-based style index (the watch picks
+  // the picture from the current weather and time of day).
+  if (getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true' && getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') {
+    var styles = require('../data/generated/weather-backgrounds').styles || [];
+    var wantId = getSetting('CONFIG_WEATHER_BG_STYLE', '');
+    for (var si = 0; si < styles.length; si++) {
+      if (styles[si].id === wantId) return { mode: 3, preset: styles[si].index, data: null, stamp: 0 };
+    }
+    if (styles.length) return { mode: 3, preset: styles[0].index, data: null, stamp: 0 };
+  }
   if (getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') return none;
   var m = /^([pu]):([0-9]{1,3})$/.exec(getSetting('CONFIG_BG_SOURCE', 'p:1'));
   if (!m) return none;

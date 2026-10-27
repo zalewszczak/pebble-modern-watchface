@@ -1,10 +1,24 @@
 #include "./bg_image_cache.h"
 #include "./bg_image_store.h"
 #include "../../generated/background_presets.h"
+#include "../../generated/weather_backgrounds.h"
+#include "../../data/watch_ui.h"
+
+// Weather background (mode 3): style = custom_bg_preset (1-based). The picture
+// follows the current weather class and day/night (sunrise/sunset).
+static uint32_t weather_bg_resource(const WatchData *d) {
+  bool night = !watch_ui_is_daylight(d, time(NULL));
+  uint8_t wx = d->valid ? d->weather_wx_now : 0;
+  return weatherbg_resource_id(d->custom_bg_preset, wx, night);
+}
 
 uint32_t bg_image_signature(const WatchData *d) {
   if (d->custom_bg_mode == 1 && bg_preset_resource_id(d->custom_bg_preset) != 0) {
     return 0x10000u | d->custom_bg_preset;
+  }
+  if (d->custom_bg_mode == 3) {
+    uint32_t id = weather_bg_resource(d);
+    return id ? (0x30000000u | id) : 0;
   }
   if (d->custom_bg_mode == 2) {
     // 0x2... = "uploaded"; the slot's stamp is 0 while that slot is empty or
@@ -15,8 +29,9 @@ uint32_t bg_image_signature(const WatchData *d) {
 }
 
 bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin) {
-  if (d->custom_bg_mode == 1) {
-    uint32_t res_id = bg_preset_resource_id(d->custom_bg_preset);
+  if (d->custom_bg_mode == 1 || d->custom_bg_mode == 3) {
+    uint32_t res_id = (d->custom_bg_mode == 3) ? weather_bg_resource(d)
+                                                : bg_preset_resource_id(d->custom_bg_preset);
     if (res_id == 0) return true; // that predefined image is not in this build
     GBitmap *bm = gbitmap_create_with_resource(res_id);
     if (!bm) return false;

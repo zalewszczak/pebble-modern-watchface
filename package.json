@@ -73,6 +73,8 @@
       "ERROR_CODE",
       "REQUEST_UPDATE",
       "WEATHER_LAST_UPDATE",
+      "WEATHER_WX_NOW",
+      "PLUGIN_TEXTS",
       "FORECAST_TEMP_C",
       "FORECAST_CONDITION",
       "HANDS",
@@ -966,9 +968,110 @@
           "type": "bitmap",
           "name": "BG_PRESET_34",
           "file": "backgrounds/34.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
+          "file": "weatherbg/manhattan/clear_sky_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
+          "file": "weatherbg/manhattan/clear_sky_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
+          "file": "weatherbg/manhattan/partly_cloudy_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
+          "file": "weatherbg/manhattan/partly_cloudy_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
+          "file": "weatherbg/manhattan/overcast_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
+          "file": "weatherbg/manhattan/overcast_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_DAY",
+          "file": "weatherbg/manhattan/fog_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
+          "file": "weatherbg/manhattan/fog_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
+          "file": "weatherbg/manhattan/drizzle_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
+          "file": "weatherbg/manhattan/drizzle_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
+          "file": "weatherbg/manhattan/rain_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
+          "file": "weatherbg/manhattan/rain_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
+          "file": "weatherbg/manhattan/heavy_rain_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
+          "file": "weatherbg/manhattan/heavy_rain_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
+          "file": "weatherbg/manhattan/snow_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
+          "file": "weatherbg/manhattan/snow_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
+          "file": "weatherbg/manhattan/thunderstorm_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
+          "file": "weatherbg/manhattan/thunderstorm_night.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
+          "file": "weatherbg/manhattan/sleet_day.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
+          "file": "weatherbg/manhattan/sleet_night.png"
         }
       ]
-    }
+    },
+    "configPage": "config.html"
   },
   "devDependencies": {
     "pngjs": "^7.0.0",

@@ -46,6 +46,7 @@ static const SimpleFieldMapping SIMPLE_FIELD_MAP[] = {
   { MK_DAILY_STEP_GOAL, F_U16, offsetof(WatchData, daily_step_goal) },
   { MK_WEATHER_ICON_CATEGORY, F_U8, offsetof(WatchData, weather_icon_category) },
   { MK_WEATHER_ICON_COLOR, F_U8, offsetof(WatchData, weather_icon_color) },
+  { MK_WEATHER_WX_NOW, F_U8, offsetof(WatchData, weather_wx_now) },
   { MK_WIND_DIR_DEG, F_I16, offsetof(WatchData, wind_dir_deg) },
   { MK_DEW_POINT_C, F_I16, offsetof(WatchData, dew_point_c) },
   { MK_PRESSURE_HPA, F_I16, offsetof(WatchData, pressure_hpa) },
@@ -132,6 +133,7 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
   { MK_CORNER_PRIMITIVE_AUX, 1, offsetof(WatchData, corner_primitive_aux), 40 },
   { MK_EDGE_LINE_PRIMITIVE_IDS, 1, offsetof(WatchData, edge_line_primitive_ids), 80 }, // 8 * 10, see watch_data.h
   { MK_EDGE_LINE_PRIMITIVE_AUX, 1, offsetof(WatchData, edge_line_primitive_aux), 80 },
+  { MK_PLUGIN_TEXTS, 1, offsetof(WatchData, plugin_text), PLUGIN_SLOT_COUNT * PLUGIN_TEXT_LEN },
 };
 
 // Applied only for valid payloads.
@@ -209,6 +211,7 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, border_weather_semi),
   offsetof(WatchData, primitive_tight_mask_lo),
   offsetof(WatchData, primitive_tight_mask_hi),
+  offsetof(WatchData, bitmap_marker_invert),
 };
 
 // Group 2 (4 fields): cloud/visibility readout + its gradient colors.

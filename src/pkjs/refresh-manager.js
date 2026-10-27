@@ -15,6 +15,7 @@
 
 var astro = require('./astro');
 var weather = require('./weather/weather');
+var weatherSource = require('./weather/weather-source');
 var geocode = require('./geocode');
 var iss = require('./iss');
 var servicelog = require('./servicelog');
@@ -434,7 +435,7 @@ function refreshAndSend(force, resendOnSkip) {
     var owmKey = getSetting('CONFIG_OWM_KEY', '');
 
     getLocationName(lat, lon, function (locationName) {
-      weather.getWeatherSnapshot(lat, lon, now, function (snapErr, snapshot) {
+      weatherSource.getSnapshot(lat, lon, now, function (snapErr, snapshot) {
         var weatherCls = servicelog.recordAttempt('weather', snapErr);
         if (snapErr) console.log('modern: weather fetch failed - ' + snapErr.message);
 

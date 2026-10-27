@@ -55,6 +55,8 @@ var shadowTranslucentCode = settingsCodecs.shadowTranslucentCode;
 var shadowAngleCode = settingsCodecs.shadowAngleCode;
 var bigAnalogMarkerStyleCode = settingsCodecs.bigAnalogMarkerStyleCode;
 var bitmapMarkerTransparentCode = settingsCodecs.bitmapMarkerTransparentCode;
+var bitmapMarkerInvertCode = settingsCodecs.bitmapMarkerInvertCode;
+var pluginManager = require('../plugins/plugin-manager');
 var borderWeatherModeCode = settingsCodecs.borderWeatherModeCode;
 var borderWeatherPxCode = settingsCodecs.borderWeatherPxCode;
 var borderWeatherSchemeCode = settingsCodecs.borderWeatherSchemeCode;
@@ -409,6 +411,7 @@ function populateSettingsFields(dict) {
   // comms_decoder.c (comment there documents the pairing); verified by
   // scripts/verify-field-blob-order.js, not just by eye.
   dict['SHAKE_ONLY_MASK'] = shakeOnlyMaskCode();
+  dict['PLUGIN_TEXTS'] = pluginManager.textsBytes();
   dict['SETTINGS_U8_BLOB'] = [
     tempUnitCode(), windSpeedUnitCode(), shakeSecondsCode(), startupClockAnimModeCode(),
     outlineEnabledCode(), cornerFontCode(), centerCircleRadiusCode(), centerCircleColorCode(),
@@ -420,7 +423,8 @@ function populateSettingsFields(dict) {
     bgImageSync.modeCode(), bgImageSync.presetCode(),
     borderWeatherModeCode(), borderWeatherPxCode(),
     borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
-    primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255
+    primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255,
+    bitmapMarkerInvertCode()
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per
@@ -763,6 +767,7 @@ function buildWeatherDict(d) {
     dict['RAIN_CHANCE_DISPLAY'] = formatPercentDisplay(rainChancePct);
     dict['HUMIDITY_DISPLAY'] = formatPercentDisplay(humidityPct);
     dict['WIND_SPEED_DISPLAY'] = formatWindSpeedDisplay(windSpeedKmh, windSpeedUnitCode());
+    dict['WEATHER_WX_NOW'] = (typeof w.wxNow === 'number' && w.wxNow >= 0 && w.wxNow <= 9) ? w.wxNow : 0;
     dict['WEATHER_LAST_UPDATE'] = Math.floor(Date.now() / 1000);
   }
   return dict;

@@ -28,6 +28,7 @@
 
 var esc = require('./config-template').esc;
 var bgImages = require('../data/generated/background-images');
+var weatherBgs = require('../data/generated/weather-backgrounds');
 
 var BG_W = 200;
 var BG_H = 228;
@@ -51,8 +52,32 @@ function validSlots(current) {
   return out;
 }
 
+function isWeatherOn(current) {
+  return !!current && (current.useWeatherBg === true || current.useWeatherBg === 'true') && !isOn(current);
+}
+
+function weatherStyleId(current) {
+  var styles = weatherBgs.styles || [];
+  var want = String((current && current.weatherBgStyle) || '');
+  for (var i = 0; i < styles.length; i++) if (styles[i].id === want) return want;
+  return styles.length ? styles[0].id : '';
+}
+
 function isOn(current) {
   return !!current && (current.useCustomBg === true || current.useCustomBg === 'true');
+}
+
+function weatherThumbImgs() {
+  return '<div style="display:none;">' + (weatherBgs.styles || []).map(function (st) {
+    return '<img id="weatherBgThumb-' + esc(st.id) + '" src="' + st.thumb + '" alt="">';
+  }).join('') + '</div>';
+}
+
+function weatherStyleOptions(current) {
+  var sel = weatherStyleId(current);
+  return (weatherBgs.styles || []).map(function (st) {
+    return '<option value="' + esc(st.id) + '"' + (st.id === sel ? ' selected' : '') + '>' + esc(st.label) + '</option>';
+  }).join('');
 }
 
 // The checkbox row + the (collapsed-until-checked) gallery panel. Lives inside
@@ -81,6 +106,18 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-useCustomBg\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-useCustomBg" style="display:none;">Draws an image behind the indices instead of the plain background color. Pick one of the predefined images, or add your own photo: it is cropped to the watch screen, converted to 64 colors, and sent to the watch when you press Save (this can take around 20 seconds).</div>' +
+'    <div class="checkbox-row" id="useWeatherBgRow">' +
+'      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + ' onchange="onUseWeatherBgChange()">' +
+'      <label for="useWeatherBg" style="margin:0;">Weather background</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-useWeatherBg\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-useWeatherBg" style="display:none;">Shows a picture matching the current weather behind the indices (clear, clouds, fog, rain, snow, storm...). After sunset and before sunrise the night picture is used together with the night colors, which are switched on automatically. Only one of custom background and weather background can be used at a time.</div>' +
+'    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
+'      <label for="weatherBgStyle">Style</label>' +
+'      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
+'      <div class="help">More styles can be added as folders in resources/weatherbg/.</div>' +
+'      ' + weatherThumbImgs() +
+'    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
 '      <div class="bg-subtitle">Predefined</div>' +
@@ -370,6 +407,18 @@ var CLIENT_BODY =
 '// What the main preview should draw behind the indices right now, or null.\n' +
 'function bgActiveSource() {\n' +
 '  if (bgEd.open) return bgEd.src ? bgEl("bgEdCanvas") : null;\n' +
+'  var wbox = bgEl("useWeatherBg");\n' +
+'  if (wbox && wbox.checked) {\n' +
+'    var wimg = bgEl("weatherBgThumb-" + bgEl("weatherBgStyle").value);\n' +
+'    if (wimg && (!wimg.complete || !wimg.naturalWidth)) {\n' +
+'      if (!wimg.getAttribute("data-bg-hooked")) {\n' +
+'        wimg.setAttribute("data-bg-hooked", "1");\n' +
+'        wimg.addEventListener("load", function () { updatePreview(); });\n' +
+'      }\n' +
+'      return null;\n' +
+'    }\n' +
+'    return wimg || null;\n' +
+'  }\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  if (!box || !box.checked) return null;\n' +
 '  var s = bgParseSource();\n' +
@@ -395,6 +444,8 @@ var CLIENT_BODY =
 '  return true;\n' +
 '}\n' +
 'function bgSubheaderPart() {\n' +
+'  var wbox = bgEl("useWeatherBg");\n' +
+'  if (wbox && wbox.checked) return " + weather background";\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  if (!box || !box.checked) return "";\n' +
 '  var s = bgParseSource();\n' +
@@ -406,6 +457,8 @@ var CLIENT_BODY =
 'function bgSyncUi() {\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var panel = bgEl("bgPanel");\n' +
+'  var wbox = bgEl("useWeatherBg"), wpanel = bgEl("weatherBgPanel");\n' +
+'  if (wpanel) wpanel.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
 '  if (panel) panel.style.display = (box && box.checked) ? "" : "none";\n' +
 '  var sel = bgParseSource();\n' +
 '  for (var i = 0; i < BG_PRESET_NUMBERS.length; i++) {\n' +
@@ -435,6 +488,15 @@ var CLIENT_BODY =
 'function refreshBackgroundSubsectionPreview() {\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var html = "", title = "Plain background color";\n' +
+'  var wbox = bgEl("useWeatherBg");\n' +
+'  if (wbox && wbox.checked) {\n' +
+'    var wi = bgEl("weatherBgThumb-" + bgEl("weatherBgStyle").value);\n' +
+'    if (wi) html = \'<img src="\' + wi.getAttribute("src") + \'" alt="">\';\n' +
+'    title = "Weather background";\n' +
+'    setPreviewThumbnail("subsecpreview-background", html);\n' +
+'    setSubsubheaderText("background", title);\n' +
+'    return;\n' +
+'  }\n' +
 '  if (box && box.checked) {\n' +
 '    var s = bgParseSource();\n' +
 '    if (s.kind === "u" && bgSlotHas(s.n)) { var u = bgSlotThumbUrl(s.n); if (u) html = \'<img src="\' + u + \'" alt="">\'; title = "My image " + s.n; }\n' +
@@ -454,7 +516,21 @@ var CLIENT_BODY =
 '  bgSyncUi();\n' +
 '  bgEdSetup();\n' +
 '}\n' +
-'function onUseCustomBgChange() { bgRefresh(); }\n' +
+'function onUseCustomBgChange() {\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  if (cb && cb.checked && wb) wb.checked = false;\n' +
+'  bgRefresh();\n' +
+'}\n' +
+'function onUseWeatherBgChange() {\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  if (wb && wb.checked) {\n' +
+'    if (cb) cb.checked = false;\n' +
+'    // Night pictures go with the night color scheme: switch it on.\n' +
+'    var ne = bgEl("nightEnabled");\n' +
+'    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
+'  }\n' +
+'  bgRefresh();\n' +
+'}\n' +
 'function bgSelectPreset(n) { bgEl("bgSource").value = "p:" + n; bgRefresh(); }\n' +
 'function bgSelectSlot(k) { bgEl("bgSource").value = "u:" + k; bgRefresh(); }\n' +
 'function bgDeleteSlot(k) {\n' +
@@ -471,6 +547,8 @@ var CLIENT_BODY =
 '}\n' +
 '// Called after a style preset / example style has rewritten #useCustomBg and #bgSource.\n' +
 'function bgAfterStyleApplied() {\n' +
+'  var cb0 = bgEl("useCustomBg"), wb0 = bgEl("useWeatherBg");\n' +
+'  if (cb0 && wb0 && cb0.checked) wb0.checked = false;\n' +
 '  var s = bgParseSource();\n' +
 '  if (s.kind === "u" && !bgSlotHas(s.n)) bgEl("bgSource").value = bgDefaultSource();\n' +
 '  bgSyncUi();\n' +

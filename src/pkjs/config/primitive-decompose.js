@@ -218,6 +218,16 @@ for (var fcContentId = 87; fcContentId <= 95; fcContentId++) {
   PRIMITIVE_TRANSPORT_AUX[fcContentId] = [fcIdx, fcIdx, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
+// Pebble plugin data (content ids 200-211 = plugin slot 0-11): one generic text
+// primitive whose aux byte is the slot the source was assigned (see
+// plugins/plugin-manager.js).
+var PLUGIN_CONTENT_FIRST = 200;
+var PLUGIN_SLOT_COUNT = 12;
+for (var plugSlot = 0; plugSlot < PLUGIN_SLOT_COUNT; plugSlot++) {
+  PRIMITIVE_TRANSPORT_SEQUENCES[PLUGIN_CONTENT_FIRST + plugSlot] = [PRIM.PRIM_PLUGIN_TEXT];
+  PRIMITIVE_TRANSPORT_AUX[PLUGIN_CONTENT_FIRST + plugSlot] = [plugSlot, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+}
+
 var PRIMITIVE_SEQUENCE_SLOT_COUNT = 10; // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
 var PRIMITIVE_TRANSPORT_CONTENT_IDS = Object.keys(PRIMITIVE_TRANSPORT_SEQUENCES).map(Number);
 
@@ -400,6 +410,11 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_COMPASS_DIR_TEXT, label: 'Compass direction' },
     { id: PRIM.PRIM_LOCATION_ICON, label: 'Location icon' },
     { id: PRIM.PRIM_LOCATION_NAME, label: 'Location name' }
+  ]},
+  // One entry per plugin data source: the picker is filled at run time from the
+  // sources the Pebble app reports (see the 'plugin' param in config-composer.js).
+  { group: 'Plugins', items: [
+    { id: PRIM.PRIM_PLUGIN_TEXT, label: 'Plugin data', param: 'plugin' }
   ]}
 ];
 var PRIMITIVE_LABEL_BY_ID = {};
@@ -583,6 +598,7 @@ var PRIMITIVE_PREVIEW_TEXT = {};
   t[PRIM.PRIM_WIND_UNIT_TEXT] = 'km/h';
   t[PRIM.PRIM_PRESSURE_UNIT_TEXT] = 'hPa';
   t[PRIM.PRIM_ALTITUDE_UNIT_TEXT] = 'm';
+  t[PRIM.PRIM_PLUGIN_TEXT] = '12.3';
 })();
 
 // Forecast slot options for PRIM_FORECAST_OFFSET_ICON/PRIM_FORECAST_TEMP_TEXT
