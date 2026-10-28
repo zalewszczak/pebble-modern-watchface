@@ -164,7 +164,6 @@ function composerClientBody() {
     document.getElementById("composerCount").textContent = n + " / " + COMPOSER_MAX;
     document.getElementById("composerCount").style.color = (n > COMPOSER_MAX) ? "#d00" : "";
     var sel = COMPOSER.selected;
-    document.getElementById("composerMinus").disabled = (n <= 1);
     document.getElementById("composerLeft").disabled = (sel <= 0);
     document.getElementById("composerRight").disabled = (sel < 0 || sel >= n - 1);
     document.getElementById("composerDelete").disabled = (sel < 0 || n <= 1);
@@ -355,8 +354,9 @@ function composerClientBody() {
   // ---- lifecycle hooks called from the slot editor ----------------------
   function composerOpen(def) {
     var section = document.getElementById("slotEditCustomPrimsSection");
-    if (!def.customPrimsId) { section.style.display = "none"; COMPOSER.items = []; return; }
+    if (!def.customPrimsId) { section.style.display = "none"; section.setAttribute("data-available", "0"); document.getElementById("slotEditCustomPrimsToggle").checked = false; document.getElementById("slotEditPrebuiltBlock").style.display = ""; COMPOSER.items = []; slotEditUpdateKindButtons(); return; }
     section.style.display = "";
+    section.setAttribute("data-available", "1");
     composerBuildPalette();
     var stored = document.getElementById(def.customPrimsId).value || "";
     COMPOSER.items = composerParse(stored);
@@ -368,6 +368,7 @@ function composerClientBody() {
     document.getElementById("slotEditPrebuiltBlock").style.display = COMPOSER.items.length ? "none" : "";
     setSlotEditorColorGroupVisibility(document.getElementById("slotEditContent").value);
     composerSetError("");
+    slotEditUpdateKindButtons();
     composerRender();
   }
 
@@ -375,6 +376,18 @@ function composerClientBody() {
   // Content dropdown's current choice ("start from what's already there").
   // Turning it off keeps the working copy (re-enabling restores it) but
   // saveSlotEditor() then commits nothing.
+  function slotEditUpdateKindButtons() {
+    var on = document.getElementById("slotEditCustomPrimsToggle").checked;
+    var group = document.getElementById("slotEditKindGroup");
+    var btns = group.getElementsByClassName("mode-btn");
+    for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + ((i === 1) === on ? " active" : "");
+    group.style.display = document.getElementById("slotEditCustomPrimsSection").getAttribute("data-available") === "0" ? "none" : "";
+  }
+  function slotEditSetKind(custom) {
+    document.getElementById("slotEditCustomPrimsToggle").checked = !!custom;
+    composerOnToggle();
+  }
+
   function composerOnToggle() {
     var on = document.getElementById("slotEditCustomPrimsToggle").checked;
     document.getElementById("slotEditCustomPrimsBody").style.display = on ? "" : "none";
@@ -387,6 +400,7 @@ function composerClientBody() {
       COMPOSER.selected = -1;
     }
     composerSetError("");
+    slotEditUpdateKindButtons();
     composerRender();
   }
 
@@ -492,13 +506,6 @@ function composerClientBody() {
         }
         cx += segs[i].width;
       }
-    }
-
-    var info = document.getElementById("slotEditPreviewInfo");
-    if (info) {
-      var outlineName = ["no outline", "thin outline", "thick outline"][Math.min(2, outline)];
-      info.innerHTML = "<span><span class=\"slot-preview-swatch\" style=\"background:" + colors.bg + "\"></span>Background</span>" +
-        "<span>" + (outline ? "<span class=\"slot-preview-swatch\" style=\"background:" + outHex + "\"></span>" : "") + outlineName + "</span>";
     }
   }
 

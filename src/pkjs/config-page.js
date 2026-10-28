@@ -890,11 +890,14 @@ configPresetSchedule.css +
 '  .primitive-chip-label { background: #ff9200; color: #fff; }' +
 '  .primitive-chip-icon { background: var(--btn-bg); color: var(--text-faint); border: 1px dashed var(--border); font-style: italic; }' +
 '  .primitive-chip-space, .primitive-chip-slash { background: none; color: var(--text-faint); padding: 3px 2px; font-weight: 700; }' +
-'  #slotEditModal .modal-box { overflow-y: auto; }' +
+'  #slotEditModal .modal-box { overflow: hidden; height: 90vh; max-height: 90vh; }' +
+'  #slotEditPrimitives { display: none !important; }' +
+'  .slot-edit-scroll { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }' +
+'  .slot-edit-footer { flex: 0 0 auto; padding-top: 10px; border-top: 1px solid var(--border-light); background: var(--card-bg); }' +
 // The box is a column flexbox; without this the overflow-hidden button group (min-height 0) is squashed to ~2px when the content is tall (custom builder open).
 '  #slotEditModal .modal-box > * { flex-shrink: 0; }' +
 // The live preview stays pinned to the top of the popup while the rest scrolls.
-'  .slot-preview { position: sticky; top: -16px; z-index: 3; background: var(--card-bg); margin: 0 -16px 8px; padding: 8px 16px 8px; border-bottom: 1px solid var(--border-light); }' +
+'  .slot-preview { flex: 0 0 auto; background: var(--card-bg); margin: 0 -16px 8px; padding: 0 16px 8px; border-bottom: 1px solid var(--border-light); }' +
 '  .slot-preview-canvas { display: block; width: 100%; height: 64px; border-radius: 10px; border: 1px solid var(--border); }' +
 '  .slot-preview-info { display: flex; gap: 12px; align-items: center; margin-top: 6px; font-size: 11px; color: var(--text-faint); }' +
 '  .slot-preview-swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border); vertical-align: -2px; margin-right: 4px; }' +
@@ -1095,34 +1098,29 @@ configPresetSchedule.css +
 
 '<div class="modal-overlay" id="slotEditModal" onclick="if (event.target === this) closeSlotEditor();">' +
 '  <div class="modal-box">' +
-'    <div class="modal-title" id="slotEditTitle">Edit slot</div>' +
+'    <div class="modal-title" id="slotEditTitle" style="display:none;">Edit slot</div>' +
 '    <div class="slot-preview" id="slotEditPreviewWrap">' +
 '      <canvas id="slotEditPreviewCanvas" class="slot-preview-canvas"></canvas>' +
-'      <div class="slot-preview-info" id="slotEditPreviewInfo"></div>' +
 '    </div>' +
+'    <div class="slot-edit-scroll" id="slotEditScroll">' +
+'    <div class="mode-btn-group" id="slotEditKindGroup" style="margin-top:2px;">' +
+'      <button type="button" class="mode-btn" onclick="slotEditSetKind(false)">PREDEFINED</button>' +
+'      <button type="button" class="mode-btn" onclick="slotEditSetKind(true)">CUSTOM</button>' +
+'    </div>' +
+'    <input type="checkbox" id="slotEditCustomPrimsToggle" style="display:none;">' +
 '    <div id="slotEditPrebuiltBlock">' +
 '    <label>Category</label>' +
 '    <div class="category-btn-group" id="slotEditCategoryGroup"></div>' +
 '    <input type="hidden" id="slotEditCategory">' +
 '    <label for="slotEditContent" style="margin-top:10px;">Content</label>' +
 '    <select id="slotEditContent" onchange="onSlotEditContentChange()">' + cornerContentOptionsHtml(0) + '</select>' +
-'    <div class="primitive-strip" id="slotEditPrimitives" style="display:none;"></div>' +
+'    <div class="primitive-strip" id="slotEditPrimitives" style="display:none !important;"></div>' +
 '    <div class="help" id="slotEditCategoryHelp" style="display:none;">Shows the time-zone option used for the selected location. Daylight saving rules may vary by location.</div>' +
 '    </div>' +
-'    <div id="slotEditCustomPrimsSection" style="display:none; margin-top:10px;">' +
-'      <label style="display:flex; align-items:center; gap:6px; font-weight:normal;">' +
-'        <input type="checkbox" id="slotEditCustomPrimsToggle" onchange="composerOnToggle()">' +
-'        Build a custom feature from elements' +
-'      </label>' +
-'      <div id="slotEditCustomPrimsBody" style="display:none; margin-top:6px;">' +
-'        <div class="help">Build the feature from up to 10 elements. Tap one to select it, then move or delete it -- or drag a chip to reorder it. Changes only apply when you press OK.</div>' +
-'        <div class="composer-row">' +
-'          <span class="help" style="margin:0; flex:1;">The preview at the top of this window shows the result.</span>' +
-'          <button type="button" class="composer-btn" id="composerPlus" onclick="composerPlus()" title="Append a space">+</button>' +
-'          <button type="button" class="composer-btn" id="composerMinus" onclick="composerMinus()" title="Remove the last element">&minus;</button>' +
-'        </div>' +
+'    <div id="slotEditCustomPrimsSection" style="display:none;">' +
+'      <div id="slotEditCustomPrimsBody" style="display:none;">' +
 '        <div class="primitive-strip" id="composerStrip"></div>' +
-'        <div class="help" id="composerEmpty" style="display:none;">Nothing here yet. Use + or the palette below.</div>' +
+'        <div class="help" id="composerEmpty" style="display:none;">Nothing here yet. Use the palette below.</div>' +
 '        <div class="composer-row">' +
 '          <button type="button" class="composer-btn composer-btn-grow" id="composerLeft" onclick="composerMove(-1)">&larr;</button>' +
 '          <button type="button" class="composer-btn composer-btn-grow" id="composerDelete" onclick="composerDelete()">Delete</button>' +
@@ -1130,25 +1128,25 @@ configPresetSchedule.css +
 '          <span class="composer-count" id="composerCount"></span>' +
 '        </div>' +
 '        <div class="composer-row" id="composerSelZoneRow" style="display:none;">' +
-'          <label style="margin:0;" id="composerSelZoneLabel">Zone for selected</label>' +
-'          <select id="composerSelZone" onchange="composerOnSelZoneChange()" style="flex:1;"></select>' +
+'          <label style="margin:0; flex:1 1 100%;" id="composerSelZoneLabel">Zone for selected</label>' +
+'          <select id="composerSelZone" onchange="composerOnSelZoneChange()" style="flex:1 1 100%;"></select>' +
 '        </div>' +
 '        <div class="composer-row" id="composerSelTextRow" style="display:none;">' +
-'          <label style="margin:0;">Text for selected</label>' +
-'          <input type="text" id="composerSelText" maxlength="15" oninput="composerOnSelTextInput()" style="flex:1;">' +
+'          <label style="margin:0; flex:1 1 100%;">Text for selected</label>' +
+'          <input type="text" id="composerSelText" maxlength="15" oninput="composerOnSelTextInput()" style="flex:1 1 100%;">' +
 '        </div>' +
-'        <label style="margin-top:10px;">Add from palette</label>' +
+'        <label style="margin-top:12px;">Add from palette</label>' +
 '        <div class="composer-row" style="margin-top:4px;">' +
 '          <select id="composerAddGroup" onchange="composerOnAddGroupChange()" style="flex:1;"></select>' +
 '          <select id="composerAddItem" onchange="composerUpdateAddZoneVisibility()" style="flex:2;"></select>' +
 '        </div>' +
 '        <div class="composer-row" id="composerAddZoneRow" style="display:none;">' +
-'          <label style="margin:0;" id="composerAddZoneLabel">Zone</label>' +
-'          <select id="composerAddZone" style="flex:1;"></select>' +
+'          <label style="margin:0; flex:1 1 100%;" id="composerAddZoneLabel">Zone</label>' +
+'          <select id="composerAddZone" style="flex:1 1 100%;"></select>' +
 '        </div>' +
 '        <div class="composer-row" id="composerAddTextRow" style="display:none;">' +
-'          <label style="margin:0;">Text</label>' +
-'          <input type="text" id="composerAddText" maxlength="15" placeholder="e.g. H, L, UV (15 characters max)" style="flex:1;">' +
+'          <label style="margin:0; flex:1 1 100%;">Text</label>' +
+'          <input type="text" id="composerAddText" maxlength="15" placeholder="e.g. H, L, UV (15 characters max)" style="flex:1 1 100%;">' +
 '        </div>' +
 '        <div class="composer-row">' +
 '          <button type="button" class="composer-btn composer-btn-grow" onclick="composerAddFromPalette()">Add element</button>' +
@@ -1156,7 +1154,7 @@ configPresetSchedule.css +
 '        <div class="composer-error" id="composerError" style="display:none;"></div>' +
 '      </div>' +
 '    </div>' +
-'    <div class="mode-btn-group" id="slotEditColorGroup" style="margin-top:10px;">' +
+'    <div class="mode-btn-group" id="slotEditColorGroup" style="margin-top:14px;">' +
 '      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(0)">MONO</button>' +
 '      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(1)">ACC</button>' +
 '      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(2)">PILL</button>' +
@@ -1167,9 +1165,11 @@ configPresetSchedule.css +
 '      <input type="checkbox" id="slotEditShake">' +
 '      <label for="slotEditShake" style="margin:0;">Show only when the watch is shaken</label>' +
 '    </div>' +
-'    <div class="help" style="margin-top:2px;">Appears for the same number of seconds as the shake animation duration.</div>' +
-'    <button type="button" onclick="saveSlotEditor()" style="width:100%; box-sizing:border-box; padding:14px; font-size:16px; font-weight:600; color:#fff; background:#ff9200; border:none; border-radius:8px; margin-top:14px;">OK</button>' +
-'    <button type="button" class="modal-cancel-btn" onclick="closeSlotEditor()">Cancel</button>' +
+'    </div>' +
+'    <div class="slot-edit-footer">' +
+'      <button type="button" onclick="saveSlotEditor()" style="width:100%; box-sizing:border-box; padding:14px; font-size:16px; font-weight:600; color:#fff; background:#ff9200; border:none; border-radius:8px;">OK</button>' +
+'      <button type="button" class="modal-cancel-btn" onclick="closeSlotEditor()" style="margin-top:8px;">Cancel</button>' +
+'    </div>' +
 '  </div>' +
 '</div>' +
 

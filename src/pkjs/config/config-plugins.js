@@ -116,7 +116,7 @@ function pluginScript(current) {
 '}\n' +
 '// Two-tier picking: first a provider (plugin name + category), then one of its data points.\n' +
 'var PLUGIN_PROV = {};\n' +
-'function pluginProvKey(src) { return src.plugin + "|" + src.category; }\n' +
+'function pluginProvKey(src) { return src.plugin; }\n' +
 'function pluginProvLabel(src) { return src.pluginName + " – " + src.category; }\n' +
 'function pluginProviders() {\n' +
 '  var out = [], seen = {};\n' +
@@ -131,7 +131,7 @@ function pluginScript(current) {
 '  var src = key ? pluginSourceByKey(key) : null;\n' +
 '  return src ? pluginProvKey(src) : "";\n' +
 '}\n' +
-'function pluginDataLabel(src) { return src.item + ": " + src.label; }\n' +
+'function pluginDataLabel(src) { return src.category + " / " + src.item + ": " + src.label; }\n' +
 '// Provider select that sits right before dataSel (created on first use).\n' +
 'function pluginProvSelect(dataSel) {\n' +
 '  var id = dataSel.id + "Prov";\n' +
@@ -140,7 +140,7 @@ function pluginScript(current) {
 '    prov = document.createElement("select");\n' +
 '    prov.id = id;\n' +
 '    prov.style.cssText = dataSel.style.cssText || "";\n' +
-'    if (dataSel.parentNode && dataSel.parentNode.className.indexOf("composer-row") >= 0) prov.style.flex = "1";\n' +
+'    if (dataSel.parentNode && dataSel.parentNode.className.indexOf("composer-row") >= 0) { prov.style.flex = "1 1 100%"; dataSel.style.flex = "1 1 100%"; }\n' +
 '    else prov.style.marginBottom = "6px";\n' +
 '    dataSel.parentNode.insertBefore(prov, dataSel);\n' +
 '    prov.onchange = function () {\n' +
