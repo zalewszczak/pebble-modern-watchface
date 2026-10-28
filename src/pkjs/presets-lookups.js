@@ -826,62 +826,62 @@ var CORNER_CATEGORIES = [
       {
         "id": 200,
         "label": "Plugin data 1",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 201,
         "label": "Plugin data 2",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 202,
         "label": "Plugin data 3",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 203,
         "label": "Plugin data 4",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 204,
         "label": "Plugin data 5",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 205,
         "label": "Plugin data 6",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 206,
         "label": "Plugin data 7",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 207,
         "label": "Plugin data 8",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 208,
         "label": "Plugin data 9",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 209,
         "label": "Plugin data 10",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 210,
         "label": "Plugin data 11",
-        "preview": "12.3"
+        "preview": "PLG"
       },
       {
         "id": 211,
         "label": "Plugin data 12",
-        "preview": "12.3"
+        "preview": "PLG"
       }
     ]
   }
