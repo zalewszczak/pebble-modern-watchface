@@ -717,9 +717,9 @@ bootstrap) which fetches the real page from PKJS in chunks (`plugins/config-brid
 (debounced polling, `liveTick()` in `config/config-runtime.js`) and PKJS applies them exactly like a Save
 (`applySettingsObject()` in `index.js`), so the watch follows live. In that mode the Save bar becomes
 "Send" (also does a forced refresh when used from "Force refresh now"), the top Back button is hidden
-(use the app's own back), and a green **LIVE · plugin API** badge sits next to the page title.
-The legacy page shows a grey **LEGACY · Save** badge; an orange **BUNDLED · no live link** badge means the
-page was served by the bundled bootstrap but `Pebble.sendMessage` is missing (it then behaves like legacy).
+(use the app's own back). The browser/tab title reads `Modern Settings (live)` in this mode and
+`(legacy)` in the old one; `(warn)` means the page was served by the bundled bootstrap but `Pebble.sendMessage`
+is missing (it then behaves like legacy).
 Older apps ignore `configPage` and use the legacy `showConfiguration` / `webviewclosed` flow (unchanged).
 
 **Packaging:** plain `pebble build` does not put `config.html` into the pbw. Build with

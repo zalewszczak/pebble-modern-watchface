@@ -670,10 +670,6 @@ configPresetSchedule.css +
 '  .donate-btn { padding: 6px 10px; font-size: 13px; font-weight: 700; color: #6b5a72; background: linear-gradient(135deg, #ffd6e0, #ffe8c2, #eaf6c8, #c8ecec, #d6d6f5, #ffd6e0); background-size: 300% 300%; animation: donateGradientShift 18s ease-in-out infinite; border: none; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }' +
 '  @keyframes donateGradientShift { 0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; } }' +
 '  .donate-btn:active { filter: brightness(0.94); }' +
-'  .mode-badge { display: inline-block; margin-left: 6px; padding: 2px 7px; font-size: 10px; font-weight: 700; letter-spacing: .04em; color: #fff; border-radius: 9px; vertical-align: middle; }' +
-'  .mode-badge.mode-legacy { background: #7a7a7a; }' +
-'  .mode-badge.mode-live { background: #2e9d4f; }' +
-'  .mode-badge.mode-warn { background: #d9822b; }' +
 '  .top-bar-title { font-size: 15px; font-weight: 700; margin-top: 6px; color: var(--text); white-space: nowrap; }' +
 '  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
 '  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
@@ -1076,7 +1072,7 @@ configPresetSchedule.css +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
 '    </div>' +
-'    <div class="top-bar-title">Modern Watchface Preview <span id="modeBadge" class="mode-badge mode-legacy">LEGACY &middot; Save</span></div>' +
+'    <div class="top-bar-title">Modern Watchface Preview</div>' +
 '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>' +
 '  </div>' +
 '  <div class="top-bar-preview">' +
@@ -1510,9 +1506,6 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="slot-btn slot-middle-right-l1" id="slotBtn-middleRightLine1" onclick="openSlotEditor(\'middleRightLine1\')"></button>' +
 '      <button type="button" class="slot-btn slot-middle-right-l2" id="slotBtn-middleRightLine2" onclick="openSlotEditor(\'middleRightLine2\')"></button>' +
 '    </div>' +
-'    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefFeaturesBtn" onclick="loadPreferredFeatures()">Load user preferences</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefFeatures\')">?</button></div>' +
-'    <div class="help" id="help-loadPrefFeatures" style="display:none;">Fills Upper-middle line 2, Bottom-middle line 1 and the first line on the left and on the right with the readings you chose in the Pebble app (Settings &rarr; Plugins &rarr; Complications), in that order. They replace what those four slots show now; the change is only kept when you save.</div>' +
-'    <div class="help" id="prefFeaturesStatus" style="display:none;"></div>' +
 '    <div class="slot-legend" id="slotShakeLegend" style="display:none;"><span class="slot-legend-sample">&nbsp;&nbsp;&nbsp;</span> Features with an orange dashed border are hidden until you shake the watch.</div>' +
 
 '    <div class="checkbox-row" id="bitmapCornerOverrideRow" style="margin-top:12px;' + ((isBitmapMarkerStyle && markerStyleNum !== 5) ? '' : ' display:none;') + '">' +
@@ -1619,6 +1612,9 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-drawFeaturesBeneathHands\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-drawFeaturesBeneathHands" style="display:none;">In Analog mode, draws feature text underneath the hands instead of on top.</div>' +
+'    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefFeaturesBtn" onclick="loadPreferredFeatures()">Load user preferences</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefFeatures\')">?</button></div>' +
+'    <div class="help" id="help-loadPrefFeatures" style="display:none;">Fills Upper-middle line 2, Bottom-middle line 1 and the first line on the left and on the right with the readings you chose in the Pebble app (Settings &rarr; Plugins &rarr; Complications), in that order. They replace what those four slots show now; the change is only kept when you save.</div>' +
+'    <div class="help" id="prefFeaturesStatus" style="display:none;"></div>' +
 '    </div>' +
 '  </fieldset>' +
 '  <fieldset>' +
@@ -2877,14 +2873,14 @@ configPlugins.pluginScript(current) +
 // and whenever bottom-style/marker-style or a slot\'s own content
 // changes.
 // Slot buttons are small, so every icon is just "(i)" instead of its placeholder text such
-// as "(weather)" or "LOGO". The canvas preview still uses the full placeholders to draw the icons.
+// as "(weather)" (the Pebble logo icon keeps "LOGO"). The canvas preview still uses the full placeholders to draw the icons.
 'function slotIconLabels(text) {' +
 '  return String(text).replace(/\\([A-Za-z+]{1,12}\\)/g, "(i)");' +
 '}' +
 'function slotButtonText(contentId) {' +
 '  var idNum = parseInt(contentId, 10);' +
 '  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
-'  if (chips && chips.length) return chips.map(function (c) { return c.kind === "icon" ? "(i)" : c.text; }).join("");' +
+'  if (chips && chips.length) return chips.map(function (c) { return (c.kind === "icon" && c.text !== "LOGO") ? "(i)" : c.text; }).join("");' +
 '  return slotIconLabels(CORNER_PREVIEW_LABELS[idNum] || "");' +
 '}' +
 'function renderSlotPicker() {' +

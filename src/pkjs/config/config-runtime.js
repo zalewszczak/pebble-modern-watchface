@@ -326,18 +326,13 @@ module.exports =
 '  if (json !== LIVE.seen) { LIVE.seen = json; return; }' +
 '  liveSend(settings, false);' +
 '}' +
-// Visible proof of which way this page was loaded: the badge next to the title and the
-// bottom button. LIVE = bundled page + plugin API (button "Send", changes stream to the
+// Visible proof of which way this page was loaded: the bottom button (and the page title). LIVE = bundled page + plugin API (button "Send", changes stream to the
 // watch); LEGACY = classic showConfiguration data: URI page (button "Save", settings are
 // returned when the page closes); BUNDLED = served as a bundled page but the
 // Pebble.sendMessage bridge is missing, so it falls back to the legacy Save behaviour.
 'function setModeUi(kind) {' +
-'  var badge = document.getElementById("modeBadge");' +
 '  var btn = document.getElementById("saveBtn");' +
-'  var map = { live: ["LIVE \u00b7 plugin API", "mode-live", "Send"], warn: ["BUNDLED \u00b7 no live link", "mode-warn", "Save"], legacy: ["LEGACY \u00b7 Save", "mode-legacy", "Save"] };' +
-'  var m = map[kind];' +
-'  if (badge) { badge.textContent = m[0]; badge.className = "mode-badge " + m[1]; }' +
-'  if (btn) btn.textContent = m[2];' +
+'  if (btn) btn.textContent = (kind === "live") ? "Send" : "Save";' +
 '  try { document.title = "Modern Settings (" + kind + ")"; } catch (e) {}' +
 '}' +
 'function liveInit() {' +
