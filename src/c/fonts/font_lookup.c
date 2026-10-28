@@ -50,7 +50,7 @@ static const FontLookupEntry FONT_TABLE[] = {
   [12] = { .sys_idx = 12, .height = 30, .y_offset = 2 }, // Bitham Bold 30  - MARK THIS INCOMPATIBLE
   [13] = { .sys_idx = 13, .height = 34, .y_offset = 4 }, // Bitham Medium 34
 
-  [14] = { .resource_id = RESOURCE_ID_DIGITALDREAM_FONT_12,  .height = 12, .y_offset = -2 }, // Digital Dream Small
+  [14] = { .resource_id = RESOURCE_ID_BITCOUNTGRID_FONT_18,  .height = 18, .y_offset = 2 }, // Bitcount Grid Double Small
   [15] = { .resource_id = RESOURCE_ID_MINECRAFTER_FONT_12,   .height = 12, .y_offset = -2}, // Minecrafter Small
   [16] = { .resource_id = RESOURCE_ID_ALAGARD_FONT_19,       .height = 19, .y_offset = -1 }, // Alagard Small
   [17] = { .resource_id = RESOURCE_ID_BEBAS_FONT_20,         .height = 20, .y_offset = 1 }, // Bebas Small
@@ -65,6 +65,10 @@ static const FontLookupEntry FONT_TABLE[] = {
   [24] = { .resource_id = RESOURCE_ID_LCDSOLID_FONT_18,      .height = 18, .y_offset = -3 }, // LCD
   [25] = { .resource_id = RESOURCE_ID_RADIOLAND_FONT_16,     .height = 16, .y_offset = -4 }, // Radioland
   [26] = { .resource_id = RESOURCE_ID_NUNITO_FONT_21,        .height = 21, .y_offset = 2 }, // Nunito small
+  
+  [27] = { .resource_id = RESOURCE_ID_DIGITALDREAM_FONT_13,  .height = 13, .y_offset = -2 }, // Digital Dream Small
+  [28] = { .resource_id = RESOURCE_ID_DIGITALDREAMNARROW_FONT_14,  .height = 14, .y_offset = -2 }, // Digital Dream Narrow Small
+  [29] = { .resource_id = RESOURCE_ID_DIGITALDREAMFAT_FONT_15,  .height = 15, .y_offset = -2 }, // Digital Dream Fat Small
 };
 
 const uint8_t FONT_LOOKUP_COUNT = sizeof(FONT_TABLE) / sizeof(FONT_TABLE[0]);

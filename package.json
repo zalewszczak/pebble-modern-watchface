@@ -225,8 +225,23 @@
         },
         {
           "type": "font",
-          "name": "DIGITALDREAM_FONT_12",
+          "name": "BITCOUNTGRID_FONT_18",
+          "file": "fonts/BitcountGridDouble-Light.ttf"
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAM_FONT_13",
           "file": "fonts/DIGITALDREAM.ttf"
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAMNARROW_FONT_14",
+          "file": "fonts/DIGITALDREAMNARROW.ttf"
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAMFAT_FONT_15",
+          "file": "fonts/DIGITALDREAMFAT.ttf"
         },
         {
           "type": "font",
