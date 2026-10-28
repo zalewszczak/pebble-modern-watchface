@@ -670,6 +670,10 @@ configPresetSchedule.css +
 '  .donate-btn { padding: 6px 10px; font-size: 13px; font-weight: 700; color: #6b5a72; background: linear-gradient(135deg, #ffd6e0, #ffe8c2, #eaf6c8, #c8ecec, #d6d6f5, #ffd6e0); background-size: 300% 300%; animation: donateGradientShift 18s ease-in-out infinite; border: none; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }' +
 '  @keyframes donateGradientShift { 0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; } }' +
 '  .donate-btn:active { filter: brightness(0.94); }' +
+'  .mode-badge { display: inline-block; margin-left: 6px; padding: 2px 7px; font-size: 10px; font-weight: 700; letter-spacing: .04em; color: #fff; border-radius: 9px; vertical-align: middle; }' +
+'  .mode-badge.mode-legacy { background: #7a7a7a; }' +
+'  .mode-badge.mode-live { background: #2e9d4f; }' +
+'  .mode-badge.mode-warn { background: #d9822b; }' +
 '  .top-bar-title { font-size: 15px; font-weight: 700; margin-top: 6px; color: var(--text); white-space: nowrap; }' +
 '  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
 '  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
@@ -1072,7 +1076,7 @@ configPresetSchedule.css +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
 '    </div>' +
-'    <div class="top-bar-title">Modern Watchface Preview</div>' +
+'    <div class="top-bar-title">Modern Watchface Preview <span id="modeBadge" class="mode-badge mode-legacy">LEGACY &middot; Save</span></div>' +
 '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>' +
 '  </div>' +
 '  <div class="top-bar-preview">' +
@@ -2007,8 +2011,8 @@ configPresetSchedule.modalHtml +
 '  </fieldset>' +
 
 (current.liveMode
-  ? '  <div class="save-bar"><div id="liveStatus" class="help" style="text-align:center; margin:0 0 6px;">Live</div><button onclick="save()">Send to watch now</button></div>'
-  : '  <div class="save-bar"><button onclick="save()">Save</button></div>') +
+  ? '  <div class="save-bar"><div id="liveStatus" class="help" style="text-align:center; margin:0 0 6px;">Live</div><button id="saveBtn" onclick="save()">Send</button></div>'
+  : '  <div class="save-bar"><button id="saveBtn" onclick="save()">Save</button></div>') +
 
 '<script>' +
 'var MARKER_PREVIEW_IMAGES = ' + JSON.stringify(MARKER_PREVIEW_IMAGES) + ';' +
