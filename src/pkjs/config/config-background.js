@@ -113,12 +113,13 @@ function backgroundSectionHtml(current) {
 '    </div>' +
 '    <div class="help" id="help-useWeatherBg" style="display:none;">Shows a picture matching the current weather behind the indices (clear, clouds, fog, rain, snow, storm...). After sunset and before sunrise the night picture is used together with the night colors, which are switched on automatically. Only one of custom background and weather background can be used at a time.</div>' +
 '    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank screen. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <label for="weatherBgStyle">Style</label>' +
 '      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
-'      <div class="help">More styles can be added as folders in resources/weatherbg/.</div>' +
 '      ' + weatherThumbImgs() +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank screen. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
 '      <div class="bg-subtitle">Predefined</div>' +
 '      ' + presetHtml +

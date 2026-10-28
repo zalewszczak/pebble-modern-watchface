@@ -61,10 +61,15 @@ function readCatalogue() {
     return { status: 'disabled', sources: [],
       message: 'Plugins are not enabled in the Pebble app (' + ((e && e.message) || 'unavailable') + '). Turn on plugins in the app\'s settings.' };
   }
-  var sources = [];
+  var sources = [], weatherProviders = [];
   (plugins || []).forEach(function (plugin) {
     (plugin.sources || []).forEach(function (source) {
       var props = source.properties || {};
+      // A weather provider serves weather/location with at least a temperature.
+      if (source.category === 'weather' && (source.items || []).indexOf('location') !== -1 && props.temperature &&
+          !weatherProviders.some(function (w) { return w.uuid === plugin.uuid; })) {
+        weatherProviders.push({ uuid: plugin.uuid, name: plugin.name || 'Weather plugin' });
+      }
       (source.items || []).forEach(function (item) {
         Object.keys(props).forEach(function (prop) {
           var shapes = props[prop] || [];
@@ -81,7 +86,7 @@ function readCatalogue() {
       });
     });
   });
-  return { status: 'ok', sources: sources, message: sources.length ? '' : 'No plugin provides text data right now.' };
+  return { status: 'ok', sources: sources, weatherProviders: weatherProviders, message: sources.length ? '' : 'No plugin provides text data right now.' };
 }
 
 function status() { return readCatalogue().status; }
@@ -196,6 +201,13 @@ function subscribe(slot) {
 
 function syncSubscriptions() {
   for (var s = 0; s < SLOT_COUNT; s++) {
+    // "text|<string>" = a fixed custom-text element: no plugin involved.
+    if (slotKeys[s].indexOf('text|') === 0) {
+      unsubscribe(s);
+      var fixed = slotKeys[s].slice(5);
+      if (slotTexts[s] !== fixed) { slotTexts[s] = fixed; schedulePush(); }
+      continue;
+    }
     var sub = subscriptions[s];
     if (sub && sub.key === slotKeys[s]) continue;
     unsubscribe(s);

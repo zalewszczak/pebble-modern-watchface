@@ -332,8 +332,6 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_FEELS_LIKE_VALUE, label: 'Feels-like temp' },
     { id: PRIM.PRIM_DEW_POINT_TEXT, label: 'Dew point' },
     { id: PRIM.PRIM_TEMP_UNIT_TEXT, label: 'Temp unit (C/F/K)' },
-    { id: PRIM.PRIM_LABEL_HIGH_PREFIX, label: '"H" label' },
-    { id: PRIM.PRIM_LABEL_LOW_PREFIX, label: '"L" label' },
     { id: PRIM.PRIM_CURRENT_CONDITIONS_TEXT, label: 'Condition text' },
     { id: PRIM.PRIM_UV_DAILY_VALUE, label: 'UV index (daily max)' },
     { id: PRIM.PRIM_UV_CURRENT_VALUE, label: 'UV index (current)' },
@@ -410,6 +408,11 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_COMPASS_DIR_TEXT, label: 'Compass direction' },
     { id: PRIM.PRIM_LOCATION_ICON, label: 'Location icon' },
     { id: PRIM.PRIM_LOCATION_NAME, label: 'Location name' }
+  ]},
+  // Free text typed by the user (e.g. "H", "L", "UV"). Travels as a fixed-text
+  // plugin slot (PRIM_PLUGIN_TEXT, slot key "text|<string>"), see plugin-manager.js.
+  { group: 'Text', items: [
+    { id: PRIM.PRIM_PLUGIN_TEXT, key: 'customtext', label: 'Custom text', customText: true }
   ]},
   // One entry per plugin data source: the picker is filled at run time from the
   // sources the Pebble app reports (see the 'plugin' param in config-composer.js).

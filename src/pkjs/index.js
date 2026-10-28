@@ -649,7 +649,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_HOURLY_VIBE_END_TIME', settings.CONFIG_HOURLY_VIBE_END_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', settings.CONFIG_HOURLY_VIBE_DAYS_MASK || '127');
   setSetting('CONFIG_HOURLY_VIBE_OVERRIDE_QUIET', settings.CONFIG_HOURLY_VIBE_OVERRIDE_QUIET === false ? 'false' : 'true');
-  if (settings.CONFIG_WEATHER_SOURCE) setSetting('CONFIG_WEATHER_SOURCE', settings.CONFIG_WEATHER_SOURCE === 'openmeteo' ? 'openmeteo' : 'plugin');
+  if (settings.CONFIG_WEATHER_SOURCE) setSetting('CONFIG_WEATHER_SOURCE', settings.CONFIG_WEATHER_SOURCE === 'openmeteo' ? 'openmeteo' : (/^plugin:[^\s]+$/.test(settings.CONFIG_WEATHER_SOURCE) ? settings.CONFIG_WEATHER_SOURCE : 'plugin'));
   // Plugin data slots: store the page's list and (re)subscribe to those sources.
   if (settings.CONFIG_PLUGIN_SLOTS !== undefined) pluginManager.setSlots(settings.CONFIG_PLUGIN_SLOTS);
 

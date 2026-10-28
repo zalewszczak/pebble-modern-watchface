@@ -25,10 +25,32 @@
 function composerClientBody() {
   var COMPOSER = { items: [], selected: -1, addGroup: 0, dragFrom: -1 };
 
-  function composerFindPaletteItem(id) {
+  function composerFindPaletteItem(id, aux) {
+    var isTxt = (id === PRIM_PLUGIN_TEXT_ID) && pluginIsTextSlot(aux);
     for (var g = 0; g < PRIMITIVE_PALETTE.length; g++) {
       for (var i = 0; i < PRIMITIVE_PALETTE[g].items.length; i++) {
-        if (PRIMITIVE_PALETTE[g].items[i].id === id) return PRIMITIVE_PALETTE[g].items[i];
+        var it = PRIMITIVE_PALETTE[g].items[i];
+        if (it.id === id && !!it.customText === isTxt) return it;
+      }
+    }
+    // Elements no longer offered for building (e.g. the old "H"/"L" labels) still show up in
+    // features that were started from a prebuilt one.
+    return PRIMITIVE_LABEL_BY_ID[id] ? { id: id, label: PRIMITIVE_LABEL_BY_ID[id] } : null;
+  }
+  function composerPaletteByValue(value) {
+    if (String(value).indexOf("k:") === 0) {
+      for (var g = 0; g < PRIMITIVE_PALETTE.length; g++) {
+        for (var i = 0; i < PRIMITIVE_PALETTE[g].items.length; i++) {
+          if (PRIMITIVE_PALETTE[g].items[i].key === value.slice(2)) return PRIMITIVE_PALETTE[g].items[i];
+        }
+      }
+      return null;
+    }
+    var id = parseInt(value, 10), isTxt = false;
+    for (var g2 = 0; g2 < PRIMITIVE_PALETTE.length; g2++) {
+      for (var j = 0; j < PRIMITIVE_PALETTE[g2].items.length; j++) {
+        var it = PRIMITIVE_PALETTE[g2].items[j];
+        if (it.id === id && !it.customText) return it;
       }
     }
     return null;
@@ -54,8 +76,9 @@ function composerClientBody() {
   }
 
   function composerItemLabel(item) {
-    var pal = composerFindPaletteItem(item.id);
+    var pal = composerFindPaletteItem(item.id, item.aux);
     if (!pal) return "?" + item.id;
+    if (pal.customText) return "Text [" + pluginTextOfSlot(item.aux) + "]";
     if (pal.param) return pal.label + " [" + composerParamShortLabel(pal.param, item.aux) + "]";
     return pal.label;
   }
@@ -102,7 +125,8 @@ function composerClientBody() {
     var items = composerParse(stored);
     if (!items.length) return "";
     return items.map(function (it) {
-      var pal = composerFindPaletteItem(it.id);
+      var pal = composerFindPaletteItem(it.id, it.aux);
+      if (pal && pal.customText) return pluginTextOfSlot(it.aux);
       if (pal && pal.param === "timezone") {
         if (pal.label.indexOf("name") >= 0) return composerZoneShortLabel(it.aux);
         return pal.label.indexOf("AM/PM") >= 0 ? "PM" : "12:00";
@@ -146,14 +170,23 @@ function composerClientBody() {
     document.getElementById("composerDelete").disabled = (sel < 0 || n <= 1);
     // Zone picker for the *selected* primitive, only when it takes a zone.
     var zoneRow = document.getElementById("composerSelZoneRow");
-    var selPal = sel >= 0 ? composerFindPaletteItem(COMPOSER.items[sel].id) : null;
+    var selPal = sel >= 0 ? composerFindPaletteItem(COMPOSER.items[sel].id, COMPOSER.items[sel].aux) : null;
     if (selPal && selPal.param) {
       zoneRow.style.display = "";
       document.getElementById("composerSelZoneLabel").textContent = PARAM_ROW_LABEL[selPal.param] + " for selected";
-      composerFillParamSelect(document.getElementById("composerSelZone"), selPal.param);
-      document.getElementById("composerSelZone").value = String(COMPOSER.items[sel].aux);
+      composerFillParamSelect(document.getElementById("composerSelZone"), selPal.param, String(COMPOSER.items[sel].aux));
+      if (selPal.param !== "plugin") document.getElementById("composerSelZone").value = String(COMPOSER.items[sel].aux);
     } else {
       zoneRow.style.display = "none";
+    }
+    var txtRow = document.getElementById("composerSelTextRow");
+    if (selPal && selPal.customText) {
+      txtRow.style.display = "";
+      var txtIn = document.getElementById("composerSelText");
+      var curTxt = pluginTextOfSlot(COMPOSER.items[sel].aux);
+      if (txtIn.value !== curTxt) txtIn.value = curTxt;
+    } else {
+      txtRow.style.display = "none";
     }
     // The result is drawn as it would look on the watch by renderSlotEditPreview()
     // (top of the popup), not as chips.
@@ -204,10 +237,18 @@ function composerClientBody() {
     composerRender();
   }
 
+  function composerOnSelTextInput() {
+    var s = COMPOSER.selected;
+    if (s < 0) return;
+    var v = document.getElementById("composerSelText").value.replace(/\s+/g, " ");
+    PLUGIN_SLOTS[COMPOSER.items[s].aux] = "text|" + v;
+    composerRender();
+  }
+
   function composerOnSelZoneChange() {
     var s = COMPOSER.selected;
     if (s < 0) return;
-    var selPal2 = composerFindPaletteItem(COMPOSER.items[s].id);
+    var selPal2 = composerFindPaletteItem(COMPOSER.items[s].id, COMPOSER.items[s].aux);
     var newAux = composerParamValueToAux(selPal2 ? selPal2.param : "", document.getElementById("composerSelZone").value);
     if (newAux < 0) { composerSetError(pluginUnavailableText()); composerRender(); return; }
     COMPOSER.items[s].aux = newAux;
@@ -243,14 +284,12 @@ function composerClientBody() {
     return parseInt(value, 10) || 0;
   }
 
-  function composerFillParamSelect(sel, param) {
+  function composerFillParamSelect(sel, param, wanted) {
     if (param === "plugin") {
-      var popts = pluginParamOptions();
-      sel.innerHTML = popts.length ? popts.map(function (o) {
-        return "<option value=\"" + o.value + "\">" + esc(o.label) + "</option>";
-      }).join("") : "<option value=\"\">" + esc(pluginUnavailableText()) + "</option>";
+      pluginFillComposerSelect(sel, wanted);
       return;
     }
+    pluginHideProvider(sel);
     var opts = PARAM_OPTIONS[param] || [];
     sel.innerHTML = opts.map(function (o) {
       return "<option value=\"" + o.index + "\">" + esc(o.label) + "</option>";
@@ -270,19 +309,20 @@ function composerClientBody() {
   function composerOnAddGroupChange() {
     var gi = parseInt(document.getElementById("composerAddGroup").value, 10) || 0;
     document.getElementById("composerAddItem").innerHTML = PRIMITIVE_PALETTE[gi].items.map(function (it) {
-      return "<option value=\"" + it.id + "\">" + esc(it.label) + "</option>";
+      return "<option value=\"" + (it.key ? "k:" + it.key : it.id) + "\">" + esc(it.label) + "</option>";
     }).join("");
     composerUpdateAddZoneVisibility();
   }
 
   function composerUpdateAddZoneVisibility() {
-    var id = parseInt(document.getElementById("composerAddItem").value, 10);
-    var pal = composerFindPaletteItem(id);
+    var pal = composerPaletteByValue(document.getElementById("composerAddItem").value);
     var row = document.getElementById("composerAddZoneRow");
+    document.getElementById("composerAddTextRow").style.display = (pal && pal.customText) ? "" : "none";
     if (pal && pal.param) {
       row.style.display = "";
       document.getElementById("composerAddZoneLabel").textContent = PARAM_ROW_LABEL[pal.param];
       composerFillParamSelect(document.getElementById("composerAddZone"), pal.param);
+      if (pal.param !== "plugin") pluginHideProvider(document.getElementById("composerAddZone"));
     } else {
       row.style.display = "none";
     }
@@ -292,11 +332,17 @@ function composerClientBody() {
   // it never replaces the selected one -- use Delete + Add, or, for a
   // parametrized primitive, the zone picker above the palette.
   function composerAddFromPalette() {
-    var id = parseInt(document.getElementById("composerAddItem").value, 10);
-    var pal = composerFindPaletteItem(id);
+    var pal = composerPaletteByValue(document.getElementById("composerAddItem").value);
     if (!pal) return;
+    var id = pal.id;
     var aux = 0;
-    if (pal.param) {
+    if (pal.customText) {
+      var txt = document.getElementById("composerAddText").value.replace(/\s+/g, " ").trim();
+      if (!txt) { composerSetError("Type the text to show first."); return; }
+      aux = pluginAllocTextSlot(txt);
+      if (aux < 0) { composerSetError("No free slot: at most 12 plugin and custom text elements can be used in total."); return; }
+      document.getElementById("composerAddText").value = "";
+    } else if (pal.param) {
       aux = composerParamValueToAux(pal.param, document.getElementById("composerAddZone").value);
       if (aux < 0) { composerSetError(pluginUnavailableText()); return; }
     }

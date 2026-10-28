@@ -1,6 +1,6 @@
 // ---- weather data source: Pebble weather plugin (default) or Open-Meteo ---------------
 //
-// CONFIG_WEATHER_SOURCE: 'plugin' (default) | 'openmeteo'.
+// CONFIG_WEATHER_SOURCE: 'plugin' (default) | 'plugin:<uuid>' | 'openmeteo'.
 //
 // With 'plugin', the Pebble app's own weather plugin (weather/location, the
 // first saved location) supplies the headline values: temperature, high/low,
@@ -56,7 +56,7 @@ var CODE_MAP = {
 };
 
 // Reads the plugin once. cb(err, { tempC, tempHighC, tempLowC, uv, rainPct, code })
-function fetchPluginWeather(cb) {
+function fetchPluginWeather(providerUuid, cb) {
   if (!pluginManager.hasApi()) return cb(new Error('plugins not available'));
   var done = false, handle = null, timer = null;
   function finish(err, value) {
@@ -71,6 +71,7 @@ function fetchPluginWeather(cb) {
     handle = Pebble.subscribeToSource({
       category: 'weather',
       item: 'location',
+      plugin: providerUuid || undefined,
       properties: PROPS,
       onData: function (env) {
         var inst = env && env.instances && env.instances[0];
@@ -105,14 +106,20 @@ function overlay(snap, p) {
   return out;
 }
 
+// 'plugin' = whichever weather plugin the user chose in the Pebble app; 'plugin:<uuid>' = that one.
+function sourceSetting() { return String(getSetting('CONFIG_WEATHER_SOURCE', 'plugin')); }
 function useWeatherPlugin() {
-  return getSetting('CONFIG_WEATHER_SOURCE', 'plugin') === 'plugin' && pluginManager.hasApi();
+  return sourceSetting().indexOf('plugin') === 0 && pluginManager.hasApi();
+}
+function providerUuid() {
+  var s = sourceSetting();
+  return s.indexOf('plugin:') === 0 ? s.slice(7) : '';
 }
 
 // Same signature as weather.getWeatherSnapshot(lat, lon, now, cb(err, snapshot)).
 function getSnapshot(lat, lon, now, cb) {
   if (!useWeatherPlugin()) return weather.getWeatherSnapshot(lat, lon, now, cb);
-  fetchPluginWeather(function (perr, p) {
+  fetchPluginWeather(providerUuid(), function (perr, p) {
     weather.getWeatherSnapshot(lat, lon, now, function (err, snap) {
       if (perr) {
         console.log('modern: weather plugin not used (' + perr.message + '), using Open-Meteo');

@@ -1,6 +1,7 @@
 #include "./feature_render.h"
 #include "../input/input.h"
 #include "./feature_icon_assets.h"
+#include "./feature_icons.h"
 #include "./primitives/primitive_renderer.h"
 
 #define CORNER_INSET_PX 2
@@ -78,9 +79,22 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
     // Horizontal padding per side: rounded ends (~7px) plus an 8px buffer so
     // icons on the left and text overhang on the right are never clipped.
     const int16_t pad = 15;
-    int16_t content_w = slot->primitives.total_width;
+    // Measure the visible extent (first visible item start to last visible
+    // item end) so trailing icon gaps / spacers don't shift the pill off centre.
+    int16_t first_x = -1, last_x = 0;
+    for (int i = 0; i < slot->primitives.count; i++) {
+      const PrimitiveInstance *it = &slot->primitives.items[i];
+      if (it->width <= 0) continue;
+      int16_t vis = (it->kind == PRIMITIVE_KIND_ICON) ? FEATURE_ICON_WIDTH
+                  : (it->kind == PRIMITIVE_KIND_SPACE ? 0 : it->width - 2);
+      if (vis <= 0) continue;
+      if (first_x < 0) first_x = it->x_offset;
+      if (it->x_offset + vis > last_x) last_x = it->x_offset + vis;
+    }
+    if (first_x < 0) { first_x = slot->primitives.items[0].x_offset; last_x = first_x + slot->primitives.total_width; }
+    int16_t content_w = last_x - first_x;
     if (content_w > box_w) content_w = box_w;
-    int16_t pill_x = box_x + slot->primitives.items[0].x_offset - pad;
+    int16_t pill_x = box_x + first_x - pad;
     int16_t pill_w = content_w + 2 * pad;
     if (pill_w < CORNER_ROW_H) {
       pill_x -= (CORNER_ROW_H - pill_w) / 2;
