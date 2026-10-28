@@ -1510,6 +1510,9 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="slot-btn slot-middle-right-l1" id="slotBtn-middleRightLine1" onclick="openSlotEditor(\'middleRightLine1\')"></button>' +
 '      <button type="button" class="slot-btn slot-middle-right-l2" id="slotBtn-middleRightLine2" onclick="openSlotEditor(\'middleRightLine2\')"></button>' +
 '    </div>' +
+'    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefFeaturesBtn" onclick="loadPreferredFeatures()">Load user preferences</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefFeatures\')">?</button></div>' +
+'    <div class="help" id="help-loadPrefFeatures" style="display:none;">Fills Upper-middle line 2, Bottom-middle line 1 and the first line on the left and on the right with the readings you chose in the Pebble app (Settings &rarr; Plugins &rarr; Complications), in that order. They replace what those four slots show now; the change is only kept when you save.</div>' +
+'    <div class="help" id="prefFeaturesStatus" style="display:none;"></div>' +
 '    <div class="slot-legend" id="slotShakeLegend" style="display:none;"><span class="slot-legend-sample">&nbsp;&nbsp;&nbsp;</span> Features with an orange dashed border are hidden until you shake the watch.</div>' +
 
 '    <div class="checkbox-row" id="bitmapCornerOverrideRow" style="margin-top:12px;' + ((isBitmapMarkerStyle && markerStyleNum !== 5) ? '' : ' display:none;') + '">' +
@@ -1823,6 +1826,10 @@ configPresetSchedule.modalHtml +
         { value: '1', label: 'FEET' }
       ], current.altitudeUnit || '0') +
 '    <div class="help" id="help-altitudeUnit" style="display:none;">Sets the unit used by the Altitude feature.</div>' +
+
+'    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefUnitsBtn" onclick="loadPreferredUnits()">Load units from Pebble app</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefUnits\')">?</button></div>' +
+'    <div class="help" id="help-loadPrefUnits" style="display:none;">Sets the temperature, wind speed and altitude units to the ones chosen in the Pebble app (altitude follows its distance unit: km = meters, mi = feet). The air quality scale has no Pebble app equivalent and is left alone. The change is only kept when you save.</div>' +
+'    <div class="help" id="prefUnitsStatus" style="display:none;"></div>' +
 
 '    </div>' +
 '  </fieldset>' +
@@ -2869,6 +2876,17 @@ configPlugins.pluginScript(current) +
 // or "N/A") and styling to match current settings -- called on init
 // and whenever bottom-style/marker-style or a slot\'s own content
 // changes.
+// Slot buttons are small, so every icon is just "(i)" instead of its placeholder text such
+// as "(weather)" or "LOGO". The canvas preview still uses the full placeholders to draw the icons.
+'function slotIconLabels(text) {' +
+'  return String(text).replace(/\\([A-Za-z+]{1,12}\\)/g, "(i)");' +
+'}' +
+'function slotButtonText(contentId) {' +
+'  var idNum = parseInt(contentId, 10);' +
+'  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
+'  if (chips && chips.length) return chips.map(function (c) { return c.kind === "icon" ? "(i)" : c.text; }).join("");' +
+'  return slotIconLabels(CORNER_PREVIEW_LABELS[idNum] || "");' +
+'}' +
 'function renderSlotPicker() {' +
 '  var avail = computeSlotAvailability();' +
 '  var anyShake = false;' +
@@ -2889,13 +2907,13 @@ configPlugins.pluginScript(current) +
 '    var customEl = def.customPrimsId ? document.getElementById(def.customPrimsId) : null;' +
 '    var customText = (customEl && customEl.value) ? composerPreviewLabel(customEl.value) : \"\";' +
 '    if (customText) {' +
-'      btn.textContent = customText;' +
+'      btn.textContent = slotIconLabels(customText);' +
 '      btn.className = baseClass;' +
 '    } else if (!val || !primitiveDecompositionText(val)) {' +
 '      btn.textContent = "OFF";' +
 '      btn.className = baseClass + " slot-off";' +
 '    } else {' +
-'      btn.textContent = (val >= PLUGIN_CONTENT_FIRST && val < PLUGIN_CONTENT_FIRST + PLUGIN_SLOT_COUNT) ? pluginButtonText(val) : primitiveDecompositionText(val);' +
+'      btn.textContent = (val >= PLUGIN_CONTENT_FIRST && val < PLUGIN_CONTENT_FIRST + PLUGIN_SLOT_COUNT) ? pluginButtonText(val) : slotButtonText(val);' +
 '      btn.className = baseClass;' +
 '    }' +
 '    if (document.getElementById(key + "Shake").value === "1" && btn.className.indexOf("slot-off") === -1) { btn.className += " slot-shake"; anyShake = true; }' +

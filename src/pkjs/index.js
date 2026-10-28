@@ -20,6 +20,8 @@ var refreshManager = require('./refresh-manager');
 var refreshAndSend = refreshManager.refreshAndSend;
 var scheduleRefresh = refreshManager.scheduleRefresh;
 var pluginManager = require('./plugins/plugin-manager');
+var preferences = require('./plugins/preferences');
+var firstRun = require('./settings/first-run');
 var configBridge = require('./plugins/config-bridge');
 var startBatterySaverHourlyCheck = refreshManager.startBatterySaverHourlyCheck;
 
@@ -45,12 +47,30 @@ function serveScheduledStyle() {
   return r.applied;
 }
 
+// ---- first start ---------------------------------------------------------
+//
+// On a fresh install the phone settings are set to what the watch itself defaults to
+// (see settings/first-run.js), before anything reads them.
+firstRun.seedIfFresh();
+
+// Reads the Pebble app's user preferences (units, complications) and, only on the first
+// start, applies them over those defaults and sends the result to the watch.
+function applyFirstRunPreferences() {
+  if (!firstRun.pending()) return;
+  preferences.capture(5000, function (prefs) {
+    if (!firstRun.applyPreferences(prefs, pluginManager)) return;
+    sendFlatDict({});
+    refreshAndSend(false, false);
+  });
+}
+
 // ---- Pebble lifecycle --------------------------------------------------
 
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
   // Plugin sources: subscribe to whatever the user assigned and push values as they change.
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
+  applyFirstRunPreferences();
   // Catch up on anything that came due while PKJS was not running (phone
   // off, watch on another app). Done first so the refresh below already
   // sends the applied style.
@@ -347,6 +367,9 @@ function buildCurrent() {
     // Pebble plugins: what the phone app offers (or why it does not), the
     // sources assigned to the watch's plugin slots, and the weather source.
     pluginCatalogue: pluginManager.readCatalogue(),
+    // Pebble app user preferences (units, complications) as last read, for the page's
+    // "Load user preferences" / "Load units" buttons.
+    preferences: preferences.snapshot(),
     pluginSlots: pluginManager.getSlots(),
     weatherSource: getSetting('CONFIG_WEATHER_SOURCE', 'plugin')
   };
@@ -437,6 +460,9 @@ function applySettingsObject(settings) {
     }
     return;
   }
+
+  // A real save: from here on the person's settings win over first-start defaults.
+  firstRun.markDone();
 
   setSetting('CONFIG_AUTO_LOC', settings.CONFIG_AUTO_LOC ? 'true' : 'false');
   setSetting('CONFIG_LAT', settings.CONFIG_LAT || '');
@@ -691,4 +717,4 @@ configBridge.install(function () {
   var current = buildCurrent();
   current.liveMode = true;
   return configPage.buildConfigHtml(current);
-}, applySettingsObject, pluginManager);
+}, applySettingsObject, pluginManager, preferences);

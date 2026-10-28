@@ -55,15 +55,35 @@ function pluginScript(current) {
 'var PLUGIN_SLOTS = ' + JSON.stringify(slots) + ';\n' +
 'var PLUGIN_CONTENT_FIRST = 200, PLUGIN_SLOT_COUNT = 12;\n' +
 'var LIVE_MODE = ' + (current.liveMode ? 'true' : 'false') + ';\n' +
+'var PREFERENCES = ' + JSON.stringify(current.preferences || { available: false, units: null, complications: null }).replace(/</g, '\\u003c') + ';\n' +
 'function pluginsAvailable() { return PLUGIN_INFO.status === "ok" && PLUGIN_INFO.sources.length > 0; }\n' +
 'function pluginUnavailableText() {\n' +
 '  if (PLUGIN_INFO.status !== "ok") return PLUGIN_INFO.message || "Plugins are not enabled.";\n' +
 '  return PLUGIN_INFO.sources.length ? "No free plugin slot (12 at most): remove a plugin feature first." : "No plugin provides data right now.";\n' +
 '}\n' +
+// Keys: "<uuid>|<category>|<item>|<property>[#<instance>]"; an empty uuid (the user\'s preferred
+// complications) means any plugin serving that category/item/property.
+'function pluginKeyParts(key) {\n' +
+'  var p = String(key || "").split("|");\n' +
+'  if (p.length < 4) return null;\n' +
+'  var prop = p.slice(3).join("|"), idx = 0, m = /^(.*)#([0-9]+)$/.exec(prop);\n' +
+'  if (m) { prop = m[1]; idx = parseInt(m[2], 10); }\n' +
+'  return { plugin: p[0], category: p[1], item: p[2], property: prop, index: idx };\n' +
+'}\n' +
 'function pluginSourceByKey(key) {\n' +
-'  for (var i = 0; i < PLUGIN_INFO.sources.length; i++) if (PLUGIN_INFO.sources[i].key === key) return PLUGIN_INFO.sources[i];\n' +
+'  var kp = pluginKeyParts(key);\n' +
+'  if (!kp) return null;\n' +
+'  for (var i = 0; i < PLUGIN_INFO.sources.length; i++) {\n' +
+'    var s = PLUGIN_INFO.sources[i];\n' +
+'    if (s.category === kp.category && s.item === kp.item && s.property === kp.property && (!kp.plugin || s.plugin === kp.plugin)) return s;\n' +
+'  }\n' +
 '  return null;\n' +
 '}\n' +
+'function pluginIndexSuffix(key) {\n' +
+'  var kp = pluginKeyParts(key);\n' +
+'  return (kp && kp.index > 0) ? " #" + (kp.index + 1) : "";\n' +
+'}\n' +
+'function pluginHumanize(s) { return String(s || "").replace(/[_-]+/g, " ").replace(/^\\s*[a-z]/, function (c) { return c.toUpperCase(); }); }\n' +
 'function pluginSlotOf(key) { return PLUGIN_SLOTS.indexOf(key); }\n' +
 'function pluginSourceLabel(src) { return src.pluginName + " \\u2013 " + src.category + "/" + src.item + ": " + src.label; }\n' +
 'function pluginIsTextSlot(slot) { return typeof PLUGIN_SLOTS[slot] === "string" && PLUGIN_SLOTS[slot].indexOf("text|") === 0; }\n' +
@@ -79,7 +99,9 @@ function pluginScript(current) {
 '  var key = PLUGIN_SLOTS[slot];\n' +
 '  if (!key) return "Plugin " + (slot + 1);\n' +
 '  var src = pluginSourceByKey(key);\n' +
-'  return src ? src.label : "(unavailable)";\n' +
+'  if (src) return src.label + pluginIndexSuffix(key);\n' +
+'  var kp = pluginKeyParts(key);\n' +
+'  return (kp && !kp.plugin) ? pluginHumanize(kp.property) + pluginIndexSuffix(key) : "(unavailable)";\n' +
 '}\n' +
 // Slots referenced by saved features and by the slot editor's open draft.
 'function pluginSlotsInUse() {\n' +
@@ -178,10 +200,12 @@ function pluginScript(current) {
 '    if (providerKey && pluginProvKey(src) !== providerKey) return;\n' +
 '    out.push({ value: slot >= 0 ? String(slot) : "c" + i, label: pluginDataLabel(src) });\n' +
 '  });\n' +
-'  if (!providerKey) {\n' +
-'    for (var s = 0; s < PLUGIN_SLOT_COUNT; s++) {\n' +
-'      if (PLUGIN_SLOTS[s] && !seen[s] && PLUGIN_SLOTS[s].indexOf("text|") !== 0) out.push({ value: String(s), label: "(unavailable) " + PLUGIN_SLOTS[s].split("|").slice(1).join("/") });\n' +
-'    }\n' +
+'  for (var s = 0; s < PLUGIN_SLOT_COUNT; s++) {\n' +
+'    var skey = PLUGIN_SLOTS[s];\n' +
+'    if (!skey || seen[s] || skey.indexOf("text|") === 0) continue;\n' +
+'    var ssrc = pluginSourceByKey(skey);\n' +
+'    if (ssrc) { if (!providerKey || pluginProvKey(ssrc) === providerKey) out.push({ value: String(s), label: pluginDataLabel(ssrc) + pluginIndexSuffix(skey) }); }\n' +
+'    else if (!providerKey) out.push({ value: String(s), label: "(unavailable) " + skey.split("|").slice(1).join("/") });\n' +
 '  }\n' +
 '  return out;\n' +
 '}\n' +
@@ -226,6 +250,14 @@ function pluginScript(current) {
 '    var value = slot >= 0 ? String(PLUGIN_CONTENT_FIRST + slot) : "plug:" + i;\n' +
 '    html += "<option value=\\"" + value + "\\"" + (String(selectedContentId) === value ? " selected" : "") + ">" + esc(pluginDataLabel(src)) + "</option>";\n' +
 '  });\n' +
+'  for (var xs = 0; xs < PLUGIN_SLOT_COUNT; xs++) {\n' +
+'    var xkey = PLUGIN_SLOTS[xs];\n' +
+'    if (!xkey || seen[xs] || xkey.indexOf("text|") === 0) continue;\n' +
+'    var xsrc = pluginSourceByKey(xkey);\n' +
+'    if (!xsrc || pluginProvKey(xsrc) !== provKey) continue;\n' +
+'    var xval = String(PLUGIN_CONTENT_FIRST + xs);\n' +
+'    html += "<option value=\\"" + xval + "\\"" + (String(selectedContentId) === xval ? " selected" : "") + ">" + esc(pluginDataLabel(xsrc) + pluginIndexSuffix(xkey)) + "</option>";\n' +
+'  }\n' +
 '  if (sel >= 0 && sel < PLUGIN_SLOT_COUNT && !pluginProviderOfSlot(sel)) html = "<option value=\\"" + selectedContentId + "\\" selected>(unavailable) " + esc(PLUGIN_SLOTS[sel] || "") + "</option>" + html;\n' +
 '  return html;\n' +
 '}\n' +
@@ -262,7 +294,79 @@ function pluginScript(current) {
 '  } else {\n' +
 '    help.style.display = "none";\n' +
 '  }\n' +
-'}\n';
+'}\n' +
+'// ---- Pebble app user preferences: "Load user preferences" (Features) and "Load units" (Weather) ----\n' +
+'// PREFERENCES = what PKJS last read from preferences/units and preferences/complications.\n' +
+'var PREF_FEATURE_SLOTS = ["upperMiddleLine2", "bottomMiddleLine1", "middleLeftLine1", "middleRightLine1"];\n' +
+'function prefStatus(id, text, isError) {\n' +
+'  var el = document.getElementById(id);\n' +
+'  if (!el) return;\n' +
+'  el.textContent = text;\n' +
+'  el.style.color = isError ? "#d9822b" : "";\n' +
+'  el.style.display = text ? "" : "none";\n' +
+'}\n' +
+'// Fresh values through the live bridge when there is one, else what the page was built with.\n' +
+'function prefFetch(done) {\n' +
+'  if (typeof LIVE !== "undefined" && LIVE.active && typeof Pebble !== "undefined") {\n' +
+'    Pebble.sendMessage("pkjs", { type: "preferences" }).then(function (r) {\n' +
+'      if (r && r.preferences) PREFERENCES = r.preferences;\n' +
+'      done(PREFERENCES);\n' +
+'    }, function () { done(PREFERENCES); });\n' +
+'  } else {\n' +
+'    done(PREFERENCES);\n' +
+'  }\n' +
+'}\n' +
+'function loadPreferredFeatures() {\n' +
+'  prefStatus("prefFeaturesStatus", "Reading your preferences…");\n' +
+'  prefFetch(function (prefs) {\n' +
+'    if (!prefs || !prefs.available) { prefStatus("prefFeaturesStatus", "Plugins are not enabled in the Pebble app, so its preferences cannot be read.", true); return; }\n' +
+'    var comps = prefs.complications || [];\n' +
+'    if (!comps.length) { prefStatus("prefFeaturesStatus", "No complications are set in the Pebble app (Settings → Plugins → Complications).", true); return; }\n' +
+'    var n = Math.min(comps.length, PREF_FEATURE_SLOTS.length), i, def;\n' +
+'    for (i = 0; i < PREF_FEATURE_SLOTS.length; i++) {\n' +
+'      def = SLOT_DEFS[PREF_FEATURE_SLOTS[i]];\n' +
+'      if (i < n) {\n' +
+'        document.getElementById(def.contentId).value = "0";\n' +
+'        if (def.customPrimsId) document.getElementById(def.customPrimsId).value = "";\n' +
+'      }\n' +
+'    }\n' +
+'    pluginGcSlots();\n' +
+'    var filled = 0, hidden = 0, avail = computeSlotAvailability();\n' +
+'    for (i = 0; i < n; i++) {\n' +
+'      var c = comps[i];\n' +
+'      var slot = pluginAllocSlot("|" + c.category + "|" + c.item + "|" + c.property + "#" + (c.index || 0));\n' +
+'      if (slot < 0) break;\n' +
+'      def = SLOT_DEFS[PREF_FEATURE_SLOTS[i]];\n' +
+'      document.getElementById(def.contentId).value = String(PLUGIN_CONTENT_FIRST + slot);\n' +
+'      if (!def.avail(avail)) hidden++;\n' +
+'      filled++;\n' +
+'    }\n' +
+'    renderSlotPicker();\n' +
+'    updatePreview();\n' +
+'    var msg = "Loaded " + filled + " preferred " + (filled === 1 ? "feature" : "features") + " from the Pebble app.";\n' +
+'    if (hidden) msg += " " + hidden + " of them " + (hidden === 1 ? "is" : "are") + " in slots your current dial style does not use (see “Incompatible features”).";\n' +
+'    prefStatus("prefFeaturesStatus", msg, false);\n' +
+'  });\n' +
+'}\n' +
+'function loadPreferredUnits() {\n' +
+'  prefStatus("prefUnitsStatus", "Reading your preferences…");\n' +
+'  prefFetch(function (prefs) {\n' +
+'    if (!prefs || !prefs.available) { prefStatus("prefUnitsStatus", "Plugins are not enabled in the Pebble app, so its preferences cannot be read.", true); return; }\n' +
+'    var u = prefs.units;\n' +
+'    if (!u) { prefStatus("prefUnitsStatus", "The Pebble app did not report any unit preferences.", true); return; }\n' +
+'    var done = [];\n' +
+'    var temp = { "°C": "C", "°F": "F" }[u.temperature];\n' +
+'    if (temp) { selectModeButton("tempUnitGroup", "tempUnit", temp); done.push(u.temperature); }\n' +
+'    var wind = { "km/h": "kmh", "mph": "mph", "m/s": "ms", "knots": "kn" }[u.wind_speed];\n' +
+'    if (wind) { selectModeButton("windSpeedUnitGroup", "windSpeedUnit", wind); done.push(u.wind_speed); }\n' +
+'    var alt = { "km": "0", "mi": "1" }[u.distance];\n' +
+'    if (alt) { selectModeButton("altitudeUnitGroup", "altitudeUnit", alt); done.push(alt === "0" ? "metres" : "feet"); }\n' +
+'    updatePreview();\n' +
+'    try { refreshAllSectionSubheaders(); } catch (e) {}\n' +
+'    prefStatus("prefUnitsStatus", done.length ? "Loaded from the Pebble app: " + done.join(", ") + "." : "Nothing to load: the Pebble app’s units have no match here.", !done.length);\n' +
+'  });\n' +
+'}\n' +
+'';
 }
 
 module.exports = { weatherSourceHtml: weatherSourceHtml, pluginScript: pluginScript };

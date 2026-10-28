@@ -690,6 +690,25 @@ disables the plugin dropdown and the weather-source select, and weather keeps us
 - Values are shown as plain text: shortText first, else numeric value + unit, timestamp (HH:MM),
   boolean (On/Off), longText. Instances: the first one is used.
 
+### Pebble app user preferences (`plugins/preferences.js`, `settings/first-run.js`)
+
+The built-in Preferences plugin exposes `preferences/units` and `preferences/complications`.
+
+- **First start only** (no settings ever saved on this phone): the phone settings are set to the watch's
+  own defaults (`WATCH_DEFAULTS` in `settings/first-run.js`, mirroring `src/c/data/watch_defaults.c` --
+  keep the two in sync) so the settings page matches what the watch draws; then, once the preferences
+  have been read, the preferred units and complications are laid over them and sent to the watch.
+  `FIRST_RUN_STATE` in localStorage: absent / `seeded` / `done`; any real settings save sets `done`.
+  To retest, clear the watchface's phone storage.
+- **Units**: temperature (°C/°F), wind speed (km/h, mph, m/s, knots) and altitude (distance km = meters,
+  mi = feet). Pressure, precipitation, clock and the air-quality scale have no setting here.
+- **Complications**: the first four go to Upper-middle line 2, Bottom-middle line 1, Middle-left line 1 and
+  Middle-right line 1, as plugin text slots. Their source key is `|category|item|property#instance`
+  (empty plugin id = the plugin the user prefers; `#n` = instance n of the source).
+- **Settings page**: *Features* -> "Load user preferences" and *Weather* -> "Load units from Pebble app"
+  redo this on demand (fresh values over the live bridge, else the values read at PKJS start); nothing is kept
+  until saved.
+
 ### Bundled settings page + live changes
 
 `package.json` has `"configPage": "config.html"`. Apps that support it open `config.html` (a tiny
@@ -697,8 +716,10 @@ bootstrap) which fetches the real page from PKJS in chunks (`plugins/config-brid
 `page`) and writes it into the document; the page then sends settings changes to PKJS as you edit
 (debounced polling, `liveTick()` in `config/config-runtime.js`) and PKJS applies them exactly like a Save
 (`applySettingsObject()` in `index.js`), so the watch follows live. In that mode the Save bar becomes
-"Send to watch now" (also does a forced refresh when used from "Force refresh now") and the top Back
-button is hidden (use the app's own back).
+"Send" (also does a forced refresh when used from "Force refresh now"), the top Back button is hidden
+(use the app's own back), and a green **LIVE · plugin API** badge sits next to the page title.
+The legacy page shows a grey **LEGACY · Save** badge; an orange **BUNDLED · no live link** badge means the
+page was served by the bundled bootstrap but `Pebble.sendMessage` is missing (it then behaves like legacy).
 Older apps ignore `configPage` and use the legacy `showConfiguration` / `webviewclosed` flow (unchanged).
 
 **Packaging:** plain `pebble build` does not put `config.html` into the pbw. Build with

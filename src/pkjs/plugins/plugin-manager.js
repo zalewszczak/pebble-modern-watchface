@@ -15,7 +15,7 @@
 // feature compiles to PRIM_PLUGIN_TEXT with aux = slot, and this module keeps
 // one subscription per assigned slot and pushes the latest text.
 //
-// Source key: "<plugin uuid>|<category>|<item>|<property>".
+// Source key: "<plugin uuid>|<category>|<item>|<property>[#<instance>]" (see parseKey()).
 
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
@@ -157,10 +157,17 @@ function setText(slot, text) {
 
 // ---- subscriptions ----------------------------------------------------------------
 
+// "<plugin uuid>|<category>|<item>|<property>", optionally "...<property>#<n>" to read
+// instance n of the source instead of the first (the user's preferred complications), and
+// an empty uuid to let the Pebble app pick the plugin (the user's preferred sources).
 function parseKey(key) {
   var p = String(key).split('|');
   if (p.length < 4) return null;
-  return { plugin: p[0], category: p[1], item: p[2], property: p.slice(3).join('|') };
+  var property = p.slice(3).join('|');
+  var index = 0;
+  var m = /^(.*)#(\d+)$/.exec(property);
+  if (m) { property = m[1]; index = parseInt(m[2], 10); }
+  return { plugin: p[0], category: p[1], item: p[2], property: property, index: index };
 }
 
 function unsubscribe(slot) {
@@ -182,7 +189,7 @@ function subscribe(slot) {
       plugin: parsed.plugin || undefined,
       properties: [parsed.property],
       onData: function (envelope) {
-        var inst = envelope && envelope.instances && envelope.instances[0];
+        var inst = envelope && envelope.instances && envelope.instances[parsed.index];
         var text = inst && inst.properties ? textFromPayloads(inst.properties[parsed.property]) : '';
         setText(slot, text || '--');
       },

@@ -17,12 +17,14 @@
 //   { type: 'settings', settings } -> { ok }             apply (and push to the watch)
 //   { type: 'action', payload }  -> { ok }               debug sends (full keyset / fake weather)
 //   { type: 'plugins' }          -> { catalogue }        re-read the plugin catalogue
+//   { type: 'preferences' }      -> { preferences }      re-read the Pebble app's user preferences
+//                                                        (units, complications)
 
 var CHUNK_CHARS = 150000;
 
 // buildPage(): () => html string; applySettings(obj): the same function the
 // legacy 'webviewclosed' flow uses.
-function install(buildPage, applySettings, pluginManager) {
+function install(buildPage, applySettings, pluginManager, preferences) {
   if (typeof Pebble === 'undefined' || typeof Pebble.addEventListener !== 'function') return;
   var pageChunks = [];
 
@@ -55,6 +57,10 @@ function install(buildPage, applySettings, pluginManager) {
           break;
         case 'plugins':
           reply({ catalogue: pluginManager.readCatalogue() });
+          break;
+        case 'preferences':
+          // Answers once the Pebble app has replied (or after a short timeout, with the cache).
+          preferences.capture(3000, function (prefs) { reply({ preferences: prefs }); });
           break;
         default:
           reply({ ok: false, error: 'unknown message' });
