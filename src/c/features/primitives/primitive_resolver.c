@@ -689,7 +689,9 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       // force_color rather than leaving this to the usual dispatch.
       bool connected = connection_service_peek_pebble_app_connection();
       GColor c = connected ? GColorFromRGB(64, 224, 208) : GColorFromRGB(255, 0, 0);
-      if (id == PRIM_BLUETOOTH_ICON) { resolve_icon(out, 13, 0, false, c); }
+      // aux_flag = disconnected: the Full color art cannot be tinted red, so the
+      // icon renderer crosses it out instead (feature_icons.c, case 13).
+      if (id == PRIM_BLUETOOTH_ICON) { resolve_icon(out, 13, 0, !connected, c); }
       else { resolve_text(out, connected ? "Connected" : "No phone", c); }
       out->force_color = true;
       return true;

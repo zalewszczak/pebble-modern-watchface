@@ -62,6 +62,8 @@ var borderWeatherPxCode = settingsCodecs.borderWeatherPxCode;
 var borderWeatherSchemeCode = settingsCodecs.borderWeatherSchemeCode;
 var borderWeatherShakeCode = settingsCodecs.borderWeatherShakeCode;
 var borderWeatherSemiCode = settingsCodecs.borderWeatherSemiCode;
+var bgTranslucentCode = settingsCodecs.bgTranslucentCode;
+var shakeHandsTranslucentCode = settingsCodecs.shakeHandsTranslucentCode;
 var drawFeaturesBeneathHandsCode = settingsCodecs.drawFeaturesBeneathHandsCode;
 var clampInt = settingsCodecs.clampInt;
 var customMarkerStyleCode = settingsCodecs.customMarkerStyleCode;
@@ -424,7 +426,8 @@ function populateSettingsFields(dict) {
     borderWeatherModeCode(), borderWeatherPxCode(),
     borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
     primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255,
-    bitmapMarkerInvertCode()
+    bitmapMarkerInvertCode(),
+    bgTranslucentCode(), shakeHandsTranslucentCode()
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per

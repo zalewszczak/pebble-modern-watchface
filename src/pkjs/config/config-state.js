@@ -36,7 +36,7 @@ function deriveConfigState(current) {
     ? current.debugOverrideData
     : (mostRecentRawChunk ? JSON.stringify(mostRecentRawChunk, null, 2) : '');
   var secondsChecked = current.showSeconds ? 'checked' : '';
-  var cornerFontId = parseInt(current.cornerFont || '1', 10);
+  var cornerFontId = parseInt(current.cornerFont || '27', 10);
 
   // Client-side copy of the feature catalogue (see presets-lookups.js).
   var cornerCategoriesForClient = CORNER_CATEGORIES;

@@ -7,8 +7,10 @@
 #define COLOR_WHITE 0xFF
 #define COLOR_BLACK 0xC0
 
-// Font id 14 in fonts/font_lookup.c: Digital Dream.
-#define FONT_ID_DIGITAL_DREAM 14
+// Font id 27 in fonts/font_lookup.c: Digital Dream (id 14 is Bitcount Grid since
+// the font table was renumbered). Keep in sync with FONT_TABLE and with
+// DEFAULT_CORNER_FONT in the phone code (settings-codecs.js).
+#define FONT_ID_DIGITAL_DREAM 27
 
 // Same ranges the phone's settings codecs produce; keep in sync with
 // src/pkjs/settings/settings-codecs.js defaults.

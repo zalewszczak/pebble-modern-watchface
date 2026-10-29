@@ -180,13 +180,19 @@ static void shake_anim_timer_callback(void *data) {
   // counting nominal frame lengths made the animation outlast the slider.
   int64_t elapsed = shake_now_ms() - s_shake_anim_start_ms;
 
-  bool still_active = elapsed < (int64_t)s_shake_anim_duration_ms;
+  int64_t remaining = (int64_t)s_shake_anim_duration_ms - elapsed;
+  bool still_active = remaining > 0;
   if (!still_active) {
     s_shake_anim_active = false;
     s_shake_anim_timer = NULL;
   } else {
-    s_shake_anim_timer = app_timer_register(SHAKE_ANIM_FRAME_MS,
-                                             shake_anim_timer_callback, NULL);
+    // Full frame rate only when something moves (smooth second hand);
+    // translucent hands alone just need a redraw when the animation ends.
+    uint32_t delay = SHAKE_ANIM_FRAME_MS;
+    if (s_data->shake_anim_mode == 0) {
+      delay = remaining > 500 ? 500 : (uint32_t)remaining + 1;
+    }
+    s_shake_anim_timer = app_timer_register(delay, shake_anim_timer_callback, NULL);
   }
   if (s_callbacks.animation_frame)
     s_callbacks.animation_frame(s_callbacks.context);
@@ -215,7 +221,7 @@ static void maybe_start_shake_features(void) {
 }
 
 static void maybe_start_shake_animation(void) {
-  if (s_data->shake_anim_mode == 0) return;
+  if (s_data->shake_anim_mode == 0 && !s_data->shake_hands_translucent) return;
   s_shake_anim_active = true;
   s_shake_anim_start_ms = shake_now_ms();
   uint8_t seconds = s_data->shake_seconds > 0 ? s_data->shake_seconds : 3;
@@ -223,6 +229,8 @@ static void maybe_start_shake_animation(void) {
   if (s_shake_anim_timer) app_timer_cancel(s_shake_anim_timer);
   s_shake_anim_timer = app_timer_register(SHAKE_ANIM_FRAME_MS,
                                            shake_anim_timer_callback, NULL);
+  // Redraw right away so translucent hands appear without waiting a frame.
+  if (s_callbacks.animation_frame) s_callbacks.animation_frame(s_callbacks.context);
 }
 
 static void tap_handler(AccelAxisType axis, int32_t direction) {

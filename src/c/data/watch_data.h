@@ -128,6 +128,11 @@ typedef struct {
   uint8_t border_weather_scheme;
   uint8_t border_weather_shake;
   uint8_t border_weather_semi;
+  // Translucent background image: only every other pixel (checkerboard) of the
+  // image is drawn, the rest stays the background colour. 0 = off.
+  uint8_t bg_translucent;
+  // Hands turn semi-transparent for the duration of the shake animation. 0 = off.
+  uint8_t shake_hands_translucent;
   // Bit mask of slots using explicit tight primitive spacing (corner bits 0-3,
   // edge/middle bits 4-11).
   uint8_t primitive_tight_mask_lo;

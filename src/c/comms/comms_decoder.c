@@ -212,6 +212,8 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, primitive_tight_mask_lo),
   offsetof(WatchData, primitive_tight_mask_hi),
   offsetof(WatchData, bitmap_marker_invert),
+  offsetof(WatchData, bg_translucent),
+  offsetof(WatchData, shake_hands_translucent),
 };
 
 // Group 2 (4 fields): cloud/visibility readout + its gradient colors.

@@ -114,6 +114,7 @@ var FIELD_MAP = {
   bgSource: ['CONFIG_BG_SOURCE', 's'],
   useWeatherBg: ['CONFIG_USE_WEATHER_BG', 'b'],
   weatherBgStyle: ['CONFIG_WEATHER_BG_STYLE', 's'],
+  bgTranslucent: ['CONFIG_BG_TRANSLUCENT', 'b'],
   borderWeatherMode: ['CONFIG_BORDER_WEATHER_MODE', 's'],
   borderWeatherPx: ['CONFIG_BORDER_WEATHER_PX', 's'],
   borderWeatherScheme: ['CONFIG_BORDER_WEATHER_SCHEME', 's'],
@@ -165,6 +166,7 @@ var FIELD_MAP = {
   startupClockAnimMode: ['CONFIG_STARTUP_CLOCK_ANIM_MODE', 's'],
   bgAnimMode: ['CONFIG_BG_ANIM_MODE', 's'],
   shakeAnimMode: ['CONFIG_SHAKE_ANIM_MODE', 's'],
+  shakeHandsTranslucent: ['CONFIG_SHAKE_HANDS_TRANSLUCENT', 'b'],
   shakeLabelSeconds: ['CONFIG_SHAKE_LABEL_SECONDS', 's']
 };
 
@@ -189,7 +191,7 @@ var DUAL_MAP = {
 
 // Elements in the preset scope that are UI state only, or that are handled
 // explicitly in applyPreset() below instead of through the tables.
-var UI_ONLY_IDS = ['showAllColorPresets'];
+var UI_ONLY_IDS = ['showAllColorPresets', '__pluginSlots'];
 
 function knownIds() {
   var ids = [];
@@ -213,6 +215,17 @@ function applyPreset(preset) {
     if (!preset.hasOwnProperty(id)) continue;
     var v = preset[id];
     if (v === null || v === undefined || v === '') continue;
+    if (id === '__pluginSlots') {
+      // The plugin data sources behind the plugin features' slot numbers (see
+      // collectStyleCornersJson() in config-page.js). index.js re-subscribes afterwards.
+      if (Object.prototype.toString.call(v) === '[object Array]') {
+        var slots = [];
+        for (var si = 0; si < 12; si++) slots.push(typeof v[si] === 'string' ? v[si] : '');
+        setSetting('CONFIG_PLUGIN_SLOTS', JSON.stringify(slots));
+        written++;
+      }
+      continue;
+    }
     var f = FIELD_MAP[id];
     if (f) {
       setSetting(f[0], toStored(f[1], v));

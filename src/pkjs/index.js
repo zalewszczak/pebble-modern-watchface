@@ -38,6 +38,8 @@ function serveScheduledStyle() {
   var r = scheduledStyle.applyDue(Date.now());
   if (r.applied) {
     console.log('modern: scheduled style applied from My style slot ' + r.slot);
+    // The style may carry its own plugin slot assignments: re-subscribe to them first.
+    pluginManager.setSlots(pluginManager.getSlots());
     sendFlatDict({});
     bgImageSync.syncIfNeeded(); // the applied style may select an uploaded background
     // Same follow-up a manual settings save does: only refetches if the
@@ -170,6 +172,7 @@ function buildCurrent() {
     bgSource: getSetting('CONFIG_BG_SOURCE', 'p:1'),
     useWeatherBg: getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
     weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
+    bgTranslucent: getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true',
     borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
     borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     borderWeatherScheme: getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'),
@@ -306,9 +309,10 @@ function buildCurrent() {
     startupClockAnimMode: getSetting('CONFIG_STARTUP_CLOCK_ANIM_MODE', '1'),
     bgAnimMode: getSetting('CONFIG_BG_ANIM_MODE', '0'),
     shakeAnimMode: getSetting('CONFIG_SHAKE_ANIM_MODE', '0'),
+    shakeHandsTranslucent: getSetting('CONFIG_SHAKE_HANDS_TRANSLUCENT', 'false') === 'true',
     outlineStyle: String(outlineEnabledCode()),
     batterySaverEnabled: getSetting('CONFIG_BATTERY_SAVER_ENABLED', 'false') === 'true',
-    cornerFont: getSetting('CONFIG_CORNER_FONT', '1'),
+    cornerFont: getSetting('CONFIG_CORNER_FONT', '27'),
     testMode: getSetting('CONFIG_TEST_MODE', 'false') === 'true',
     testDateTime: getSetting('CONFIG_TEST_DATETIME', ''),
     drawDebug: getSetting('CONFIG_DRAW_DEBUG', 'false') === 'true',
@@ -517,6 +521,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_BG_SOURCE', settings.CONFIG_BG_SOURCE || 'p:1');
   setSetting('CONFIG_USE_WEATHER_BG', settings.CONFIG_USE_WEATHER_BG ? 'true' : 'false');
   setSetting('CONFIG_WEATHER_BG_STYLE', settings.CONFIG_WEATHER_BG_STYLE || '');
+  setSetting('CONFIG_BG_TRANSLUCENT', settings.CONFIG_BG_TRANSLUCENT ? 'true' : 'false');
   setSetting('CONFIG_BORDER_WEATHER_MODE', (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) ? settings.CONFIG_BORDER_WEATHER_MODE : '0');
   setSetting('CONFIG_BORDER_WEATHER_SCHEME', (settings.CONFIG_BORDER_WEATHER_SCHEME === '1' || settings.CONFIG_BORDER_WEATHER_SCHEME === '2') ? settings.CONFIG_BORDER_WEATHER_SCHEME : '0');
   setSetting('CONFIG_BORDER_WEATHER_SHAKE', settings.CONFIG_BORDER_WEATHER_SHAKE ? 'true' : 'false');
@@ -641,9 +646,10 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_STARTUP_CLOCK_ANIM_MODE', settings.CONFIG_STARTUP_CLOCK_ANIM_MODE || '1');
   setSetting('CONFIG_BG_ANIM_MODE', settings.CONFIG_BG_ANIM_MODE || '0');
   setSetting('CONFIG_SHAKE_ANIM_MODE', settings.CONFIG_SHAKE_ANIM_MODE || '0');
+  setSetting('CONFIG_SHAKE_HANDS_TRANSLUCENT', settings.CONFIG_SHAKE_HANDS_TRANSLUCENT ? 'true' : 'false');
   setSetting('CONFIG_OUTLINE_ENABLED', settings.CONFIG_OUTLINE_ENABLED || '1');
   setSetting('CONFIG_BATTERY_SAVER_ENABLED', settings.CONFIG_BATTERY_SAVER_ENABLED ? 'true' : 'false');
-  setSetting('CONFIG_CORNER_FONT', settings.CONFIG_CORNER_FONT || '1');
+  setSetting('CONFIG_CORNER_FONT', settings.CONFIG_CORNER_FONT || '27');
   setSetting('CONFIG_TEST_MODE', settings.CONFIG_TEST_MODE ? 'true' : 'false');
   setSetting('CONFIG_TEST_DATETIME', settings.CONFIG_TEST_DATETIME || '');
   setSetting('CONFIG_DEBUG_OVERRIDE_ENABLED', settings.CONFIG_DEBUG_OVERRIDE_ENABLED ? 'true' : 'false');

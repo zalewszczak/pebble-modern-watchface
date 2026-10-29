@@ -46,6 +46,7 @@ Out of the box the watch starts with the **Modern** bitmap marker style (marker 
 * Manual latitude/longitude
 ##### Interactions & updates
 * Shake-triggered smooth second hand
+* Optional semi-transparent hands for the duration of the shake animation
 * Preserve battery option for the watchface to suspend activity when not used
 * Configurable shake duration
 * Automatic data refresh with configurable interval
@@ -104,7 +105,9 @@ The project was converted from the Eclipz solar-eclipse watchface into the analo
 
 ## Custom backgrounds
 
-Style -> "Use custom background" draws a full-screen picture behind the indices.
+Style -> Background: an OFF / IMAGE / WEATHER button group chooses what is drawn behind the indices (plain color, a predefined/own image, or a weather picture). Below it, "Translucent background image" (hidden for OFF) draws only every other pixel of the picture (checkerboard) and leaves the rest in the background color (`bg_translucent`, applied in `bg_image_draw()`). The buttons drive the two hidden checkboxes `#useCustomBg` / `#useWeatherBg`, so presets and saving are unchanged.
+
+The picture is a full-screen image behind the indices.
 
 - **Predefined images**: put numbered PNGs in `resources/backgrounds/` (`1.png`, `2.png`, ...; 200x228, palette PNGs keep the settings page small) and run `node scripts/generate-backgrounds.js` (also part of `generate-all.js`). It embeds them into the settings page (`src/pkjs/data/generated/background-images.js`), writes `src/c/generated/background_presets.h` (`bg_preset_resource_id(n)`) and (re)creates the `BG_PRESET_<n>` bitmap entries in `package.json`. The watch loads the chosen one with `gbitmap_create_with_resource()`, draws it once into the dial cache (below) and frees it.
 - **Your own images**: 9 slots, edited in the settings page (`src/pkjs/config/config-background.js`): crop/pan/zoom, dithering (none, Floyd-Steinberg, Atkinson, Bayer 4x4/8x8) and style (neutral, B&W, sepia, vivid), converted to 64 colors (6 bits/pixel, packed 4 px -> 3 bytes, 34200 bytes) and kept in phone `localStorage` (`CONFIG_BG_SLOT_<k>`, base64url).
@@ -752,3 +755,7 @@ missing images fall back to the other time of day, then clear sky.
 Checkbox *Inverted blend* under the bitmap indices options (`CONFIG_BITMAP_MARKER_INVERT`): indices are
 drawn as black or white, whichever contrasts with the pixels underneath (`marker_bitmap_draw_inverted()`);
 combined with *Semi transparent* the effect is halved.
+
+## Style presets and plugin features
+
+A saved style (My Style Presets, JSON export, scheduled styles) stores the Features as content ids; plugin features are ids 200-211 = "plugin slot N". What a slot *means* (which plugin data source) lives in `PLUGIN_SLOTS` / `CONFIG_PLUGIN_SLOTS`, not in any input, so a style now also carries `__pluginSlots` (the 12 slot keys, only slots the style uses). `applyStyleCornersJson()` restores them before the Features are rebuilt, and `scheduled-style.js` writes them to `CONFIG_PLUGIN_SLOTS` for scheduled styles. Styles saved by older builds have no `__pluginSlots`; re-save them once.

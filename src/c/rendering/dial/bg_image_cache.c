@@ -28,7 +28,30 @@ uint32_t bg_image_signature(const WatchData *d) {
   return 0;
 }
 
-bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin) {
+// Translucent mode: replace every other pixel (checkerboard, same parity the
+// weather border leaves free) of the freshly drawn image with the background
+// colour. Works directly on the 8-bit frame buffer; skipped if it cannot be
+// captured (then the image just stays opaque).
+static void bg_make_translucent(GContext *ctx, GRect bounds, GPoint origin, GColor bg) {
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+  if (!fb) return;
+  if (gbitmap_get_format(fb) == GBitmapFormat8Bit) {
+    const GRect fbb = gbitmap_get_bounds(fb);
+    const int w = bounds.size.w, h = bounds.size.h;
+    if (origin.x >= fbb.origin.x && origin.y >= fbb.origin.y &&
+        origin.x + w <= fbb.origin.x + fbb.size.w && origin.y + h <= fbb.origin.y + fbb.size.h) {
+      uint8_t *data = gbitmap_get_data(fb);
+      const uint16_t stride = gbitmap_get_bytes_per_row(fb);
+      for (int y = 0; y < h; y++) {
+        uint8_t *row = data + (int32_t)(origin.y + y) * stride + origin.x;
+        for (int x = (y & 1) ? 0 : 1; x < w; x += 2) row[x] = bg.argb; // odd (x + y)
+      }
+    }
+  }
+  graphics_release_frame_buffer(ctx, fb);
+}
+
+bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin, GColor bg) {
   if (d->custom_bg_mode == 1 || d->custom_bg_mode == 3) {
     uint32_t res_id = (d->custom_bg_mode == 3) ? weather_bg_resource(d)
                                                 : bg_preset_resource_id(d->custom_bg_preset);
@@ -45,6 +68,9 @@ bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
   } else if (d->custom_bg_mode == 2) {
     if (bg_image_store_stamp(d->custom_bg_preset) == 0) return true; // slot empty / not received yet
     if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) return false;
+  }
+  if (d->bg_translucent && d->custom_bg_mode >= 1 && d->custom_bg_mode <= 3) {
+    bg_make_translucent(ctx, bounds, origin, bg);
   }
   return true;
 }

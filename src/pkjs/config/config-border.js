@@ -77,6 +77,9 @@ var CSS_TEXT =
 '  .border-legend .sw { width: 18px; height: 12px; border-radius: 3px; border: 1px solid var(--border); flex: 0 0 auto; }\n' +
 '  .border-legend .grad { height: 12px; border-radius: 3px; border: 1px solid var(--border); margin: 4px 0; }\n' +
 '  .border-legend .sub { font-weight: 700; font-size: 11px; margin: 6px 0 3px; color: var(--text-strong); }\n' +
+'  .border-legend .grad-row { display: flex; align-items: flex-start; gap: 8px; }\n' +
+'  .border-legend .grad-col { flex: 1; min-width: 0; }\n' +
+'  .border-legend .grad-unit { flex: 0 0 auto; font-size: 12px; font-weight: 700; line-height: 20px; margin-top: 0; color: var(--text-strong); }\n' +
 '  .border-legend .scale { position: relative; height: 26px; font-size: 11px; }\n' +
 '  .border-legend .scale .tick { position: absolute; top: 0; width: 1px; height: 4px; background: var(--text-muted); }\n' +
 '  .border-legend .scale .tl { position: absolute; top: 5px; white-space: nowrap; transform: translateX(-50%); }\n' +
@@ -209,7 +212,7 @@ function borderScript() {
 'function borderTitle(mode) { return ["", "Weather conditions", "Temperature", "Rain chance", "All three"][mode]; }\n' +
 'function borderGradientCss(fn, n) { var g = []; for (var i = 0; i <= n; i++) g.push(borderCss3(fn(i / n))); return "linear-gradient(90deg," + g.join(",") + ")"; }\n' +
 // Legend scale: a tick and a label at 0, 25, 50, 75 and 100 % of the bar. The temperature bar
-// spans -10..40 C; its labels follow the temperature unit picked in the Weather section.
+// spans -10..40 C; its labels follow the temperature unit picked in the Weather section (whole numbers; the unit sits beside the bar).
 'function borderScale(ticks) {\n' +
 '  var html = \'<div class="scale">\';\n' +
 '  ticks.forEach(function (t, i) {\n' +
@@ -218,15 +221,19 @@ function borderScript() {
 '  });\n' +
 '  return html + \'</div>\';\n' +
 '}\n' +
+'function borderTempUnitSym() {\n' +
+'  var el = document.getElementById("tempUnit"), unit = el ? el.value : "C";\n' +
+'  return unit === "F" ? "&deg;F" : (unit === "K" ? "K" : "&deg;C");\n' +
+'}\n' +
+// Whole numbers only (rounded, no fractions) and no unit on the labels: the unit is shown once, beside the bar.
 'function borderTempTicks() {\n' +
 '  var el = document.getElementById("tempUnit"), unit = el ? el.value : "C";\n' +
 '  var out = [];\n' +
 '  for (var i = 0; i <= 4; i++) {\n' +
-'    var c = -10 + i * 12.5, v = c, sym = "&deg;C";\n' +
-'    if (unit === "F") { v = c * 9 / 5 + 32; sym = "&deg;F"; }\n' +
-'    else if (unit === "K") { v = c + 273.15; sym = " K"; }\n' +
-'    var r = unit === "K" ? Math.round(v) : Math.round(v * 10) / 10;\n' +
-'    out.push({ pct: i * 25, label: r + sym });\n' +
+'    var c = -10 + i * 12.5, v = c;\n' +
+'    if (unit === "F") v = c * 9 / 5 + 32;\n' +
+'    else if (unit === "K") v = c + 273.15;\n' +
+'    out.push({ pct: i * 25, label: String(Math.round(v)) });\n' +
 '  }\n' +
 '  return out;\n' +
 '}\n' +
@@ -242,7 +249,7 @@ function borderScript() {
 '      html += borderRow(css, name);\n' +
 '    });\n' +
 '  } else if (mode === 2) {\n' +
-'    html = \'<div class="grad" style="background:\' + borderGradientCss(function (f) { return borderTempRgb(-10 + f * 50, scheme); }, 12) + \'"></div>\' + borderScale(borderTempTicks()) ;\n' +
+'    html = \'<div class="grad-row"><div class="grad-col"><div class="grad" style="background:\' + borderGradientCss(function (f) { return borderTempRgb(-10 + f * 50, scheme); }, 12) + \'"></div>\' + borderScale(borderTempTicks()) + \'</div><span class="grad-unit">\' + borderTempUnitSym() + \'</span></div>\';\n' +
 '  } else {\n' +
 '    if (scheme === 2) {\n' +
 '      html = borderRow("transparent", "Under 20 %") + borderRow("rgb(255,255,0)", "20 - 49 %") + borderRow("rgb(255,170,0)", "50 - 79 %") + borderRow("rgb(255,0,0)", "80 % or more");\n' +

@@ -62,6 +62,7 @@ static uint32_t dial_static_signature(const WatchData *d, GSize size,
   h = sig_mix(h, ((uint32_t)d->marker_text.hour_mask << 16) | d->marker_text.second_mask);
   // Custom background image (selection, or the uploaded image's stamp).
   h = sig_mix(h, bg_image_signature(d));
+  h = sig_mix(h, d->bg_translucent ? 1u : 0u);
   // Weather border (colours already fold in the current hour and the forecast).
   h = sig_mix(h, border_on ? weather_border_signature(border) : 0);
   return h ? h : 1u;
@@ -74,7 +75,7 @@ static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoi
   graphics_context_set_fill_color(ctx, bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
-  state->bg_ok = bg_image_draw(ctx, d, bounds, origin);
+  state->bg_ok = bg_image_draw(ctx, d, bounds, origin, bg);
   // Below the indices, above the background image.
   if (border_on) weather_border_draw(ctx, border, bounds, origin);
 

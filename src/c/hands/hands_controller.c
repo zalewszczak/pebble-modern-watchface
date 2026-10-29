@@ -111,6 +111,14 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
   HandConfig min_cfg = s_data->hand_minute;
   HandConfig sec_cfg = s_data->hand_second;
 
+  // "Semi-transparent hands on shake": all hands are drawn translucent while
+  // the shake animation runs (input.c keeps it running for the shake duration).
+  if (s_data->shake_hands_translucent && input_shake_animation_active()) {
+    hour_cfg.translucent = true;
+    min_cfg.translucent = true;
+    sec_cfg.translucent = true;
+  }
+
   // Hourly-vibration flash: for the flash's whole duration, one of
   // the hour/minute hands (see hourly_vibration.h's own comment on
   // which) swaps main/background color for one second out of every

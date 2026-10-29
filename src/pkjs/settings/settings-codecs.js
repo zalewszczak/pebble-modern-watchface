@@ -474,6 +474,8 @@ function borderWeatherSchemeCode() {
 }
 function borderWeatherShakeCode() { return getSetting('CONFIG_BORDER_WEATHER_SHAKE', 'false') === 'true' ? 1 : 0; }
 function borderWeatherSemiCode() { return getSetting('CONFIG_BORDER_WEATHER_SEMI', 'false') === 'true' ? 1 : 0; }
+function bgTranslucentCode() { return getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true' ? 1 : 0; }
+function shakeHandsTranslucentCode() { return getSetting('CONFIG_SHAKE_HANDS_TRANSLUCENT', 'false') === 'true' ? 1 : 0; }
 function borderWeatherPxCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_PX', '8'), 10);
   if (isNaN(v)) v = 8;
@@ -502,8 +504,10 @@ function outlineEnabledCode() {
   return [0, 1, 2].indexOf(v) === -1 ? 1 : v;
 }
 function batterySaverEnabledCode() { return getSetting('CONFIG_BATTERY_SAVER_ENABLED', 'false') === 'true' ? 1 : 0; }
+// Feature font on a fresh install: Digital Dream (font id 27, see presets-lookups.js / font_lookup.c).
+var DEFAULT_CORNER_FONT = 27;
 function cornerFontCode() {
-  return clampInt(getSetting('CONFIG_CORNER_FONT', '1'), 0, FONT_MAX_CONTENT_ID, 1); // 1 = System Medium, the old default
+  return clampInt(getSetting('CONFIG_CORNER_FONT', String(DEFAULT_CORNER_FONT)), 0, FONT_MAX_CONTENT_ID, DEFAULT_CORNER_FONT);
 }
 
 // Corners: 4 slots (0=top-left, 1=top-right, 2=bottom-left,
@@ -621,6 +625,8 @@ module.exports = {
   borderWeatherSchemeCode: borderWeatherSchemeCode,
   borderWeatherShakeCode: borderWeatherShakeCode,
   borderWeatherSemiCode: borderWeatherSemiCode,
+  bgTranslucentCode: bgTranslucentCode,
+  shakeHandsTranslucentCode: shakeHandsTranslucentCode,
   drawFeaturesBeneathHandsCode: drawFeaturesBeneathHandsCode,
   clampInt: clampInt,
   customMarkerStyleCode: customMarkerStyleCode,
@@ -738,6 +744,7 @@ module.exports = {
   outlineEnabledCode: outlineEnabledCode,
   batterySaverEnabledCode: batterySaverEnabledCode,
   cornerFontCode: cornerFontCode,
+  DEFAULT_CORNER_FONT: DEFAULT_CORNER_FONT,
   cornerContentBytes: cornerContentBytes,
   cornerColorModeBytes: cornerColorModeBytes,
   dailyStepGoalValue: dailyStepGoalValue

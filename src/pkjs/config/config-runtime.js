@@ -82,6 +82,7 @@ module.exports =
 '    CONFIG_BG_SOURCE: document.getElementById("bgSource").value,' +
 '    CONFIG_USE_WEATHER_BG: document.getElementById("useWeatherBg").checked,' +
 '    CONFIG_WEATHER_BG_STYLE: document.getElementById("weatherBgStyle").value,' +
+'    CONFIG_BG_TRANSLUCENT: document.getElementById("bgTranslucent").checked,' +
 '    CONFIG_BORDER_WEATHER_MODE: document.getElementById("borderWeatherMode").value,' +
 '    CONFIG_BORDER_WEATHER_PX: document.getElementById("borderWeatherPx").value,' +
 '    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +
@@ -115,6 +116,7 @@ module.exports =
 '    CONFIG_STARTUP_CLOCK_ANIM_MODE: document.getElementById("startupClockAnimMode").value,' +
 '    CONFIG_BG_ANIM_MODE: document.getElementById("bgAnimMode").value,' +
 '    CONFIG_SHAKE_ANIM_MODE: document.getElementById("shakeAnimMode").value,' +
+'    CONFIG_SHAKE_HANDS_TRANSLUCENT: document.getElementById("shakeHandsTranslucent").checked,' +
 '    CONFIG_OUTLINE_ENABLED: document.getElementById("outlineStyle").value,' +
 '    CONFIG_BATTERY_SAVER_ENABLED: document.getElementById("batterySaverEnabled").checked,' +
 '    CONFIG_CORNER_FONT: document.getElementById("cornerFont").value,' +

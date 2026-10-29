@@ -1746,6 +1746,15 @@ configPresetSchedule.modalHtml +
 '    <div class="help" id="help-shakeAnimMode" style="display:none;">Choose what happens when you shake the watch.</div>' +
 
 '    <div class="subsection">' +
+'      <div class="checkbox-row">' +
+'        <input type="checkbox" id="shakeHandsTranslucent" ' + (current.shakeHandsTranslucent ? 'checked' : '') + ' onchange="updatePreview(); try { refreshAllSectionSubheaders(); } catch (e) {}">' +
+'        <label for="shakeHandsTranslucent" style="margin:0;">Semi-transparent hands on shake</label>' +
+'        <button type="button" class="help-btn" onclick="toggleHelp(\'help-shakeHandsTranslucent\')">?</button>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="help-shakeHandsTranslucent" style="display:none;">The hands turn semi-transparent for the duration of the shake animation (see the duration slider below), so you can see the dial and features underneath them. Works with or without the smooth second hand.</div>' +
+
+'    <div class="subsection">' +
 '      <div class="slider-row">' +
 '        <div class="field-label-row"><label for="shakeLabelSeconds">Shake animations duration <span class="val" id="shakeLabelSecondsVal">' + esc(current.shakeLabelSeconds || '3') + 's</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-shakeLabelSeconds\')">?</button></div>' +
 '        <div class="slider-with-buttons">' +
@@ -1755,7 +1764,7 @@ configPresetSchedule.modalHtml +
 '        </div>' +
 '      </div>' +
 '    </div>' +
-'    <div class="help" id="help-shakeLabelSeconds" style="display:none;">Sets how long the smooth second hand keeps running after a shake.</div>' +
+'    <div class="help" id="help-shakeLabelSeconds" style="display:none;">Sets how long the shake animations (smooth second hand, semi-transparent hands) last after a shake.</div>' +
 '    </div>' +
 
 '    </div>' +
@@ -3823,6 +3832,20 @@ configPlugins.pluginScript(current) +
 '      obj[el.id] = (el.type === "checkbox") ? el.checked : el.value;' +
 '    });' +
 '  });' +
+// Plugin features point at one of 12 shared plugin slots (content id 200 + slot, or the
+// "Plugin data" element's aux), and what a slot MEANS (which plugin data source) lives in
+// PLUGIN_SLOTS, outside every input this walk visits. Without it a saved style only keeps
+// "slot 5" and loses what slot 5 was, so it is stored with the style (only the slots the
+// style actually uses) and put back when the style is applied.
+'  if (typeof pluginSlotsInUse === "function" && typeof PLUGIN_SLOTS !== "undefined") {' +
+'    var used = pluginSlotsInUse(), slots = [], any = false;' +
+'    for (var si = 0; si < PLUGIN_SLOT_COUNT; si++) {' +
+'      var sk = used[si] && typeof PLUGIN_SLOTS[si] === "string" ? PLUGIN_SLOTS[si] : "";' +
+'      if (sk) any = true;' +
+'      slots.push(sk);' +
+'    }' +
+'    if (any) obj.__pluginSlots = slots;' +
+'  }' +
 '  return obj;' +
 '}' +
 // Sets every id->value pair from a previously-exported (or a preset
@@ -3830,7 +3853,13 @@ configPlugins.pluginScript(current) +
 // handlers each field\'s own onchange would have triggered by hand --
 // show/hide rows, slot picker labels, the preview canvas.
 'function applyStyleCornersJson(obj) {' +
+// Restore the plugin slot assignments first: the Features pickers rebuilt below read them.
+// Styles saved before this existed have none; the current assignments are left alone then.
+'  if (obj && Array.isArray(obj.__pluginSlots) && typeof PLUGIN_SLOTS !== "undefined") {' +
+'    for (var psi = 0; psi < PLUGIN_SLOT_COUNT; psi++) PLUGIN_SLOTS[psi] = typeof obj.__pluginSlots[psi] === "string" ? obj.__pluginSlots[psi] : "";' +
+'  }' +
 '  Object.keys(obj).forEach(function (id) {' +
+'    if (id === "__pluginSlots") return;' +
 '    var el = document.getElementById(id);' +
 '    if (!el) {' +
 '      var radio = document.querySelector(\'input[name="\' + id + \'"][value="\' + obj[id] + \'"]\');' + // no plain element has this id -- try it as a radio group name instead
@@ -4994,6 +5023,7 @@ require('./config/config-runtime') +
 '  if (document.getElementById("startupClockAnimMode").value === "1") parts.push("animated clock on start");' +
 '  if (document.getElementById("bgAnimMode").value === "1") parts.push("indices on start");' +
 '  if (document.getElementById("shakeAnimMode").value === "1") parts.push("smooth second hand on shake");' +
+'  if (document.getElementById("shakeHandsTranslucent").checked) parts.push("semi-transparent hands on shake");' +
 '  if (!parts.length) return "No animations active";' +
 '  var s = parts.join(", ");' +
 '  return s.charAt(0).toUpperCase() + s.slice(1);' +

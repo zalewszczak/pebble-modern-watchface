@@ -100,18 +100,24 @@ function backgroundSectionHtml(current) {
   // Hands style and Indices style use.
   return '' +
 '    <div class="help">Choose what is drawn behind the indices: the plain background color, one of the predefined images, or your own photos.</div>' +
-'    <div class="checkbox-row" id="useCustomBgRow">' +
-'      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + ' onchange="onUseCustomBgChange()">' +
-'      <label for="useCustomBg" style="margin:0;">Use custom background</label>' +
-'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-useCustomBg\')">?</button>' +
+'    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
+'      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
+'      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
+'      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
 '    </div>' +
-'    <div class="help" id="help-useCustomBg" style="display:none;">Draws an image behind the indices instead of the plain background color. Pick one of the predefined images, or add your own photo: it is cropped to the watch screen, converted to 64 colors, and sent to the watch when you press Save (this can take around 20 seconds).</div>' +
-'    <div class="checkbox-row" id="useWeatherBgRow">' +
-'      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + ' onchange="onUseWeatherBgChange()">' +
-'      <label for="useWeatherBg" style="margin:0;">Weather background</label>' +
-'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-useWeatherBg\')">?</button>' +
+'    <div class="help"><b>OFF</b> = plain background color, <b>IMAGE</b> = a predefined image or your own photo (cropped to the watch screen, converted to 64 colors and sent to the watch when you press Save; this can take around 20 seconds), <b>WEATHER</b> = a picture matching the current weather (clear, clouds, fog, rain, snow, storm...). After sunset and before sunrise the night picture is used together with the night colors, which are switched on automatically.</div>' +
+// The two checkboxes stay as the (hidden) state behind the buttons: presets, save() and the
+// preview all read them, so nothing else needs to know about the button group.
+'    <div style="display:none;">' +
+'      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
+'      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
 '    </div>' +
-'    <div class="help" id="help-useWeatherBg" style="display:none;">Shows a picture matching the current weather behind the indices (clear, clouds, fog, rain, snow, storm...). After sunset and before sunrise the night picture is used together with the night colors, which are switched on automatically. Only one of custom background and weather background can be used at a time.</div>' +
+'    <div class="checkbox-row" id="bgTranslucentRow" style="margin-top:10px;' + (isOn(current) || isWeatherOn(current) ? '' : 'display:none;') + '">' +
+'      <input type="checkbox" id="bgTranslucent" ' + (current && (current.bgTranslucent === true || current.bgTranslucent === 'true') ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'      <label for="bgTranslucent" style="margin:0;">Translucent background image</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and features stay easy to read.</div>' +
 '    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <label for="weatherBgStyle">Style</label>' +
@@ -441,6 +447,20 @@ var CLIENT_BODY =
 '  var nw = s.naturalWidth || s.width, nh = s.naturalHeight || s.height;\n' +
 '  if (!nw || !nh) return false;\n' +
 '  var dw = nw * w / BG_W, dh = nh * h / BG_H;\n' +
+'  var trans = bgEl("bgTranslucent");\n' +
+'  if (trans && trans.checked) {\n' +
+'    // Same checkerboard as the watch: keep the even (x + y) pixels, the plain background shows through the rest.\n' +
+'    try {\n' +
+'      var tmp = document.createElement("canvas"); tmp.width = w; tmp.height = h;\n' +
+'      var tctx = tmp.getContext("2d");\n' +
+'      tctx.drawImage(s, (w - dw) / 2, (h - dh) / 2, dw, dh);\n' +
+'      var id = tctx.getImageData(0, 0, w, h), px = id.data;\n' +
+'      for (var y = 0; y < h; y++) for (var x = ((y & 1) ? 0 : 1); x < w; x += 2) px[(y * w + x) * 4 + 3] = 0;\n' +
+'      tctx.putImageData(id, 0, 0);\n' +
+'      ctx.drawImage(tmp, 0, 0);\n' +
+'    } catch (e) { return false; }\n' +
+'    return true;\n' +
+'  }\n' +
 '  try { ctx.drawImage(s, (w - dw) / 2, (h - dh) / 2, dw, dh); } catch (e) { return false; }\n' +
 '  return true;\n' +
 '}\n' +
@@ -460,6 +480,11 @@ var CLIENT_BODY =
 '  var panel = bgEl("bgPanel");\n' +
 '  var wbox = bgEl("useWeatherBg"), wpanel = bgEl("weatherBgPanel");\n' +
 '  if (wpanel) wpanel.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
+'  var bmode = (wbox && wbox.checked) ? 2 : ((box && box.checked) ? 1 : 0);\n' +
+'  var bbtns = bgEl("bgModeGroup") ? bgEl("bgModeGroup").getElementsByClassName("mode-btn") : [];\n' +
+'  for (var bi = 0; bi < bbtns.length; bi++) bbtns[bi].className = "mode-btn" + (bi === bmode ? " active" : "");\n' +
+'  var trow = bgEl("bgTranslucentRow");\n' +
+'  if (trow) trow.style.display = bmode === 0 ? "none" : "";\n' +
 '  if (panel) panel.style.display = (box && box.checked) ? "" : "none";\n' +
 '  var sel = bgParseSource();\n' +
 '  for (var i = 0; i < BG_PRESET_NUMBERS.length; i++) {\n' +
@@ -516,6 +541,17 @@ var CLIENT_BODY =
 '  if (s.kind === "u" && !bgSlotHas(s.n)) bgEl("bgSource").value = bgDefaultSource();\n' +
 '  bgSyncUi();\n' +
 '  bgEdSetup();\n' +
+'}\n' +
+'function bgSetMode(m) {\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  if (cb) cb.checked = (m === 1);\n' +
+'  if (wb) wb.checked = (m === 2);\n' +
+'  if (m === 2) {\n' +
+'    // Night pictures go with the night color scheme: switch it on.\n' +
+'    var ne = bgEl("nightEnabled");\n' +
+'    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
+'  }\n' +
+'  bgRefresh();\n' +
 '}\n' +
 'function onUseCustomBgChange() {\n' +
 '  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
