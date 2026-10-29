@@ -991,16 +991,6 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_36",
-          "file": "backgrounds/36.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_37",
-          "file": "backgrounds/37.png"
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
           "file": "weatherbg/baroque_beach/clear_sky_day.png"
         },

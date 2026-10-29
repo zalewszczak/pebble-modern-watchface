@@ -319,6 +319,7 @@ function buildCurrent() {
     hourlyVibeMode: getSetting('CONFIG_HOURLY_VIBE_MODE', '0'),
     hourlyVibeIntervalMin: getSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', '30'),
     hourlyVibePattern: getSetting('CONFIG_HOURLY_VIBE_PATTERN', '0'),
+    btLostVibe: getSetting('CONFIG_BT_LOST_VIBE', '0'),
     hourlyVibeStartTime: getSetting('CONFIG_HOURLY_VIBE_START_TIME', '00:00'),
     hourlyVibeEndTime: getSetting('CONFIG_HOURLY_VIBE_END_TIME', '00:00'),
     hourlyVibeDaysMask: getSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', '127'),
@@ -684,6 +685,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_HOURLY_VIBE_MODE', settings.CONFIG_HOURLY_VIBE_MODE || '0');
   setSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', settings.CONFIG_HOURLY_VIBE_INTERVAL_MIN || '30');
   setSetting('CONFIG_HOURLY_VIBE_PATTERN', settings.CONFIG_HOURLY_VIBE_PATTERN || '0');
+  setSetting('CONFIG_BT_LOST_VIBE', settings.CONFIG_BT_LOST_VIBE || '0');
   setSetting('CONFIG_HOURLY_VIBE_START_TIME', settings.CONFIG_HOURLY_VIBE_START_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_END_TIME', settings.CONFIG_HOURLY_VIBE_END_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', settings.CONFIG_HOURLY_VIBE_DAYS_MASK || '127');

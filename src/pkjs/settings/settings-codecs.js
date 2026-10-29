@@ -441,6 +441,7 @@ function drawDebugCode() { return getSetting('CONFIG_DRAW_DEBUG', 'false') === '
 // eclipse_data.h for the full field layout this maps onto.
 function hourlyVibeModeCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_MODE', '0'), 0, 2, 0); }
 function hourlyVibeIntervalMinCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', '30'), 1, 180, 30); }
+function btLostVibeCode() { return clampInt(getSetting('CONFIG_BT_LOST_VIBE', '0'), 0, 3, 0); }
 function hourlyVibePatternCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_PATTERN', '0'), 0, 2, 0); }
 // "HH:MM" (the config page's own <input type="time"> value) -> minutes
 // since midnight (0-1439), same units hourly_vibe_start_min/
@@ -733,6 +734,7 @@ module.exports = {
   hourlyVibeModeCode: hourlyVibeModeCode,
   hourlyVibeIntervalMinCode: hourlyVibeIntervalMinCode,
   hourlyVibePatternCode: hourlyVibePatternCode,
+  btLostVibeCode: btLostVibeCode,
   minutesSinceMidnight: minutesSinceMidnight,
   hourlyVibeStartMinCode: hourlyVibeStartMinCode,
   hourlyVibeEndMinCode: hourlyVibeEndMinCode,

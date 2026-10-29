@@ -248,6 +248,7 @@ module.exports =
 '    CONFIG_HOURLY_VIBE_MODE: document.getElementById("hourlyVibeMode").value,' +
 '    CONFIG_HOURLY_VIBE_INTERVAL_MIN: document.getElementById("hourlyVibeIntervalMin").value,' +
 '    CONFIG_HOURLY_VIBE_PATTERN: document.getElementById("hourlyVibePattern").value,' +
+'    CONFIG_BT_LOST_VIBE: document.getElementById("btLostVibe").value,' +
 '    CONFIG_HOURLY_VIBE_START_TIME: document.getElementById("hourlyVibeStartTime").value,' +
 '    CONFIG_HOURLY_VIBE_END_TIME: document.getElementById("hourlyVibeEndTime").value,' +
 '    CONFIG_HOURLY_VIBE_DAYS_MASK: document.getElementById("hourlyVibeDaysMask").value,' +

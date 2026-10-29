@@ -1953,6 +1953,15 @@ configPresetSchedule.modalHtml +
 '    <div class="help" id="help-hourlyVibeOverrideQuiet" style="display:none;">When enabled, hourly vibrations continue during Quiet Time.</div>'
     ) : '') +
 
+'    <div class="field-label-row"><label style="margin-top:16px;">Vibrate when Bluetooth connection is lost</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-btLostVibe\')">?</button></div>' +
+      verticalButtonGroupHtml('btLostVibeGroup', 'btLostVibe', [
+        { value: '0', label: 'Off' },
+        { value: '1', label: 'Short' },
+        { value: '2', label: 'Double' },
+        { value: '3', label: 'Long' }
+      ], current.btLostVibe || '0') +
+'    <div class="help" id="help-btLostVibe" style="display:none;">Vibrates once when the watch loses its connection to the phone. Nothing happens when the connection comes back.</div>' +
+
 '    </div>' +
 '  </fieldset>' +
 

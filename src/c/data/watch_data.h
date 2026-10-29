@@ -319,6 +319,7 @@ typedef struct {
   uint8_t hourly_vibe_mode; // 0=off, 1=hourly, 2=interval.
   uint8_t hourly_vibe_interval_min; // interval for mode 2.
   uint8_t hourly_vibe_pattern; // 0=short, 1=double, 2=long.
+  uint8_t bt_lost_vibe;        // vibrate when the phone connection is lost: 0=off, 1=short, 2=double, 3=long.
   uint16_t hourly_vibe_start_min; // start minute of day.
   uint16_t hourly_vibe_end_min; // end minute; equal means all day.
 

@@ -169,6 +169,7 @@ var bgImageSync = require('../bg-image/bg-image-sync');
 var hourlyVibeModeCode = settingsCodecs.hourlyVibeModeCode;
 var hourlyVibeIntervalMinCode = settingsCodecs.hourlyVibeIntervalMinCode;
 var hourlyVibePatternCode = settingsCodecs.hourlyVibePatternCode;
+var btLostVibeCode = settingsCodecs.btLostVibeCode;
 var minutesSinceMidnight = settingsCodecs.minutesSinceMidnight;
 var hourlyVibeStartMinCode = settingsCodecs.hourlyVibeStartMinCode;
 var hourlyVibeEndMinCode = settingsCodecs.hourlyVibeEndMinCode;
@@ -427,7 +428,7 @@ function populateSettingsFields(dict) {
     borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
     primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255,
     bitmapMarkerInvertCode(),
-    bgTranslucentCode(), shakeHandsTranslucentCode()
+    bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode()
   ];
   // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
   // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per
