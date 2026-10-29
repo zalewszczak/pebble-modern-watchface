@@ -60,6 +60,7 @@ function applyFirstRunPreferences() {
   preferences.capture(5000, function (prefs) {
     if (!firstRun.applyPreferences(prefs, pluginManager)) return;
     sendFlatDict({});
+    messageEncoder.resendUnitDisplays();
     refreshAndSend(false, false);
   });
 }
@@ -408,6 +409,11 @@ Pebble.addEventListener('webviewclosed', function (e) {
   applySettingsObject(settings);
 });
 
+function unitSettingsSignature() {
+  return [getSetting('CONFIG_TEMP_UNIT', 'C'), getSetting('CONFIG_WIND_SPEED_UNIT', 'kmh'),
+    getSetting('CONFIG_ALTITUDE_UNIT', '0'), getSetting('CONFIG_AQI_UNIT', '0')].join('|');
+}
+
 // Applies a settings object from the page -- either handed over when the legacy
 // page closes (above) or sent live by the bundled page (see plugins/config-bridge.js).
 function applySettingsObject(settings) {
@@ -463,6 +469,7 @@ function applySettingsObject(settings) {
 
   // A real save: from here on the person's settings win over first-start defaults.
   firstRun.markDone();
+  var unitsBefore = unitSettingsSignature();
 
   setSetting('CONFIG_AUTO_LOC', settings.CONFIG_AUTO_LOC ? 'true' : 'false');
   setSetting('CONFIG_LAT', settings.CONFIG_LAT || '');
@@ -684,6 +691,9 @@ function applySettingsObject(settings) {
   // waiting for a full refresh cycle to complete, so a settings
   // change feels instant regardless of whether one happens at all.
   sendFlatDict({});
+  // The unit-dependent texts (temperatures, wind, altitude, AQI) are formatted here, not on
+  // the watch: re-send them now instead of waiting for the next weather update.
+  if (unitSettingsSignature() !== unitsBefore) messageEncoder.resendUnitDisplays();
   // An uploaded background image goes out after the settings (and only if the
   // watch does not already hold exactly that image).
   bgImageSync.syncIfNeeded();

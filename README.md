@@ -709,6 +709,13 @@ The built-in Preferences plugin exposes `preferences/units` and `preferences/com
   redo this on demand (fresh values over the live bridge, else the values read at PKJS start); nothing is kept
   until saved.
 
+### Unit changes apply immediately
+
+Temperature, wind, altitude and air-quality texts are formatted on the phone when weather is sent. The raw
+inputs of the last push are kept (`LAST_UNIT_INPUTS`, `comms/message-encoder.js`), and a settings save that
+changes a unit calls `resendUnitDisplays()` so the watch gets the re-formatted strings right away, with no
+weather refresh. The Border style temperature legend (0/25/50/75/100 % labels) follows the temperature unit too.
+
 ### Bundled settings page + live changes
 
 `package.json` has `"configPage": "config.html"`. Apps that support it open `config.html` (a tiny

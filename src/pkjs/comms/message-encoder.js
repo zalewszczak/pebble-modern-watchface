@@ -773,8 +773,68 @@ function buildWeatherDict(d) {
   return dict;
 }
 
+// ---- unit changes without a weather refresh -----------------------------------------
+//
+// The *_DISPLAY strings that depend on a unit setting (temperatures, wind speed, altitude,
+// air quality scale) are formatted here, when weather is sent. Changing a unit therefore
+// used to show on the watch only after the next weather push. The raw inputs of the last
+// push are remembered so the strings can be re-formatted and sent the moment a unit changes.
+var UNIT_INPUTS_KEY = 'LAST_UNIT_INPUTS';
+function rememberUnitInputs(d) {
+  try {
+    var w = d.weather || {}, e = d.extraWeather || {};
+    localStorage.setItem(UNIT_INPUTS_KEY, JSON.stringify({
+      ok: !!d.weatherOk, tempC: w.tempC, highC: w.tempHighC, lowC: w.tempLowC, humidity: w.humidityPct, windKmh: w.windSpeedKmh,
+      dewC: e.dewPointC, altM: e.altitudeMeters, forecastTempC: e.forecastTempC, aqiUs: e.aqiUs, aqiEu: e.aqiEu
+    }));
+  } catch (err) { /* storage unavailable: units then apply with the next weather push */ }
+}
+function unitDisplayDict() {
+  var raw = null;
+  try { raw = JSON.parse(localStorage.getItem(UNIT_INPUTS_KEY)); } catch (err) { return null; }
+  if (!raw || typeof raw !== 'object') return null;
+  var dict = {}, tempUnit = tempUnitCode();
+  if (raw.ok) {
+    dict['CURRENT_TEMP_DISPLAY'] = formatTempDisplay(raw.tempC, tempUnit);
+    dict['TEMP_HIGH_DISPLAY'] = formatTempDisplay(raw.highC, tempUnit);
+    dict['TEMP_LOW_DISPLAY'] = formatTempDisplay(raw.lowC, tempUnit);
+    dict['FEELS_LIKE_DISPLAY'] = formatTempDisplay(apparentTempC(raw.tempC, raw.windKmh, raw.humidity), tempUnit);
+    dict['WIND_SPEED_DISPLAY'] = formatWindSpeedDisplay(raw.windKmh, windSpeedUnitCode());
+  }
+  if (typeof raw.dewC === 'number') dict['DEW_POINT_DISPLAY'] = formatTempDisplay(raw.dewC, tempUnit);
+  if (typeof raw.altM === 'number') dict['ALTITUDE_DISPLAY'] = formatAltitudeDisplay(raw.altM, altitudeUnitCode());
+  if (Array.isArray(raw.forecastTempC)) {
+    raw.forecastTempC.forEach(function (c, i) { dict['FORECAST_TEMP_DISPLAY_' + i] = formatTempDisplay(c, tempUnit); });
+  }
+  if (typeof raw.aqiUs === 'number' || typeof raw.aqiEu === 'number') {
+    var aqiUnit = aqiUnitCode();
+    var aqiValue = aqiUnit === 1 ? raw.aqiEu : raw.aqiUs;
+    if (typeof aqiValue === 'number') {
+      dict['AQI_DISPLAY'] = formatAqiDisplay(aqiValue);
+      dict['AQI_COLOR'] = aqiGradientColorByte(aqiValue, aqiUnit);
+    }
+  }
+  return Object.keys(dict).length ? dict : null;
+}
+// Sends the re-formatted strings to the watch and updates the cached full dict, so a later
+// resend of it does not bring the old units back. Returns false when nothing was sent yet.
+function resendUnitDisplays() {
+  var dict = unitDisplayDict();
+  if (!dict) return false;
+  try {
+    var cached = JSON.parse(localStorage.getItem('LAST_FULL_COMPUTED_DICT'));
+    if (cached && typeof cached === 'object') {
+      Object.keys(dict).forEach(function (k) { cached[k] = dict[k]; });
+      localStorage.setItem('LAST_FULL_COMPUTED_DICT', JSON.stringify(cached));
+    }
+  } catch (err) { /* nothing cached yet */ }
+  enqueueFlatDict(dict);
+  return true;
+}
+
 // Full data dict: weather + astronomy + extra weather + ISS fields.
 function sendWeatherData(d) {
+  rememberUnitInputs(d);
   var dict = buildWeatherDict(d);
   [astroFieldsDict(d.astro), extraWeatherFieldsDict(d.extraWeather), issFieldsDict(d.issPos, d.issErrorCode)]
     .forEach(function (part) { Object.keys(part).forEach(function (k) { dict[k] = part[k]; }); });
@@ -809,5 +869,6 @@ module.exports = {
   sendInvalid: sendInvalid,
   sendWeatherData: sendWeatherData,
   sendFakeWeather: sendFakeWeather,
+  resendUnitDisplays: resendUnitDisplays,
   buildFullKeysetDict: buildFullKeysetDict
 };

@@ -77,7 +77,11 @@ var CSS_TEXT =
 '  .border-legend .sw { width: 18px; height: 12px; border-radius: 3px; border: 1px solid var(--border); flex: 0 0 auto; }\n' +
 '  .border-legend .grad { height: 12px; border-radius: 3px; border: 1px solid var(--border); margin: 4px 0; }\n' +
 '  .border-legend .sub { font-weight: 700; font-size: 11px; margin: 6px 0 3px; color: var(--text-strong); }\n' +
-'  .border-legend .scale { display: flex; justify-content: space-between; font-size: 11px; }\n';
+'  .border-legend .scale { position: relative; height: 26px; font-size: 11px; }\n' +
+'  .border-legend .scale .tick { position: absolute; top: 0; width: 1px; height: 4px; background: var(--text-muted); }\n' +
+'  .border-legend .scale .tl { position: absolute; top: 5px; white-space: nowrap; transform: translateX(-50%); }\n' +
+'  .border-legend .scale .tl.first { transform: none; }\n' +
+'  .border-legend .scale .tl.last { transform: translateX(-100%); }\n';
 
 function borderCss() { return CSS_TEXT; }
 
@@ -204,6 +208,28 @@ function borderScript() {
 'function borderCss3(c) { return c ? "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" : "transparent"; }\n' +
 'function borderTitle(mode) { return ["", "Weather conditions", "Temperature", "Rain chance", "All three"][mode]; }\n' +
 'function borderGradientCss(fn, n) { var g = []; for (var i = 0; i <= n; i++) g.push(borderCss3(fn(i / n))); return "linear-gradient(90deg," + g.join(",") + ")"; }\n' +
+// Legend scale: a tick and a label at 0, 25, 50, 75 and 100 % of the bar. The temperature bar
+// spans -10..40 C; its labels follow the temperature unit picked in the Weather section.
+'function borderScale(ticks) {\n' +
+'  var html = \'<div class="scale">\';\n' +
+'  ticks.forEach(function (t, i) {\n' +
+'    var cls = i === 0 ? " first" : (i === ticks.length - 1 ? " last" : "");\n' +
+'    html += \'<span class="tick" style="left:\' + t.pct + \'%"></span><span class="tl\' + cls + \'" style="left:\' + t.pct + \'%">\' + t.label + \'</span>\';\n' +
+'  });\n' +
+'  return html + \'</div>\';\n' +
+'}\n' +
+'function borderTempTicks() {\n' +
+'  var el = document.getElementById("tempUnit"), unit = el ? el.value : "C";\n' +
+'  var out = [];\n' +
+'  for (var i = 0; i <= 4; i++) {\n' +
+'    var c = -10 + i * 12.5, v = c, sym = "&deg;C";\n' +
+'    if (unit === "F") { v = c * 9 / 5 + 32; sym = "&deg;F"; }\n' +
+'    else if (unit === "K") { v = c + 273.15; sym = " K"; }\n' +
+'    var r = unit === "K" ? Math.round(v) : Math.round(v * 10) / 10;\n' +
+'    out.push({ pct: i * 25, label: r + sym });\n' +
+'  }\n' +
+'  return out;\n' +
+'}\n' +
 'function borderRow(css, name) { return \'<div class="row"><span class="sw" style="background:\' + css + \'"></span>\' + name + \'</div>\'; }\n' +
 'function borderLegendFor(mode, scheme) {\n' +
 '  var html = "", i;\n' +
@@ -216,12 +242,12 @@ function borderScript() {
 '      html += borderRow(css, name);\n' +
 '    });\n' +
 '  } else if (mode === 2) {\n' +
-'    html = \'<div class="grad" style="background:\' + borderGradientCss(function (f) { return borderTempRgb(-10 + f * 50, scheme); }, 12) + \'"></div><div class="scale"><span>-10&deg;C</span><span>40&deg;C</span></div>\';\n' +
+'    html = \'<div class="grad" style="background:\' + borderGradientCss(function (f) { return borderTempRgb(-10 + f * 50, scheme); }, 12) + \'"></div>\' + borderScale(borderTempTicks()) ;\n' +
 '  } else {\n' +
 '    if (scheme === 2) {\n' +
 '      html = borderRow("transparent", "Under 20 %") + borderRow("rgb(255,255,0)", "20 - 49 %") + borderRow("rgb(255,170,0)", "50 - 79 %") + borderRow("rgb(255,0,0)", "80 % or more");\n' +
 '    } else {\n' +
-'      html = \'<div class="grad" style="background:\' + borderGradientCss(function (f) { var p = f * 100; return scheme === 1 ? borderLerp(BORDER_RAIN_BLUE, p, 0, 100) : borderTurquoise(p); }, 12) + \'"></div><div class="scale"><span>5 %</span><span>100 %</span></div>\';\n' +
+'      html = \'<div class="grad" style="background:\' + borderGradientCss(function (f) { var p = f * 100; return scheme === 1 ? borderLerp(BORDER_RAIN_BLUE, p, 0, 100) : borderTurquoise(p); }, 12) + \'"></div>\' + borderScale([{ pct: 0, label: "5 %" }, { pct: 100, label: "100 %" }]);\n' +
 '    }\n' +
 '  }\n' +
 '  return html;\n' +
@@ -304,6 +330,11 @@ function borderScript() {
 'function borderAfterStyleApplied() {\n' +
 '  borderSyncFromHidden();\n' +
 '  renderBorderDiagram();\n' +
+'}\n' +
+'function onTempUnitChange(val) {\n' +
+'  selectModeButton("tempUnitGroup", "tempUnit", val);\n' +
+'  renderBorderDiagram();\n' +
+'  updatePreview();\n' +
 '}\n' +
 'function borderInit() { borderSyncFromHidden(); renderBorderDiagram(); }\n';
 }

@@ -1797,7 +1797,7 @@ configPresetSchedule.modalHtml +
         { value: 'C', label: '\u00b0C' },
         { value: 'F', label: '\u00b0F' },
         { value: 'K', label: 'K' }
-      ], current.tempUnit || 'C') +
+      ], current.tempUnit || 'C', 'onTempUnitChange') +
 '    <div class="help" id="help-tempUnit" style="display:none;">Sets the temperature unit used throughout the watchface.</div>' +
 
 '    <div class="field-label-row"><label style="margin-top:10px;">Wind speed unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-windSpeedUnit\')">?</button></div>' +

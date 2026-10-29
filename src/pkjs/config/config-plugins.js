@@ -356,7 +356,7 @@ function pluginScript(current) {
 '    if (!u) { prefStatus("prefUnitsStatus", "The Pebble app did not report any unit preferences.", true); return; }\n' +
 '    var done = [];\n' +
 '    var temp = { "°C": "C", "°F": "F" }[u.temperature];\n' +
-'    if (temp) { selectModeButton("tempUnitGroup", "tempUnit", temp); done.push(u.temperature); }\n' +
+'    if (temp) { onTempUnitChange(temp); done.push(u.temperature); }\n' +
 '    var wind = { "km/h": "kmh", "mph": "mph", "m/s": "ms", "knots": "kn" }[u.wind_speed];\n' +
 '    if (wind) { selectModeButton("windSpeedUnitGroup", "windSpeedUnit", wind); done.push(u.wind_speed); }\n' +
 '    var alt = { "km": "0", "mi": "1" }[u.distance];\n' +
