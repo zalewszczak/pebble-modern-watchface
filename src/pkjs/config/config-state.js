@@ -17,7 +17,7 @@
 
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
-var EXAMPLE_STYLE_COUNT = 5;
+var EXAMPLE_STYLE_COUNT = 9;
 var EXAMPLE_STYLE_IMAGES = require('../data/generated/example-style-images');
 var EXAMPLE_STYLE_PRESETS = require('../example-style-presets');
 
