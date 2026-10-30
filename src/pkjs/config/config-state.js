@@ -69,7 +69,9 @@ function deriveConfigState(current) {
   // comment already promises it matches, and a future reader/caller
   // shouldn't inherit a silently-stale copy.)
   var markerStyleNum = parseInt(current.bigAnalogMarkerStyle || '3', 10);
-  var isBitmapMarkerStyle = markerStyleNum >= 3 && markerStyleNum <= 7; // everything else is ring-based (0 None, 1/2/9/10 presets, 8 Custom)
+  var isBitmapMarkerStyle = (markerStyleNum >= 3 && markerStyleNum <= 7) || (markerStyleNum >= 11 && markerStyleNum <= 19); // everything else is ring-based (0 None, 1/2/9/10 presets, 8 Custom)
+  // The Modern/Roman variants (11-19) lay features out like Fancy (7), the last pre-variant style.
+  if (markerStyleNum >= 11) markerStyleNum = 7;
   var bitmapCornerOverride = !!current.bitmapCornerOverride;
   var edgeAvail;
   if (!isBitmapMarkerStyle) {

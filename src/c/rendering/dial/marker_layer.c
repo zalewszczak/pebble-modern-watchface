@@ -223,7 +223,7 @@ void marker_layer_deinit(MarkerLayerState *state) {
   font_lookup_release(&state->text_font_slot);
 }
 
-// Draws the active marker style: one of the bitmap styles (3-7), or --
+// Draws the active marker style: one of the bitmap styles (3-7, 11-19), or --
 // for anything else -- the custom hour/second rings plus marker text.
 // The phone resolves the Minimal/Braun/Swiss/Classy/None presets into
 // those custom ring + text values before sending, so this never has to
@@ -233,7 +233,7 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
                               bool anim_active, int32_t anim_progress_1000, bool draw_debug) {
   uint8_t marker_style = d->big_analog_marker_style;
 
-  bool is_bitmap_style = marker_style >= 3 && marker_style <= 7;
+  bool is_bitmap_style = marker_style_is_bitmap(marker_style);
 
   marker_bitmap_ensure(&state->bitmap, &state->bitmap_style, &state->bitmap_tinted,
                          &state->bitmap_tint_color, &state->bitmap_tint_transparent, marker_style);

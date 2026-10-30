@@ -225,11 +225,13 @@ module.exports =
 // Values returned are already scaled into this canvas\'s own pixel
 // space (see readHandConfig()\'s own `scale` comment for why that\'s
 // needed at all).
+// Bitmap marker styles: 3-7 and the Modern/Roman variants 11-19 (see marker_style_is_bitmap() in marker_bitmap.h).
+'function isBitmapMarkerStyleId(n) { return (n >= 3 && n <= 7) || (n >= 11 && n <= 19); }' +
 'function computeMiddleFeatureMargins(w, h) {' +
 '  var scale = w / 200;' +
 '  var margins = { top: 44 * scale, bottom: 40 * scale, left: 30 * scale, right: 30 * scale };' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
-'  var isBitmapStyle = markerStyle >= 3 && markerStyle <= 7;' +
+'  var isBitmapStyle = isBitmapMarkerStyleId(markerStyle);' +
 '  if (isBitmapStyle) return margins;' + // BITMAP_STYLE_MARGINS's 5 entries are all identical to the defaults above -- nothing to differ
 '  var pct, ecc;' +
 // Every non-bitmap style (Custom AND the Minimal/Braun/Swiss/Classy
@@ -859,7 +861,7 @@ module.exports =
 // the customHour*/customSec*/markerText* fields: picking a preset copies
 // its rings AND numerals values in (see applyMarkerStylePresetToCustom()),
 // and the watch is sent those same values as a Custom marker.
-'  if (markerStyle < 3 || markerStyle > 7) {' +
+'  if (!isBitmapMarkerStyleId(markerStyle)) {' +
 '    var secCfg = readCustomMarkerConfig("sec"), hourCfg = readCustomMarkerConfig("hour");' +
 '    drawMarkerRing(ctx, cx, cy, w, h, secCfg, 60, 5, colors);' +
 '    drawMarkerRing(ctx, cx, cy, w, h, hourCfg, 12, 0, colors);' +
@@ -939,7 +941,7 @@ module.exports =
 '    var bgLum = bgRgb ? (0.3 * bgRgb.r + 0.59 * bgRgb.g + 0.11 * bgRgb.b) : 0;' +
 '    markerTint = bgLum > 127 ? "#000000" : "#FFFFFF";' +
 '  }' +
-'  var markerImageDrawn = (markerStyleInt >= 3 && markerStyleInt <= 7) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, markerTint);' +
+'  var markerImageDrawn = isBitmapMarkerStyleId(markerStyleInt) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, markerTint);' +
 '  drawBigAnalogPreview(ctx, colors, now, showSeconds, w, h, markerImageDrawn);' +
 '  drawCornersAndEdges(ctx, w, h, colors, h);' +
 '}' +

@@ -17,13 +17,22 @@ static uint32_t marker_bitmap_resource_id(uint8_t style) {
     case 5: return RESOURCE_ID_TALLY_BACKGROUND;
     case 6: return RESOURCE_ID_BELL_BACKGROUND;
     case 7: return RESOURCE_ID_FANCY_BACKGROUND;
+    case 11: return RESOURCE_ID_MODERN_BOLD_BACKGROUND;
+    case 12: return RESOURCE_ID_MODERN_F_BACKGROUND;
+    case 13: return RESOURCE_ID_MODERN_H_BACKGROUND;
+    case 14: return RESOURCE_ID_MODERN_P_BACKGROUND;
+    case 15: return RESOURCE_ID_MODERN_PR_BACKGROUND;
+    case 16: return RESOURCE_ID_MODERN_S_BACKGROUND;
+    case 17: return RESOURCE_ID_MODERN_W_BACKGROUND;
+    case 18: return RESOURCE_ID_MODERN_WR_BACKGROUND;
+    case 19: return RESOURCE_ID_ROMAN_BACKGROUND;
     default: return 0;
   }
 }
 
 void marker_bitmap_ensure(GBitmap **bitmap, uint8_t *bitmap_style, bool *bitmap_tinted,
                           GColor *tint_color, bool *tint_transparent, uint8_t style) {
-  if (style < 3 || style > 7) { // not a bitmap style (custom rings draw instead)
+  if (!marker_style_is_bitmap(style)) { // not a bitmap style (custom rings draw instead)
     if (*bitmap) {
       gbitmap_destroy(*bitmap);
       *bitmap = NULL;

@@ -170,7 +170,7 @@ Quick reference (details for each are in their own section below):
 | --- | --- | --- |
 | `generate-all.js` | Node | Runs every script below, in order |
 | `generate-message-keys.js` | Node | `src/c/generated/message_key_index.h` -- required for the watch app to compile, not a preview |
-| `generate-marker-previews.js` | Node | Bitmap marker style artwork (Modern/Swiss/Tally/Bell/Brown) |
+| `generate-marker-previews.js` | Node | Bitmap marker style artwork (Modern/Shadow/Tally/Bell/Fancy) |
 | `generate-infographics.js` | Node | Hand-style picker pictures, hand-editor explainer diagrams |
 | `generate-preset-previews.js` | Node + `sharp` | Procedural marker-preset pictures (none/minimal/small/big) |
 | `generate-example-style-previews.js` | Node | Example style gallery preview images |
@@ -427,8 +427,8 @@ condition.
 
 
 The big-analog watchface mode has several "bitmap" marker styles
-(Modern, Swiss, Tally, Bell, Brown), each using its own PNG resource
-under `resources/images/<name>_background.png`. The settings page can
+(Modern, Shadow, Tally, Bell, Fancy), each using its own PNG resource
+under `resources/indices/<name>_background.png`. The settings page can
 show a live preview of each style's artwork so you see it before
 applying -- but since that settings page is a single self-contained
 `data:` URI with no server behind it, it has no way to load an
@@ -443,7 +443,7 @@ node scripts/generate-marker-previews.js
 ```
 
 Run this **before** `pebble build`, any time you add or change one of
-the `*_background.png` files in `resources/images/`. It reads
+the `*_background.png` files in `resources/indices/`. It reads
 whatever's there, base64-encodes it, and writes
 `src/pkjs/data/generated/marker-preview-images.js` -- a generated file the settings
 page requires and embeds directly. No separate preview-only files are
@@ -759,3 +759,7 @@ combined with *Semi transparent* the effect is halved.
 ## Style presets and plugin features
 
 A saved style (My Style Presets, JSON export, scheduled styles) stores the Features as content ids; plugin features are ids 200-211 = "plugin slot N". What a slot *means* (which plugin data source) lives in `PLUGIN_SLOTS` / `CONFIG_PLUGIN_SLOTS`, not in any input, so a style now also carries `__pluginSlots` (the 12 slot keys, only slots the style uses). `applyStyleCornersJson()` restores them before the Features are rebuilt, and `scheduled-style.js` writes them to `CONFIG_PLUGIN_SLOTS` for scheduled styles. Styles saved by older builds have no `__pluginSlots`; re-save them once.
+
+## Bitmap indices
+
+Bitmap index styles live in `resources/indices/<name>_background.png` (declared in `package.json`; drawn by `marker_bitmap.c`; previews baked by `scripts/generate-marker-previews.js`). Style ids: 3-7 Modern, Shadow, Tally, Bell, Fancy; 11-19 Modern Bold, Modern F, Modern H, Modern P, Modern P Round, Modern S, Modern W, Modern W Round, Roman. To add one: PNG in `resources/indices/`, a `package.json` resource, a case in `marker_bitmap_resource_id()`, a record in `BITMAP_STYLE_MARGINS` (`feature_layout.c`), an entry in `STYLE_IDS_BY_NAME` (generator) and in `MARKER_VARIANT_STYLES` (`config-page.js`). The 11-19 margin records are placeholders copied from Fancy, and they use Fancy's feature-slot availability rules.

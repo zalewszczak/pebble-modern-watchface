@@ -1,5 +1,6 @@
 #include "./dial_animation.h"
 #include "./dial_layer.h"
+#include "./marker_bitmap.h"
 
 #define DIAL_ANIMATION_FRAME_MS 40
 
@@ -30,8 +31,7 @@ void dial_animation_start(WatchData *data, Layer *dial_layer) {
   s_played = true;
 
   // Bitmap markers cannot animate their artwork; skip the pointless redraws.
-  bool bitmap_marker = data->big_analog_marker_style >= 3 &&
-                       data->big_analog_marker_style <= 7;
+  bool bitmap_marker = marker_style_is_bitmap(data->big_analog_marker_style);
   if (bitmap_marker) return;
 
   s_dial_layer = dial_layer;

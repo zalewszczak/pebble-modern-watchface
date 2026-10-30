@@ -34,8 +34,11 @@ static WatchData s_data;
 // nothing redraws them when it changes -- so refresh them here, and give the
 // optional "connection lost" vibration. While the phone is away the Bluetooth
 // icon flashes (visible one second, hidden the next).
+#define BT_FLASH_DURATION_S 60
 static AppTimer *s_bt_flash_timer = NULL;
 static bool s_bt_flash_hidden = false;
+static bool s_bt_flash_done = false;   // the minute is over: icon stays steady until the next disconnect
+static time_t s_bt_flash_start = 0;    // when the current disconnect began (or the app started disconnected)
 
 static void bt_flash_apply(bool hidden) {
   if (s_bt_flash_hidden == hidden) return;
@@ -54,6 +57,11 @@ static void bt_flash_tick(void *context) {
   (void)context;
   s_bt_flash_timer = NULL;
   if (!bt_flash_wanted()) { bt_flash_apply(false); return; }
+  if (time(NULL) - s_bt_flash_start >= BT_FLASH_DURATION_S) {
+    s_bt_flash_done = true; // flashed for a minute: become static (visible)
+    bt_flash_apply(false);
+    return;
+  }
   uint32_t next_ms = 1000;
   if (battery_saver_phase() == BATTERY_SAVER_AWAKE) {
     bt_flash_apply(!s_bt_flash_hidden);
@@ -66,7 +74,7 @@ static void bt_flash_tick(void *context) {
 
 // Starts or stops the flashing to match the connection state and the features in use.
 static void bt_flash_update(void) {
-  if (bt_flash_wanted()) {
+  if (bt_flash_wanted() && !s_bt_flash_done) {
     if (!s_bt_flash_timer) s_bt_flash_timer = app_timer_register(1000, bt_flash_tick, NULL);
   } else {
     if (s_bt_flash_timer) { app_timer_cancel(s_bt_flash_timer); s_bt_flash_timer = NULL; }
@@ -77,6 +85,9 @@ static void bt_flash_update(void) {
 static void app_connection_handler(bool connected) {
   Layer *features = layout_controller_features_layer();
   if (features) features_layer_refresh_values(features);
+  // A new disconnect starts a fresh minute of flashing; reconnecting clears it.
+  s_bt_flash_done = false;
+  s_bt_flash_start = time(NULL);
   bt_flash_update();
   if (!connected) {
     switch (s_data.bt_lost_vibe) {
@@ -237,6 +248,7 @@ void app_controller_init(void) {
 
   comms_init(&s_data, comms_data_applied, NULL);
   connection_service_subscribe((ConnectionHandlers){ .pebble_app_connection_handler = app_connection_handler });
+  s_bt_flash_start = time(NULL); // started while already disconnected: flash for the first minute
   bt_flash_update();
   battery_saver_controller_update();
 }

@@ -87,13 +87,26 @@ var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
 // Base64 data: URIs for each bitmap marker style's preview image,
 // generated at build time from the same resource PNGs used on the
-// watch itself (resources/images/<name>_background.png -- see
+// watch itself (resources/indices/<name>_background.png -- see
 // scripts/generate-marker-previews.js -- this file itself has no way
 // to load an external image at runtime, since the whole settings
 // page ends up as one self-contained data: URI with no server behind
 // it). Missing entries (a style with no PNG provided yet) are handled
 // gracefully wherever this is used below, not treated as an error.
 var MARKER_PREVIEW_IMAGES = require('./data/generated/marker-preview-images');
+// The Modern/Roman bitmap variants (resources/indices/<file>, style ids 11-19). Same ids as
+// marker_bitmap.c / scripts/generate-marker-previews.js; shown in the picker after the presets.
+var MARKER_VARIANT_STYLES = [
+  { value: '11', title: 'Modern Bold' },
+  { value: '12', title: 'Modern F' },
+  { value: '13', title: 'Modern H' },
+  { value: '14', title: 'Modern P' },
+  { value: '15', title: 'Modern P Round' },
+  { value: '16', title: 'Modern S' },
+  { value: '17', title: 'Modern W' },
+  { value: '18', title: 'Modern W Round' },
+  { value: '19', title: 'Roman' }
+];
 
 // Base64 data: URIs for the hand style picker popup's 9 buttons
 // (resources/infographics/hands<n>.png -- see
@@ -1104,6 +1117,7 @@ configPresetSchedule.css +
 '    </div>' +
 '    <div class="slot-edit-scroll" id="slotEditScroll">' +
 '    <div class="mode-btn-group" id="slotEditKindGroup" style="margin-top:2px;">' +
+'      <button type="button" class="mode-btn" onclick="slotEditSetOff()">OFF</button>' +
 '      <button type="button" class="mode-btn" onclick="slotEditSetKind(false)">PREDEFINED</button>' +
 '      <button type="button" class="mode-btn" onclick="slotEditSetKind(true)">CUSTOM</button>' +
 '    </div>' +
@@ -1202,6 +1216,9 @@ handEditorModalHtml('sec', 'Edit second hand') +
 '    <div class="modal-title">Hour/seconds indices style</div>' +
 '    <div class="modal-scroll-body">' +
 '      <div class="style-picker-grid" id="markerStyleGrid"></div>' +
+'    </div>' +
+// Outside the scrolling area so they stay visible however many styles there are.
+'    <div style="flex: 0 0 auto;">' +
 '      <button type="button" class="style-picker-custom-btn" onclick="chooseMarkerStyleCustom()">Custom</button>' +
 '      <button type="button" class="style-picker-custom-btn style-picker-none-btn" onclick="chooseMarkerStyle(\'0\')">None</button>' +
 '    </div>' +
@@ -1451,6 +1468,7 @@ configPresetSchedule.modalHtml +
 '        <option value="6"' + (current.bigAnalogMarkerStyle === '6' ? ' selected' : '') + '>Bell</option>' +
 '        <option value="7"' + (current.bigAnalogMarkerStyle === '7' ? ' selected' : '') + '>Fancy</option>' +
 '        <option value="8"' + (current.bigAnalogMarkerStyle === '8' ? ' selected' : '') + '>Custom</option>' +
+        MARKER_VARIANT_STYLES.map(function (s) { return '<option value="' + s.value + '"' + (current.bigAnalogMarkerStyle === s.value ? ' selected' : '') + '>' + s.title + '</option>'; }).join('') +
 '      </select>' +
 '      <div class="checkbox-row" id="bitmapMarkerTransparentRow" style="margin-top:12px;' + (isBitmapMarkerStyle ? '' : ' display:none;') + '">' +
 '        <input type="checkbox" id="bitmapMarkerTransparent" ' + (current.bitmapMarkerTransparent ? 'checked' : '') + ' onchange="onBitmapMarkerTransparentChange()">' +
@@ -2872,8 +2890,9 @@ configPlugins.pluginScript(current) +
 'function computeSlotAvailability() {' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
 '  var override = document.getElementById("bitmapCornerOverride").checked;' +
+'  if (markerStyle >= 11) markerStyle = 7;' + // Modern/Roman variants (11-19) lay out like Fancy, the last of the original bitmap styles
 '  var avail = { upper: false, bottom: false, left: false, right: false, cornersGrayed: false };' +
-'    if (markerStyle < 3 || markerStyle > 7) {' +
+'    if (!isBitmapMarkerStyleId(markerStyle) && markerStyle !== 7) {' +
 '      avail.upper = avail.bottom = avail.left = avail.right = true;' +
 '    } else if (markerStyle === 3 || markerStyle === 4 || markerStyle === 6) {' +
 '      avail.upper = avail.bottom = true; avail.left = avail.right = override; avail.cornersGrayed = !override;' +
@@ -2962,7 +2981,7 @@ configPlugins.pluginScript(current) +
 // called once at page init, see the bottom of this script.
 'function renderCategoryButtons() {' +
 '  var group = document.getElementById("slotEditCategoryGroup");' +
-'  group.innerHTML = CORNER_CATEGORIES.map(function (c) {' +
+'  group.innerHTML = CORNER_CATEGORIES.filter(function (c) { return c.id !== "none"; }).map(function (c) {' + // "None" is the OFF button of the kind selector now
 '    return \'<button type="button" class="category-btn" data-category="\' + c.id + \'" onclick="selectSlotEditCategory(\\\'\' + c.id + \'\\\')" title="\' + c.label + \'">\' + c.icon + \'</button>\';' +
 '  }).join("");' +
 '}' +
@@ -3199,7 +3218,7 @@ configPlugins.pluginScript(current) +
 '  applyMarkerStylePresetToCustom(val);' +
 '  refreshEditButtonLabels();' +
 '  document.getElementById("customMarkerSection").style.display = (val === "8") ? "" : "none";' +
-'  var isBitmap = (val === "3" || val === "4" || val === "5" || val === "6" || val === "7");' +
+'  var isBitmap = isBitmapMarkerStyleId(parseInt(val, 10));' +
 '  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
 '  document.getElementById("bitmapMarkerInvertRow").style.display = isBitmap ? "" : "none";' +
 '  document.getElementById("bitmapCornerOverrideRow").style.display = (isBitmap && val !== "5") ? "" : "none";' +
@@ -3724,7 +3743,7 @@ configPlugins.pluginScript(current) +
 // nothing at all).
 'function refreshIndicesSubsectionPreview() {' +
 '  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
-'  var bmp = MARKER_BITMAP_STYLES.filter(function (s) { return s.value === val; })[0];' +
+'  var bmp = MARKER_BITMAP_STYLES.concat(MARKER_VARIANT_STYLES).filter(function (s) { return s.value === val; })[0];' +
 '  var img = null, isBitmap = false;' +
 '  if (bmp) { img = MARKER_PREVIEW_IMAGES[val]; isBitmap = true; }' +
 '  else {' +
@@ -3759,6 +3778,7 @@ configPlugins.pluginScript(current) +
 '  { value: "6", title: "Bell" },' +
 '  { value: "7", title: "Fancy" }' +
 '];' +
+'var MARKER_VARIANT_STYLES = ' + JSON.stringify(MARKER_VARIANT_STYLES) + ';' +
 'var MARKER_PRESET_STYLES = [' +
 '  { value: "9", title: "Classy", image: "classy" },' +
 '  { value: "10", title: "Minimal", image: "minimal" },' +
@@ -3770,7 +3790,7 @@ configPlugins.pluginScript(current) +
 // value neither array carries since it has no picker button of its
 // own -- see chooseMarkerStyleCustom()).
 'var MARKER_STYLE_TITLES = { "0": "None", "8": "Custom" };' +
-'MARKER_BITMAP_STYLES.concat(MARKER_PRESET_STYLES).forEach(function (s) { MARKER_STYLE_TITLES[s.value] = s.title; });' +
+'MARKER_BITMAP_STYLES.concat(MARKER_PRESET_STYLES, MARKER_VARIANT_STYLES).forEach(function (s) { MARKER_STYLE_TITLES[s.value] = s.title; });' +
 'function updateMarkerStyleButtonLabel() {' +
 '  var span = document.getElementById("markerStyleTriggerLabel");' +
 '  if (!span) return;' +
@@ -3789,6 +3809,12 @@ configPlugins.pluginScript(current) +
 '  });' +
 '  MARKER_PRESET_STYLES.forEach(function (s) {' +
 '    var img = MARKER_PRESET_IMAGES[s.image];' +
+'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
+'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
+'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
+'  });' +
+'  MARKER_VARIANT_STYLES.forEach(function (s) {' +
+'    var img = MARKER_PREVIEW_IMAGES[s.value];' +
 '    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
 '      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
 '      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +

@@ -377,15 +377,48 @@ function composerClientBody() {
   // Turning it off keeps the working copy (re-enabling restores it) but
   // saveSlotEditor() then commits nothing.
   function slotEditUpdateKindButtons() {
+    // Three states: OFF (nothing shown: content 0, no custom elements), PREDEFINED, CUSTOM.
     var on = document.getElementById("slotEditCustomPrimsToggle").checked;
+    var off = !on && document.getElementById("slotEditContent").value === "0";
+    var active = on ? 2 : (off ? 0 : 1);
     var group = document.getElementById("slotEditKindGroup");
     var btns = group.getElementsByClassName("mode-btn");
-    for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + ((i === 1) === on ? " active" : "");
-    group.style.display = document.getElementById("slotEditCustomPrimsSection").getAttribute("data-available") === "0" ? "none" : "";
+    for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + (i === active ? " active" : "");
+    // Slots without custom support lose only the CUSTOM button, not the whole selector.
+    var customAvail = document.getElementById("slotEditCustomPrimsSection").getAttribute("data-available") !== "0";
+    if (btns[2]) btns[2].style.display = customAvail ? "" : "none";
+    // Category / Content only make sense for PREDEFINED.
+    document.getElementById("slotEditPrebuiltBlock").style.display = (on || off) ? "none" : "";
   }
   function slotEditSetKind(custom) {
+    if (!custom && document.getElementById("slotEditContent").value === "0") {
+      // Nothing chosen yet (coming from OFF or from an empty custom): start on the first real
+      // category and its first item.
+      document.getElementById("slotEditCustomPrimsToggle").checked = false;
+      document.getElementById("slotEditCustomPrimsBody").style.display = "none";
+      selectSlotEditCategory(CORNER_CATEGORIES[1].id);
+      slotEditUpdateKindButtons();
+      return;
+    }
     document.getElementById("slotEditCustomPrimsToggle").checked = !!custom;
     composerOnToggle();
+  }
+  // OFF: the feature shows nothing. Replaces the old "None" category button.
+  function slotEditSetOff() {
+    document.getElementById("slotEditCustomPrimsToggle").checked = false;
+    COMPOSER.items = [];
+    COMPOSER.selected = -1;
+    document.getElementById("slotEditCategory").value = "none";
+    var contentSelect = document.getElementById("slotEditContent");
+    contentSelect.innerHTML = categoryItemOptionsHtml("none", 0);
+    contentSelect.disabled = true;
+    document.getElementById("slotEditCustomPrimsBody").style.display = "none";
+    slotEditCategoryHelpUpdate("none");
+    updateCategoryButtonActive("none");
+    composerSetError("");
+    onSlotEditContentChange();
+    slotEditUpdateKindButtons();
+    composerRender();
   }
 
   function composerOnToggle() {

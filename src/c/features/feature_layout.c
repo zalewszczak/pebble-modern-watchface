@@ -1,5 +1,6 @@
 #include "./feature_layout.h"
 #include "../rendering/dial/marker_layer.h"
+#include "../rendering/dial/marker_bitmap.h"
 #include "../fonts/font_lookup.h"
 #include "./primitives/primitive_catalogue.h"
 
@@ -19,23 +20,38 @@ void feature_layout_recompute(FeaturesState *state) {
   if (!d) return;
 
   uint8_t marker_style = d->big_analog_marker_style;
-  bool marker_is_bitmap = marker_style >= 3 && marker_style <= 7;
+  bool marker_is_bitmap = marker_style_is_bitmap(marker_style);
 
   // Inner-empty-area margins: fixed per bitmap style (3-7); every other
   // style (the custom hour/second rings, which is also what the phone
   // sends for the Minimal/Braun/Swiss/Classy/None presets) is computed
   // from those rings + marker text below.
   typedef struct { int8_t top, bottom, left, right; } EdgeMargins;
-  static const EdgeMargins BITMAP_STYLE_MARGINS[5] = {
-    { 38, 37, 42, 39 }, // 3: Modern
-    { 37, 33, 38, 33 }, // 4: Shadow
-    { 44, 42, 27, 20 }, // 5: Tally
-    { 46, 44, 45, 45 }, // 6: Bell
-    { 44, 40, 30, 26 }, // 7: Fancy
+  // One record per bitmap style id. The 11-19 records are placeholders: copies of the
+  // last record (Fancy) until their real values are measured.
+  typedef struct { uint8_t style; EdgeMargins m; } BitmapMarginRecord;
+  static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
+    {  3, { 38, 37, 42, 39 } }, // Modern
+    {  4, { 37, 33, 38, 33 } }, // Shadow
+    {  5, { 44, 42, 27, 20 } }, // Tally
+    {  6, { 46, 44, 45, 45 } }, // Bell
+    {  7, { 44, 40, 30, 26 } }, // Fancy
+    { 11, { 44, 40, 30, 26 } }, // Modern Bold
+    { 12, { 44, 40, 30, 26 } }, // Modern F
+    { 13, { 44, 40, 30, 26 } }, // Modern H
+    { 14, { 44, 40, 30, 26 } }, // Modern P
+    { 15, { 44, 40, 30, 26 } }, // Modern P Round
+    { 16, { 44, 40, 30, 26 } }, // Modern S
+    { 17, { 44, 40, 30, 26 } }, // Modern W
+    { 18, { 44, 40, 30, 26 } }, // Modern W Round
+    { 19, { 44, 40, 30, 26 } }, // Roman
   };
   int16_t dyn_upper_offset = 24, dyn_bottom_shift = 20, dyn_left_inset = 0, dyn_right_inset = 0;
   if (marker_is_bitmap) {
-    const EdgeMargins *m = &BITMAP_STYLE_MARGINS[marker_style - 3];
+    const EdgeMargins *m = &BITMAP_STYLE_MARGINS[4].m; // fall back to Fancy
+    for (size_t i = 0; i < sizeof(BITMAP_STYLE_MARGINS) / sizeof(BITMAP_STYLE_MARGINS[0]); i++) {
+      if (BITMAP_STYLE_MARGINS[i].style == marker_style) { m = &BITMAP_STYLE_MARGINS[i].m; break; }
+    }
     dyn_upper_offset = m->top; dyn_bottom_shift = m->bottom; dyn_left_inset = m->left; dyn_right_inset = m->right;
   } else {
     GRect screen = GRect(0, 0, 200, 228);

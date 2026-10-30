@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Reads the big-analog bitmap marker styles' own resource PNGs --
-// resources/images/<name>_background.png, the same files already
+// resources/indices/<name>_background.png, the same files already
 // declared in package.json and used on the watch itself -- and
 // generates src/pkjs/data/generated/marker-preview-images.js as a lookup table of
 // data: URIs the settings page can embed directly. No separate
@@ -20,13 +20,13 @@
 //   node scripts/generate-marker-previews.js
 //
 // Run this whenever you add or change a marker style's PNG in
-// resources/images/, before `pebble build` (or wire it into your own
+// resources/indices/, before `pebble build` (or wire it into your own
 // build script -- see the note at the bottom of this file).
 
 var fs = require('fs');
 var path = require('path');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'images');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'indices');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'marker-preview-images.js');
 var SUFFIX = '_background.png';
 
@@ -37,16 +37,24 @@ var SUFFIX = '_background.png';
 // <name>_background.png), NOT the package.json resource name -- those
 // two have diverged for styles 4 and 7 (package.json's "name" is now
 // SHADOW_BACKGROUND/FANCY_BACKGROUND, matching the new "Shadow"/
-// "Fancy" UI labels, but the PNGs on disk are still named
-// swiss_background.png/brown_background.png pending a manual file
-// rename) -- keep these keys pointed at whatever the files are
-// actually called until that rename happens, then update here too.
+// "Fancy"
 var STYLE_IDS_BY_NAME = {
   modern: '3',
-  swiss: '4', // TODO: rename to `shadow` once swiss_background.png -> shadow_background.png
+  shadow: '4',
   tally: '5',
   bell: '6',
-  brown: '7' // TODO: rename to `fancy` once brown_background.png -> fancy_background.png
+  fancy: '7',
+  // Modern / Roman variants (style ids 11-19; resource names in package.json,
+  // RESOURCE_ID_* in src/c/rendering/dial/marker_bitmap.c)
+  modern_bold: '11',
+  modern_f: '12',
+  modern_h: '13',
+  modern_p: '14',
+  modern_pr: '15',
+  modern_s: '16',
+  modern_w: '17',
+  modern_wr: '18',
+  roman: '19'
 };
 
 var entries = {};
@@ -81,7 +89,7 @@ var missingNames = Object.keys(STYLE_IDS_BY_NAME).filter(function (name) {
 var lines = [];
 lines.push('// GENERATED FILE -- do not edit by hand.');
 lines.push('// Produced by scripts/generate-marker-previews.js from');
-lines.push('// resources/images/*_background.png. Re-run that script after adding or');
+lines.push('// resources/indices/*_background.png. Re-run that script after adding or');
 lines.push('// changing any marker style\'s PNG, before `pebble build`.');
 lines.push('module.exports = ' + JSON.stringify(entries, null, 2) + ';');
 lines.push('');

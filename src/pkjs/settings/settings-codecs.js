@@ -107,7 +107,7 @@ function shadowAngleCode() { return clampInt(getSetting('CONFIG_SHADOW_ANGLE', '
 // The built-in marker presets (bigAnalogMarkerStyle 0 None, 1 Braun,
 // 2 Swiss, 9 Classy, 10 Minimal -- see MARKER_STYLE_PRESET_FIELDS in
 // presets-lookups.js) don't exist on the watch: it only knows the
-// bitmap styles (3-7) and Custom (8). While one of those presets is
+// bitmap styles (3-7, 11-19) and Custom (8). While one of those presets is
 // the selected style, this sends 8 and every customHour*/customSec*/
 // markerText* codec below reports the preset's own values (numerals
 // included) in place of whatever is stored, so the watch simply
@@ -122,7 +122,7 @@ var MARKER_STYLE_CUSTOM = 8;
 var MARKER_STYLE_DEFAULT = 3; // Modern (bitmap) -- also what a missing/garbled stored value falls back to
 function storedMarkerStyleId() {
   var id = parseInt(getSetting('CONFIG_BIG_ANALOG_MARKER_STYLE', String(MARKER_STYLE_DEFAULT)), 10);
-  if (isNaN(id) || id < 0 || id > 10) id = MARKER_STYLE_DEFAULT;
+  if (isNaN(id) || id < 0 || id > 19) id = MARKER_STYLE_DEFAULT;
   return id;
 }
 function activeMarkerPresetFields() {

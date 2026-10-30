@@ -312,27 +312,72 @@
         {
           "type": "bitmap",
           "name": "MODERN_BACKGROUND",
-          "file": "images/modern_background.png"
+          "file": "indices/modern_background.png"
         },
         {
           "type": "bitmap",
           "name": "SHADOW_BACKGROUND",
-          "file": "images/swiss_background.png"
+          "file": "indices/shadow_background.png"
         },
         {
           "type": "bitmap",
           "name": "TALLY_BACKGROUND",
-          "file": "images/tally_background.png"
+          "file": "indices/tally_background.png"
         },
         {
           "type": "bitmap",
           "name": "BELL_BACKGROUND",
-          "file": "images/bell_background.png"
+          "file": "indices/bell_background.png"
         },
         {
           "type": "bitmap",
           "name": "FANCY_BACKGROUND",
-          "file": "images/brown_background.png"
+          "file": "indices/fancy_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_BOLD_BACKGROUND",
+          "file": "indices/modern_bold_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_F_BACKGROUND",
+          "file": "indices/modern_f_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_H_BACKGROUND",
+          "file": "indices/modern_h_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_P_BACKGROUND",
+          "file": "indices/modern_p_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_PR_BACKGROUND",
+          "file": "indices/modern_pr_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_S_BACKGROUND",
+          "file": "indices/modern_s_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_W_BACKGROUND",
+          "file": "indices/modern_w_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_WR_BACKGROUND",
+          "file": "indices/modern_wr_background.png"
+        },
+        {
+          "type": "bitmap",
+          "name": "ROMAN_BACKGROUND",
+          "file": "indices/roman_background.png"
         },
         {
           "type": "bitmap",
