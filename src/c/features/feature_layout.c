@@ -36,15 +36,15 @@ void feature_layout_recompute(FeaturesState *state) {
     {  5, { 44, 42, 27, 20 } }, // Tally
     {  6, { 46, 44, 45, 45 } }, // Bell
     {  7, { 44, 40, 30, 26 } }, // Fancy
-    { 11, { 44, 40, 30, 26 } }, // Modern Bold
-    { 12, { 44, 40, 30, 26 } }, // Modern F
-    { 13, { 44, 40, 30, 26 } }, // Modern H
-    { 14, { 44, 40, 30, 26 } }, // Modern P
-    { 15, { 44, 40, 30, 26 } }, // Modern P Round
-    { 16, { 44, 40, 30, 26 } }, // Modern S
-    { 17, { 44, 40, 30, 26 } }, // Modern W
-    { 18, { 44, 40, 30, 26 } }, // Modern W Round
-    { 19, { 44, 40, 30, 26 } }, // Roman
+    { 11, { 38, 38, 42, 39 } }, // Modern Bold
+    { 12, { 37, 37, 37, 35 } }, // Modern F
+    { 13, { 39, 39, 36, 35 } }, // Modern H
+    { 14, { 39, 39, 39, 38 } }, // Modern P
+    { 15, { 41, 41, 40, 39 } }, // Modern P Round
+    { 16, { 37, 37, 38, 36 } }, // Modern S
+    { 17, { 40, 40, 40, 38 } }, // Modern W
+    { 18, { 40, 40, 39, 38 } }, // Modern W Round
+    { 19, { 39, 39, 40, 40 } }, // Roman
   };
   int16_t dyn_upper_offset = 24, dyn_bottom_shift = 20, dyn_left_inset = 0, dyn_right_inset = 0;
   if (marker_is_bitmap) {
