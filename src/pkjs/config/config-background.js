@@ -104,7 +104,7 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
 '      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
 '    </div>' +
-'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo (cropped to the watch screen, converted to 64 colors and sent to the watch when you press Save; this can take around 20 seconds), <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors.</div>' +
+'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo, <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors.</div>' +
 // The two checkboxes stay as the (hidden) state behind the buttons: presets, save() and the
 // preview all read them, so nothing else needs to know about the button group.
 '    <div style="display:none;">' +
