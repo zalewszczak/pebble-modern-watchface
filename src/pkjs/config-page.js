@@ -25,7 +25,7 @@
  * what you see here is exactly what you'll get.
  */
 
-var APP_VERSION = "4.0-beta";
+var APP_VERSION = "4.0-rc";
 
 // servicelog require removed here -- serviceStatusRowsHtml() (its
 // only user in this file) moved to config/config-debug.js, which
@@ -1104,7 +1104,7 @@ configPresetSchedule.css +
 '      <div class="about-info-row"><div class="about-info-label">Platform</div><div class="about-info-value">Pebble Time 2 / Emery</div></div>' +
 '    </div>' +
 '    <div class="about-description">Find out more about the project on github, feel free to contribute as well.</div>' +
-'    <a class="about-source" href="https://github.com/zalewszczak/solar-eclipse-watch" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>' +
+'    <a class="about-source" href="https://github.com/zalewszczak/pebble-modern-watchface" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>' +
 '    <button type="button" class="about-ok-btn" onclick="closeAboutModal()">OK</button>' +
 '  </div>' +
 '</div>' +
