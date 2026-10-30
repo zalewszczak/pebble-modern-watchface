@@ -12,6 +12,8 @@
 #include "../rendering/status/status_label.h"
 #include "../features/feature_controller.h"
 #include "../features/features_layer.h"
+#include "../features/feature_icons.h"
+#include "../features/primitives/primitive_ids.h"
 #include "../hands/hands_controller.h"
 #include "../timing/hourly_vibration.h"
 #include "./layout_controller.h"
@@ -30,10 +32,52 @@ static WatchData s_data;
 // ---- phone connection -------------------------------------------------------
 // The Bluetooth features read the connection state when they are drawn, but
 // nothing redraws them when it changes -- so refresh them here, and give the
-// optional "connection lost" vibration.
+// optional "connection lost" vibration. While the phone is away the Bluetooth
+// icon flashes (visible one second, hidden the next).
+static AppTimer *s_bt_flash_timer = NULL;
+static bool s_bt_flash_hidden = false;
+
+static void bt_flash_apply(bool hidden) {
+  if (s_bt_flash_hidden == hidden) return;
+  s_bt_flash_hidden = hidden;
+  feature_icons_set_bt_flash_hidden(hidden);
+  Layer *features = layout_controller_features_layer();
+  if (features) features_layer_refresh_primitive(features, PRIM_BLUETOOTH_ICON);
+}
+
+static bool bt_flash_wanted(void) {
+  return !connection_service_peek_pebble_app_connection() &&
+         feature_controller_primitive_in_use(&s_data, PRIM_BLUETOOTH_ICON);
+}
+
+static void bt_flash_tick(void *context) {
+  (void)context;
+  s_bt_flash_timer = NULL;
+  if (!bt_flash_wanted()) { bt_flash_apply(false); return; }
+  uint32_t next_ms = 1000;
+  if (battery_saver_phase() == BATTERY_SAVER_AWAKE) {
+    bt_flash_apply(!s_bt_flash_hidden);
+  } else {
+    bt_flash_apply(false); // resting: keep the icon steady and poll slowly
+    next_ms = 10000;
+  }
+  s_bt_flash_timer = app_timer_register(next_ms, bt_flash_tick, NULL);
+}
+
+// Starts or stops the flashing to match the connection state and the features in use.
+static void bt_flash_update(void) {
+  if (bt_flash_wanted()) {
+    if (!s_bt_flash_timer) s_bt_flash_timer = app_timer_register(1000, bt_flash_tick, NULL);
+  } else {
+    if (s_bt_flash_timer) { app_timer_cancel(s_bt_flash_timer); s_bt_flash_timer = NULL; }
+    bt_flash_apply(false);
+  }
+}
+
 static void app_connection_handler(bool connected) {
   Layer *features = layout_controller_features_layer();
   if (features) features_layer_refresh_values(features);
+  bt_flash_update();
   if (!connected) {
     switch (s_data.bt_lost_vibe) {
       case 1: vibes_short_pulse(); break;
@@ -141,6 +185,8 @@ static void comms_data_applied(CommsChangeFlags changes, void *context) {
     features_layer_set_data(layout_controller_features_layer(), &s_data);
   }
 
+  bt_flash_update(); // the Bluetooth feature may have been added or removed
+
   // Apply early settings, but defer tick-policy changes until valid data exists.
   if (!s_data.valid) {
     persistence_save(&s_data);
@@ -191,11 +237,13 @@ void app_controller_init(void) {
 
   comms_init(&s_data, comms_data_applied, NULL);
   connection_service_subscribe((ConnectionHandlers){ .pebble_app_connection_handler = app_connection_handler });
+  bt_flash_update();
   battery_saver_controller_update();
 }
 
 void app_controller_deinit(void) {
   connection_service_unsubscribe();
+  if (s_bt_flash_timer) { app_timer_cancel(s_bt_flash_timer); s_bt_flash_timer = NULL; }
   battery_saver_controller_deinit();
   time_service_deinit();
   input_deinit();

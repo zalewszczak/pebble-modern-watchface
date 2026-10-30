@@ -78,6 +78,12 @@ static const IconResourceSet QUIET_TIME_ICON_SET[2] = { ICON_SET(QUIET_TIME), IC
 static const IconResourceSet SUN_TIME_ICON_SET[2] = { ICON_SET(SUN_TIME_SET), ICON_SET(SUN_TIME_RISE) };
 #undef ICON_SET
 
+// "Phone disconnected" flashing of the Bluetooth icon: app_controller.c toggles
+// this once a second while the connection is down; the icon is skipped (its
+// space stays reserved) during the hidden phase.
+static bool s_bt_flash_hidden = false;
+void feature_icons_set_bt_flash_hidden(bool hidden) { s_bt_flash_hidden = hidden; }
+
 
 
 
@@ -207,6 +213,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
                // icon_flag = phone disconnected. Simple/Hollow already turn red
                // through `color`; Full color art keeps its own colors, so it gets a
                // red X across it instead.
+      if (icon_flag && s_bt_flash_hidden) return; // flashing while disconnected
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2);
       feature_icon_assets_draw_styled_with_outline(ctx, pos, &BLUETOOTH_ICON_SET, icon_style,
                                                    outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);

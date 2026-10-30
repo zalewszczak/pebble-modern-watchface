@@ -1471,13 +1471,13 @@ configPresetSchedule.modalHtml +
 '      </div>' +
 '    </div>' +
 
-'    <div class="subsection">' +
+'    <div>' +
       subsectionLegendHtml('background', 'Background style') +
 '      <div class="subsection-body" id="subsec-background" style="display:none;">' +
         configBackground.backgroundSectionHtml(current) +
 '      </div>' +
 '    </div>' +
-'    <div class="subsection">' +
+'    <div>' +
       subsectionLegendHtml('border', 'Border style') +
 '      <div class="subsection-body" id="subsec-border" style="display:none;">' +
         configBorder.borderSectionHtml(current) +
