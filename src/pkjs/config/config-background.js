@@ -99,13 +99,12 @@ function backgroundSectionHtml(current) {
   // collapsible subsection (subsectionLegendHtml + .subsection-body) that
   // Hands style and Indices style use.
   return '' +
-'    <div class="help">Choose what is drawn behind the indices: the plain background color, one of the predefined images, or your own photos.</div>' +
 '    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
 '      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
 '      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
 '      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
 '    </div>' +
-'    <div class="help"><b>OFF</b> = plain background color, <b>IMAGE</b> = a predefined image or your own photo (cropped to the watch screen, converted to 64 colors and sent to the watch when you press Save; this can take around 20 seconds), <b>WEATHER</b> = a picture matching the current weather (clear, clouds, fog, rain, snow, storm...). After sunset and before sunrise the night picture is used together with the night colors, which are switched on automatically.</div>' +
+'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo (cropped to the watch screen, converted to 64 colors and sent to the watch when you press Save; this can take around 20 seconds), <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors.</div>' +
 // The two checkboxes stay as the (hidden) state behind the buttons: presets, save() and the
 // preview all read them, so nothing else needs to know about the button group.
 '    <div style="display:none;">' +

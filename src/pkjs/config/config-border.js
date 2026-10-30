@@ -25,7 +25,7 @@ function borderSectionHtml(current) {
   function sel(v, cur) { return v === cur ? ' selected' : ''; }
   var shown = mode !== '0' ? mode : '1';
   return '' +
-'    <div class="help">Turns the edge of the screen into a 12-hour weather forecast. Like on the dial, the sector at each clock position shows the weather for the next time the hour hand will be there: at 2:20 the 3 o\'clock edge is the weather at 3:00 (+1 h) and the 2 o\'clock edge is +12 h. It is drawn into the background (below the indices) and only refreshed when the weather updates.</div>' +
+'    <div class="help">Turns the edge of the screen into a 12-hour weather forecast. Like on the dial, the sector at each clock position shows the weather for the next time the hour hand will be there.</div>' +
 '    <div class="checkbox-row" id="borderWeatherEnabledRow" style="margin-top:10px;">' +
 '      <input type="checkbox" id="borderWeatherEnabled" ' + (mode !== '0' ? 'checked' : '') + ' onchange="onBorderWeatherChange()">' +
 '      <label for="borderWeatherEnabled" style="margin:0;">Use border to show weather</label>' +
@@ -288,7 +288,6 @@ function borderScript() {
 '    } else lg.innerHTML = borderLegendFor(mode, scheme);\n' +
 '  }\n' +
 '  var ht = document.getElementById("borderHelpText");\n' +
-'  if (ht) ht.textContent = "Example: the edge next to a label shows the " + (mode === 2 ? "temperature" : mode === 3 ? "rain chance" : mode === 4 ? "temperature, rain chance and conditions" : "weather") + " at that many hours from now. The diagram uses sample data; the watch uses your real forecast.";\n' +
 '}\n' +
 'function refreshBorderSubsectionPreview() {\n' +
 '  var mode = borderMode();\n' +
