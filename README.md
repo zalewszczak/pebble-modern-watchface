@@ -289,6 +289,8 @@ in `scheduled-style.js` (mirroring `save()`'s payload). After adding or
 renaming a style setting run `node scripts/check-scheduled-style-map.js`;
 if a saved style contains an element id the table does not know, the
 schedule popup shows a "Developer note" listing it.
+The table also covers each feature slot's custom-primitives field
+(`*CustomPrims`), and the check script verifies those too.
 
 ### Adding a new Example style
 

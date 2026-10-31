@@ -152,14 +152,19 @@ var FIELD_MAP = {
   cornerFont: ['CONFIG_CORNER_FONT', 's'],
   weatherIconStyle: ['CONFIG_WEATHER_ICON_STYLE', 's'],
   cornerTL: ['CONFIG_CORNER_TL', 's'],
+  cornerTLCustomPrims: ['CONFIG_CORNER_TL_CUSTOM_PRIMS', 's'],
   cornerTLColor: ['CONFIG_CORNER_TL_COLOR', 's'],
   cornerTR: ['CONFIG_CORNER_TR', 's'],
+  cornerTRCustomPrims: ['CONFIG_CORNER_TR_CUSTOM_PRIMS', 's'],
   cornerTRColor: ['CONFIG_CORNER_TR_COLOR', 's'],
   cornerBL: ['CONFIG_CORNER_BL', 's'],
+  cornerBLCustomPrims: ['CONFIG_CORNER_BL_CUSTOM_PRIMS', 's'],
   cornerBLColor: ['CONFIG_CORNER_BL_COLOR', 's'],
   cornerBR: ['CONFIG_CORNER_BR', 's'],
+  cornerBRCustomPrims: ['CONFIG_CORNER_BR_CUSTOM_PRIMS', 's'],
   cornerBRColor: ['CONFIG_CORNER_BR_COLOR', 's'],
   bottomMiddleLine2Content: ['CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT', 's'],
+  bottomMiddleLine2CustomPrims: ['CONFIG_BOTTOM_MIDDLE_LINE2_CUSTOM_PRIMS', 's'],
   bottomMiddleLine2Color: ['CONFIG_BOTTOM_MIDDLE_LINE2_COLOR', 's'],
   stepGoal: ['CONFIG_STEP_GOAL', 's'],
   drawFeaturesBeneathHands: ['CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'b'],
@@ -175,23 +180,32 @@ var FIELD_MAP = {
 var DUAL_MAP = {
   upperMiddleLine1Content: ['CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG'],
   upperMiddleLine1Color: ['CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG'],
+  upperMiddleLine1CustomPrims: ['CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG'],
   upperMiddleLine2Content: ['CONFIG_UPPER_MIDDLE_LINE2_CONTENT_ANALOG'],
   upperMiddleLine2Color: ['CONFIG_UPPER_MIDDLE_LINE2_COLOR_ANALOG'],
+  upperMiddleLine2CustomPrims: ['CONFIG_UPPER_MIDDLE_LINE2_CUSTOM_PRIMS_ANALOG'],
   bottomMiddleLine1Content: ['CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT_ANALOG'],
   bottomMiddleLine1Color: ['CONFIG_BOTTOM_MIDDLE_LINE1_COLOR_ANALOG'],
+  bottomMiddleLine1CustomPrims: ['CONFIG_BOTTOM_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG'],
   middleLeftLine1Content: ['CONFIG_MIDDLE_LEFT_LINE1_CONTENT_ANALOG'],
   middleLeftLine1Color: ['CONFIG_MIDDLE_LEFT_LINE1_COLOR_ANALOG'],
+  middleLeftLine1CustomPrims: ['CONFIG_MIDDLE_LEFT_LINE1_CUSTOM_PRIMS_ANALOG'],
   middleLeftLine2Content: ['CONFIG_MIDDLE_LEFT_LINE2_CONTENT_ANALOG'],
   middleLeftLine2Color: ['CONFIG_MIDDLE_LEFT_LINE2_COLOR_ANALOG'],
+  middleLeftLine2CustomPrims: ['CONFIG_MIDDLE_LEFT_LINE2_CUSTOM_PRIMS_ANALOG'],
   middleRightLine1Content: ['CONFIG_MIDDLE_RIGHT_LINE1_CONTENT_ANALOG'],
   middleRightLine1Color: ['CONFIG_MIDDLE_RIGHT_LINE1_COLOR_ANALOG'],
+  middleRightLine1CustomPrims: ['CONFIG_MIDDLE_RIGHT_LINE1_CUSTOM_PRIMS_ANALOG'],
   middleRightLine2Content: ['CONFIG_MIDDLE_RIGHT_LINE2_CONTENT_ANALOG'],
-  middleRightLine2Color: ['CONFIG_MIDDLE_RIGHT_LINE2_COLOR_ANALOG']
+  middleRightLine2Color: ['CONFIG_MIDDLE_RIGHT_LINE2_COLOR_ANALOG'],
+  middleRightLine2CustomPrims: ['CONFIG_MIDDLE_RIGHT_LINE2_CUSTOM_PRIMS_ANALOG']
 };
 
 // Elements in the preset scope that are UI state only, or that are handled
 // explicitly in applyPreset() below instead of through the tables.
-var UI_ONLY_IDS = ['showAllColorPresets', '__pluginSlots'];
+// borderWeatherEnabled / borderWeatherModeSel only drive the hidden
+// borderWeatherMode input (see config-border.js), which FIELD_MAP covers.
+var UI_ONLY_IDS = ['showAllColorPresets', '__pluginSlots', 'borderWeatherEnabled', 'borderWeatherModeSel'];
 
 function knownIds() {
   var ids = [];
