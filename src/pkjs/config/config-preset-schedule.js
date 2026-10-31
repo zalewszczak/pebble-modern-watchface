@@ -146,7 +146,7 @@ function clientJs(knownIds) {
 '    }' +
 '  } catch (e) {}' +
 '  var warn = document.getElementById("scheduleWarn");' +
-'  warn.textContent = unknown.length ? ("(!!! feel free to notify me about this on github if you see this message) Developer note: " + unknown.length + " setting(s) in this style are not known to the scheduler and will be skipped: " + unknown.join(", ")) : "";' +
+'  warn.textContent = unknown.length ? ("Developer note: " + unknown.length + " setting(s) in this style are not known to the scheduler and will be skipped: " + unknown.join(", ")) : "";' +
 '  warn.style.display = unknown.length ? "" : "none";' +
 '  renderScheduleDays();' +
 '  updateScheduleEnabledState();' +

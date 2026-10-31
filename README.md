@@ -109,7 +109,7 @@ Style -> Background: an OFF / IMAGE / WEATHER button group chooses what is drawn
 
 The picture is a full-screen image behind the indices.
 
-- **Predefined images**: put numbered PNGs in `resources/backgrounds/` (`1.png`, `2.png`, ...; 200x228, palette PNGs keep the settings page small) and run `node scripts/generate-backgrounds.js` (also part of `generate-all.js`). It embeds them into the settings page (`src/pkjs/data/generated/background-images.js`), writes `src/c/generated/background_presets.h` (`bg_preset_resource_id(n)`) and (re)creates the `BG_PRESET_<n>` bitmap entries in `package.json`. The watch loads the chosen one with `gbitmap_create_with_resource()`, draws it once into the dial cache (below) and frees it.
+- **Predefined images**: put numbered PNGs in `resources/backgrounds/` (`1.png`, `2.png`, ...; 200x228, palette PNGs are best; they are re-encoded as lossless WebP for the settings page by `optimize-generated-images.js`) and run `node scripts/generate-backgrounds.js` (also part of `generate-all.js`). It embeds them into the settings page (`src/pkjs/data/generated/background-images.js`), writes `src/c/generated/background_presets.h` (`bg_preset_resource_id(n)`) and (re)creates the `BG_PRESET_<n>` bitmap entries in `package.json`. The watch loads the chosen one with `gbitmap_create_with_resource()`, draws it once into the dial cache (below) and frees it.
 - **Your own images**: 9 slots, edited in the settings page (`src/pkjs/config/config-background.js`): crop/pan/zoom, dithering (none, Floyd-Steinberg, Atkinson, Bayer 4x4/8x8) and style (neutral, B&W, sepia, vivid), converted to 64 colors (6 bits/pixel, packed 4 px -> 3 bytes, 34200 bytes) and kept in phone `localStorage` (`CONFIG_BG_SLOT_<k>`, base64url).
 - **Transfer**: `src/pkjs/bg-image/bg-image-sync.js` streams the selected slot with raw `BG_IMG_*` AppMessages (1020-byte payloads, 36 messages) straight into watch persistent storage (`rendering/dial/bg_image_store.c`, 255-byte persist values; the Time 2 allows 1 MB). The watch reports the stored image's stamp (`BG_IMG_STAMP`) with every `REQUEST_UPDATE`, so a missing or stale image is re-sent automatically.
 - **Watch RAM**: the packed data is never held in RAM: uploaded images are decoded straight from persistent storage into the frame buffer while the dial cache is built.
@@ -179,6 +179,21 @@ Quick reference (details for each are in their own section below):
 | `generate_hand_style_icons.py` | Python 3 + Pillow | Renders the 11 hand-style shape icons |
 | `generate-hand-style-icons.js` | Node | Bakes those 11 icons for the hand-style picker popup |
 | `generate-weather-icon-previews.js` | Node + `pngjs` | Weather icon style picker previews |
+| `optimize-generated-images.js` | Node + `sharp` | Last step of `generate-all.js`: rewrites every PNG data URI in `src/pkjs/data/generated/*.js` as a **lossless WebP** one (about 30% less image data in the .pbw, pixels and alpha identical). Keeps the PNG if WebP is not smaller or the round-trip check fails. Safe to re-run; `--dry-run` only reports. |
+
+### Why the settings-page images are lossless WebP
+
+The settings page is one `data:` URI built by PKJS, so it cannot link to
+the PNGs in `resources/` (those live inside the watch app, which PKJS
+cannot read, and a data: page has no files next to it): every picture has
+to be embedded as base64. Lossy formats were measured and rejected: the
+pictures are 64-colour dithered pixel art, flat diagrams and alpha masks,
+which lossy WebP/JPEG/AVIF store *larger* or visibly smeared, and JPEG has
+no alpha (the preview recolours marker/font bitmaps by `alpha > 0`).
+JPEG XL is not decoded by Android's WebView. Lossless WebP keeps every
+pixel and is decoded by every WebView the Pebble app uses. Run
+`node scripts/optimize-generated-images.js` by hand if you ran a single
+`generate-*.js` script on its own (they still write PNG).
 
 ## Message keys
 

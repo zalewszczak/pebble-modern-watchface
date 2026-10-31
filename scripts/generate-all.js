@@ -43,7 +43,9 @@ var STEPS = [
   { label: 'generate-example-style-previews.js', command: 'node scripts/generate-example-style-previews.js' },
   { label: 'generate-preview-icons.js (real icon PNGs for the settings preview)', command: 'node scripts/generate-preview-icons.js' },
   { label: 'generate-backgrounds.js (predefined custom backgrounds: settings page + C resource table + package.json media)', command: 'node scripts/generate-backgrounds.js' },
-  { label: 'generate-weather-backgrounds.js (weather background styles: settings page + C resource table + package.json media)', command: 'node scripts/generate-weather-backgrounds.js' }
+  { label: 'generate-weather-backgrounds.js (weather background styles: settings page + C resource table + package.json media)', command: 'node scripts/generate-weather-backgrounds.js' },
+  // Must stay last: rewrites the PNG data URIs every generator above just wrote as lossless WebP.
+  { label: 'optimize-generated-images.js (PNG data URIs -> lossless WebP, ~30% smaller .pbw JS)', command: 'node scripts/optimize-generated-images.js' }
 ];
 
 var PROJECT_ROOT = path.join(SCRIPTS_DIR, '..');
