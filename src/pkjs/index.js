@@ -15,6 +15,7 @@ var sendFlatDict = messageEncoder.sendFlatDict;
 var buildFullKeysetDict = messageEncoder.buildFullKeysetDict;
 var messageQueue = require('./comms/message-queue');
 var bgImageSync = require('./bg-image/bg-image-sync');
+var pluginBg = require('./bg-image/plugin-bg');
 var enqueueFlatDict = messageQueue.enqueueFlatDict;
 var refreshManager = require('./refresh-manager');
 var refreshAndSend = refreshManager.refreshAndSend;
@@ -41,6 +42,7 @@ function serveScheduledStyle() {
     // The style may carry its own plugin slot assignments: re-subscribe to them first.
     pluginManager.setSlots(pluginManager.getSlots());
     sendFlatDict({});
+    pluginBg.apply(); // ... and may select (or leave) the plugin background
     bgImageSync.syncIfNeeded(); // the applied style may select an uploaded background
     // Same follow-up a manual settings save does: only refetches if the
     // regular refresh interval has actually elapsed.
@@ -73,6 +75,8 @@ Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
   // Plugin sources: subscribe to whatever the user assigned and push values as they change.
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
+  // Plugin background picture (style PLUGIN): follow its source again after every start.
+  pluginBg.apply();
   applyFirstRunPreferences();
   // Catch up on anything that came due while PKJS was not running (phone
   // off, watch on another app). Done first so the refresh below already
@@ -173,6 +177,11 @@ function buildCurrent() {
     useWeatherBg: getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
     weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
     bgTranslucent: getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true',
+    usePluginBg: getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
+    pluginBgSource: getSetting('CONFIG_PLUGIN_BG_SOURCE', ''),
+    pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
+    pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),
+    pluginBgFit: getSetting('CONFIG_PLUGIN_BG_FIT', 'fill'),
     borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
     borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     borderWeatherScheme: getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'),
@@ -518,6 +527,11 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_USE_WEATHER_BG', settings.CONFIG_USE_WEATHER_BG ? 'true' : 'false');
   setSetting('CONFIG_WEATHER_BG_STYLE', settings.CONFIG_WEATHER_BG_STYLE || '');
   setSetting('CONFIG_BG_TRANSLUCENT', settings.CONFIG_BG_TRANSLUCENT ? 'true' : 'false');
+  setSetting('CONFIG_USE_PLUGIN_BG', settings.CONFIG_USE_PLUGIN_BG ? 'true' : 'false');
+  setSetting('CONFIG_PLUGIN_BG_SOURCE', settings.CONFIG_PLUGIN_BG_SOURCE || '');
+  setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
+  setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
+  setSetting('CONFIG_PLUGIN_BG_FIT', ['fill', 'full', '75', '50', 'center'].indexOf(settings.CONFIG_PLUGIN_BG_FIT) >= 0 ? settings.CONFIG_PLUGIN_BG_FIT : 'fill');
   setSetting('CONFIG_BORDER_WEATHER_MODE', (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) ? settings.CONFIG_BORDER_WEATHER_MODE : '0');
   setSetting('CONFIG_BORDER_WEATHER_SCHEME', (settings.CONFIG_BORDER_WEATHER_SCHEME === '1' || settings.CONFIG_BORDER_WEATHER_SCHEME === '2') ? settings.CONFIG_BORDER_WEATHER_SCHEME : '0');
   setSetting('CONFIG_BORDER_WEATHER_SHAKE', settings.CONFIG_BORDER_WEATHER_SHAKE ? 'true' : 'false');
@@ -698,7 +712,10 @@ function applySettingsObject(settings) {
   // the watch: re-send them now instead of waiting for the next weather update.
   if (unitSettingsSignature() !== unitsBefore) messageEncoder.resendUnitDisplays();
   // An uploaded background image goes out after the settings (and only if the
-  // watch does not already hold exactly that image).
+  // watch does not already hold exactly that image). The plugin picture follows
+  // its source/style first: apply() re-renders it for new options and drops it
+  // when the style was left, which syncIfNeeded() below then sends / empties.
+  pluginBg.apply();
   bgImageSync.syncIfNeeded();
 
   scheduleRefresh();

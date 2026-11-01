@@ -67,6 +67,48 @@ function isOn(current) {
   return !!current && (current.useCustomBg === true || current.useCustomBg === 'true');
 }
 
+// Background style PLUGIN: a picture supplied by a Pebble plugin, processed on the
+// phone (plugin-image.js) with the options below and sent to the watch's volatile slot.
+function isPluginOn(current) {
+  return !!current && (current.usePluginBg === true || current.usePluginBg === 'true') && !isOn(current) && !isWeatherOn(current);
+}
+
+var PLUGIN_DITHERS = [['none', 'None (nearest color)'], ['fs', 'Floyd&ndash;Steinberg'], ['atkinson', 'Atkinson'],
+  ['bayer4', 'Ordered 4x4 (Bayer)'], ['bayer8', 'Ordered 8x8 (Bayer)']];
+var PLUGIN_COLORS = [['neutral', 'Normal'], ['vivid', 'Vivid colors'], ['bw', 'Black &amp; white'], ['sepia', 'Sepia']];
+var PLUGIN_FITS = [['fill', 'Scale to fill the screen'], ['full', 'Scale to show the full image'],
+  ['75', 'Scale to 75% of the screen'], ['50', 'Scale to 50% of the screen'], ['center', 'Original size, centered']];
+
+function optionList(list, selected, fallback) {
+  var known = list.some(function (e) { return e[0] === selected; });
+  var sel = known ? selected : fallback;
+  return list.map(function (e) {
+    return '<option value="' + e[0] + '"' + (e[0] === sel ? ' selected' : '') + '>' + e[1] + '</option>';
+  }).join('');
+}
+
+function pluginSourceLabel(src) {
+  return String(src.pluginName || 'Plugin') + ' - ' + src.category + ' / ' + src.item + ': ' + src.label;
+}
+
+// The sources that can deliver a picture right now. A saved source that is no
+// longer offered stays selectable (so a save does not silently change it).
+function pluginSourceOptions(current) {
+  var cat = current && current.pluginCatalogue;
+  var list = (cat && cat.status === 'ok' && Array.isArray(cat.imageSources)) ? cat.imageSources : [];
+  var stored = String((current && current.pluginBgSource) || '');
+  var opts = '', found = false;
+  list.forEach(function (src) {
+    var sel = src.key === stored || (!stored && !found && src === list[0]);
+    if (src.key === stored) found = true;
+    opts += '<option value="' + esc(src.key) + '"' + (sel ? ' selected' : '') + '>' + esc(pluginSourceLabel(src)) + '</option>';
+  });
+  if (stored && !found) opts += '<option value="' + esc(stored) + '" selected>Selected source (not available now)</option>';
+  if (!opts) opts = '<option value="">No plugin provides images</option>';
+  return { html: opts, any: list.length > 0 || !!stored,
+    message: !cat || cat.status !== 'ok' ? ((cat && cat.message) || 'Plugins are not enabled.') : (list.length ? '' : 'No plugin offers an image right now.') };
+}
+
 function weatherThumbImgs() {
   return '<div style="display:none;">' + (weatherBgs.styles || []).map(function (st) {
     return '<img id="weatherBgThumb-' + esc(st.id) + '" src="' + st.thumb + '" alt="">';
@@ -84,6 +126,7 @@ function weatherStyleOptions(current) {
 // #section-style so #useCustomBg / #bgSource are captured by style presets.
 function backgroundSectionHtml(current) {
   var numbers = bgImages.numbers || [];
+  var pluginSrc = pluginSourceOptions(current);
   var presetHtml = '';
   if (numbers.length) {
     presetHtml = '<div class="example-style-grid">';
@@ -100,18 +143,20 @@ function backgroundSectionHtml(current) {
   // Hands style and Indices style use.
   return '' +
 '    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
-'      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
+'      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) && !isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
 '      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
 '      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
+'      <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
 '    </div>' +
-'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo, <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors.</div>' +
+'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo, <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
 // The two checkboxes stay as the (hidden) state behind the buttons: presets, save() and the
 // preview all read them, so nothing else needs to know about the button group.
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
+'      <input type="checkbox" id="usePluginBg" ' + (isPluginOn(current) ? 'checked' : '') + '>' +
 '    </div>' +
-'    <div class="checkbox-row" id="bgTranslucentRow" style="margin-top:10px;' + (isOn(current) || isWeatherOn(current) ? '' : 'display:none;') + '">' +
+'    <div class="checkbox-row" id="bgTranslucentRow" style="margin-top:10px;' + (isOn(current) || isWeatherOn(current) || isPluginOn(current) ? '' : 'display:none;') + '">' +
 '      <input type="checkbox" id="bgTranslucent" ' + (current && (current.bgTranslucent === true || current.bgTranslucent === 'true') ? 'checked' : '') + ' onchange="bgRefresh()">' +
 '      <label for="bgTranslucent" style="margin:0;">Translucent background image</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
@@ -122,6 +167,19 @@ function backgroundSectionHtml(current) {
 '      <label for="weatherBgStyle">Style</label>' +
 '      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
 '      ' + weatherThumbImgs() +
+'    </div>' +
+'    <div id="pluginBgPanel" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
+'      <label for="pluginBgSource">Image source</label>' +
+'      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
+(pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
+'      <label for="pluginBgDither">Dithering</label>' +
+'      <select id="pluginBgDither" onchange="bgRefresh()">' + optionList(PLUGIN_DITHERS, String((current && current.pluginBgDither) || ''), 'fs') + '</select>' +
+'      <label for="pluginBgColor">Color processing</label>' +
+'      <select id="pluginBgColor" onchange="bgRefresh()">' + optionList(PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral') + '</select>' +
+'      <label for="pluginBgFit">Screen filling</label>' +
+'      <select id="pluginBgFit" onchange="bgRefresh()">' + optionList(PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill') + '</select>' +
+'      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. It is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts, and removed when the plugin reports no image. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
@@ -466,6 +524,8 @@ var CLIENT_BODY =
 'function bgSubheaderPart() {\n' +
 '  var wbox = bgEl("useWeatherBg");\n' +
 '  if (wbox && wbox.checked) return " + weather background";\n' +
+'  var pbox = bgEl("usePluginBg");\n' +
+'  if (pbox && pbox.checked) return " + plugin background";\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  if (!box || !box.checked) return "";\n' +
 '  var s = bgParseSource();\n' +
@@ -478,8 +538,10 @@ var CLIENT_BODY =
 '  var box = bgEl("useCustomBg");\n' +
 '  var panel = bgEl("bgPanel");\n' +
 '  var wbox = bgEl("useWeatherBg"), wpanel = bgEl("weatherBgPanel");\n' +
+'  var pbox = bgEl("usePluginBg"), ppanel = bgEl("pluginBgPanel");\n' +
 '  if (wpanel) wpanel.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
-'  var bmode = (wbox && wbox.checked) ? 2 : ((box && box.checked) ? 1 : 0);\n' +
+'  if (ppanel) ppanel.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
+'  var bmode = (wbox && wbox.checked) ? 2 : ((box && box.checked) ? 1 : ((pbox && pbox.checked) ? 3 : 0));\n' +
 '  var bbtns = bgEl("bgModeGroup") ? bgEl("bgModeGroup").getElementsByClassName("mode-btn") : [];\n' +
 '  for (var bi = 0; bi < bbtns.length; bi++) bbtns[bi].className = "mode-btn" + (bi === bmode ? " active" : "");\n' +
 '  var trow = bgEl("bgTranslucentRow");\n' +
@@ -513,6 +575,8 @@ var CLIENT_BODY =
 'function refreshBackgroundSubsectionPreview() {\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var html = "", title = "Plain background color";\n' +
+'  var pbox = bgEl("usePluginBg");\n' +
+'  if (pbox && pbox.checked && !(box && box.checked)) title = "Plugin background";\n' +
 '  var wbox = bgEl("useWeatherBg");\n' +
 '  if (wbox && wbox.checked) {\n' +
 '    var wi = bgEl("weatherBgThumb-" + bgEl("weatherBgStyle").value);\n' +
@@ -542,9 +606,10 @@ var CLIENT_BODY =
 '  bgEdSetup();\n' +
 '}\n' +
 'function bgSetMode(m) {\n' +
-'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg"), pb = bgEl("usePluginBg");\n' +
 '  if (cb) cb.checked = (m === 1);\n' +
 '  if (wb) wb.checked = (m === 2);\n' +
+'  if (pb) pb.checked = (m === 3);\n' +
 '  if (m === 2) {\n' +
 '    // Night pictures go with the night color scheme: switch it on.\n' +
 '    var ne = bgEl("nightEnabled");\n' +
@@ -553,14 +618,16 @@ var CLIENT_BODY =
 '  bgRefresh();\n' +
 '}\n' +
 'function onUseCustomBgChange() {\n' +
-'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg"), pb = bgEl("usePluginBg");\n' +
 '  if (cb && cb.checked && wb) wb.checked = false;\n' +
+'  if (cb && cb.checked && pb) pb.checked = false;\n' +
 '  bgRefresh();\n' +
 '}\n' +
 'function onUseWeatherBgChange() {\n' +
-'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg");\n' +
+'  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg"), pb = bgEl("usePluginBg");\n' +
 '  if (wb && wb.checked) {\n' +
 '    if (cb) cb.checked = false;\n' +
+'    if (pb) pb.checked = false;\n' +
 '    // Night pictures go with the night color scheme: switch it on.\n' +
 '    var ne = bgEl("nightEnabled");\n' +
 '    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
@@ -583,8 +650,9 @@ var CLIENT_BODY =
 '}\n' +
 '// Called after a style preset / example style has rewritten #useCustomBg and #bgSource.\n' +
 'function bgAfterStyleApplied() {\n' +
-'  var cb0 = bgEl("useCustomBg"), wb0 = bgEl("useWeatherBg");\n' +
+'  var cb0 = bgEl("useCustomBg"), wb0 = bgEl("useWeatherBg"), pb0 = bgEl("usePluginBg");\n' +
 '  if (cb0 && wb0 && cb0.checked) wb0.checked = false;\n' +
+'  if (pb0 && ((cb0 && cb0.checked) || (wb0 && wb0.checked))) pb0.checked = false;\n' +
 '  var s = bgParseSource();\n' +
 '  if (s.kind === "u" && !bgSlotHas(s.n)) bgEl("bgSource").value = bgDefaultSource();\n' +
 '  bgSyncUi();\n' +

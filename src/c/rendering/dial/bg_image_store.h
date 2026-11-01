@@ -18,8 +18,19 @@
 // bitmap (bg_image_cache.c) when it is built.
 //
 // Slot numbers are 1-based everywhere (1..BG_IMG_SLOTS).
+//
+// One more slot, BG_IMG_PLUGIN_SLOT, holds the picture of the PLUGIN background
+// style. It travels with the very same messages but lives in RAM only: it is never
+// written to persistent storage, so it is gone whenever the watchface restarts
+// (the phone notices from the stamp, 0, that we report, and sends it again), and it
+// may be any size up to the screen -- the phone has already applied fit, colour
+// and dither settings, so the watch just draws what it is given, centred.
+// It is allocated when a transfer starts and freed when the slot is emptied.
 
 #define BG_IMG_SLOTS 9
+#define BG_IMG_PLUGIN_SLOT (BG_IMG_SLOTS + 1)
+// Stamps reported to the phone: the persistent slots, then the plugin slot.
+#define BG_IMG_REPORTED_SLOTS (BG_IMG_SLOTS + 1)
 #define BG_IMG_CHUNK_BYTES 255
 #define BG_IMG_MAX_PIXELS (320 * 320)
 
@@ -27,8 +38,8 @@
 // or 0 when the slot is empty -- including while a transfer into it is half done.
 uint32_t bg_image_store_stamp(uint8_t slot);
 
-// Fills out[0..BG_IMG_SLOTS-1] with the stamp of slots 1..9 (0 = empty).
-void bg_image_store_stamps(uint32_t out[BG_IMG_SLOTS]);
+// Fills out[0..BG_IMG_REPORTED_SLOTS-1] with the stamp of slots 1..10 (0 = empty).
+void bg_image_store_stamps(uint32_t out[BG_IMG_REPORTED_SLOTS]);
 
 // Starts a transfer into `slot`: invalidates that slot's current image and
 // records what is coming. Other slots are untouched.
@@ -42,7 +53,7 @@ bool bg_image_store_write(uint16_t first_chunk, const uint8_t *data, uint16_t le
 // current. Returns false (and leaves the slot empty) if anything is missing.
 bool bg_image_store_commit(uint32_t stamp);
 
-// Empties `slot` (the image was removed on the phone).
+// Empties `slot` (the image was removed on the phone); the plugin slot's memory is freed.
 void bg_image_store_clear(uint8_t slot);
 
 // Slot currently being received (1-based), or 0 when no transfer is active.
@@ -54,11 +65,11 @@ uint16_t bg_image_store_pending_progress(void);
 // Total chunks of the active transfer, or 0.
 uint16_t bg_image_store_pending_chunks(void);
 
-// Abandons the active transfer (the slot stays empty).
+// Abandons the active transfer (the slot stays empty; a half-received plugin picture is freed).
 void bg_image_store_abort(void);
 
 // Decodes the image in `slot` straight into the frame buffer, centred in
 // `bounds` (layer coordinates; `origin` is the layer's position on screen).
-// Nothing is allocated: pixels go from persistent storage to the screen in
-// 255-byte pieces. Returns false if the slot has no (readable) image.
+// Nothing is allocated: pixels go from persistent storage (or, for the plugin
+// slot, from its RAM copy) to the screen in 255-byte pieces. Returns false if the slot has no (readable) image.
 bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origin);

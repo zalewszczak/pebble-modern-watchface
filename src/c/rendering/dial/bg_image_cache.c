@@ -20,6 +20,11 @@ uint32_t bg_image_signature(const WatchData *d) {
     uint32_t id = weather_bg_resource(d);
     return id ? (0x30000000u | id) : 0;
   }
+  if (d->custom_bg_mode == 4) {
+    // 0x4... = "from a plugin": the RAM picture's stamp is 0 while there is none (not
+    // received yet, emptied, or the watchface just restarted) and changes with every new picture.
+    return 0x40000000u | (bg_image_store_stamp(BG_IMG_PLUGIN_SLOT) & 0x3FFFFFFFu);
+  }
   if (d->custom_bg_mode == 2) {
     // 0x2... = "uploaded"; the slot's stamp is 0 while that slot is empty or
     // still being transferred, and changes when its image is replaced.
@@ -68,8 +73,12 @@ bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
   } else if (d->custom_bg_mode == 2) {
     if (bg_image_store_stamp(d->custom_bg_preset) == 0) return true; // slot empty / not received yet
     if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) return false;
+  } else if (d->custom_bg_mode == 4) {
+    // The picture is already processed and sized by the phone; it is drawn centred.
+    if (bg_image_store_stamp(BG_IMG_PLUGIN_SLOT) == 0) return true; // none yet / removed
+    if (!bg_image_store_draw(BG_IMG_PLUGIN_SLOT, ctx, bounds, origin)) return false;
   }
-  if (d->bg_translucent && d->custom_bg_mode >= 1 && d->custom_bg_mode <= 3) {
+  if (d->bg_translucent && d->custom_bg_mode >= 1 && d->custom_bg_mode <= 4) {
     bg_make_translucent(ctx, bounds, origin, bg);
   }
   return true;

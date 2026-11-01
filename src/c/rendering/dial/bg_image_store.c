@@ -12,7 +12,13 @@ static uint32_t header_key(uint8_t slot) { return PERSIST_KEY_BG_HEADER_BASE + s
 static uint32_t chunk_key(uint8_t slot, uint16_t chunk) {
   return PERSIST_KEY_BG_CHUNK_BASE + (uint32_t)slot * BG_CHUNK_KEY_SPAN + chunk;
 }
-static bool slot_ok(uint8_t slot) { return slot >= 1 && slot <= BG_IMG_SLOTS; }
+static bool slot_ok(uint8_t slot) { return slot >= 1 && slot <= BG_IMG_PLUGIN_SLOT; }
+// The plugin slot lives in RAM only: nothing below touches persistent storage for it.
+static bool is_ram(uint8_t slot) { return slot == BG_IMG_PLUGIN_SLOT; }
+
+// Free heap that must stay available after the plugin picture is allocated: the
+// dial cache and the other layers need room too.
+#define BG_RAM_HEAP_RESERVE 4096
 
 typedef struct __attribute__((packed)) {
   uint32_t stamp;
@@ -21,23 +27,35 @@ typedef struct __attribute__((packed)) {
   uint16_t chunks;
 } BgHeader;
 
-static bool s_loaded[BG_IMG_SLOTS + 1];
-static BgHeader s_header[BG_IMG_SLOTS + 1]; // valid when .stamp != 0
+static bool s_loaded[BG_IMG_PLUGIN_SLOT + 1];
+static BgHeader s_header[BG_IMG_PLUGIN_SLOT + 1]; // valid when .stamp != 0
+static uint8_t *s_ram;                       // plugin slot: the packed picture (NULL = none)
+static uint32_t s_ram_filled;                // plugin slot: bytes received so far
 static BgHeader s_pending;                   // transfer in progress
 static uint8_t s_pending_slot;               // 0 = none
 static uint16_t s_pending_written;           // highest chunk index written + 1
 static uint16_t s_old_chunks;                // chunk count of the image being replaced
 
+static uint32_t packed_bytes(uint16_t w, uint16_t h) {
+  return ((((uint32_t)w * h) + 3) / 4) * 3;
+}
+
 static uint16_t expected_chunks(uint16_t w, uint16_t h) {
-  uint32_t groups = ((uint32_t)w * h + 3) / 4;
-  uint32_t bytes = groups * 3;
+  uint32_t bytes = packed_bytes(w, h);
   return (uint16_t)((bytes + BG_IMG_CHUNK_BYTES - 1) / BG_IMG_CHUNK_BYTES);
+}
+
+static void ram_free(void) {
+  if (s_ram) free(s_ram);
+  s_ram = NULL;
+  s_ram_filled = 0;
 }
 
 static void load_header(uint8_t slot) {
   if (!slot_ok(slot) || s_loaded[slot]) return;
   s_loaded[slot] = true;
   memset(&s_header[slot], 0, sizeof(BgHeader));
+  if (is_ram(slot)) return; // starts empty, always
   BgHeader h;
   if (persist_exists(header_key(slot)) &&
       persist_get_size(header_key(slot)) == (int)sizeof(h) &&
@@ -53,11 +71,12 @@ uint32_t bg_image_store_stamp(uint8_t slot) {
   return s_header[slot].stamp;
 }
 
-void bg_image_store_stamps(uint32_t out[BG_IMG_SLOTS]) {
-  for (uint8_t s = 1; s <= BG_IMG_SLOTS; s++) out[s - 1] = bg_image_store_stamp(s);
+void bg_image_store_stamps(uint32_t out[BG_IMG_REPORTED_SLOTS]) {
+  for (uint8_t s = 1; s <= BG_IMG_REPORTED_SLOTS; s++) out[s - 1] = bg_image_store_stamp(s);
 }
 
 static void delete_chunks(uint8_t slot, uint16_t from, uint16_t to) {
+  if (is_ram(slot)) return;
   for (uint16_t i = from; i < to; i++) {
     if (persist_exists(chunk_key(slot, i))) persist_delete(chunk_key(slot, i));
   }
@@ -68,7 +87,11 @@ void bg_image_store_clear(uint8_t slot) {
   load_header(slot);
   if (s_pending_slot == slot) bg_image_store_abort();
   uint16_t n = s_header[slot].chunks;
-  if (persist_exists(header_key(slot))) persist_delete(header_key(slot));
+  if (is_ram(slot)) {
+    ram_free();
+  } else if (persist_exists(header_key(slot))) {
+    persist_delete(header_key(slot));
+  }
   memset(&s_header[slot], 0, sizeof(BgHeader));
   delete_chunks(slot, 0, n);
 }
@@ -77,10 +100,17 @@ uint8_t bg_image_store_pending_slot(void) { return s_pending_slot; }
 uint16_t bg_image_store_pending_progress(void) { return s_pending_slot ? s_pending_written : 0; }
 uint16_t bg_image_store_pending_chunks(void) { return s_pending_slot ? s_pending.chunks : 0; }
 
-void bg_image_store_abort(void) {
+// Forgets the active transfer's bookkeeping (what has been stored stays).
+static void pending_reset(void) {
   memset(&s_pending, 0, sizeof(s_pending));
   s_pending_slot = 0;
   s_pending_written = 0;
+}
+
+void bg_image_store_abort(void) {
+  // A half-received plugin picture is useless: give its memory back.
+  if (is_ram(s_pending_slot)) ram_free();
+  pending_reset();
 }
 
 bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h) {
@@ -90,10 +120,22 @@ bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_
   s_old_chunks = s_header[slot].chunks;
   // Drop the header first: a transfer that dies half-way must never leave a
   // header pointing at a mix of old and new chunks.
-  if (persist_exists(header_key(slot))) persist_delete(header_key(slot));
+  if (is_ram(slot)) {
+    ram_free();
+  } else if (persist_exists(header_key(slot))) {
+    persist_delete(header_key(slot));
+  }
   memset(&s_header[slot], 0, sizeof(BgHeader));
   if (stamp == 0 || w == 0 || h == 0 || (uint32_t)w * h > BG_IMG_MAX_PIXELS ||
       chunks != expected_chunks(w, h) || chunks > BG_CHUNK_KEY_SPAN) return false;
+  if (is_ram(slot)) {
+    // The old picture is already gone, so the whole heap is available for the new one.
+    const uint32_t bytes = packed_bytes(w, h);
+    if (heap_bytes_free() < bytes + BG_RAM_HEAP_RESERVE) return false;
+    s_ram = (uint8_t *)malloc(bytes);
+    if (!s_ram) return false;
+    s_ram_filled = 0;
+  }
   s_pending.stamp = stamp;
   s_pending.w = w;
   s_pending.h = h;
@@ -107,10 +149,21 @@ bool bg_image_store_write(uint16_t first_chunk, const uint8_t *data, uint16_t le
   if (s_pending_slot == 0 || s_pending.stamp == 0) return false;
   bool ok = true;
   uint16_t chunk = first_chunk;
+  if (is_ram(s_pending_slot)) {
+    // No gaps: a chunk may repeat (the phone retried), never skip ahead.
+    if (!s_ram || first_chunk > s_pending_written) { bg_image_store_abort(); return false; }
+  }
   while (len > 0) {
     if (chunk >= s_pending.chunks) return false;
     uint16_t n = len < BG_IMG_CHUNK_BYTES ? len : BG_IMG_CHUNK_BYTES;
-    if (persist_write_data(chunk_key(s_pending_slot, chunk), data, n) != (int)n) ok = false;
+    if (is_ram(s_pending_slot)) {
+      const uint32_t off = (uint32_t)chunk * BG_IMG_CHUNK_BYTES;
+      if (off + n > packed_bytes(s_pending.w, s_pending.h)) { ok = false; break; }
+      memcpy(s_ram + off, data, n);
+      if (off + n > s_ram_filled) s_ram_filled = off + n;
+    } else if (persist_write_data(chunk_key(s_pending_slot, chunk), data, n) != (int)n) {
+      ok = false;
+    }
     data += n;
     len -= n;
     chunk++;
@@ -124,8 +177,16 @@ bool bg_image_store_commit(uint32_t stamp) {
   if (s_pending_slot == 0 || s_pending.stamp == 0 || s_pending.stamp != stamp) return false;
   const uint8_t slot = s_pending_slot;
   BgHeader h = s_pending;
-  bg_image_store_abort();
-  uint32_t total_bytes = (((uint32_t)h.w * h.h + 3) / 4) * 3;
+  const uint32_t total_bytes = packed_bytes(h.w, h.h);
+  if (is_ram(slot)) {
+    const bool complete = s_ram && s_ram_filled == total_bytes && s_pending_written == h.chunks;
+    pending_reset(); // the buffer stays: it becomes the slot's image (or is freed just below)
+    if (!complete) { ram_free(); return false; }
+    s_header[slot] = h;
+    s_loaded[slot] = true;
+    return true;
+  }
+  pending_reset();
   for (uint16_t i = 0; i < h.chunks; i++) {
     int want = (i + 1 < h.chunks) ? BG_IMG_CHUNK_BYTES
                                   : (int)(total_bytes - (uint32_t)i * BG_IMG_CHUNK_BYTES);
@@ -139,6 +200,21 @@ bool bg_image_store_commit(uint32_t stamp) {
   s_header[slot] = h;
   s_loaded[slot] = true;
   return true;
+}
+
+// One chunk of the packed image: from persistent storage, or from the plugin
+// slot's RAM copy. Returns the byte count, or <= 0 when it cannot be read.
+static int read_chunk(uint8_t slot, const BgHeader *hdr, uint16_t c, uint8_t *buf) {
+  if (is_ram(slot)) {
+    const uint32_t total = packed_bytes(hdr->w, hdr->h);
+    const uint32_t off = (uint32_t)c * BG_IMG_CHUNK_BYTES;
+    if (!s_ram || off >= total) return -1;
+    uint32_t n = total - off;
+    if (n > BG_IMG_CHUNK_BYTES) n = BG_IMG_CHUNK_BYTES;
+    memcpy(buf, s_ram + off, n);
+    return (int)n;
+  }
+  return persist_read_data(chunk_key(slot, c), buf, BG_IMG_CHUNK_BYTES);
 }
 
 bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origin) {
@@ -176,7 +252,7 @@ bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origi
   uint8_t buf[BG_IMG_CHUNK_BYTES];
 
   for (uint16_t c = 0; c < hdr.chunks && pixel < total && ok; c++) {
-    int n = persist_read_data(chunk_key(slot, c), buf, sizeof(buf));
+    int n = read_chunk(slot, &hdr, c, buf);
     if (n <= 0 || (n % 3) != 0) { ok = false; break; }
     for (int i = 0; i + 2 < n && pixel < total; i += 3) {
       uint8_t b0 = buf[i], b1 = buf[i + 1], b2 = buf[i + 2];

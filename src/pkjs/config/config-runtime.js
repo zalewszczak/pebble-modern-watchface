@@ -58,6 +58,11 @@ module.exports =
 '    CONFIG_USE_WEATHER_BG: document.getElementById("useWeatherBg").checked,' +
 '    CONFIG_WEATHER_BG_STYLE: document.getElementById("weatherBgStyle").value,' +
 '    CONFIG_BG_TRANSLUCENT: document.getElementById("bgTranslucent").checked,' +
+'    CONFIG_USE_PLUGIN_BG: document.getElementById("usePluginBg").checked,' +
+'    CONFIG_PLUGIN_BG_SOURCE: document.getElementById("pluginBgSource").value,' +
+'    CONFIG_PLUGIN_BG_DITHER: document.getElementById("pluginBgDither").value,' +
+'    CONFIG_PLUGIN_BG_COLOR: document.getElementById("pluginBgColor").value,' +
+'    CONFIG_PLUGIN_BG_FIT: document.getElementById("pluginBgFit").value,' +
 '    CONFIG_BORDER_WEATHER_MODE: document.getElementById("borderWeatherMode").value,' +
 '    CONFIG_BORDER_WEATHER_PX: document.getElementById("borderWeatherPx").value,' +
 '    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +

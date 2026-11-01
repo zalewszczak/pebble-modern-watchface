@@ -51,17 +51,17 @@ function humanize(s) {
 // Each source: { key, plugin, pluginName, category, item, property, shapes, label, group }.
 function readCatalogue() {
   if (!hasApi()) {
-    return { status: 'unsupported', sources: [],
+    return { status: 'unsupported', sources: [], imageSources: [],
       message: 'Plugins are not enabled: this version of the Pebble app does not support plugins. Update the app to use them.' };
   }
   var plugins;
   try {
     plugins = Pebble.enumeratePlugins();
   } catch (e) {
-    return { status: 'disabled', sources: [],
+    return { status: 'disabled', sources: [], imageSources: [],
       message: 'Plugins are not enabled in the Pebble app (' + ((e && e.message) || 'unavailable') + '). Turn on plugins in the app\'s settings.' };
   }
-  var sources = [], weatherProviders = [];
+  var sources = [], weatherProviders = [], imageSources = [];
   (plugins || []).forEach(function (plugin) {
     (plugin.sources || []).forEach(function (source) {
       var props = source.properties || {};
@@ -73,6 +73,16 @@ function readCatalogue() {
       (source.items || []).forEach(function (item) {
         Object.keys(props).forEach(function (prop) {
           var shapes = props[prop] || [];
+          // Properties that can deliver a bitmap are offered as background pictures (style PLUGIN).
+          if (shapes.indexOf('image') !== -1) {
+            imageSources.push({
+              key: [plugin.uuid, source.category, item, prop].join('|'),
+              plugin: plugin.uuid, pluginName: plugin.name || 'Plugin',
+              category: source.category, item: item, property: prop,
+              group: (plugin.name || 'Plugin') + ' - ' + humanize(source.category) + ' / ' + humanize(item),
+              label: humanize(prop)
+            });
+          }
           var usable = shapes.filter(function (s) { return TEXT_SHAPES.indexOf(s) !== -1; });
           if (!usable.length) return; // series, images and icons cannot be shown as text
           sources.push({
@@ -86,7 +96,7 @@ function readCatalogue() {
       });
     });
   });
-  return { status: 'ok', sources: sources, weatherProviders: weatherProviders, message: sources.length ? '' : 'No plugin provides text data right now.' };
+  return { status: 'ok', sources: sources, imageSources: imageSources, weatherProviders: weatherProviders, message: sources.length ? '' : 'No plugin provides text data right now.' };
 }
 
 function status() { return readCatalogue().status; }

@@ -26,6 +26,7 @@ Preview ready-made designs. Applying an example replaces the related Style, Colo
 - **Hands:** select a hand design and edit hour, minute, and second hands separately. Available properties include width, length, rear and middle offsets, secondary width, color, outline, translucency, shadow, and hollow styling. The centre circle has its own radius and color.
 - **Indices:** select the hour/second marker design, including built-in bitmap designs and procedural presets. Depending on the design, additional options control transparency, inversion, custom ring geometry, and marker text. Marker text supports font, offset, hour/second masks, and Roman numerals.
 - **Background:** choose a solid/custom background, a bundled image, or a weather-driven background style. Personal images can be imported from the phone and transferred to the watch.
+  - **PLUGIN** (fourth background style) shows a picture supplied by a Pebble plugin that offers an `image` property. Pick the source, then dithering (none, Floyd–Steinberg, Atkinson, ordered 4x4/8x8), color processing (normal, vivid, black & white, sepia) and screen filling (fill, show full image, 75 %, 50 %, original size centered). The phone does all of the processing (`bg-image/plugin-image.js`) and sends the finished 64-color picture over the same transfer as personal images, into a RAM-only slot on the watch: the watch knows nothing about these options, the picture is not saved in persistent storage, and the phone sends it again whenever the watchface restarts. When the plugin reports no image, the picture is removed from the watch.
 - **Border:** configure the dial border and its weather-responsive behavior, including width, scheme, and shake-related options.
 - **Seconds:** show or hide the second hand.
 
@@ -98,7 +99,7 @@ src/c/                     Pebble watch application (C)
   generated/               Generated C headers; do not edit by hand
 src/pkjs/                  Phone-side JavaScript application
   astronomy/               Solar, lunar, planet, meteor, aurora, and ISS calculations
-  bg-image/                Custom background encoding and transfer
+  bg-image/                Custom background encoding and transfer; plugin picture subscription and processing
   comms/                   Message schema, encoding, and queue
   config/                  Settings UI modules, preview, and lookup data
   data/generated/          Generated settings-page image/data modules

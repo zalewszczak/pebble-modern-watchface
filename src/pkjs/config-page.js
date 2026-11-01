@@ -3785,6 +3785,11 @@ configPlugins.pluginScript(current) +
 '  if (obj && Array.isArray(obj.__pluginSlots) && typeof PLUGIN_SLOTS !== "undefined") {' +
 '    for (var psi = 0; psi < PLUGIN_SLOT_COUNT; psi++) PLUGIN_SLOTS[psi] = typeof obj.__pluginSlots[psi] === "string" ? obj.__pluginSlots[psi] : "";' +
 '  }' +
+// Styles saved before the PLUGIN background existed say nothing about it: they mean "no plugin background".
+'  if (obj && obj.usePluginBg === undefined && (obj.useCustomBg !== undefined || obj.useWeatherBg !== undefined)) {' +
+'    var pbReset = document.getElementById("usePluginBg");' +
+'    if (pbReset) pbReset.checked = false;' +
+'  }' +
 '  Object.keys(obj).forEach(function (id) {' +
 '    if (id === "__pluginSlots") return;' +
 '    var el = document.getElementById(id);' +

@@ -117,7 +117,10 @@ typedef struct {
   // bitmap resource, see generated/background_presets.h), 2 = one of the
   // user's uploaded images, user slot custom_bg_preset (1-9), which the phone
   // transferred into persistent storage ahead of time (see
-  // rendering/dial/bg_image_store.h).
+  // rendering/dial/bg_image_store.h), 3 = weather background (style
+  // custom_bg_preset), 4 = picture from a plugin: the phone has already scaled,
+  // colour-processed and dithered it, and keeps it in RAM only (the plugin slot
+  // of bg_image_store.h), so it is empty after every restart until re-sent.
   uint8_t custom_bg_mode;
   // Weather border drawn into the cached background, below the indices:
   // 0 = off, 1 = conditions, 2 = temperature, 3 = rain chance, 4 = all three
