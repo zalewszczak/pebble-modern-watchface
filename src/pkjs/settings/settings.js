@@ -1,12 +1,6 @@
-// ---- tiny settings helpers, backed directly by localStorage -------------
-//
-// Raw access only -- reading/writing a CONFIG_* (or cache) key exactly
-// as stored, no wire-format encoding or validation. See
-// settings-codecs.js for the layer that turns a raw stored string into
-// the clamped numeric/byte value actually sent to the watch.
-//
-// Moved out of index.js verbatim (settings subsystem extraction).
-// Behavior is unchanged; only the module boundary is new.
+// ---- Local settings storage ----------------------------------------------
+// Reads and writes raw localStorage values. settings-codecs.js validates
+// and converts these values for the watch protocol.
 
 function getSetting(key, fallback) {
   var v = localStorage.getItem(key);

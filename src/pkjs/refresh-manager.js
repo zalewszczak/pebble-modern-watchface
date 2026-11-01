@@ -1,11 +1,6 @@
-// ---- refresh manager --------------------------------------------------
-//
-// Moved to refresh-manager.js (refresh manager extraction). Owns: the
-// smart-refresh skip/resend cache, location + reverse-geocode lookup,
-// the optional ISS/air-quality/aurora fetches, the main refresh cycle
-// (refreshAndSend), and its two timers (the periodic interval and the
-// battery-saver hourly check). Behavior is unchanged; only the module
-// boundary is new.
+// ---- Data refresh coordination ------------------------------------------
+// Owns location lookup, optional data-source fetches, refresh scheduling,
+// and the cache used to avoid unnecessary requests and resends.
 //
 // Public API: refreshAndSend, scheduleRefresh, startBatterySaverHourlyCheck,
 // setBatterySaverPhase -- the last one exists because lastBatterySaverPhase
@@ -30,7 +25,6 @@ var sendFlatDict = messageEncoder.sendFlatDict;
 var refreshTimer = null;
 // Battery saver: last BATTERY_SAVER_PHASE the watch has reported (0=awake,
 // 1=sleep, 2=deep sleep -- see shake_anim_mode's neighboring comment block
-// in eclipse_data.h/pebble-eclipse-watch.c for the full state machine on
 // the watch side). While non-zero, the watch itself has said nobody's
 // shaken it in 2h+, so the periodic refresh below holds off except right
 // at the top of the hour (see scheduleRefresh()/startBatterySaverHourlyCheck()) --
@@ -70,12 +64,9 @@ function parseDateTimeLocal(str) {
   );
 }
 
-// "Now" for the purposes of the eclipse calculation -- normally the
-// real current time, but overridable from settings so you can preview
-// the watchface against a known eclipse date without waiting for one.
-// This only affects what PKJS calculates and sends; it doesn't touch
-// the watch's own clock, so set that to match by hand if you want the
-// on-screen countdown to line up too.
+// Astronomy values are refreshed by the phone-side data service.
+// Real time can be overridden in test mode to preview time-dependent
+// data. This changes phone-side calculations only, not the watch clock.
 function getEffectiveNow() {
   var testMode = getSetting('CONFIG_TEST_MODE', 'false') === 'true';
   if (testMode) {
@@ -212,10 +203,9 @@ function shouldSkipRefresh(lat, lon) {
 // can go missing independently of anything PKJS tracks (most commonly
 // right after a watch app update changes its data struct's layout,
 // which invalidates whatever was saved under the old one -- see
-// EclipseData's own persistence comment in eclipse_data.h). When that
+// Watch data is serialized using the current schema.
 // happens the watch shows "No data yet, waiting for phone" and starts
 // asking for a resend via REQUEST_UPDATE (see request_retry_callback()
-// in pebble-eclipse-watch.c) -- and before this existed, that request
 // landed right back on shouldSkipRefresh() and got silently dropped,
 // since from PKJS's side nothing had changed since the last
 // successful fetch. Resending the last full computed result (cheap --
@@ -496,7 +486,6 @@ function scheduleRefresh() {
 // compute and re-schedule a timer landing exactly on the next hour
 // boundary -- simpler, and the watch's own once-a-minute tick while
 // resting already has this exact same shape (see tick_handler()'s
-// deep_sleep_skip in pebble-eclipse-watch.c).
 function startBatterySaverHourlyCheck() {
   if (batterySaverHourlyTimer) clearInterval(batterySaverHourlyTimer);
   batterySaverHourlyTimer = setInterval(function () {

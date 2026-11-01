@@ -1,10 +1,6 @@
 // ---- ISS (or any other near-Earth satellite given fresh elements) -------
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
-// Named iss-orbit.js rather than iss.js (the report's suggested name)
-// to avoid colliding with the existing top-level src/pkjs/iss.js, which
-// is the Celestrak fetch + field-mapping layer, not this orbital math --
-// see that file's own header comment for the split between the two.
+// Orbital calculations for the ISS and other near-Earth satellites.
 
 var angles = require('./angles');
 var sind = angles.sind;

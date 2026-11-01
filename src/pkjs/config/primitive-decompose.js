@@ -3,7 +3,7 @@
 // Feature IDs exist only in settings and this module. Before communication,
 // every selectable feature is compiled into a bounded primitive-ID sequence
 // plus auxiliary parameters. The watch receives no feature/content IDs and
-// has no legacy content resolver or rendering fallback.
+// has no content resolver or rendering fallback.
 //
 // PRIMITIVE_PALETTE below exposes only IDs supported by primitive_resolver.c.
 // The preview uses the same sequence tables that the message encoder sends.
@@ -42,13 +42,8 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   98: [PRIM.PRIM_WEEKDAY_SHORT_UPPER, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH, PRIM.PRIM_SLASH, PRIM.PRIM_MONTH_NUMBER],
   99: [PRIM.PRIM_WEEKDAY_SHORT_UPPER, PRIM.PRIM_SPACE, PRIM.PRIM_MONTH_NUMBER, PRIM.PRIM_SLASH, PRIM.PRIM_DAY_OF_MONTH],
 
-  // Unblocked by the color-ownership principle (see this file's header and
-  // IMPLEMENTATION_NOTES.md's Phase 3 update): these all used to need a
-  // *different* canonical color for the same primitive ID depending on
-  // which content composed it. Now every date-component primitive shares
-  // one watch-decided gradient regardless of context, and every weather
-  // primitive resolves its own PKJS-decided color regardless of context --
-  // so there's no more ambiguity to avoid.
+  // Date components share a watch-computed gradient. Weather values and
+  // icons use the colors supplied with their resolved data.
   19: [PRIM.PRIM_LABEL_WK_PREFIX, PRIM.PRIM_SPACE, PRIM.PRIM_WEEK_NUMBER],
   22: [PRIM.PRIM_DAY_OF_MONTH],
   23: [PRIM.PRIM_WEEKDAY_SHORT_UPPER],
@@ -61,13 +56,8 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   106: [PRIM.PRIM_WEEKDAY_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH, PRIM.PRIM_SPACE,
         PRIM.PRIM_MONTH_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_LABEL_WK_PREFIX, PRIM.PRIM_WEEK_NUMBER],
 
-  // Health/status cluster (all watch-runtime, no color-ownership conflicts
-  // -- see the former health feature-value path and primitive_resolver.c's own
-  // per-case comments). Each is icon+text (or icon-only/text-only) exactly
-  // as the former segment helper's legacy slot setter/
-  // legacy segment setters
-  // pairs already produce, so no further decomposition was needed --
-  // these were already atomic in Phase 8's sense.
+  // Health and status values are resolved from watch services. Each entry
+  // is already an atomic icon or text element.
   1: [PRIM.PRIM_HEART_RATE_ICON, PRIM.PRIM_HEART_RATE_VALUE],
   2: [PRIM.PRIM_STEPS_ICON, PRIM.PRIM_STEPS_VALUE],
   3: [PRIM.PRIM_STEPS_ICON, PRIM.PRIM_STEP_GOAL_PCT],
@@ -82,22 +72,19 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   41: [PRIM.PRIM_SLEEP_QUALITY_ICON, PRIM.PRIM_SLEEP_QUALITY_PCT],
   42: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT],
   43: [PRIM.PRIM_WAKE_TIME_ICON, PRIM.PRIM_WAKE_TIME_TEXT],
-  // Fixed primitive-only equivalents for legacy composites 101 and 104.
-  // When sleep data is unavailable, individual resolvers render their N/A state.
+  // Primitive sequences for the combined sleep and bed/wake displays.
+  // Individual resolvers provide their own unavailable-data messages.
   101: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT, PRIM.PRIM_SLASH, PRIM.PRIM_WAKE_TIME_TEXT],
   104: [PRIM.PRIM_SLEEP_TOTAL_ICON, PRIM.PRIM_SLEEP_TOTAL_TEXT, PRIM.PRIM_SLEEP_RESTFUL_TEXT, PRIM.PRIM_SLEEP_QUALITY_PCT],
 
-  // Weather singles (legacy weather feature code cases 73/74/75/77) -- each a
-  // distinct primitive ID from content 4/32/76's, so no conflict with the
-  // temperature cluster above.
+  // Standalone weather values use distinct IDs from the combined displays.
   73: [PRIM.PRIM_CURRENT_TEMP_ONLY_TEXT],
   74: [PRIM.PRIM_TEMP_HIGH_ONLY_TEXT],
   75: [PRIM.PRIM_TEMP_LOW_ONLY_TEXT],
   77: [PRIM.PRIM_FEELS_LIKE_TEXT],
 
-  // Astronomy cluster (Update 24). Every one resolves on the watch
-  // (primitive_resolver.c): PKJS-supplied display strings (11/80/81/84) or
-  // watch-runtime selections over PKJS data (16/79/82/83), plus the live
+  // Astronomy values are resolved on the watch from phone-supplied data
+  // or live watch state.
   // compass sensor (85) and a passthrough name (13). Color rules copied
   // 1:1 from feature_value_sky_compute().
   11: [PRIM.PRIM_MOON_PHASE_ICON, PRIM.PRIM_MOON_PHASE_NAME],
@@ -111,14 +98,9 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   84: [PRIM.PRIM_AURORA_ICON, PRIM.PRIM_AURORA_KP],
   85: [PRIM.PRIM_COMPASS_ICON, PRIM.PRIM_COMPASS_DIR_TEXT],
 
-  // Composites (Update 24): fixed sequences over primitives that already
-  // resolve on their own. Not covered: 101 (bed/wake) and 104 (sleep
-  // times) -- their sequence LENGTH depends on whether sleep data exists
-  // (legacy drops the wake time / restful / quality parts when there is
-  // none), which a fixed transported sequence cannot express. See
-  // IMPLEMENTATION_NOTES.md Update 24.
-  // Time cluster (Update 25): plain clock/second/date-field contents. All
-  // watch-runtime.
+  // Composite displays use fixed sequences when all elements are available.
+  // Sleep composites remain resolver-managed because their elements depend
+  // on whether sleep data is available. Clock and date values resolve on-watch.
   18: [PRIM.PRIM_TIME_HM],
   63: [PRIM.PRIM_TIME_HMS],
   64: [PRIM.PRIM_HOUR_24_PAD],
@@ -132,9 +114,7 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   72: [PRIM.PRIM_SECOND_ONES],
   86: [PRIM.PRIM_AMPM],
 
-  // Weather cluster (Update 25). Every one PKJS-value-sourced with a
-  // watch-side fallback, same as the temperature/UV contents already
-  // transported.
+  // Weather values are supplied by PKJS, with watch-side fallbacks where needed.
   5: [PRIM.PRIM_CURRENT_CONDITIONS_TEXT],
   6: [PRIM.PRIM_UV_DAILY_TEXT],
   107: [PRIM.PRIM_UV_CURRENT_TEXT],
@@ -197,7 +177,6 @@ for (var tzContentId = 44; tzContentId <= 62; tzContentId++) {
 }
 
 // Per-position aux byte for the sequences above -- see
-// eclipse_data.h's corner_primitive_aux comment. Sparse: only content ids
 // whose primitives need a non-zero aux appear here; every other content
 // id (and every position within it) is implicitly all-zero, which is
 // exactly right since none of the primitives used elsewhere in this file
@@ -208,7 +187,7 @@ for (var tzAuxContentId = 44; tzAuxContentId <= 62; tzAuxContentId++) {
   PRIMITIVE_TRANSPORT_AUX[tzAuxContentId] = [zoneIdx, 0, zoneIdx, 0, zoneIdx, 0, 0, 0, 0, 0];
 }
 
-// Content 87-95 (Update 25): each is [PRIM_FORECAST_OFFSET_ICON,
+// Forecast contents 87-95 each use [PRIM_FORECAST_OFFSET_ICON,
 // PRIM_FORECAST_TEMP_TEXT] with a fixed forecast-slot aux (0-8, matching
 // forecast_temp_c[]'s own index space) baked in per content id -- the
 // content number itself picks the slot, same idea as a timezone content id
@@ -253,7 +232,7 @@ function primitiveAuxSequenceForContent(contentId) {
 
 // Clamps/pads an arbitrary (person-composed) array of numeric primitive
 // IDs to exactly PRIMITIVE_SEQUENCE_SLOT_COUNT bytes the same way -- used
-// for a custom sequence (Phase 9's composer, config-page.js) instead of
+// for a custom sequence from the settings-page composer instead of
 // one derived from a single content id.
 function normalizePrimitiveSequence(ids) {
   var out = (ids || []).slice(0, PRIMITIVE_SEQUENCE_SLOT_COUNT);
@@ -261,7 +240,7 @@ function normalizePrimitiveSequence(ids) {
   return out;
 }
 
-// ---- Phase 9: composable primitive palette --------------------------
+// ---- Custom primitive sequences -------------------------------------
 //
 // Only primitive IDs primitive_resolver.c actually resolves -- offering
 // anything else would let a person build a sequence that silently falls
@@ -439,7 +418,7 @@ var TIMEZONE_ZONES = [];
   }
 })();
 
-// Custom-sequence setting format (Phase 9 composer): comma-separated
+// Custom-sequence setting format: comma-separated
 // entries, each `id` or `id:aux`. Plain `id` (the original text-box format)
 // still parses, with aux 0, so anything saved by the earlier composer keeps
 // working. Invalid entries are dropped, never guessed at. The result is NOT
@@ -621,7 +600,7 @@ var FORECAST_SLOTS = [
   { index: 8, label: '3 days ahead' }
 ];
 
-// ---- Phase 10: preview chips derived from the real transport sequence ----
+// ---- Preview chips ---------------------------------------------------
 //
 // Reverse of PRIM (name -> id) and a param lookup built from
 // PRIMITIVE_PALETTE (the same "which primitives take an aux parameter, and

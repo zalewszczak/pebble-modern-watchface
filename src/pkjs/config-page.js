@@ -27,9 +27,6 @@
 
 var APP_VERSION = "4.0-rc";
 
-// servicelog require removed here -- serviceStatusRowsHtml() (its
-// only user in this file) moved to config/config-debug.js, which
-// requires it directly now.
 // See presets-lookups.js's own header comment for what lives there and
 // why (font metadata, color scheme presets, the corner/edge feature
 // content catalogue, hand-style presets) -- required once up top since
@@ -69,12 +66,7 @@ function aboutLogoMarkup(className, attrs) {
 // kept in perfect sync with THIS array by copy rather than a second
 // require(), since it's 7 short strings, not a table worth its own
 // module export.
-// DUAL_CONTEXT_FIELD_LIST, esc, MODE_BTN_ICONS, sectionCategoryIcon,
-// SECTION_META, sectionLegendHtml, subsectionLegendHtml,
-// verticalButtonGroupHtml, modeButtonGroupHtml, colorRoleButtonGroupHtml
-// all moved to config/config-template.js (configuration architecture
-// extraction, JS8 first slice) -- generic template helpers every
-// domain-specific picker below builds on.
+// Shared HTML helpers and section metadata are defined in config-template.js.
 var configTemplate = require('./config/config-template');
 var esc = configTemplate.esc;
 var sectionCategoryIcon = configTemplate.sectionCategoryIcon;
@@ -155,7 +147,6 @@ var EXAMPLE_STYLE_PRESETS = require('./example-style-presets');
 // Sun..Sat, matching struct tm's own tm_wday (0=Sunday) so the watch
 // can test "is today's bit set" directly against the mask byte with
 // no reindexing -- see hourly_vibe_days_mask's own comment in
-// eclipse_data.h. Rendered as a flush 7-button row (renderMarkerStyleGrid()'s
 // neighbors aside, this is the one other place a whole button row is
 // built at HTML-generation time here rather than client-side).
 var HOURLY_VIBE_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -184,10 +175,7 @@ var FONT_PREVIEW_IMAGES = require('./data/generated/font-preview-images');
 // every field means. (Still need to bump FONT_MAX_CONTENT_ID in
 // index.js when adding an entry there.)
 
-// googleFontsHref, cdnFontLinks, fontLookupEntry,
-// secondsAvailableForDigital, fontOptionsHtml all moved to
-// config/config-fonts.js (configuration architecture extraction, JS8
-// second slice).
+// Font lookup and option helpers are defined in config-fonts.js.
 var configFonts = require('./config/config-fonts');
 var googleFontsHref = configFonts.googleFontsHref;
 var cdnFontLinks = configFonts.cdnFontLinks;
@@ -197,29 +185,13 @@ var fontOptionsHtml = configFonts.fontOptionsHtml;
 var fontManagerSource = require('./config/font-manager');
 
 
-// verticalButtonGroupHtml/modeButtonGroupHtml/colorRoleButtonGroupHtml
-// moved to config/config-template.js -- see the alias block near the
-// top of this file for where they're pulled back in.
-
-// CORNER_CONTENT_OPTIONS/cornerContentOptionsHtml moved to
-// config/config-features.js (configuration architecture extraction,
-// JS8 fifth slice).
+// Feature picker options are defined in config-features.js.
 var configFeatures = require('./config/config-features');
 var CORNER_CONTENT_OPTIONS = configFeatures.CORNER_CONTENT_OPTIONS;
 var cornerContentOptionsHtml = configFeatures.cornerContentOptionsHtml;
 
-// Primitive-strip preview (Feature Primitive Refactor Phase 9) -- see
-// config/primitive-decompose.js's own header for what this can and can't
-// do yet. Phase 10: the full per-content chip table is precomputed here,
-// once, straight from primitiveChipsForContent() (which itself derives
-// from the real transport sequences -- see that function's own header) --
-// not just the two-entry ATOMIC_DECOMPOSITIONS fallback table Phase 9 sent
-// down before every other content id had a transport sequence to derive
-// from. Computed from PRESETS_LOOKUPS' own unfiltered CORNER_CATEGORIES
-// (decomposition is a fixed property of a content id, not something that
-// depends on the aurora-enabled/etc. per-request filtering
-// cornerCategoriesForClient applies), so it's the same for every request
-// and only needs computing once at module load.
+// Precompute each feature's primitive preview from the same sequences used
+// for watch communication. The result is independent of request-time filters.
 var primitiveDecomposeModule = require('./config/primitive-decompose');
 var primitiveContentDecompositions = {};
 PRESETS_LOOKUPS.CORNER_CATEGORIES.forEach(function (cat) {
@@ -227,10 +199,7 @@ PRESETS_LOOKUPS.CORNER_CATEGORIES.forEach(function (cat) {
     primitiveContentDecompositions[it.id] = primitiveDecomposeModule.primitiveChipsForContent(it.id);
   });
 });
-// Phase 9 composer: the palette of resolver-covered primitives a person
-// can actually build a custom sequence from, and the raw numeric
-// transport table (so "start from this content" can seed the composer --
-// see PRIMITIVE_TRANSPORT_SEQUENCES in the generated script below).
+// Primitive palette and transport tables used by the custom sequence editor.
 var primitivePalette = primitiveDecomposeModule.PRIMITIVE_PALETTE;
 var primitiveTransportSequences = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_SEQUENCES;
 var primitiveTransportAux = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_AUX;
@@ -251,10 +220,7 @@ var composerClientSource = require('./config/config-composer');
 // 12,1..11) or which every-5-second slots (kind='sec', labels 0,5..55)
 // should get a numeral -- bit i of the mask corresponds to button i,
 // same order marker_layer_draw_text() iterates on-watch.
-// markBtnGridHtml/MARKER_BORDER_MIN/MARKER_BORDER_MAX/
-// customMarkerHiddenInputsHtml/customMarkerModalHtml/textMarkerModalHtml
-// all moved to config/config-markers.js (configuration architecture
-// extraction, JS8 fifth slice).
+// Marker controls are defined in config-markers.js.
 var configMarkers = require('./config/config-markers');
 var markBtnGridHtml = configMarkers.markBtnGridHtml;
 var MARKER_BORDER_MIN = configMarkers.MARKER_BORDER_MIN;
@@ -263,13 +229,10 @@ var customMarkerHiddenInputsHtml = configMarkers.customMarkerHiddenInputsHtml;
 var customMarkerModalHtml = configMarkers.customMarkerModalHtml;
 var textMarkerModalHtml = configMarkers.textMarkerModalHtml;
 
-// schemeColorOptionsHtml moved to config/config-colors.js
-// (configuration architecture extraction, JS8 fifth slice).
+// Color-role options are defined in config-colors.js.
 var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOptionsHtml;
 
-// handHiddenInputsHtml/HAND_COPY_SOURCE/HAND_COPY_SOURCE_LABEL/
-// handEditorModalHtml all moved to config/config-hands.js
-// (configuration architecture extraction, JS8 fifth slice).
+// Hand controls are defined in config-hands.js.
 var configBackground = require('./config/config-background');
 var configPlugins = require('./config/config-plugins');
 var configBorder = require('./config/config-border');
@@ -279,49 +242,10 @@ var HAND_COPY_SOURCE = configHands.HAND_COPY_SOURCE;
 var HAND_COPY_SOURCE_LABEL = configHands.HAND_COPY_SOURCE_LABEL;
 var handEditorModalHtml = configHands.handEditorModalHtml;
 
-
-/**
- * @param {object} current  current settings, as plain values:
- *   { autoLoc, lat, lon, owmKey, updateMins,
- *     clockFont, showSeconds, bottomStyle: 'digital'|'analog' (a persisted 'biganalog' from before this app version is treated as 'analog'),
- *     bigAnalogMarkerStyle: '0'-'10' (0/1/2/9/10=None/Braun/Swiss/Classy/Minimal presets, which copy their ring + numerals values into customHour.../customSec.../markerText... and reach the watch as 8; 3-7=bitmap styles; 8=custom -- see customHour.../customSec.../markerText... below), upperMiddleLine1Content/upperMiddleLine2Content: '0'-'12', upperMiddleLine1Color/upperMiddleLine2Color: '0'-'3',
- *     colorScheme: '0'-'9'|'custom', customBg, customText, customAccent (packed byte strings),
- *     nightEnabled, nightScheme, nightCustomBg, nightCustomText, nightCustomAccent,
- *     showIss, showMajorStars, sunMoonSize: '25'|'50'|'75'|'100', shakeLabelSeconds, vibrateOnPhaseChange,
- *     tempUnit: 'C'|'F',
- *     cornerTL, cornerTR, cornerBL, cornerBR: '0'-'9', cornerTLColor, cornerTRColor, cornerBLColor, cornerBRColor: '0'-'3', stepGoal,
- *     customHourStyle/customSecStyle: '0'-'2' (dot/line/square), '4' (tapered -- 3 reserved/unused;
- *     also drives customHourInnerThickness (1-20)/customSecInnerThickness (1-10) below, only
- *     meaningful for style 4), customHourThickness (1-20)/
- *     customSecThickness (1-10), customHourInnerEcc/customHourOuterEcc/customSecInnerEcc/
- *     customSecOuterEcc: '0'-'100', customHourInnerBorder/customHourOuterBorder/
- *     customSecInnerBorder/customSecOuterBorder: '0'-'100' (% reach, see marker_reach_px()
- *     in marker_layer.c -- each mark spans directly between its inner/outer border points),
- *     markerTextTarget: '0'(off)|'1'(hour)|'2'(second), markerTextFont: '0'-'35', markerTextOffset: '-50'-'50',
- *     markerTextHourMask/markerTextSecMask: 0-4095 (12-bit),
- *     hourlyVibeMode: '0'(off)|'1'(on full hours)|'2'(every X minutes), hourlyVibeIntervalMin: '1'-'180',
- *     hourlyVibePattern: '0'(short)|'1'(double)|'2'(long), hourlyVibeStartTime/hourlyVibeEndTime: 'HH:MM'
- *     (inclusive; start==end, including the '00:00'/'00:00' default, means all 24 hours),
- *     hourlyVibeDaysMask: 0-127 (bit i = HOURLY_VIBE_DAY_LABELS[i], Sun=bit 0), hourlyVibeOverrideQuiet: boolean,
- *     testMode, testDateTime, fullKeysetJson: pretty-printed JSON string, every current
- *     AppMessage key/value pre-filled for the debug "Full keyset" window (see buildFullKeysetDict() in index.js) }
- */
-// One quick-recall Style Presets row (apply button, rename input, save/
-// rename/delete icon buttons) plus its three backing hidden inputs --
-// called for n = 1..6 from buildConfigHtml below, same "templated, not
-// copy-pasted per slot" pattern as handEditorModalHtml() uses for the
-// 3 hands.
-// presetSlotHtml moved to config/config-presets.js (configuration
-// architecture extraction, JS8 fourth slice).
+// Preset and debug controls are implemented in their respective modules.
 var configPresets = require('./config/config-presets');
 var presetSlotHtml = configPresets.presetSlotHtml;
-// Scheduled My styles popup (CSS, modal markup, client script) -- see the
-// module's own header.
 var configPresetSchedule = require('./config/config-preset-schedule');
-
-// serviceStatusRowsHtml/rawMessageLogButtonsHtml moved to
-// config/config-debug.js (configuration architecture extraction, JS8
-// fourth slice).
 var configDebug = require('./config/config-debug');
 var serviceStatusRowsHtml = configDebug.serviceStatusRowsHtml;
 var rawMessageLogButtonsHtml = configDebug.rawMessageLogButtonsHtml;
@@ -340,12 +264,11 @@ function faqItemsHtml() {
   }).join('');
 }
 
+/** Builds the settings webview using the current persisted settings.
+ * @param {object} current Current settings as key/value pairs.
+ */
 function buildConfigHtml(current) {
-  // autoLocChecked through initialNightColors all moved to
-  // config/config-state.js (configuration architecture extraction, JS8
-  // third slice) as deriveConfigState() -- one call, then aliased back
-  // to the same local names so every reference further down in this
-  // function is unchanged.
+  // Derive the settings-page state once, then expose the values used below.
   var configState = require('./config/config-state').deriveConfigState(current);
   var autoLocChecked = configState.autoLocChecked;
   var manualDisabled = configState.manualDisabled;
@@ -890,13 +813,7 @@ configPresetSchedule.css +
 '  .example-style-modal-img { max-width: min(50%, 3cm); width: auto; height: auto; margin: 0 auto; border-radius: 8px; display: block; }' +
 '  .example-style-modal-title { font-weight: 700; font-size: 16px; margin-top: 10px; text-align: center; color: var(--text-strong); }' +
 '  .mode-btn-group { display: flex; width: 100%; margin-top: 6px; border-radius: 6px; overflow: hidden; border: 1px solid var(--border); box-sizing: border-box; }' +
-// Primitive-strip preview (Feature Primitive Refactor Phase 9) -- a row of
-// small chips under the Content dropdown showing what that content
-// actually decomposes into on the watch (see primitiveChipsForContent()
-// below). Read-only for now (no drag/append/remove -- see
-// config/primitive-decompose.js's header for why), so styled as a plain
-// inline preview, not as interactive buttons: no hover/active states,
-// smaller and quieter than .mode-btn/.category-btn.
+// Read-only preview of the primitive elements used by the selected feature.
 '  .primitive-strip { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }' +
 '  .primitive-chip { display: inline-block; padding: 3px 8px; font-size: 11px; font-weight: 600; border-radius: 10px; line-height: 1.4; }' +
 '  .primitive-chip-value { background: var(--btn-bg); color: var(--text-strong); border: 1px solid var(--border); }' +
@@ -2739,10 +2656,7 @@ fontManagerSource +
 '  refreshAllFontTriggerLabels();' +
 '}' +
 
-// drawSkyLayer through updatePreview (the whole canvas-drawing preview
-// engine) moved to config/config-preview.js (JS9 -- preview engine).
-// It still has to land in the exact same spot in this concatenation
-// chain, since it becomes part of the same embedded <script> tag.
+// Add the canvas preview renderer to the settings-page script.
 require('./config/config-preview') +
 
 configBackground.backgroundScript(current) +
@@ -2769,15 +2683,9 @@ configBorder.borderScript() +
 '    if (it.preview) CORNER_PREVIEW_LABELS[it.id] = it.preview;' +
 '  });' +
 '});' +
-// Primitive-strip preview (Phase 9/10) -- the precomputed per-content chip
-// table (primitiveContentDecompositions above), serialized whole rather
-// than hand-duplicated client-side. See config/primitive-decompose.js's
-// primitiveChipsForContent() for what a chip is and how each entry is
-// derived from that content id's own real transport sequence.
+// Send the precomputed primitive previews to the settings page.
 'var PRIMITIVE_DECOMPOSITIONS = ' + JSON.stringify(primitiveContentDecompositions) + ';' +
-// Phase 9 composer: the palette (grouped, for the reference list) and a
-// flat id->label lookup (for rendering arbitrary typed IDs), same
-// serialize-the-canonical-table pattern as everything else on this page.
+// Send the primitive palette and ID-to-label lookup to the settings page.
 'var PRIMITIVE_PALETTE = ' + JSON.stringify(primitivePalette) + ';' +
 'var PRIMITIVE_LABEL_BY_ID = {};' +
 'PRIMITIVE_PALETTE.forEach(function (g) { g.items.forEach(function (it) { PRIMITIVE_LABEL_BY_ID[it.id] = it.label; }); });' +
@@ -2785,11 +2693,7 @@ configBorder.borderScript() +
 'var PRIMITIVE_TRANSPORT_SEQUENCES = ' + JSON.stringify(primitiveTransportSequences) + ';' +
 'var PRIMITIVE_TRANSPORT_AUX = ' + JSON.stringify(primitiveTransportAux) + ';' +
 'var TIMEZONE_ZONES = ' + JSON.stringify(primitiveTimezoneZones) + ';' +
-// Update 25 introduced FORECAST_SLOTS and the composer's forecast picker
-// but never actually baked this line in -- the composer's PARAM_OPTIONS
-// referenced an undefined global the moment the script ran (caught here,
-// during Phase 10's own end-to-end script-execution test, not by any
-// earlier node --check, which only parses; see this update's notes).
+// Forecast options are shared with the custom sequence editor.
 'var FORECAST_SLOTS = ' + JSON.stringify(primitiveForecastSlots) + ';' +
 'var PRIMITIVE_PREVIEW_TEXT = ' + JSON.stringify(primitivePreviewText) + ';' +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
@@ -2797,19 +2701,8 @@ configBorder.borderScript() +
 configPlugins.pluginScript(current) +
 'var COMPOSER_MAX = 10;' + // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
 '\n' + composerClientSource + '\n' +
-// Phase 10: PRIMITIVE_DECOMPOSITIONS now has a precomputed entry for every
-// content id (derived server-side from that id's real transport sequence --
-// see primitiveContentDecompositions above), so this is a straight lookup.
-// CORNER_PREVIEW_LABELS is kept only as a defensive last resort (a content
-// id present in CORNER_CATEGORIES but somehow missing here, which
-// shouldn't happen -- see that table's own header) rather than being load-
-// bearing the way it was before Phase 10.
-// Phase 10: the plain string form of a content id's preview -- what the
-// canvas preview and slot-picker buttons show -- built by joining that
-// content id's own real chip text, instead of a separately-authored
-// CORNER_PREVIEW_LABELS string. Falls back to CORNER_PREVIEW_LABELS only
-// when PRIMITIVE_DECOMPOSITIONS has no entry at all (shouldn\'t happen --
-// see primitiveChipsForContent\'s own comment).
+// Build the preview label from the same primitive chips shown in the
+// feature editor, with the feature label as a fallback.
 'function primitiveDecompositionText(contentId, forPreview) {' +
 '  var idNum = parseInt(contentId, 10);' +
 '  var chips = PRIMITIVE_DECOMPOSITIONS[idNum];' +
@@ -3378,7 +3271,6 @@ configPlugins.pluginScript(current) +
 // when "None" is picked -- there\'s nothing left to configure for a
 // ring that draws nothing at all -- and the Inner thickness row,
 // which only Tapered (style 4) actually reads (see MarkerRingConfig\'s
-// own style/thickness comments in eclipse_data.h). Called from every
 // place that can change Style out from under the popup: a direct tap,
 // re-opening the popup, applying a preset, or copying the other
 // ring\'s config.
@@ -4853,7 +4745,6 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 // Rough "is it night" approximation for the day/night color highlight
 // below -- a plain local-clock-hours check, not the watch\'s own real
 // sun-altitude/civil-twilight test (get_active_color_scheme() in
-// pebble-eclipse-watch.c), since that needs a location and a real
 // astronomy calculation this page has no reason to duplicate just for
 // a visual hint. Good enough to avoid the actual confusion this
 // feature is for (editing colors that silently do nothing because
@@ -4886,10 +4777,7 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 '  nightBadge.classList.toggle("inactive", !isNight);' +
 '}' +
 
-// save()/getQueryParam() moved to config/config-runtime.js (JS8 --
-// config-runtime slice). Lands in the exact same spot in this
-// concatenation chain, since it becomes part of the same embedded
-// <script> tag.
+// Add the settings save and return-URL handlers to the webview script.
 require('./config/config-runtime') +
 
 // ---- section sub-headers -------------------------------------------

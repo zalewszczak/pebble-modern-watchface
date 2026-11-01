@@ -31,7 +31,7 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
   if (!feature || feature->count == 0) return;
   uint8_t effective_outline_style = (slot && slot->allow_outline) ? outline_style : 0;
 
-  // Pass 1 -- outline for every primitive that can be split (Section 13).
+  // Draw text outlines before drawing text content.
   // See primitive_renderer.h for why icon primitives are not split yet.
   for (int i = 0; i < feature->count; i++) {
     const PrimitiveInstance *p = &feature->items[i];

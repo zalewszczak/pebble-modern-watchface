@@ -1,7 +1,4 @@
-// ---- hand domain: hidden inputs and the per-hand editor popup ----------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fifth slice).
+// ---- Hand settings and per-hand editor ----------------------------------
 
 var esc = require('./config-template').esc;
 var schemeColorOptionsHtml = require('./config-colors').schemeColorOptionsHtml;

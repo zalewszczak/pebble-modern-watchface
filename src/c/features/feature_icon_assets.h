@@ -2,7 +2,7 @@
 #include <pebble.h>
 
 // One icon, drawn in each of the 3 "Icons style" looks (see watch_data.h's
-// icon_style / former weather_icon_style): 0=simple, 1=hollow, 2=full color.
+// icon_style): 0=simple, 1=hollow, 2=full color.
 // A resource id of 0 means "no art for this style yet" and is skipped rather
 // than crashing -- lets new icon identities be wired up before every style's
 // artwork exists (see feature_icons.c / feature_weather_icons.c tables).

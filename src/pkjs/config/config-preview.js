@@ -1,25 +1,7 @@
-// ---- client-side miniature-watch preview renderer -----------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS9 -- preview engine). This is NOT a Node module in the usual
-// sense: it exports the exact JavaScript *source text* (as a string)
-// that config-page.js splices into the settings page's embedded
-// <script> tag, because that script runs in the phone's webview --
-// a completely separate JS runtime from PKJS that can't require()
-// this or any other Node module. Splitting it out here still buys
-// the same thing every other JS8 slice did: this ~1100-line canvas-
-// drawing engine (sky/stars/moon phase, corner slots, hand geometry,
-// digital-side features, and the updatePreview() orchestrator that
-// ties them together) now lives in its own file instead of being
-// buried inside one 5000-line function, even though at runtime it's
-// still concatenated into the same single HTML string it always was.
-//
-// Everything here is pure rendering: given already-resolved settings
-// values and a canvas 2D context, draw the miniature watch. No event
-// handlers, no DOM wiring beyond reading already-resolved input
-// values -- the UI/event-handling code that calls updatePreview()
-// after each change is still embedded directly in config-page.js's
-// own remaining template content (a later slice's job).
+// ---- Miniature watch preview renderer ------------------------------------
+// Exports client-side JavaScript source for the settings webview. The code
+// draws the watch preview from resolved settings and a canvas context; UI
+// event handling remains in config-page.js.
 
 module.exports =
 'function hasPreviewContent(contentId) {' +

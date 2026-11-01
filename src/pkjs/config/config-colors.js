@@ -1,7 +1,4 @@
-// ---- color role dropdown -----------------------------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fifth slice).
+// ---- Color-role dropdown options ----------------------------------------
 
 function schemeColorOptionsHtml(selected) {
   var sel = selected || '0';

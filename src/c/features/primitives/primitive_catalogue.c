@@ -3,12 +3,9 @@
 // --- primitive ID -> source / refresh class -----------------------------
 
 PrimitiveSource primitive_catalogue_source_for(PrimitiveId id) {
-  // Compass is watch-local even though it lives in the astronomy ID range
-  // (Section 5b's astronomy addendum explicitly calls this exception out).
+  // Compass values come from the watch's live sensor.
   if (id == PRIM_COMPASS_ICON || id == PRIM_COMPASS_DIR_TEXT) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
-  // "H"/"L" prefix labels (Phase 8's atomic decomposition of content 4) are
-  // constant watch-side glyphs, not a PKJS-supplied value, even though they
-  // live in the weather ID range next to the values they label.
+  // High/low labels are constant watch-side glyphs.
   if (id == PRIM_LABEL_HIGH_PREFIX || id == PRIM_LABEL_LOW_PREFIX) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
   // Builder additions (appended after the original catalogue): bare values
   // and unit symbols derived from PKJS-supplied data change only when PKJS
@@ -24,9 +21,7 @@ PrimitiveSource primitive_catalogue_source_for(PrimitiveId id) {
       return PRIMITIVE_SOURCE_WATCH_RUNTIME;
     default: break;
   }
-  // Time-dependent selections over PKJS data (Update 6): which sun event /
-  // planet is "next" changes with the watch's own clock, so the watch owns
-  // them even though they sit in the astronomy ID range.
+  // The next event or planet depends on the watch's current time.
   if (id == PRIM_SUN_EVENT_ICON || id == PRIM_SUN_EVENT_TIME ||
       id == PRIM_PLANETS_VISIBLE_ICON || id == PRIM_PLANETS_VISIBLE_COUNT ||
       id == PRIM_NEXT_PLANET_RISE) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
@@ -34,7 +29,7 @@ PrimitiveSource primitive_catalogue_source_for(PrimitiveId id) {
   if (id >= PRIM_GROUP_ASTRO_FIRST && id <= PRIM_GROUP_ASTRO_LAST) return PRIMITIVE_SOURCE_PKJS_VALUE;
   if (id >= PRIM_GROUP_WEATHER_FIRST && id <= PRIM_GROUP_WEATHER_LAST) return PRIMITIVE_SOURCE_PKJS_VALUE;
 
-  // Universal spacers, date/time, health/status: watch-runtime (Section 5b).
+  // Spacers, date/time, and health/status values are resolved on-watch.
   return PRIMITIVE_SOURCE_WATCH_RUNTIME;
 }
 
@@ -56,7 +51,7 @@ PrimitiveRefreshClass primitive_catalogue_refresh_class_for(PrimitiveId id) {
       return PRIMITIVE_REFRESH_EVENT;
     default:
       // Everything else in the watch-runtime date/time/health range ticks
-      // on the shared minute refresh (Section 14: "a feature should only be
+      // on the shared minute refresh.
       return PRIMITIVE_REFRESH_MINUTE;
   }
 }

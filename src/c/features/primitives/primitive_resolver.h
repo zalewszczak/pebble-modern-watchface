@@ -1,18 +1,8 @@
 #pragma once
 
-// Phase 3 (primitive value transport): given a primitive ID alone -- no
-// "content" number, no legacy render segment -- resolves what that primitive
-// should currently show. Feature IDs and composition are phone-side concerns;
-// this resolver operates on one primitive at a time.
-//
-// The resolver covers the primitive IDs exposed by the phone compiler and
-// custom primitive palette. Unknown IDs are rejected; there is no fallback.
-//
-// Each primitive resolves its OWN best color (Section 31), independent of
-// the phone-side feature selection -- see
-// primitive_transport.c for how that composes with the slot's color_mode
-// (feature_color_resolve_flat already does the MONO/ACC/PILL/COLOR
-// dispatch; this only ever supplies the "COLOR mode" candidate).
+// Resolves one primitive ID into its current display payload and dynamic
+// color. Feature composition stays on the phone. Unsupported IDs are rejected.
+// primitive_transport.c combines the resolved color with the slot's color mode.
 
 #include <pebble.h>
 #include "./primitive_types.h"
@@ -26,13 +16,8 @@ typedef struct {
   int16_t aux;
   bool aux_flag;
   GColor dynamic_color; // this primitive's own candidate for COLOR mode
-  // Some primitive fallback cases (sleep/bed-wake time's "N/A" branches) render an
-  // always-gray fallback that bypasses color_mode entirely -- not even
-  // COLOR mode is the exception to it, unlike every other dynamic color in
-  // this codebase. Setting this true tells primitive_transport.c to use
-  // dynamic_color as the final color directly, skipping
-  // feature_color_resolve_flat()'s MONO/ACC/PILL/COLOR dispatch.
-  // False (the default/common case) for everything else.
+  // When true, primitive_transport.c uses dynamic_color directly instead
+  // of applying the slot's color mode. Used by fixed-color fallback messages.
   bool force_color;
   // Legacy astronomy/composite cases passed main_color (not a graded color)
   // as their COLOR-mode candidate. True = "my dynamic candidate is the

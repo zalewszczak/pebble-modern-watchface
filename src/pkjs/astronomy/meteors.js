@@ -1,11 +1,5 @@
 // ---- meteor showers -----------------------------------------------------
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
-// Not in the report's original file list, but a genuinely distinct,
-// fully self-contained concern (pure calendar math, no dependency on
-// any other astronomy module) -- folding it into another module
-// would just conflate two unrelated things to avoid adding one file.
-
 
 /**
  * All months/days below are 0-indexed months (JS Date convention:

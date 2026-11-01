@@ -152,21 +152,11 @@ typedef struct {
   uint8_t weather_wx_now; // detailed class of the current weather (see forecast_wx); drives the weather background.
   uint8_t weather_condition; // 0=clear/cloudy, 1=fog, 2=rain, 3=snow, 4=storm.
 
-  // Phase 7 (icon selection, Section 4's "static icon" concept): PKJS-
-  // computed icon category (0-6), a verbatim port of
-  // feature_icons_weather_category() applied to weather_condition/
-  // cloud_cover_pct. No natural "not sent yet" value exists in 0-6, so this
-  // is only trusted when current_temp_display is also non-empty (both are
-  // sent together, gated on weatherOk, in message-encoder.js) -- see
-  // legacy weather feature code's cases 31/32/76.
+  // Phone-computed weather icon category (0-6). It is valid when
+  // current_temp_display is non-empty; both fields are sent together.
   uint8_t weather_icon_category;
 
-  // Color-ownership principle (see IMPLEMENTATION_NOTES.md's Phase 3
-  // update): weather_icon_category's *value* is PKJS-decided, so its
-  // color should be too, rather than the watch computing
-  // feature_colors_weather_condition_color() locally from fields PKJS
-  // already sent it. Same gating/fallback shape as weather_icon_category
-  // itself.
+  // Packed color for weather_icon_category, sent with the category.
   uint8_t weather_icon_color;
 
   uint8_t icon_style; // 0=simple, 1=hollow, 2=full color. Applies to weather AND plain feature icons alike (was weather-only; wire key is still MK_WEATHER_ICON_STYLE, see comms_decoder.c).
@@ -177,31 +167,20 @@ typedef struct {
   // prefers this unit-converted value when present and can use raw weather data
   // as a local fallback before the first successful phone update.
   char current_temp_display[8];
-  char temp_high_display[8];  // Phase 7: PKJS-formatted high temp (content 4, 74, 76).
-  char temp_low_display[8];   // Phase 7: PKJS-formatted low temp (content 4, 75, 76).
-  char feels_like_display[8]; // Phase 7: PKJS-formatted apparent temp (content 77).
+  char temp_high_display[8];  // Phone-formatted high temperature.
+  char temp_low_display[8];   // Phone-formatted low temperature.
+  char feels_like_display[8]; // Phone-formatted feels-like temperature.
 
-  // Phase 7 gradient colors: packed GColor8 bytes (same wire format as the
-  // SETTINGS custom-color fields, see watch_ui.c's
-  // watch_ui_color_from_packed()), one per *_display field above. Only
-  // meaningful when the paired *_display string is non-empty -- see
-  // legacy weather feature code's temp_display_and_color(). Computed by
-  // weather-normalize.js's tempGradientColorByte(), a verbatim port of
-  // feature_colors_seven_stop_gradient(), so the watch no longer needs that
-  // function (or the raw Celsius value) at all for these four cases.
+  // Packed GColor8 gradient colors paired with the display strings above.
+  // A color is valid only when its corresponding display string is present.
   uint8_t current_temp_color;
   uint8_t temp_high_color;
   uint8_t temp_low_color;
   uint8_t feels_like_color;
 
-  // Phase 7, continued: the rest of Section 5's weather-value table, same
-  // *_display (text) / *_color (packed GColor8, empty display = "PKJS
-  // hasn't sent one yet") pattern as above. dew_point_display has no
-  // matching color field -- content 37 never used a dynamic gradient (see
-  // legacy weather feature code). altitude_display/_color are only ever sent
-  // for the "available" case -- see weather-normalize.js's
-  // formatAltitudeDisplay() and legacy weather feature code's case 38 for why
-  // the N/A sentinel stays watch-side.
+  // Phone-formatted weather values and their optional packed colors.
+  // An empty display string means no value has been received. Dew point
+  // uses the feature's fixed color; unavailable altitude is handled on-watch.
   char uv_daily_display[6];
   uint8_t uv_daily_color;
   char uv_current_display[6];
@@ -224,13 +203,13 @@ typedef struct {
   char aqi_display[10];
   uint8_t aqi_color;
 
-  // Phase 7, forecast temps (content 87-95): 9 discrete display strings
+  // Phone-formatted forecast temperatures for the nine forecast slots.
   // (AppMessage has no string-array type, and per-index cstring keys mean
   // zero watch-side parsing -- see message-encoder.js's own comment) plus
   // one 9-byte packed-color blob (same wire shape forecast_condition[]
   // already uses). Same empty-string fallback signal as everywhere else,
   // but the N/A sentinel on forecast_temp_c[idx] itself is still checked
-  // FIRST on the watch regardless -- see legacy weather feature code.
+  // FIRST on the watch regardless -- see weather resolver.
   char forecast_temp_display[FORECAST_SLOT_COUNT][6];
   uint8_t forecast_temp_color[FORECAST_SLOT_COUNT];
 
@@ -251,9 +230,9 @@ typedef struct {
   // 9 sleet; and rain chance 0-100 %.
   uint8_t forecast_wx[FORECAST_SLOT_COUNT];
   uint8_t forecast_rain_pct[FORECAST_SLOT_COUNT];
-  // Phase 7: PKJS-computed icon categories, same as weather_icon_category
+  // Phone-computed forecast icon categories, using the same values as weather_icon_category.
   // above but one per forecast index, gated on forecast_temp_display[idx]
-  // (see legacy weather feature code's case 87-95).
+  // (see weather resolver's case 87-95).
   uint8_t forecast_icon_category[FORECAST_SLOT_COUNT];
   char location_name[32];  // reverse-geocoded place name.
 
@@ -271,13 +250,13 @@ typedef struct {
   uint8_t altitude_unit;   // 0=meters, 1=feet.
 
   uint8_t saturn_ring_open_pct; // 0-100 ring opening.
-  // Phase 7: PKJS-formatted "Rings N%" (case 81 has no dynamic color, so no
-  // matching *_color field -- see legacy time feature code).
+  // Phone-formatted Saturn ring visibility text. No dynamic color is needed.
+  // matching *_color field -- see time resolver).
   char saturn_rings_display[10];
 
   uint8_t moon_phase_pct;  // illuminated fraction, 0-100.
   bool moon_waxing;        // true when phase is increasing.
-  // Phase 7: PKJS-formatted short phase name ("New"/"WxCr"/"1stQ"/...),
+  // Phone-formatted short Moon phase name ("New", "WxCr", "1stQ", etc.).
   // verbatim port of feature_moon_phase_short_name() -- case 11 always
   // used a flat GColorWhite, so no matching *_color field either.
   char moon_phase_display[6];
@@ -293,10 +272,10 @@ typedef struct {
   // Active meteor shower, if any.
   uint8_t meteor_intensity; // active-shower intensity, 0-100.
   char meteor_shower_name[16]; // empty when no shower is active.
-  // Phase 7: PKJS-formatted "name or N/A" (case 80's own active/inactive
+  // Phone-formatted meteor shower name, or "N/A" when no shower is active.
   // logic, replicated PKJS-side) + gradient color. Only consulted after the
   // watch's own error_code check, same as everywhere else in this cluster
-  // -- see legacy time feature code.
+  // -- see time resolver.
   char meteor_display[16];
   uint8_t meteor_color;
 
@@ -307,8 +286,8 @@ typedef struct {
 
   // Aurora data and display settings.
   uint8_t aurora_kp_x10;    // Kp index ×10.
-  // Phase 7: PKJS-formatted "Kp N.N" + gradient color, same pattern as
-  // everything else in this file -- see legacy time feature code's case 84.
+  // Phone-formatted aurora Kp value and its gradient color.
+  // everything else in this file -- see time resolver's case 84.
   char aurora_kp_display[8];
   uint8_t aurora_kp_color;
 

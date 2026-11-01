@@ -1,7 +1,4 @@
-// ---- service-status and raw-message debug rows ------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fourth slice).
+// ---- Service-status and raw-message debug controls ----------------------
 
 var esc = require('./config-template').esc;
 var servicelog = require('../servicelog.js');
@@ -81,7 +78,7 @@ function rawMessageLogButtonsHtml(current) {
 // here since it's what positions the cloud band the background actually
 // draws) is safe because the watch only touches keys actually PRESENT
 // in a message (dict_find() per field -- see comms_decoder.c) -- so
-// this can never accidentally blank out ECLIPSE_TYPE/eclipse times/etc,
+// Astronomy values are refreshed by the phone-side data service.
 // only ever the weather fields it explicitly sets.
 //
 // Sliders (rather than free-typed numbers) so a value can never

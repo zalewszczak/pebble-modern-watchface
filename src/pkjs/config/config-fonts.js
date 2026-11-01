@@ -1,11 +1,5 @@
-// ---- font domain: lookup, availability, and <option> rendering -----------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 second slice). Everything here reads only FONT_LOOKUP
-// (presets-lookups.js) plus the generic esc() helper (config-
-// template.js) -- no dependency on hands, markers, or any other
-// domain, and nothing else in config-page.js depends on these except
-// by calling them.
+// ---- Font lookup, availability, and option rendering --------------------
+// Uses FONT_LOOKUP and the shared HTML-escaping helper.
 
 var presetsLookups = require('../presets-lookups');
 var FONT_LOOKUP = presetsLookups.FONT_LOOKUP;

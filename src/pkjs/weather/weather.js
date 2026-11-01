@@ -2,16 +2,9 @@
  * weather.js -- cloud cover lookup, and the
  * public API every other module (refresh-manager.js) consumes.
  *
- * Split into provider-specific modules (weather providers extraction):
- * open-meteo.js (primary source, used unconditionally), openweathermap.js
- * (optional second source, only if the user supplied an API key --
- * averaged with Open-Meteo when both are available, smoothing over the
- * biggest single-model errors), air-quality.js, and weather-normalize.js
- * (the WMO weather-code -> on-watch condition-enum mapping). This file
- * is the orchestrator: it combines the providers (getCloudOutlook)
- * and re-exports each provider's own public function so callers keep
- * requiring just './weather/weather' for everything, same shape as
- * before this split.
+ * Coordinates the Open-Meteo, optional OpenWeatherMap, and air-quality
+ * providers. It also normalizes weather data and exposes the public API
+ * used by refresh-manager.js.
  *
  * fetchAuroraKp stays here rather than in its own provider file -- it's
  * a single small NOAA fetch, not a multi-function provider the way

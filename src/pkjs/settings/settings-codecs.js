@@ -1,15 +1,6 @@
-// GENERATED-STYLE MODULE BOUNDARY -- NOT a generated file, hand-written,
-// but this file's whole job is to be the settings-codec layer: every
-// exported function here reads exactly one (or a couple of related)
-// CONFIG_* localStorage setting(s) via settings.js and returns the
-// already-clamped/coded numeric or byte value the AppMessage-building
-// code in index.js sends to the watch. None of these decide message
-// layout or send anything themselves -- see message-encoder-shaped
-// code (handBytes()/handsBytes()/etc.) still in index.js for that.
-//
-// Moved out of index.js verbatim (settings subsystem extraction) --
-// see the refactoring plan for the full rationale. Behavior is
-// unchanged; only the module boundary is new.
+// Converts saved CONFIG_* settings into validated numeric values and byte
+// arrays for AppMessage payloads. Message construction and transmission are
+// handled by the communication modules.
 
 var settings = require('./settings');
 var getSetting = settings.getSetting;
@@ -67,7 +58,6 @@ function nightCustomAccentByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_A
 
 // 0=simple, 1=hollow, 2=filled -- only hollow is actually implemented
 // on-watch right now (see draw_weather_icon_hollow() in
-// pebble-eclipse-watch.c); simple/filled are drawing-side stubs.
 function weatherIconStyleCode() {
   var id = parseInt(getSetting('CONFIG_WEATHER_ICON_STYLE', '1'), 10);
   if (isNaN(id) || id < 0 || id > 2) id = 1;
@@ -193,7 +183,6 @@ function customHourStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_HOU
 function customHourThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'), 0, 20, 3); } // 0 is a real value here -- see draw_marker_ring()'s own "thickness 0 means this ring draws nothing at all" comment; the config page's "None" shape commits exactly that
 // Only meaningful for style 4 (tapered) -- sent as its own simple
 // field, not part of the MARKER_RINGS blob, see custom_hour_marker_
-// inner_thickness's own comment in eclipse_data.h for why.
 function customHourInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_THICKNESS', '3'), 1, 20, 3); }
 function customHourInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', '0'), 0, 100, 0); }
 function customHourOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', '0'), 0, 100, 0); }
@@ -205,7 +194,6 @@ function customHourOuterBorderCode() {
 }
 function customHourTranslucentCode() { return customMarkerSetting('CONFIG_CUSTOM_HOUR_TRANSLUCENT', 'false') === 'true' ? 1 : 0; }
 // 0=main, 1=accent, 2=background -- see MarkerRingConfig's own color
-// comment in eclipse_data.h.
 function customHourColorCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_COLOR', '0'), 0, 2, 0); }
 function customSecStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_SEC_STYLE', 0); }
 function customSecThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_THICKNESS', '1'), 0, 10, 1); } // see customHourThicknessCode()
@@ -438,7 +426,6 @@ function middleRightLine2ColorModeCode() {
 
 function drawDebugCode() { return getSetting('CONFIG_DRAW_DEBUG', 'false') === 'true' ? 1 : 0; }
 // Hourly vibrations -- see hourly_vibe_mode's own comment in
-// eclipse_data.h for the full field layout this maps onto.
 function hourlyVibeModeCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_MODE', '0'), 0, 2, 0); }
 function hourlyVibeIntervalMinCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', '30'), 1, 180, 30); }
 function btLostVibeCode() { return clampInt(getSetting('CONFIG_BT_LOST_VIBE', '0'), 0, 3, 0); }
@@ -493,7 +480,6 @@ function shakeAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_SHAKE_ANIM_MODE', '0'), 10);
   return (v === 1 || v === 3) ? 1 : 0;
 }
-// 0=none, 1=thin, 2=thick -- see eclipse_data.h's own outline_style
 // comment. Backward-compatible with the setting's old plain boolean
 // ('true'/'false', from before the Thick option existed): those map
 // to thin/none respectively, same as they always looked.
@@ -514,7 +500,7 @@ function cornerFontCode() {
 // Corners: 4 slots (0=top-left, 1=top-right, 2=bottom-left,
 // 3=bottom-right), each an independent content-type + color-mode
 // pair. Sent as two packed byte arrays rather than 8 separate keys.
-// ---- Phase 9 composer: custom primitive sequences for edge/middle slots ---
+// ---- Custom primitive sequences for edge and middle slots ---------------
 //
 // Mirrors the 4 corner CONFIG_CORNER_*_CUSTOM_PRIMS settings (see
 // message-encoder.js) for the 8 edge/middle slots, following each slot's own

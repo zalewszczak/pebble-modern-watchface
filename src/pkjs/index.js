@@ -277,8 +277,7 @@ function buildCurrent() {
     middleRightLine1ColorAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE1_COLOR_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE1_COLOR', '0')),
     middleRightLine2ContentAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE2_CONTENT_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE2_CONTENT', '0')),
     middleRightLine2ColorAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE2_COLOR_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE2_COLOR', '0')),
-    // Phase 9 composer, edge/middle slots (Update 23): custom primitive
-    // sequences, one per layout for the 7 dual-context slots.
+    // Custom primitive sequences for the seven dual-context edge/middle slots.
     upperMiddleLine1CustomPrimsAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG', ''),
     upperMiddleLine2CustomPrimsAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE2_CUSTOM_PRIMS_ANALOG', ''),
     bottomMiddleLine1CustomPrimsAnalog: getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG', ''),
@@ -291,12 +290,8 @@ function buildCurrent() {
     cornerTR: getSetting('CONFIG_CORNER_TR', '0'),
     cornerBL: getSetting('CONFIG_CORNER_BL', '0'),
     cornerBR: getSetting('CONFIG_CORNER_BR', '0'),
-    // Phase 9 composer (corner slots only so far -- see
-    // IMPLEMENTATION_NOTES.md's Update 19): a comma-joined string of
-    // numeric primitive IDs the person built by hand, overriding
-    // primitiveIdSequenceForContent(cornerTL) for that corner. Empty
-    // string (the default) means "no custom sequence -- derive one from
-    // the content id as usual."
+    // A custom sequence overrides the sequence compiled from the selected
+    // feature. An empty string uses the feature's default sequence.
     cornerTLCustomPrims: getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
     cornerTRCustomPrims: getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
     cornerBLCustomPrims: getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),

@@ -372,7 +372,6 @@ function markerTextBytes() {
 // night_custom_bg, night_custom_text, night_custom_accent.
 // Deliberately NOT night_scheme_enabled too (still its own separate
 // key -- see apply_consolidated_fields()'s own comment in
-// pebble-eclipse-watch.c for why).
 function colorsBytes() {
   return [
     customBgByte(), customTextByte(), customAccentByte(),
@@ -389,7 +388,7 @@ function colorsBytes() {
 // get one without it also quietly sending anything.
 function populateSettingsFields(dict) {
   // Always carried, on every message -- these are purely cosmetic,
-  // phone-local preferences, not eclipse data, so there's no reason
+  // These fields are part of the watch data payload.
   // to gate them behind DATA_VALID or wait for a full refresh cycle.
   dict['SHOW_SECONDS'] = showSecondsCode();
   dict['COLORS'] = colorsBytes();
@@ -408,11 +407,8 @@ function populateSettingsFields(dict) {
   dict['SHAKE_ANIM_MODE'] = shakeAnimModeCode();
   // Legacy CORNER_CONTENT is never emitted: feature IDs stay on the phone.
   dict['CORNER_COLOR_MODE'] = cornerColorModeBytes();
-  // Phase 13 (IMPLEMENTATION_NOTES.md Update 34): 23 scattered settings
-  // bytes packed into one wire blob instead of 23 separate AppMessage keys
-  // -- order here MUST exactly match SETTINGS_BLOB_OFFSETS in
-  // comms_decoder.c (comment there documents the pairing); verified by
-  // scripts/verify-field-blob-order.js, not just by eye.
+  // Settings are packed into one byte array. Its order must match
+  // SETTINGS_BLOB_OFFSETS in comms_decoder.c.
   dict['SHAKE_ONLY_MASK'] = shakeOnlyMaskCode();
   dict['PLUGIN_TEXTS'] = pluginManager.textsBytes();
   dict['SETTINGS_U8_BLOB'] = [
@@ -430,19 +426,9 @@ function populateSettingsFields(dict) {
     bitmapMarkerInvertCode(),
     bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode()
   ];
-  // Phase 3 (primitive value transport): a flat 40-byte array (4 corners *
-  // 10 primitive-ID slots), one primitiveIdSequenceForContent() call per
-  // corner, always sent in full -- see that function's own comment for why
-  // an all-zero sequence (any content id not in PRIMITIVE_TRANSPORT_SEQUENCES)
-  // is the correct "not transport-enabled" signal, and primitive-decompose.js's
-  // header for which content ids actually get a real sequence today.
-  //
-  // Phase 9 composer (see IMPLEMENTATION_NOTES.md's Updates 19-21): a non-
-  // empty CONFIG_CORNER_*_CUSTOM_PRIMS setting ("id" or "id:aux" entries)
-  // overrides the content-derived sequence for that one corner -- the
-  // composed sequence and its aux bytes are sent as-is (normalized/padded)
-  // instead of what primitiveIdSequenceForContent(contentId) would have
-  // produced.
+  // Each corner sends ten primitive IDs and matching auxiliary values.
+  // A custom sequence overrides the sequence compiled from the selected feature.
+  // Empty sequences are sent as zero-filled slots.
   var cornerCustomPrimsSettings = [
     getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
     getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
@@ -470,19 +456,9 @@ function populateSettingsFields(dict) {
   dict['NEXT_STYLE_CHECK'] = scheduledStyle.nextCheckSeconds(Date.now());
 }
 
-// For the settings page's own debug "full keyset" window (see
-// showConfiguration in index.js and fullKeysetData in config-page.js) --
-// every key the watch could currently receive, ready to hand-edit and
-// send as-is. Starts from the last genuinely computed full send (the
-// same LAST_FULL_COMPUTED_DICT resendLastFullData() in index.js already
-// uses) so the eclipse/weather/astronomy fields are real values
-// rather than blank/zeroed placeholders, then overlays fresh settings
-// on top (same reasoning as resendLastFullData()'s own fix: those
-// need to reflect whatever's actually configured right now, not
-// whatever happened to be true whenever that snapshot was last
-// cached). No network fetch of its own -- opening the settings page
-// should be instant, not wait on a fresh weather/astronomy call just
-// to populate a debug textarea.
+// Builds the settings page's debug keyset from the last computed data
+// snapshot, then overlays current settings. This avoids triggering network
+// requests just to populate the debug view.
 function buildFullKeysetDict() {
   var dict = {};
   try {
@@ -498,17 +474,9 @@ function buildFullKeysetDict() {
   return dict;
 }
 
-// Builds the full flat dict (eclipse/weather/sky data passed in, plus
-// the cosmetic settings/features fields merged in below) exactly as
-// before, then hands it to enqueueFlatDict() (comms/message-queue.js) to
-// be split into typed chunks and sent one at a time -- see
-// message-schema.js's KEY_TYPE_MAP. Kept the name/shape of the old
-// single-big-message sendDict() so every call site (mostly in index.js,
-// plus the debug-override/localStorage-snapshot logic already living
-// here) stayed untouched.
-//
-// The actual field-by-field population (dict['CLOCK_FONT'] = ...,
-// all ~148 of them) lives in populateSettingsFields() below, split
+// Builds the outgoing data dictionary and passes it to the message queue,
+// which splits it into typed chunks using message-schema.js. Settings fields
+// are added by populateSettingsFields() below.
 // out so the settings page's own debug "full keyset" window (see
 // buildFullKeysetDict()) can get a fresh, correctly-encoded settings
 // snapshot without going through this function's OWN side effects
@@ -658,7 +626,7 @@ function extraWeatherFieldsDict(extra) {
     dict['FORECAST_TEMP_C'] = extra.forecastTempC.map(function (c) {
       return (typeof c === 'number') ? Math.max(0, Math.min(255, Math.round(c) + 50)) : 255;
     });
-    // Phase 7: per-index display text (9 discrete keys -- AppMessage has no
+    // Per-index forecast display text (AppMessage has no
     // "array of strings" type, and 9 individual cstring keys mean zero
     // watch-side string-splitting/parsing, matching the "least possible
     // watch processing" goal better than one delimited string would) plus

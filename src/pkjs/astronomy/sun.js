@@ -1,7 +1,5 @@
 // ---- Sun (low precision, Meeus ch.25) --------------------------------
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
-
 var angles = require('./angles');
 var sind = angles.sind;
 var cosd = angles.cosd;

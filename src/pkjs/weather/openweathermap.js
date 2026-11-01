@@ -1,9 +1,7 @@
 // ---- OpenWeatherMap provider ----------------------------------------------
 //
-// Moved out of weather.js (weather providers extraction). Optional
-// second cloud-cover source, only used if the user supplied an API
-// key in settings -- see weather.js's getCloudOutlook() for how this
-// is combined with Open-Meteo.
+// Optional second cloud-cover source. Used only when an API key is
+// configured; weather.js combines its result with Open-Meteo data.
 
 var xhrGetJSON = require('./http').xhrGetJSON;
 

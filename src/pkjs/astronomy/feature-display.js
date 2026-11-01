@@ -1,32 +1,7 @@
-// ---- astronomy display-value formatting (Feature Primitive Refactor,
-//      Phase 7, continuing the Section 5b addendum into the astronomy
-//      cluster) --------------------------------------------------------
-//
-// Same shape as weather-normalize.js's temperature/UV/etc. functions: a
-// display-text formatter and, where the watch used a dynamic gradient
-// color, a matching packed-color-byte function. See
-// feature_value_sky_compute() (feature_value_time.c) for the on-watch
-// code these replace.
-//
-// NOT everything in the astronomy cluster migrates, though -- three of its
-// content ids (16 sunrise/sunset, 82 next planet rise, 83 ISS next pass)
-// stay watch-computed even after this pass, for two compounding reasons
-// this module's functions deliberately don't try to route around:
-//   1. Time-dependent SELECTION: "which of these several future instants
-//      is the soonest one relative to right now" is not a value PKJS can
-//      precompute once and hand over as a static string -- it keeps
-//      changing purely because time keeps advancing on the watch, with no
-//      new data having arrived at all. PKJS only pushes on a refresh
-//      cycle, not continuously, so it cannot keep re-resolving "next" the
-//      way the watch's own redraw path already does.
-//   2. 12h/24h formatting: every one of those three cases formats a clock
-//      time with strftime() using clock_is_24h_style() -- a native Pebble
-//      OS service reflecting the paired phone's system clock-format
-//      setting, which PKJS has no access to at all (it isn't part of this
-//      app's own settings). Any value whose *text* depends on that watch-
-//      only setting can't be formatted on the PKJS side, full stop.
-// Compass (content 85) stays watch-runtime for the usual reason (Section
-// 2.1): the heading itself is read from a live watch-local sensor.
+// Formats astronomy values on the phone before they are sent to the watch.
+// Time-sensitive event selection and clock formatting remain on the watch,
+// where current time and Pebble's 12/24-hour setting are available. Compass
+// direction is also resolved on the watch from its live sensor reading.
 
 var packGColorByte = require('../comms/gcolor').packGColorByte;
 

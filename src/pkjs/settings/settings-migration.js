@@ -1,36 +1,11 @@
-// Runs once per pkjs startup (self-executing on require -- keep this
-// required from index.js at the same point it used to run inline, so
-// timing relative to the rest of startup is unchanged).
-//
-// Moved out of index.js verbatim (settings subsystem extraction).
-// Behavior is unchanged; only the module boundary is new.
+// Runs once during PKJS startup to migrate saved settings and cached data.
+// User configuration remains in localStorage; only obsolete cached message
+// payloads and values affected by schema changes are rewritten.
 
-// ---- migration: settings-key wire-format schema version ------------------
-//
-// C consolidated 86 individual settings AppMessage keys (HAND_HOUR_*,
-// CUSTOM_HOUR_*/CUSTOM_SEC_*, MARKER_TEXT_*, the edge-line content/color
-// keys, and the CUSTOM_*/NIGHT_CUSTOM_* color keys) into 5 packed-byte-
-// array keys -- HANDS, MARKER_RINGS, EDGE_LINE_COLOR_MODE, MARKER_TEXT, COLORS.
-// See handsBytes()/markerRingsBytes()/edgeLinesBytes()/markerTextBytes()/
-// colorsBytes() in index.js, and apply_consolidated_fields() in
-// comms_decoder.c for the watch side.
-//
-// This doesn't touch any of the CONFIG_* localStorage keys the settings
-// page reads/writes (those are unchanged, so nobody's saved hand/marker/
-// color choices are affected) -- but LAST_FULL_COMPUTED_DICT (see
-// sendFlatDict()'s own comment) caches an entire previously-sent flat
-// dict verbatim, keyed by the OLD individual AppMessage key names, for
-// resendLastFullData()/buildFullKeysetDict() to reuse. An update landing
-// on a phone that still has one of those old-format dicts cached would
-// otherwise have populateSettingsFields() add the 5 new keys on top
-// without ever clearing the ~86 stale old ones already sitting on that
-// same object -- enqueueFlatDict() tolerates unknown keys (logs a
-// warning and stuffs them in the SETTINGS chunk anyway) rather than
-// crashing, but there's no reason to ship that instead of just starting
-// clean. Bumping this version wipes the one cache that could carry the
-// old key names forward; everything else (the real CONFIG_* settings,
-// and a fresh computed dict using the 5 new keys) rebuilds itself
-// normally on the very next refresh either way.
+// ---- Settings schema version ---------------------------------------------
+// The watch protocol now uses packed settings arrays. Version 3 remaps the
+// marker-style IDs; version 4 invalidates cached data from the older layout
+// and removes settings for features no longer supported by Modern.
 // 3 = marker style ids renumbered: Minimal moved 0 -> 10 and 0 became "None"
 //     (it was 9; 9 is Classy now). Stored value and saved snapshots remapped.
 // 4 = Modern: digital layouts, sky rendering, flights and sky styles removed;

@@ -1,4 +1,4 @@
-// Phase 9 composer -- client-side (settings page) code.
+// Custom feature-sequence editor used by the settings page.
 //
 // Same non-Node-module shape as config-preview.js/config-runtime.js: this
 // file exports client JS *source text* that config-page.js splices into the
@@ -6,7 +6,7 @@
 // function declarations (embedded via Function.prototype.toString) rather
 // than as concatenated string literals, so `node --check` validates it
 // directly and there is no quote-escaping to get wrong -- the class of bug
-// IMPLEMENTATION_NOTES.md's Update 20 hit with an embedded `//` comment.
+// an embedded line comment in generated script text.
 //
 // Nothing in composerClientBody() ever runs in PKJS; it only runs inside the
 // settings page, where these globals exist (defined elsewhere in the
@@ -14,9 +14,8 @@
 // PRIMITIVE_TRANSPORT_SEQUENCES, PRIMITIVE_TRANSPORT_AUX, TIMEZONE_ZONES,
 // PRIM_SPACE_ID, COMPOSER_MAX, PRIMITIVE_PREVIEW_TEXT, FORECAST_SLOTS.
 //
-// Working-copy semantics (report Section 24): the composer edits COMPOSER.items
-// only. Nothing touches the slot's hidden input until saveSlotEditor()
-// validates and commits, so Cancel / tapping outside discards every edit.
+// Edits stay in a working copy until saveSlotEditor() validates and commits
+// them. Canceling the editor discards the changes.
 //
 // Storage format of the hidden input / CONFIG_CORNER_*_CUSTOM_PRIMS setting:
 // comma-separated "id" or "id:aux" entries (aux omitted when 0). See
@@ -61,9 +60,7 @@ function composerClientBody() {
     return z ? (z.abbr || z.label.split(" ")[0]) : ("zone " + aux);
   }
 
-  // Generalizes the zone picker to any parametrized primitive (Update 25
-  // adds 'forecast' alongside 'timezone'): which option list backs the
-  // picker and what its row is labelled.
+  // Supplies the option list and row label for each parameterized element.
   var PARAM_OPTIONS = { timezone: TIMEZONE_ZONES, forecast: FORECAST_SLOTS };
   var PARAM_ROW_LABEL = { timezone: "Zone", forecast: "Forecast slot", plugin: "Plugin data source" };
   function composerParamShortLabel(param, aux) {
@@ -100,8 +97,8 @@ function composerClientBody() {
     return items.map(function (it) { return it.aux ? (it.id + ":" + it.aux) : String(it.id); }).join(",");
   }
 
-  // "Prebuilt feature" (report Section 19/20): the primitive sequence a
-  // legacy content id transports as, including per-position aux (zone
+  // A prebuilt feature starts with its default primitive sequence.
+  // content id transports as, including per-position aux (zone
   // index for the time-zone contents). Empty when that content has no
   // transport sequence (None, astronomy, composites that aren't
   // transport-enabled yet).
@@ -152,9 +149,7 @@ function composerClientBody() {
     var strip = document.getElementById("composerStrip");
     strip.innerHTML = COMPOSER.items.map(function (it, idx) {
       var cls = "composer-chip" + (idx === COMPOSER.selected ? " selected" : "");
-      // Draggable for pointer-based reordering (report's "if feasible"
-      // note); <-/-> below remain the primary, keyboard-reachable way to
-      // reorder, so drag support is additive, not a replacement.
+      // Dragging supplements the arrow controls, which remain keyboard accessible.
       return "<button type=\"button\" class=\"" + cls + "\" draggable=\"true\"" +
         " ondragstart=\"composerDragStart(" + idx + ")\" ondragover=\"composerDragOver(event)\" ondrop=\"composerDrop(" + idx + ")\"" +
         " onclick=\"composerSelect(" + idx + ")\">" +
@@ -199,7 +194,7 @@ function composerClientBody() {
     composerRender();
   }
 
-  // Top row "+" (report Section 21): appends a SPACE -- a harmless,
+  // The top-row "+" control appends a Space element.
   // editable default -- and selects it so the person can immediately swap
   // it via the palette below or move it.
   function composerPlus() {
@@ -260,10 +255,8 @@ function composerClientBody() {
   function composerDragOver(ev) {
     ev.preventDefault(); // required for drop to fire (native HTML5 DnD)
   }
-  // Drop reorders by removing the dragged chip and reinserting it at the
-  // drop target's position -- same one-array-splice approach as the
-  // report's "if feasible" note suggested, layered on top of (not
-  // replacing) the <-/-> buttons, which remain the accessible/keyboard path.
+  // Move the dragged item to the drop target. Arrow controls provide
+  // the same reordering action for keyboard users.
   function composerDrop(idx) {
     var from = COMPOSER.dragFrom;
     COMPOSER.dragFrom = -1;
@@ -327,7 +320,7 @@ function composerClientBody() {
     }
   }
 
-  // Selecting a primitive from the palette *appends* it (report Section 20);
+  // Selecting a primitive from the palette appends it;
   // it never replaces the selected one -- use Delete + Add, or, for a
   // parametrized primitive, the zone picker above the palette.
   function composerAddFromPalette() {
@@ -544,7 +537,7 @@ function composerClientBody() {
 
   // Returns the string to store in the slot's hidden input, or null if the
   // composer refuses to commit (a message is shown and the popup must stay
-  // open -- report Section 23: never silently truncate).
+  // open; sequences are never silently truncated).
   function composerCommitValue() {
     if (!document.getElementById("slotEditCustomPrimsToggle").checked) return "";
     var n = COMPOSER.items.length;

@@ -11,7 +11,7 @@ GColor feature_color_resolve_flat(uint8_t color_mode, GColor dynamic_color, GCol
   }
 }
 
-// Phase 7 (Feature Primitive Refactor): unpacks a PKJS-sent GColor8 byte
+// Converts a packed GColor8 byte received from PKJS.
 // (see watch_data.h's current_temp_color et al.) the same way
 // watch_ui.c's watch_ui_color_from_packed() does for the SETTINGS
 // custom-color fields -- GColor8 IS its own wire byte, no conversion table

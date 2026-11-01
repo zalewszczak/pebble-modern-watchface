@@ -14,11 +14,8 @@ GColor feature_render_contrasting_outline_color(GColor c) {
   return (luma >= 9) ? GColorBlack : GColorWhite;
 }
 
-// Split into two halves so the primitive renderer (primitive_renderer.c) can
-// run a genuine outline-pass-then-content-pass across every text primitive
-// in a feature (Section 13), instead of interleaving outline+content per
-// segment as the legacy per-slot path below still does. feature_render_draw_text_outlined()
-// is kept calling both, unchanged, for the legacy (non-primitive) slots.
+// Separate text outline and content drawing so the primitive renderer can
+// complete each pass across the feature before moving to the next one.
 
 void feature_render_draw_text_outline_only(GContext *ctx, const char *text, GFont font, GRect box,
                                            GTextOverflowMode overflow, GTextAlignment alignment,

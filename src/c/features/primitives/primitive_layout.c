@@ -2,9 +2,7 @@
 #include "../feature_slot.h"
 #include "../feature_icons.h"
 
-// Mirrors feature_render_resolve_segment_offsets() (feature_render.c)
-// exactly, generalized to PrimitiveInstance and to the three universal
-// spacer kinds it never had to handle before (Section 4).
+// Applies the feature-slot alignment rules to resolved primitive instances.
 
 static const char *spacer_glyph(PrimitiveKind kind) {
   switch (kind) {

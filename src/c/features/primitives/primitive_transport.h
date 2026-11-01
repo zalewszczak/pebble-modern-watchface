@@ -1,7 +1,7 @@
 #pragma once
 
 // Build a resolved primitive sequence from the primitive-only wire payload.
-// There is intentionally no legacy content fallback: an empty sequence means
+// There is intentionally no content fallback: an empty sequence means
 // the slot is disabled, and an invalid/unresolvable sequence is rejected.
 
 #include <pebble.h>

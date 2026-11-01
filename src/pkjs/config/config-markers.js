@@ -1,7 +1,4 @@
-// ---- marker domain: hour/second index grids and the ring/text editors ---
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fifth slice).
+// ---- Marker controls: index grids, rings, and marker text ----------------
 
 var configTemplate = require('./config-template');
 var esc = configTemplate.esc;

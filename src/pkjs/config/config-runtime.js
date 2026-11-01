@@ -1,31 +1,6 @@
-// ---- client-side save + Pebble/browser compatibility layer --------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 -- config-runtime slice). Same non-Node-module shape as
-// config-preview.js: this exports the exact client-side JS source text
-// that gets spliced into the settings page's embedded <script>, since
-// that script runs in the phone's webview, a separate JS runtime from
-// PKJS.
-//
-// Two things live here together because they're both about getting a
-// finished, in-memory settings object safely off this page and into
-// PKJS's hands, regardless of which Pebble app/OS/emulator is hosting
-// the webview:
-//
-//   save(forceRefresh) -- reads every field on the page (re-deriving a
-//   few values -- Show Seconds, which edge slots are actually
-//   available -- at save time rather than trusting the DOM already
-//   reflects the latest style change, since several UI events can
-//   affect them) into one settings object, then hands it off via
-//   getQueryParam()'s `return_to` protocol.
-//
-//   getQueryParam(name, defaultValue) -- the actual compatibility
-//   shim: different Pebble apps/OS versions/the emulator all append
-//   their own `return_to` query param telling this page where to
-//   navigate with the finished settings (falling back to the legacy
-//   `pebblejs://close#` prefix when none is present) -- see this
-//   file's own top-of-module comment in config-page.js for the full
-//   rationale.
+// Builds the settings object in the configuration webview and returns it
+// to PKJS through Pebble's return_to navigation protocol. The save handler
+// recalculates dependent slot availability before collecting the values.
 
 module.exports =
 'function collectSettings(forceRefresh) {' +
@@ -128,7 +103,7 @@ module.exports =
 '    CONFIG_CORNER_TR_COLOR: document.getElementById("cornerTRColor").value,' +
 '    CONFIG_CORNER_BL_COLOR: document.getElementById("cornerBLColor").value,' +
 '    CONFIG_CORNER_BR_COLOR: document.getElementById("cornerBRColor").value,' +
-// Phase 9 composer (see IMPLEMENTATION_NOTES.md's Update 19): read
+// Read
 // independently of avail.cornersGrayed above, same as the *_COLOR
 // fields -- a corner being grayed out in the current layout doesn't
 // change what's saved for it (features_layer.c already trusts a
@@ -274,7 +249,7 @@ module.exports =
 '  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
 '  document.location = returnTo + encodeURIComponent(JSON.stringify(settings));' +
 '}' +
-// Debug sends (full keyset / fake weather) and "back": navigate in the legacy flow,
+// Debug sends (full keyset / fake weather) and "back": navigate in the existing flow,
 // message PKJS in the live one.
 'function phoneAction(payload) {' +
 '  if (LIVE.active) { return Pebble.sendMessage("pkjs", { type: "action", payload: payload }).then(function () { liveStatus("Sent"); }, function () { liveStatus("Not sent: no connection to the phone app", true); }); }' +

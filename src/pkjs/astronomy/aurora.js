@@ -1,4 +1,4 @@
-// Moved out of astro.js (astronomy split, by mathematical domain).
+// Aurora visibility estimate based on geomagnetic activity.
 
 var angles = require('./angles');
 var sind = angles.sind;

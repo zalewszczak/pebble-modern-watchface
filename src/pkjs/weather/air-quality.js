@@ -1,6 +1,6 @@
 // ---- air quality provider -------------------------------------------
 //
-// Moved out of weather.js (weather providers extraction).
+// Fetches current air-quality measurements from Open-Meteo.
 
 var xhrGetJSON = require('./http').xhrGetJSON;
 

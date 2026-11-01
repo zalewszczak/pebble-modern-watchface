@@ -1,6 +1,6 @@
 // ---- weather condition normalization -------------------------------------
 //
-// Moved out of weather.js (weather providers extraction).
+// Converts provider weather codes and values into the formats used by the watch.
 
 // Maps an Open-Meteo/WMO weather code to our simplified on-watch
 // condition enum. Plain clear/cloudy states need no special effect
@@ -33,20 +33,9 @@ function weatherDetailClass(code, cloudPct) {
   return 2;
 }
 
-// ---- display-value formatting (Feature Primitive Refactor, Phase 7) ------
-//
-// Moves the current-temperature unit conversion out of the watch
-// (feature_rules_convert_temp() in feature_rules.c, called from
-// feature_value_weather_compute()'s content-32 case) and into PKJS, per
-// FEATURE_PRIMITIVE_REFACTOR_REPORT_REVISED.md Section 6. `tempUnitCode`
-// must be the same 0=C/1=F/2=K encoding feature_rules_convert_temp() used
-// (see settingsCodecs.tempUnitCode()) -- this is deliberately the exact
-// same integer-truncating arithmetic as the C it replaces (Math.trunc,
-// not Math.round, for the C-to-F step) so switching which side computes
-// this doesn't change what the number on the watch face actually reads.
-// Only content 32 (current temperature + weather icon) consumes this for
-// now; every other temperature-shaped content (5, 73, 76, 87-95, ...)
-// still converts on the watch until a later pass migrates them too.
+// Formats weather values for display using the configured temperature unit.
+// The integer arithmetic matches the watch-side conversion so values remain
+// consistent regardless of where formatting occurs.
 function formatTempDisplay(tempCRaw, tempUnitCode) {
   if (typeof tempCRaw !== 'number' || isNaN(tempCRaw)) return '';
   var c = Math.round(tempCRaw); // WEATHER_TEMP_C itself is sent Math.round()ed -- match it
@@ -61,13 +50,8 @@ function formatTempDisplay(tempCRaw, tempUnitCode) {
   return String(shown);
 }
 
-// Moved from feature_rules_apparent_temp_c() (feature_rules.c) as part of
-// the same Phase 7 migration -- a simple windchill/heat-index approximation,
-// not real apparent-temperature science, so it's ported verbatim rather
-// than improved, to keep today's on-watch number unchanged. Takes and
-// returns whole-degree Celsius (matching the C version's int16_t math);
-// pass the result straight into formatTempDisplay() for the final string,
-// same as the current/high/low temps above.
+// Estimates apparent temperature using a simple wind-chill/heat-index
+// approximation. Inputs and output are whole-degree Celsius values.
 function apparentTempC(tempCRaw, windKmhRaw, humidityPctRaw) {
   if (typeof tempCRaw !== 'number' || isNaN(tempCRaw)) return tempCRaw;
   var tempC = Math.round(tempCRaw);
@@ -86,26 +70,9 @@ function apparentTempC(tempCRaw, windKmhRaw, humidityPctRaw) {
   return tempC;
 }
 
-// ---- gradient-color computation (continuing Phase 7 into Section 31) -----
-//
-// The report's ownership split (Section 31) puts "colors" on the watch's
-// side of the line in general -- but that assumes the *value* driving the
-// color is watch-local. Once a value's display text is PKJS-sourced (like
-// the temperatures above), computing its gradient color on the watch means
-// keeping feature_colors_seven_stop_gradient()'s color-ramp table AND the
-// raw Celsius value around on-watch for no reason but that one lookup. So
-// for every value already migrated to a *_DISPLAY string above, its
-// gradient color moves to PKJS too, as a single packed-GColor8 byte sent
-// alongside the string (same wire format the SETTINGS custom-color fields
-// already use -- see settings-codecs.js's customColorByte() and
-// watch_ui.c). This is a verbatim port
-// of feature_colors_seven_stop_gradient() (feature_colors.c): same 7 color
-// stops, same integer-truncating interpolation math, so the exact same
-// color comes out either side of the wire -- only which side computes it
-// changes. Not ported here: GColorFromRGB()'s own 8-bit-to-2-bit-per-channel
-// packing is not officially documented as truncation vs. rounding, but is
-// well-established SDK behavior (channel >> 6) -- see comms/gcolor.js's
-// packGColorByte(), shared with astronomy/feature-display.js below.
+// Computes gradient colors alongside phone-formatted values and sends each
+// color as a packed GColor8 byte. The interpolation matches the watch-side
+// gradient functions so the displayed colors remain consistent.
 var packGColorByte = require('../comms/gcolor').packGColorByte;
 
 var SEVEN_STOP_GRADIENT_STOPS = [
@@ -133,10 +100,7 @@ function sevenStopGradientRGB(value, minV, maxV) {
   return [r, g, b];
 }
 
-// Packs an 8-bit RGB triple (always fully opaque here) into the one-byte
-// GColor8 wire format -- moved to comms/gcolor.js so astronomy/feature-display.js
-// can share it without requiring this weather-specific module. Imported
-// above as packGColorByte.
+// Color packing is shared through comms/gcolor.js.
 
 // The specific gradient every temperature display above uses: 7-stop
 // rainbow across -10C..40C (matches feature_colors_seven_stop_gradient()'s
@@ -148,7 +112,7 @@ function tempGradientColorByte(tempCRaw) {
   return packGColorByte(rgb[0], rgb[1], rgb[2]);
 }
 
-// ---- remaining Section 5 weather values (UV, humidity, wind, rain,
+// ---- Additional weather display values (UV, humidity, wind, rain,
 //      visibility, cloud cover, pressure, AQI, dew point, altitude) --------
 //
 // Same shape as the temperature cluster above: a display-text function and,
@@ -273,7 +237,7 @@ function aqiGradientColorByte(aqiValueRaw, aqiUnitCode) {
 // transient fetch failure (see extraWeatherFieldsDict()'s own comment), and
 // the watch's existing GColorLightGray/"N/A" special case for it is kept
 // as-is on the watch rather than guessed at here -- see
-// feature_value_weather.c's case 38 and IMPLEMENTATION_NOTES.md.
+// the watch-side altitude resolver.
 function formatAltitudeDisplay(altitudeMRaw, altitudeUnitCode) {
   if (typeof altitudeMRaw !== 'number' || isNaN(altitudeMRaw)) return '';
   var m = Math.round(altitudeMRaw);
@@ -288,15 +252,8 @@ function altitudeGradientColorByte(altitudeMRaw) {
   return packGColorByte(rgb[0], rgb[1], rgb[2]);
 }
 
-// Icon-category selection (Section 4's "static icon" concept): verbatim
-// port of feature_icons_weather_category() (feature_icons.c). Used both
-// for the current-conditions weather icon and, with a neutral cloud%
-// guess, for each forecast hour/day's icon -- same as the watch always
-// did. Unlike every other function in this file, this doesn't produce
-// display text or a color -- it produces the icon ID itself, so the watch
-// no longer needs to interpret weather_condition/cloud_cover_pct into an
-// icon category at all once this is present (see its fallback in
-// feature_value_weather.c's cases 31/32/76/87-95).
+// Selects the icon category for current conditions and forecast periods.
+// The returned category is sent to the watch with the corresponding weather data.
 function weatherIconCategory(conditionCode, cloudPct) {
   switch (conditionCode) {
     case 1: return 3; // fog
@@ -310,10 +267,7 @@ function weatherIconCategory(conditionCode, cloudPct) {
   }
 }
 
-// ---- weather-condition color (completes weatherIconCategory's "PKJS
-// decides the color too, since PKJS already decided the value" pairing --
-// see the color-ownership principle in IMPLEMENTATION_NOTES.md's Phase 3
-// update) -----------------------------------------------------------------
+// ---- Weather-condition icon colors --------------------------------------
 //
 // Verbatim port of feature_colors_weather_condition_color()
 // (feature_colors.c) and the two gradients private to it.

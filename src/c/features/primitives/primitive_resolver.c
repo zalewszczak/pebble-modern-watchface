@@ -31,10 +31,8 @@ static void resolve_punct(PrimitiveResolved *out, const char *text, GColor color
   out->dynamic_color = color;
 }
 
-// Removes `prefix` from the start and `suffix` from the end of the resolved
-// text when present. Used to turn a legacy "legend + value + unit" primitive
-// into the bare value ("UV6" -> "6", "1013 hPa" -> "1013"); fallbacks that do
-// not carry the legend ("N/A", "ERR 2") are left alone.
+// Removes optional text around a resolved value while preserving fallback
+// messages such as "N/A" and "ERR 2".
 static void strip_text(PrimitiveResolved *out, const char *prefix, const char *suffix) {
   size_t len = strlen(out->text);
   size_t pl = prefix ? strlen(prefix) : 0;
@@ -147,7 +145,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     if (resolve_builder_extra(id, aux_in, data, now, t, out, &extra_ok)) return extra_ok;
   }
   // Every currently-covered date/time primitive shares this one gradient
-  // (the same one legacy date computation() uses for every content id
+  // (the same one date resolver() uses for every content id
   // enabled for transport so far -- see primitive_transport.h) -- computed
   // once here rather than per-case, since date/time cases below all want
   // the same value.
@@ -166,15 +164,14 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       out->dynamic_color = date_c;
       return true;
     case PRIM_DASH:
-      // Universal "-" spacer (report Section 4/19). Renderer/layout already
-      // handle PRIMITIVE_KIND_DASH; only the resolver case was missing.
+      // Resolve the dash spacer; layout and rendering handle its appearance.
       out->kind = PRIMITIVE_KIND_DASH;
       out->dynamic_color = date_c;
       return true;
 
-    // ---- clock cluster (legacy date computation's plain time/second
+    // ---- clock cluster (date resolver's plain time/second
     // cases, content 18/63-72/86) -- all watch-runtime, read straight off
-    // `t`/`now`. Color rules copied 1:1 from the legacy switch.
+    // `t`/`now`. Color rules copied 1:1 from the switch.
     case PRIM_TIME_HM:
       strftime(buf, sizeof(buf), clock_is_24h_style() ? "%H:%M" : "%I:%M %p", t);
       resolve_text(out, buf, feature_colors_daynight_gradient(now, data->sun_rise, data->sun_set));
@@ -258,17 +255,8 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, buf, date_c);
       return true;
 
-    // Date-component family, continued -- unified under the same date_c
-    // gradient as everything above (color-ownership principle: the watch
-    // computes every one of these, so the watch decides their color, and
-    // "the watch's decision" means ONE consistent rule per family, not a
-    // different bespoke gradient depending on which content happened to
-    // compose it -- see IMPLEMENTATION_NOTES.md's Phase 3 update). This
-    // deliberately does NOT match every one of these primitives' old
-    // standalone-content gradient (e.g. content 19's week number used its
-    // own 7-stop 1-52 gradient, content 23's weekday used a 7-stop 0-6
-    // gradient) -- that per-content variation was the compromise being
-    // replaced, not a behavior being preserved.
+    // Date components share one gradient so a component keeps the same
+    // color wherever it appears.
     case PRIM_WEEK_NUMBER:
       strftime(buf, sizeof(buf), "%V", t);
       resolve_text(out, buf, date_c);
@@ -324,10 +312,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, num, c);
       return true;
     }
-    // "H"/"L" are constant glyphs (Section 31: nothing to resolve about
-    // their own value), but their COLOR should visually match the value
-    // they label -- resolved by delegating to that value's own case above
-    // rather than duplicating its fallback logic here.
+    // Match each label's color to the temperature value it describes.
     case PRIM_LABEL_HIGH_PREFIX: {
       PrimitiveResolved hv;
       primitive_resolver_resolve(PRIM_TEMP_HIGH_TEXT, 0, data, now, t, &hv);
@@ -340,20 +325,9 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, "L", lv.dynamic_color);
       return true;
     }
-    // PRIM_CURRENT_TEMP_TEXT/PRIM_WEATHER_CONDITION_ICON: content 32/76's
-    // current-temp text and weather icon. Legacy code forced these (and
-    // content 76's high/low halves) to all share one weather-*condition*
-    // color rather than each value's own natural gradient -- exactly the
-    // kind of compromise this whole resolver design rejects (each
-    // primitive resolves its own best color, per its own source, "down to
-    // primitives" -- see IMPLEMENTATION_NOTES.md's Phase 3 update). Here,
-    // current temp gets its own current_temp_color (same source as
-    // PRIM_CURRENT_TEMP_ONLY_TEXT), and the icon gets its own
-    // weather_icon_color (Section 31: PKJS decided the icon's category, so
-    // PKJS decides its color too) -- not cond_color. This means content 76
-    // rendered through transport shows each value in its own color instead
-    // of one shared condition color, a deliberate, direction-endorsed
-    // departure from the legacy behavior, not an oversight.
+    // Temperature text and the weather icon use their own colors: the
+    // temperature follows its gradient, while the icon uses the color
+    // supplied with its weather category.
     case PRIM_CURRENT_TEMP_TEXT: {
       char num[8];
       GColor c;
@@ -387,7 +361,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     // ---- weather cluster (primitive weather-value resolution, content
     // 5/6/7/8/9/14/15/34/35/36/37/38/87-97/107) -- PKJS-supplied display
     // string when present, watch-side fallback otherwise. Color rules
-    // copied 1:1 from the legacy switch; every case is force_color-free
+    // copied 1:1 from the switch; every case is force_color-free
     // (each already resolves its own natural gradient, no flat/COLOR-mode
     // dispatch needed beyond the shared transport step).
     case PRIM_CURRENT_CONDITIONS_TEXT: {
@@ -630,13 +604,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- health/status cluster (primitive health-value resolution) ----------
-    // All watch-runtime (Section 2.1): read straight from Pebble's own
-    // services, no PKJS round-trip. Each icon/text pair below is used by
-    // exactly one canonical color rule across every content id currently
-    // enabled for transport (content 1/2/3/10/17/20/78/108/109/39/40/41/
-    // 42/43) -- see IMPLEMENTATION_NOTES.md's Phase 3 update for the
-    // per-content color audit this was checked against before enabling.
+    // Health and status values come directly from Pebble's watch services.
     case PRIM_HEART_RATE_ICON:
     case PRIM_HEART_RATE_VALUE: {
       int bpm = feature_health_peek_current_bpm();
@@ -701,12 +669,8 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     case PRIM_QUIET_TIME_STATUS_TEXT: {
       bool active = quiet_time_is_active();
       GColor c = active ? GColorRed : GColorWhite;
-      // PRIM_QUIET_TIME_ICON shows state in its shape (crossed-out while
-      // active) -- content 108/112/118. The old code always passed false
-      // here, so a transported content 108 never showed the crossed-out
-      // speaker its legacy path does. PRIM_QUIET_TIME_PLAIN_ICON is the
-      // never-crossed-out variant (109/113 carry the state in their ON/OFF
-      // text instead).
+      // The stateful icon is crossed out while Quiet Time is active. The
+      // plain variant leaves the icon unchanged and reports state as text.
       if (id == PRIM_QUIET_TIME_ICON) { resolve_icon(out, 29, 0, active, c); return true; }
       if (id == PRIM_QUIET_TIME_PLAIN_ICON) { resolve_icon(out, 29, 0, false, c); return true; }
       resolve_text(out, active ? "ON" : "OFF", c);
@@ -787,10 +751,10 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- weather singles (legacy weather feature code cases 73/74/75/77) ---
+    // ---- weather singles (weather resolver cases 73/74/75/77) ---
     // Each is a distinct primitive ID from content 4/32/76's *_TEXT
     // primitives (no color-ownership conflict -- see
-    // IMPLEMENTATION_NOTES.md), so these are safe to resolve independently.
+    // so each value can be resolved independently.
     case PRIM_CURRENT_TEMP_ONLY_TEXT:
     case PRIM_TEMP_HIGH_ONLY_TEXT:
     case PRIM_TEMP_LOW_ONLY_TEXT:
@@ -841,7 +805,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- timezone cluster (legacy timezone computation) --------------
+    // ---- timezone cluster (timezone resolver) --------------
     // aux_in is the zone index (feature_timezone_get()'s own index space,
     // 0-18) rather than a raw UTC offset -- see primitive_resolver.h's own
     // comment on why: reusing feature_timezone_get()/
@@ -867,7 +831,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       if (id == PRIM_TIMEZONE_AMPM) {
         // The transmitted sequence is fixed at content-selection time and
         // can't vary with clock_is_24h_style() (a runtime, watch-only
-        // setting -- Section 2.1, and the same "sequence can't react to a
+        // setting. The value also depends on the current time, so a cached
         // setting that changes later" constraint content 4's color_mode
         // already has). So this always resolves, but resolves to an empty,
         // zero-width primitive in 24h style rather than showing "AM"/"PM"
@@ -887,12 +851,12 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- astronomy cluster (the previous astronomy feature path, content 11/13/16/79-85) ----
+    // ---- Astronomy ----------------------------------------------------------
     // Values are either PKJS-supplied display strings (moon, meteor, Saturn,
-    // aurora -- Update 6) or watch-runtime selections over PKJS data
+    // aurora) or watch-runtime selections over phone-supplied data
     // (sun event, planets visible, next planet rise -- time-dependent and
     // 12h/24h-formatted, so they can't be precomputed). Color rules copied
-    // 1:1 from the legacy cases: an error is always red and an unavailable
+    // 1:1 from the cases: an error is always red and an unavailable
     // value always gray, both bypassing color_mode (force_color); otherwise
     // most use the slot's main color as their COLOR-mode candidate
     // (dynamic_is_main).
@@ -1073,6 +1037,6 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     }
 
     default:
-      return false; // invalid/unsupported primitive; there is no legacy fallback
+      return false; // The primitive ID is unsupported.
   }
 }

@@ -167,7 +167,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
     case 14: { // weather condition icon -- style picked in settings (simple/hollow/full color),
                // plus day/night art for the 2 categories that have both
                // (icon_flag carries "is it night right now", set by
-               // legacy weather feature code when it resolves the category).
+               // weather resolver when it resolves the category).
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2 - 2);
       uint8_t category = (uint8_t)icon_extra;
       draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
@@ -261,7 +261,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
     case 30: { // "+Xh"/"+X day" forecast-offset half-icon (see
                // feature_forecast_offset_icons.c) -- icon_extra carries the
                // 0-8 offset index (content-87, computed by
-               // legacy weather feature code), drawn just like any other
+               // weather resolver), drawn just like any other
                // fixed-shape icon; feature_icons_plus_gap_width()'s own
                // table is what makes this one only take up half the width.
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2 - 2);

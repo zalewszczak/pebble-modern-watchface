@@ -11,8 +11,7 @@ void feature_render_draw_text_outlined(GContext *ctx, const char *text, GFont fo
                                        GTextOverflowMode overflow, GTextAlignment alignment,
                                        GColor color, uint8_t outline_style);
 
-// Split halves of the above, for the primitive renderer's genuine two-pass
-// draw (Section 13) -- see primitive_renderer.c.
+// Separate outline and content passes used by the primitive renderer.
 void feature_render_draw_text_outline_only(GContext *ctx, const char *text, GFont font, GRect box,
                                            GTextOverflowMode overflow, GTextAlignment alignment,
                                            GColor color, uint8_t outline_style);

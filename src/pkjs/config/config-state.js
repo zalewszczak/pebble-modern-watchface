@@ -1,19 +1,6 @@
-// ---- settings-page derived state ------------------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 third slice). This is the precompute step buildConfigHtml() used
-// to run inline at its own top: turning the raw `current` settings
-// snapshot into every derived flag/value the template (still in
-// config-page.js) reads while building the page -- which layout is
-// active, whether seconds/side-columns are available for the current
-// font, the example-style button row's HTML, the initial color swatch
-// values, and so on.
-//
-// deriveConfigState(current) is the only export -- one function in,
-// one plain object out, no side effects. Nothing here renders HTML
-// itself (exampleStylesButtonsHtml is the one exception: it's already
-// a small HTML fragment in the original code, kept exactly as-is
-// rather than inventing a new boundary for a single field).
+// ---- Derived settings-page state ----------------------------------------
+// Converts the current settings snapshot into values used to build the page.
+// deriveConfigState() is side-effect free and returns the complete state object.
 
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;

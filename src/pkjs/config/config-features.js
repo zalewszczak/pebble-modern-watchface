@@ -1,7 +1,4 @@
-// ---- corner/edge content picker options ---------------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fifth slice).
+// ---- Corner and edge feature picker options -----------------------------
 
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;

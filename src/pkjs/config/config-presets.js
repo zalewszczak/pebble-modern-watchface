@@ -1,7 +1,4 @@
-// ---- preset slot rows -------------------------------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 fourth slice).
+// ---- Preset slot rows ----------------------------------------------------
 
 var esc = require('./config-template').esc;
 var presetSchedule = require('./config-preset-schedule');

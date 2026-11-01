@@ -1,6 +1,5 @@
 // ---- Moon (reduced ELP2000 terms, Meeus ch.47) ------------------------
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
 // Position, topocentric correction, and phase -- computeMoonPhase()
 // needs sun.js too (phase is a Sun-Moon geometry question).
 
@@ -100,9 +99,8 @@ function moonPosition(T) {
   return { ra: ra, dec: dec, distanceKm: distanceKm, eclipticLon: norm360(lon) };
 }
 
-// Corrects the Moon's geocentric RA/Dec for the observer's location
-// (parallax-in-right-ascension method, Meeus ch.40). This is the
-// single most important correction for local eclipse timing.
+// Corrects the Moon's geocentric coordinates for the observer's location
+// using the parallax-in-right-ascension method (Meeus, chapter 40).
 function topocentricMoon(moon, latDeg, lonDeg, lstDeg) {
   var pi = asind(6378.14 / moon.distanceKm); // equatorial horizontal parallax
   var H = norm360(lstDeg - moon.ra);

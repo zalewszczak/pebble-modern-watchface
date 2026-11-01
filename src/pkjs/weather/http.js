@@ -1,10 +1,6 @@
-// ---- shared XHR-as-JSON helper -------------------------------------------
-//
-// Moved out of weather.js (weather providers extraction) -- every
-// provider fetch (Open-Meteo, OpenWeatherMap, air quality, aurora Kp)
-// used its own copy of this exact pattern; genuinely shared, so it
-// lives here rather than being duplicated per provider file. Everything
-// here is XHR-based (PKJS has no fetch()).
+// ---- Shared XHR JSON request helper -------------------------------------
+// PKJS uses XMLHttpRequest for network requests; this helper parses JSON
+// responses and reports transport or parsing errors through the callback.
 
 function xhrGetJSON(url, timeoutMs, cb) {
   var xhr = new XMLHttpRequest();

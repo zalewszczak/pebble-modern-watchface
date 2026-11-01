@@ -5,7 +5,6 @@
 // checked against the real values before use (Mercury 87.97d, Venus
 // 224.7d, Mars 1.881yr, Jupiter 11.86yr, Saturn 29.45yr -- all match).
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
 
 var angles = require('./angles');
 var DEG = angles.DEG;

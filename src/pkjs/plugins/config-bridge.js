@@ -4,7 +4,7 @@
 // "config.html" in package.json) and let it talk to PKJS while it is open:
 // the page calls Pebble.sendMessage('pkjs', msg) and PKJS answers through the
 // 'configmessage' event. config.html is only a small bootstrap: it asks for
-// the real page (the same HTML the legacy flow builds, see config-page.js) in
+// the real page (the same HTML the existing flow builds, see config-page.js) in
 // chunks, writes it into the document, and from then on sends every change to
 // PKJS as it happens -- so the watch follows the settings live.
 //

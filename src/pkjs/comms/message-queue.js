@@ -1,10 +1,6 @@
-// ---- AppMessage send queue -------------------------------------------
-//
-// Moved to comms/message-queue.js (communication subsystem extraction).
-// Behavior is unchanged; only the module boundary is new. enqueueFlatDict()
-// is the only entry point anything outside this file needs -- everything
-// else here (the queue array, in-flight flag, startup delay, raw-message
-// log) is this module's own private state.
+// ---- AppMessage send queue -----------------------------------------------
+// Serializes outgoing message chunks and tracks the in-flight request.
+// enqueueFlatDict() is the public entry point; queue state and logging stay private.
 
 var messageSchema = require('./message-schema');
 var MSG_TYPE = messageSchema.MSG_TYPE;
@@ -33,7 +29,6 @@ var s_sendInFlight = false;
 // Lets the watch's own screen finish laying out/settling first before
 // a message starts changing what's on it -- the watch itself holds
 // its own first outbound request back a few seconds for the same
-// reason (see request_update()'s own comment in pebble-eclipse-watch.c),
 // so this is the phone-side half of that same "let it settle first"
 // intent, on its own longer timer since the phone doesn't know
 // whether the watch's request has actually arrived yet.

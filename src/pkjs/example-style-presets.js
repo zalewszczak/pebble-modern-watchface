@@ -26,8 +26,7 @@
 // config-page.js). Adding a 6th example means bumping that number, adding
 // resources/example-styles/6.png, and adding a "6" entry here.
 //
-// Modern is analog-only: the former digital/grid example styles were removed
-// and the rest renumbered (old 1,2,3,5,7 -> new 1-5).
+// Example styles use the analog dial layout.
 module.exports = {
   "1": {
     "title": "Modern",

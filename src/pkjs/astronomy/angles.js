@@ -1,12 +1,7 @@
 // ---- foundational math -----------------------------------------------
 //
-// Moved out of astro.js (astronomy split, by mathematical domain).
-// Degree-based trig, Julian date conversion, and the coordinate-
-// transform primitives (sidereal time, angular separation, alt/az)
-// every other astronomy module builds on. Kept together rather than
-// split further -- these are all tiny, used identically across every
-// domain (sun/moon/planets/ISS), and none of them
-// belongs more to one domain than another.
+// Degree-based trigonometry, Julian dates, sidereal time, and coordinate
+// transforms shared by the astronomy modules.
 
 var DEG = Math.PI / 180;
 

@@ -1,20 +1,6 @@
-// ---- generic settings-page template helpers ------------------------------
-//
-// Moved out of config-page.js (configuration architecture extraction,
-// JS8 first slice). These are the reusable, generic HTML-building
-// blocks every domain-specific picker (fonts, hands, markers, ...)
-// composes on top of -- escaping, the 3 collapsible-section icon/
-// legend helpers, and the 3 button-group renderers (vertical stack,
-// horizontal mode row, and the Main/Accent/Background color-role row
-// built on top of that). None of these know about fonts, hands,
-// markers, or any other specific domain; they only take already-built
-// option lists and labels.
-//
-// This is a first, deliberately narrow slice of config-page.js's
-// eventual split (see the refactoring plan's JS8 step) -- the giant
-// buildConfigHtml() function itself (the actual page template plus
-// its embedded webview <script>) is untouched here; that is a much
-// larger, separate piece of work.
+// ---- Shared settings-page template helpers -------------------------------
+// Provides HTML escaping, section headings, legends, and reusable button
+// groups for the settings-page controls.
 
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
