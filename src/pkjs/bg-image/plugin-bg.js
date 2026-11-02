@@ -66,6 +66,31 @@ function parseKey(key) {
   return { plugin: p[0], category: p[1], item: p[2], property: property, index: index };
 }
 
+// A one-line "what is happening" for the settings page (PLUGIN panel), so a missing
+// picture can be traced to the plugin, the Pebble app or this watchface. Kept under a
+// non-CONFIG key: it is diagnostics, not a setting.
+var STATUS_KEY = 'PLUGIN_BG_STATUS';
+function setStatus(text) {
+  var d = new Date();
+  var hh = (d.getHours() < 10 ? '0' : '') + d.getHours(), mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+  try { localStorage.setItem(STATUS_KEY, hh + ':' + mm + ' ' + text); } catch (e) { /* storage unavailable */ }
+  console.log('modern: plugin background - ' + text);
+}
+function status() {
+  try { return localStorage.getItem(STATUS_KEY) || ''; } catch (e) { return ''; }
+}
+
+// The picture of a property: normally under "image", but fall back to "icon" or any
+// shape that carries { pixels, palette } so a differently named shape still works.
+function findImagePayload(prop) {
+  if (!prop || typeof prop !== 'object') return null;
+  var names = ['image', 'icon'];
+  var k, i;
+  for (i = 0; i < names.length; i++) if (prop[names[i]] && typeof prop[names[i]] === 'object') return prop[names[i]];
+  for (k in prop) if (prop.hasOwnProperty(k) && prop[k] && typeof prop[k] === 'object' && prop[k].pixels !== undefined && prop[k].palette !== undefined) return prop[k];
+  return null;
+}
+
 function notify() {
   if (s_onChange) {
     try { s_onChange(); } catch (e) { console.log('modern: plugin background notify failed - ' + e.message); }
@@ -102,15 +127,22 @@ function shapeInfo(img) {
 }
 
 function onData(parsed, envelope) {
+  var count = envelope && envelope.instances ? envelope.instances.length : 0;
   var inst = envelope && envelope.instances && envelope.instances[parsed.index];
   var prop = inst && inst.properties ? inst.properties[parsed.property] : null;
-  var payload = prop && prop.image ? prop.image : null;
+  var payload = findImagePayload(prop);
+  if (!payload) {
+    if (!inst) setStatus('update has ' + count + ' instance(s), none at #' + (parsed.index + 1) + ' - no picture');
+    else if (!prop) setStatus('update has no "' + parsed.property + '" property (it has: ' + Object.keys(inst.properties || {}).join(', ') + ') - no picture');
+    else setStatus('"' + parsed.property + '" arrived without a bitmap (shapes: ' + Object.keys(prop).join(', ') + ') - no picture');
+  }
 
   var img = null;
   if (payload) {
     if (!s_loggedShape) { s_loggedShape = true; console.log('modern: plugin background image payload: ' + shapeInfo(payload)); }
     img = pluginImage.decodeImagePayload(payload);
-    if (!img) console.log('modern: plugin background image could not be decoded: ' + shapeInfo(payload));
+    if (!img) setStatus('picture could not be decoded: ' + shapeInfo(payload));
+    else setStatus('picture ' + img.w + 'x' + img.h + ' received');
   }
 
   if (!img) {
@@ -134,7 +166,8 @@ function unsubscribe() {
 
 function subscribe(key) {
   var parsed = parseKey(key);
-  if (!parsed || !hasApi()) return;
+  if (!parsed) { setStatus('invalid source key'); return; }
+  if (!hasApi()) { setStatus('this Pebble app has no plugin API (or plugins are switched off)'); return; }
   var handle = null;
   try {
     handle = Pebble.subscribeToSource({
@@ -147,14 +180,15 @@ function subscribe(key) {
         try { onData(parsed, envelope); } catch (e) { console.log('modern: plugin background update failed - ' + (e && e.message)); }
       },
       onError: function (err) {
-        console.log('modern: plugin background ' + key + ' error ' + (err && err.code));
+        setStatus('plugin error ' + (err && err.code) + (err && err.message ? ': ' + err.message : ''));
       }
     });
   } catch (e) {
-    console.log('modern: plugin background subscribe failed - ' + (e && e.message));
+    setStatus('subscribe failed: ' + (e && e.message));
     return;
   }
   s_sub = { key: key, handle: handle };
+  setStatus('subscribed, waiting for the plugin to send data');
 }
 
 // Brings the subscription and the rendered picture in line with the settings.
@@ -188,6 +222,7 @@ function setOnChange(fn) { s_onChange = fn; }
 module.exports = {
   apply: apply,
   getOutput: getOutput,
+  status: status,
   setOnChange: setOnChange,
   enabled: enabled
 };

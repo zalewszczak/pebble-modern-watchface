@@ -75,7 +75,7 @@ bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
     if (!bg_image_store_draw(d->custom_bg_preset, ctx, bounds, origin)) return false;
   } else if (d->custom_bg_mode == 4) {
     // The picture is already processed and sized by the phone; it is drawn centred.
-    if (bg_image_store_stamp(BG_IMG_PLUGIN_SLOT) == 0) return true; // none yet / removed
+    if (bg_image_store_stamp(BG_IMG_PLUGIN_SLOT) == 0) return !bg_image_store_ram_failed(); // none yet / removed; false = out of memory (reported by the dial)
     if (!bg_image_store_draw(BG_IMG_PLUGIN_SLOT, ctx, bounds, origin)) return false;
   }
   if (d->bg_translucent && d->custom_bg_mode >= 1 && d->custom_bg_mode <= 4) {

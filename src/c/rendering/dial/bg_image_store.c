@@ -30,6 +30,8 @@ typedef struct __attribute__((packed)) {
 static bool s_loaded[BG_IMG_PLUGIN_SLOT + 1];
 static BgHeader s_header[BG_IMG_PLUGIN_SLOT + 1]; // valid when .stamp != 0
 static uint8_t *s_ram;                       // plugin slot: the packed picture (NULL = none)
+static void (*s_relief)(void);               // frees rebuildable memory when the heap is full
+static bool s_ram_failed;                    // plugin slot: the last allocation failed
 static uint32_t s_ram_filled;                // plugin slot: bytes received so far
 static BgHeader s_pending;                   // transfer in progress
 static uint8_t s_pending_slot;               // 0 = none
@@ -89,6 +91,7 @@ void bg_image_store_clear(uint8_t slot) {
   uint16_t n = s_header[slot].chunks;
   if (is_ram(slot)) {
     ram_free();
+    s_ram_failed = false;
   } else if (persist_exists(header_key(slot))) {
     persist_delete(header_key(slot));
   }
@@ -106,6 +109,9 @@ static void pending_reset(void) {
   s_pending_slot = 0;
   s_pending_written = 0;
 }
+
+void bg_image_store_set_memory_relief(void (*relief)(void)) { s_relief = relief; }
+bool bg_image_store_ram_failed(void) { return s_ram_failed; }
 
 void bg_image_store_abort(void) {
   // A half-received plugin picture is useless: give its memory back.
@@ -131,9 +137,10 @@ bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_
   if (is_ram(slot)) {
     // The old picture is already gone, so the whole heap is available for the new one.
     const uint32_t bytes = packed_bytes(w, h);
-    if (heap_bytes_free() < bytes + BG_RAM_HEAP_RESERVE) return false;
-    s_ram = (uint8_t *)malloc(bytes);
-    if (!s_ram) return false;
+    s_ram_failed = false;
+    if (heap_bytes_free() < bytes + BG_RAM_HEAP_RESERVE && s_relief) s_relief();
+    if (heap_bytes_free() >= bytes + BG_RAM_HEAP_RESERVE) s_ram = (uint8_t *)malloc(bytes);
+    if (!s_ram) { s_ram_failed = true; return false; }
     s_ram_filled = 0;
   }
   s_pending.stamp = stamp;

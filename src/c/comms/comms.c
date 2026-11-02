@@ -169,6 +169,8 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
     if (bg_image_store_commit(read_le32(end->value->data))) {
       if (!silent) bg_progress_update(chunks);
       redraw_dial = true; // the dial rebuilds its background cache if this slot is in use
+    } else if (silent) {
+      redraw_dial = true; // failed (e.g. out of memory): let the dial notice and report it
     }
     // The next image of the batch (if any) sends its own BEGIN with the new
     // batch_done; if this was the last one, the bar is finished.

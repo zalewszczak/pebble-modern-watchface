@@ -176,6 +176,14 @@ void dial_layer_set_data(Layer *layer, WatchData *data) {
   layer_mark_dirty(layer);
 }
 
+void dial_layer_release_cache(Layer *layer) {
+  if (!layer) return;
+  DialState *state = (DialState *)layer_get_data(layer);
+  marker_layer_release_resources(&state->markers);
+  dial_cache_release(&state->cache);
+  state->cache.failed = false;
+}
+
 void dial_layer_set_animation(Layer *layer, bool active, uint16_t elapsed_ms) {
   DialState *state = (DialState *)layer_get_data(layer);
   state->anim_active = active;

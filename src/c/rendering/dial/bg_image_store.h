@@ -41,6 +41,15 @@ uint32_t bg_image_store_stamp(uint8_t slot);
 // Fills out[0..BG_IMG_REPORTED_SLOTS-1] with the stamp of slots 1..10 (0 = empty).
 void bg_image_store_stamps(uint32_t out[BG_IMG_REPORTED_SLOTS]);
 
+// Called (if set) when the plugin slot cannot be allocated for lack of free heap,
+// so the app can give back memory it can rebuild (the dial cache). The allocation
+// is then tried once more.
+void bg_image_store_set_memory_relief(void (*relief)(void));
+
+// True if the last transfer into the plugin slot failed for lack of memory (cleared
+// by the next successful transfer or by emptying the slot). Lets the dial report it.
+bool bg_image_store_ram_failed(void);
+
 // Starts a transfer into `slot`: invalidates that slot's current image and
 // records what is coming. Other slots are untouched.
 bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h);

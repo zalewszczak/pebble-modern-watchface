@@ -179,6 +179,7 @@ function backgroundSectionHtml(current) {
 '      <select id="pluginBgColor" onchange="bgRefresh()">' + optionList(PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral') + '</select>' +
 '      <label for="pluginBgFit">Screen filling</label>' +
 '      <select id="pluginBgFit" onchange="bgRefresh()">' + optionList(PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill') + '</select>' +
+(current && current.pluginBgStatus ? '      <div class="help" style="margin-top:8px;"><b>Status:</b> ' + esc(current.pluginBgStatus) + '</div>' : '') +
 '      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. It is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts, and removed when the plugin reports no image. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +

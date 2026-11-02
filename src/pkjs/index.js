@@ -178,6 +178,7 @@ function buildCurrent() {
     weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
     bgTranslucent: getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true',
     usePluginBg: getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
+    pluginBgStatus: pluginBg.status(),
     pluginBgSource: getSetting('CONFIG_PLUGIN_BG_SOURCE', ''),
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
     pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),

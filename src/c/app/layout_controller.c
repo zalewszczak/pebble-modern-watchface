@@ -2,6 +2,7 @@
 #include "./layout_controller.h"
 #include "../rendering/dial/dial_layer.h"
 #include "../rendering/dial/bg_progress.h"
+#include "../rendering/dial/bg_image_store.h"
 #include "../rendering/status/status_label.h"
 #include "../features/features_layer.h"
 #include "../hands/hands_controller.h"
@@ -19,7 +20,13 @@ Layer *layout_controller_bg_progress_layer(void) { return s_progress_layer; }
 Layer *layout_controller_hands_layer(void) { return s_hands_layer; }
 Layer *layout_controller_features_layer(void) { return s_features_layer; }
 
+// The plugin background picture needs a RAM buffer about the size of the dial cache.
+// When the heap is too full for both, the cache is dropped (it is rebuilt on the next
+// draw, uncached if there is still no room).
+static void release_dial_cache_for_picture(void) { dial_layer_release_cache(s_dial_layer); }
+
 void layout_controller_init(WatchData *data, Window *window) {
+  bg_image_store_set_memory_relief(release_dial_cache_for_picture);
   s_data = data;
   s_window = window;
   s_current_draw_features_beneath_hands = false;
