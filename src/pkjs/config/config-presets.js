@@ -1,5 +1,4 @@
-// ---- Preset slot rows ----------------------------------------------------
-
+// Preset slot rows
 var esc = require('./config-template').esc;
 var presetSchedule = require('./config-preset-schedule');
 

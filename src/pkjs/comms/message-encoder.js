@@ -1,12 +1,4 @@
-// ---- AppMessage message encoder ------------------------------------------
-//
-// Owns: turning settings (via settings-codecs.js), astronomy data and
-// weather data into AppMessage-ready dicts, and the top-level send
-// functions index.js / refresh-manager.js call with that data.
-// Public API: sendFlatDict, sendInvalid, sendWeatherData,
-// buildFullKeysetDict -- everything else here is a private
-// implementation detail of building those dicts.
-
+// AppMessage message encoder
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var settingsCodecs = require('../settings/settings-codecs');
@@ -206,13 +198,8 @@ function i32ArrayToBytes(arr) {
 
 function toU8(v) { return ((v % 256) + 256) % 256; }
 
-// Must match PlanetId's order in watch_data.h exactly -- PLANET_RISE and
-// PLANET_SET are packed in this order.
 var PLANET_ORDER = ['mercury', 'venus', 'mars', 'jupiter', 'saturn'];
 
-// Astronomy fields every refresh: sun/planet rise/set times, moon phase,
-// Saturn ring tilt and the active meteor shower.
-// astro = { moonPhase, riseSet, sunRiseTomorrow, saturnRingOpenPct, meteorShower }
 function astroFieldsDict(astro) {
   var moonPhase = astro.moonPhase, riseSet = astro.riseSet, meteorShower = astro.meteorShower;
   var planetRiseArr = [], planetSetArr = [];
@@ -231,7 +218,6 @@ function astroFieldsDict(astro) {
     'MOON_PHASE_DISPLAY': featureDisplay.formatMoonPhaseDisplay(moonPhase.illuminatedPct, moonPhase.waxing),
     'METEOR_DISPLAY': featureDisplay.formatMeteorDisplay(meteorIntensity, meteorShower ? meteorShower.name : ''),
     'SATURN_RINGS_DISPLAY': featureDisplay.formatSaturnRingsDisplay(astro.saturnRingOpenPct),
-    // Order must match ASTRO_BLOB_OFFSETS in comms_decoder.c.
     'ASTRO_U8_BLOB': [
       astro.saturnRingOpenPct, moonPhase.illuminatedPct, moonPhase.waxing ? 1 : 0,
       meteorIntensity, featureDisplay.meteorGradientColorByte(meteorIntensity)
@@ -239,10 +225,6 @@ function astroFieldsDict(astro) {
   };
 }
 
-// One hand's 14-byte HandConfig blob, in HandConfig's own field order
-// (see hand_layer.h): style, width, length, back_offset, middle_offset,
-// secondary_width, color, outline_enabled, outline_color, translucent,
-// hollow, hollow_thickness, shadow_enabled, shadow_distance_px.
 function handBytes(style, width, length, backOffset, middleOffset, secondaryWidth,
                     color, outlineEnabled, outlineColor, translucent,
                     hollow, hollowThickness, shadowEnabled, shadowDistance) {
@@ -253,7 +235,6 @@ function handBytes(style, width, length, backOffset, middleOffset, secondaryWidt
   ];
 }
 
-// HANDS: 42 bytes, hour/minute/second HandConfig back to back.
 function handsBytes() {
   return [].concat(
     handBytes(
@@ -277,14 +258,10 @@ function handsBytes() {
   );
 }
 
-// One ring's 8-byte MarkerRingConfig blob, in MarkerRingConfig's own
-// field order (see watch_data.h): style, thickness, inner_eccentricity,
-// outer_eccentricity, inner_border_pct, outer_border_pct, translucent, color.
 function markerRingBytes(style, thickness, innerEcc, outerEcc, innerBorder, outerBorder, translucent, color) {
   return [style, thickness, innerEcc, outerEcc, innerBorder, outerBorder, translucent, color];
 }
 
-// MARKER_RINGS: 16 bytes, hour ring then second ring.
 function markerRingsBytes() {
   return [].concat(
     markerRingBytes(
@@ -298,8 +275,6 @@ function markerRingsBytes() {
   );
 }
 
-// EDGE_LINE_COLOR_MODE is eight color-mode bytes in slot order. Feature identity is
-// phone-local: only compiled primitive sequences cross the wire.
 function edgeLinesBytes() {
   return [
     settingsCodecs.upperMiddleLine1ColorModeCode(), settingsCodecs.upperMiddleLine2ColorModeCode(),
@@ -311,7 +286,6 @@ function edgeLinesBytes() {
 function edgeCustomPrims() {
   return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting);
 }
-// Selected feature IDs are local settings inputs only; these values are never sent.
 function edgeFeatureCodesRaw() {
   return [
     settingsCodecs.upperMiddleLine1ContentCode(), settingsCodecs.upperMiddleLine2ContentCode(),
@@ -320,14 +294,6 @@ function edgeFeatureCodesRaw() {
     settingsCodecs.middleRightLine1ContentCode(), settingsCodecs.middleRightLine2ContentCode()
   ];
 }
-// EDGE_LINE_PRIMITIVE_IDS / _AUX: 80 bytes each (8 slots * 10), in slot order
-// (SLOT_UPPER_L1..SLOT_RIGHT_L2). A slot with a custom sequence sends that
-// sequence (and its own aux bytes); every other slot derives its sequence
-// from its REAL content id (not the placeholder edgeLinesBytes() may have
-// substituted, which only exists to activate the slot).
-// Bit n set = slot n is a user-built sequence: corners TL,TR,BL,BR are bits
-// 0-3, edge/middle slots (SLOT_UPPER_L1..SLOT_RIGHT_L2) are bits 4-11. The
-// watch lays those out with no automatic gaps between elements.
 function primitiveTightMask() {
   var mask = 0;
   ['CONFIG_CORNER_TL_CUSTOM_PRIMS', 'CONFIG_CORNER_TR_CUSTOM_PRIMS', 'CONFIG_CORNER_BL_CUSTOM_PRIMS', 'CONFIG_CORNER_BR_CUSTOM_PRIMS']
@@ -350,11 +316,6 @@ function edgeLinePrimitiveAuxBytes() {
   }, []);
 }
 
-// MARKER_TEXT: 8 bytes -- target, font_choice, offset_px (signed byte),
-// hour_mask (u16 little-endian), second_mask (u16 little-endian),
-// roman_numerals. Not a memcpy target on the C side (MarkerTextConfig
-// has padding around its two u16 masks), but PKJS still needs to send
-// exactly these 8 bytes in exactly this order for that unpack to work.
 function markerTextBytes() {
   var hourMask = markerTextHourMaskCode();
   var secMask = markerTextSecMaskCode();
@@ -368,10 +329,6 @@ function markerTextBytes() {
   ];
 }
 
-// COLORS: 6 bytes -- custom_bg, custom_text, custom_accent,
-// night_custom_bg, night_custom_text, night_custom_accent.
-// Deliberately NOT night_scheme_enabled too (still its own separate
-// key -- see apply_consolidated_fields()'s own comment in
 function colorsBytes() {
   return [
     customBgByte(), customTextByte(), customAccentByte(),
@@ -379,17 +336,7 @@ function colorsBytes() {
   ];
 }
 
-// Populates every settings-derived AppMessage field (all ~148 of
-// them) into `dict`, reading current values fresh from localStorage
-// each time -- no send-related side effects of its own (no cache
-// write, no debug-override check, no enqueueFlatDict()), so callers
-// that just want a correctly-encoded settings snapshot (the debug
-// page's own "full keyset" window -- see buildFullKeysetDict()) can
-// get one without it also quietly sending anything.
 function populateSettingsFields(dict) {
-  // Always carried, on every message -- these are purely cosmetic,
-  // These fields are part of the watch data payload.
-  // to gate them behind DATA_VALID or wait for a full refresh cycle.
   dict['SHOW_SECONDS'] = showSecondsCode();
   dict['COLORS'] = colorsBytes();
   dict['NIGHT_SCHEME_ENABLED'] = nightSchemeEnabledCode();
@@ -400,15 +347,12 @@ function populateSettingsFields(dict) {
   dict['MARKER_RINGS'] = markerRingsBytes();
   dict['MARKER_TEXT'] = markerTextBytes();
   dict['HANDS'] = handsBytes();
-  dict['EDGE_LINE_COLOR_MODE'] = edgeLinesBytes(); // primitive-only slot color modes
+  dict['EDGE_LINE_COLOR_MODE'] = edgeLinesBytes();
   dict['EDGE_LINE_PRIMITIVE_IDS'] = edgeLinePrimitiveIdsBytes();
   dict['EDGE_LINE_PRIMITIVE_AUX'] = edgeLinePrimitiveAuxBytes();
   dict['BG_ANIM_MODE'] = bgAnimModeCode();
   dict['SHAKE_ANIM_MODE'] = shakeAnimModeCode();
-  // Legacy CORNER_CONTENT is never emitted: feature IDs stay on the phone.
   dict['CORNER_COLOR_MODE'] = cornerColorModeBytes();
-  // Settings are packed into one byte array. Its order must match
-  // SETTINGS_BLOB_OFFSETS in comms_decoder.c.
   dict['SHAKE_ONLY_MASK'] = shakeOnlyMaskCode();
   dict['PLUGIN_TEXTS'] = pluginManager.textsBytes();
   dict['SETTINGS_U8_BLOB'] = [
@@ -426,24 +370,17 @@ function populateSettingsFields(dict) {
     bitmapMarkerInvertCode(),
     bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode()
   ];
-  // Each corner sends ten primitive IDs and matching auxiliary values.
-  // A custom sequence overrides the sequence compiled from the selected feature.
-  // Empty sequences are sent as zero-filled slots.
   var cornerCustomPrimsSettings = [
     getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
     getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
     getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),
     getSetting('CONFIG_CORNER_BR_CUSTOM_PRIMS', '')
-  ].map(parseCustomPrimsSetting); // {ids, aux} -- ids empty means "no custom sequence"
-  var cornerFeatureIds = cornerContentBytes(); // local-only input to the compiler
+  ].map(parseCustomPrimsSetting);
+  var cornerFeatureIds = cornerContentBytes();
   dict['CORNER_PRIMITIVE_IDS'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
     var custom = cornerCustomPrimsSettings[idx];
     return acc.concat(custom.ids.length ? normalizePrimitiveSequence(custom.ids) : primitiveIdSequenceForContent(contentId));
   }, []);
-  // CORNER_PRIMITIVE_AUX: per-position aux counterpart, same shape and
-  // gating -- see EDGE_LINE_PRIMITIVE_AUX's comment above. A custom
-  // sequence now carries its own aux bytes (e.g. the zone index chosen in
-  // the composer for a time-zone primitive).
   dict['CORNER_PRIMITIVE_AUX'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
     var custom = cornerCustomPrimsSettings[idx];
     return acc.concat(custom.ids.length ? normalizePrimitiveAux(custom.aux) : primitiveAuxSequenceForContent(contentId));
@@ -451,14 +388,9 @@ function populateSettingsFields(dict) {
   dict['DAILY_STEP_GOAL'] = dailyStepGoalValue();
   dict['HOURLY_VIBE_START_MIN'] = hourlyVibeStartMinCode();
   dict['HOURLY_VIBE_END_MIN'] = hourlyVibeEndMinCode();
-  // Scheduled My styles: when the watch should next ask PKJS to serve one
-  // (0 = none). Always sent so the watch's copy can never go stale.
   dict['NEXT_STYLE_CHECK'] = scheduledStyle.nextCheckSeconds(Date.now());
 }
 
-// Builds the settings page's debug keyset from the last computed data
-// snapshot, then overlays current settings. This avoids triggering network
-// requests just to populate the debug view.
 function buildFullKeysetDict() {
   var dict = {};
   try {
@@ -468,46 +400,23 @@ function buildFullKeysetDict() {
       if (parsed && typeof parsed === 'object') dict = parsed;
     }
   } catch (e) {
-    // Corrupt/missing cache -- fall back to settings-only, below.
   }
   populateSettingsFields(dict);
   return dict;
 }
 
-// Builds the outgoing data dictionary and passes it to the message queue,
-// which splits it into typed chunks using message-schema.js. Settings fields
-// are added by populateSettingsFields() below.
-// out so the settings page's own debug "full keyset" window (see
-// buildFullKeysetDict()) can get a fresh, correctly-encoded settings
-// snapshot without going through this function's OWN side effects
-// (the LAST_FULL_COMPUTED_DICT cache write, the debug-override check,
-// and -- the one that actually matters here -- enqueueFlatDict()
-// itself, which would mean just opening the settings page quietly
-// sent something to the watch).
 function sendFlatDict(dict) {
   populateSettingsFields(dict);
 
   try {
-    // Separate from the raw-message log recordRawMessage() builds
-    // once each chunk actually sends (comms/message-queue.js) -- this
-    // one is ONLY overwritten when `dict` is a genuine full-data send
-    // (from sendWeatherData(), which always sets SUN_RISE --
-    // vs. the cosmetic-only sendFlatDict({}) push settings-only saves
-    // trigger, or sendInvalid()'s {DATA_VALID:0,...}, neither of
-    // which ever sets it). refreshAndSend()'s skip-path resend (refresh-manager.js)
-    // needs something that's reliably the real, complete thing, not
-    // just whatever the most recent send of any kind happened to be.
     if (Object.prototype.hasOwnProperty.call(dict, 'SUN_RISE')) {
       localStorage.setItem('LAST_FULL_COMPUTED_DICT', JSON.stringify(dict));
     }
   } catch (e) {
-    // Not critical if this fails (storage full, etc.) -- just means
-    // refreshAndSend()'s (refresh-manager.js) skip-path resend won't have a fresh snapshot
-    // to fall back on this time (see resendLastFullData()).
   }
 
   var toSend = dict;
-  
+
   if (getSetting('CONFIG_DEBUG_OVERRIDE_ENABLED', 'false') === 'true') {
     try {
       var parsed = JSON.parse(getSetting('CONFIG_DEBUG_OVERRIDE_DATA', ''));
@@ -520,12 +429,8 @@ function sendFlatDict(dict) {
     }
   }
 
-  // Splits toSend into per-subject chunks (STATUS/ECLIPSE/WEATHER/
-  // ASTRONOMY/SKY_EFFECTS/FEATURES/SETTINGS) and queues them -- see
-  // enqueueFlatDict() in comms/message-queue.js.
   enqueueFlatDict(toSend);
 }
-
 
 function sendInvalid(errorCode) {
   sendFlatDict({ 'DATA_VALID': 0, 'ERROR_CODE': errorCode || 0 });
@@ -534,58 +439,27 @@ function sendInvalid(errorCode) {
 function issFieldsDict(issPos, issErrorCode) {
   return {
     'ISS_NEXT_PASS': (issPos && issPos.nextPass) ? toEpoch(issPos.nextPass) : 0,
-    // Always sent (0 = this cycle's fetch was fine, or the ISS feature
-    // wasn't in use at all) -- the watch needs it every cycle to know
-    // whether to trust ISS_NEXT_PASS.
     'ISS_ERROR_CODE': issErrorCode || 0
   };
 }
 
-// Bundles the newer weather-extra fields (pressure/wind direction/dew
-// point/air quality) into one object param on the two send functions
-// below, rather than growing their already-long positional parameter
-// lists by another 6 -- extra = { windDirDeg, dewPointC, pressureHpa,
-// pressureTrend, aqiUs, aqiEu }, any of which may be null/undefined.
-//
-// Fields sourced from a live network fetch (everything except
-// ALTITUDE_M, which comes from the phone's own GPS) are OMITTED
-// entirely -- not sent as a zeroed default -- when that value is
-// null/not a number, i.e. when the fetch failed or genuinely returned
-// nothing. dict_find() on the watch only touches a field when its key
-// is actually present, so an omitted key means "leave whatever's
-// already showing alone" -- a transient network hiccup no longer
-// wipes out the last known-good reading the way sending an
-// unconditional 0 used to.
 function extraWeatherFieldsDict(extra) {
   extra = extra || {};
   var dict = {
-    // -32000 = sentinel for "no altitude available" (many phones don't
-    // report GPS altitude, and manual-coordinates mode never has it --
-    // see getLocation()). A real altitude can legitimately be negative
-    // (Death Valley, the Dead Sea shore) or exactly 0 (sea level), so
-    // those can't double as the "missing" signal the way they might
-    // elsewhere -- this needs its own out-of-range sentinel instead.
-    // Always sent (never omitted): unlike the fields below, "no GPS
-    // altitude" is a stable fact about this phone/location, not a
-    // transient fetch failure to protect a previous reading from.
     'ALTITUDE_M': (typeof extra.altitudeMeters === 'number') ? Math.round(extra.altitudeMeters) : -32000
   };
   if (typeof extra.altitudeMeters === 'number') {
-    // Deliberately NOT sent for the -32000/"unavailable" case -- see
-    // formatAltitudeDisplay()'s own comment (weather-normalize.js) on why
-    // that special case stays on the watch instead of being replicated
-    // here.
     dict['ALTITUDE_DISPLAY'] = formatAltitudeDisplay(extra.altitudeMeters, altitudeUnitCode());
     dict['ALTITUDE_COLOR'] = altitudeGradientColorByte(extra.altitudeMeters);
   }
   if (typeof extra.windDirDeg === 'number') dict['WIND_DIR_DEG'] = Math.round(extra.windDirDeg);
   if (typeof extra.dewPointC === 'number') {
     dict['DEW_POINT_C'] = Math.round(extra.dewPointC);
-    dict['DEW_POINT_DISPLAY'] = formatTempDisplay(extra.dewPointC, tempUnitCode()); // no color: case 37 never used a gradient
+    dict['DEW_POINT_DISPLAY'] = formatTempDisplay(extra.dewPointC, tempUnitCode());
   }
   if (typeof extra.pressureHpa === 'number') {
     dict['PRESSURE_HPA'] = Math.round(extra.pressureHpa);
-    dict['PRESSURE_TREND'] = extra.pressureTrend || 0; // trend only means anything alongside a real pressure reading
+    dict['PRESSURE_TREND'] = extra.pressureTrend || 0;
     dict['PRESSURE_DISPLAY'] = formatPressureDisplay(extra.pressureHpa);
     dict['PRESSURE_COLOR'] = pressureGradientColorByte(extra.pressureHpa);
   }
@@ -599,45 +473,16 @@ function extraWeatherFieldsDict(extra) {
       dict['AQI_COLOR'] = aqiGradientColorByte(aqiValue, aqiUnitCode());
     }
   }
-  // x10 -- same convention as every other _x10/_decideg field. Kp is
-  // fractional (thirds: .00/.33/.67), hence the scaling rather than
-  // sending it as a plain 0-9 integer.
   if (typeof extra.auroraKpX10 === 'number') {
     dict['AURORA_KP_X10'] = extra.auroraKpX10;
     dict['AURORA_KP_DISPLAY'] = featureDisplay.formatAuroraKpDisplay(extra.auroraKpX10);
     dict['AURORA_KP_COLOR'] = featureDisplay.auroraGradientColorByte(extra.auroraKpX10);
   }
-  // Always sent, same reasoning as ISS_ERROR_CODE above.
   dict['AURORA_ERROR_CODE'] = extra.auroraErrorCode || 0;
-  // "Weather in N hours"/"Weather in N days" (features_layer.c ids
-  // 87-95) -- sent as byte arrays, one entry per forecast slot: 1h
-  // through 6h ahead, then 1 through 3 days ahead (indices 0-5, 6-8;
-  // content id - 87 either way, same index watch_data.h's own
-  // forecast_temp_c/forecast_condition use). Only sent when the
-  // daily-forecast fetch that produced them actually succeeded, same
-  // reasoning as every other field here -- a transient failure
-  // shouldn't wipe out the watch's last known-good forecast.
-  // forecast_temp_c can't go through as a plain signed byte (AppMessage
-  // byte-array tuples are unsigned), so each value is offset by +50
-  // celsius first; 255 is the "not available" sentinel for a single
-  // entry within an otherwise-successful fetch (see forecastTempC's own
-  // per-index null check in weather.js).
   if (extra.forecastTempC) {
     dict['FORECAST_TEMP_C'] = extra.forecastTempC.map(function (c) {
       return (typeof c === 'number') ? Math.max(0, Math.min(255, Math.round(c) + 50)) : 255;
     });
-    // Per-index forecast display text (AppMessage has no
-    // "array of strings" type, and 9 individual cstring keys mean zero
-    // watch-side string-splitting/parsing, matching the "least possible
-    // watch processing" goal better than one delimited string would) plus
-    // one 9-byte color blob (reusing the same packed-array wire shape
-    // FORECAST_CONDITION already uses below, since colors ARE plain bytes).
-    // Not sent per-index for an unavailable entry -- formatTempDisplay()
-    // already returns '' for a non-number input, which is this module's
-    // universal "nothing to show yet" signal, so no special-casing needed
-    // here. The watch checks its own -128 sentinel on forecast_temp_c[idx]
-    // before ever looking at these anyway (same belt-and-suspenders
-    // ordering as altitude's N/A case -- see the primitive resolver).
     var forecastUnitCode = tempUnitCode();
     var forecastColorBytes = [];
     extra.forecastTempC.forEach(function (c, i) {
@@ -647,7 +492,6 @@ function extraWeatherFieldsDict(extra) {
     dict['FORECAST_TEMP_COLORS'] = forecastColorBytes;
   }
   if (extra.forecastWx) {
-    // Detailed per-hour weather class + rain chance (%) for the weather border.
     dict['FORECAST_WX'] = extra.forecastWx.map(function (c) {
       return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0;
     });
@@ -661,10 +505,6 @@ function extraWeatherFieldsDict(extra) {
     dict['FORECAST_CONDITION'] = extra.forecastCondition.map(function (c) {
       return (typeof c === 'number') ? c : 0;
     });
-    // Same category function as WEATHER_ICON_CATEGORY above, with the same
-    // neutral 50% cloud guess the watch always used for forecast icons
-    // (no per-hour cloud forecast is fetched -- see the primitive resolver's
-    // own comment on this).
     dict['FORECAST_ICON_CATEGORIES'] = extra.forecastCondition.map(function (c) {
       return weatherIconCategory(typeof c === 'number' ? c : 0, 50);
     });
@@ -672,25 +512,11 @@ function extraWeatherFieldsDict(extra) {
   return dict;
 }
 
-
-// Builds the full data dict and hands it to sendFlatDict().
-// d = {
-//   locationName, astro (see astroFieldsDict), issPos, issErrorCode,
-//   headlineCloud, headlineSources  -- cloud-cover outlook (OWM-blended)
-//   weather: Open-Meteo snapshot ("extras": condition, tempC, ...),
-//   weatherOk, weatherErrorCode, extraWeather (see extraWeatherFieldsDict)
-// }
-// When weatherOk is false every field sourced from the snapshot is OMITTED
-// (not zeroed), so a transient network failure can't wipe the watch's last
-// known-good readings. weatherErrorCode/issErrorCode are always sent (0 =
-// fetch fine); see servicelog.js's classifyError() for what a nonzero value
-// means.
 function buildWeatherDict(d) {
   var w = d.weather;
   var weatherCondition = w.condition, weatherTempC = w.tempC, tempHighC = w.tempHighC, tempLowC = w.tempLowC;
   var uvIndexMax = w.uvIndexMax, uvIndexCurrent = w.uvIndexCurrent, rainChancePct = w.rainChancePct;
   var humidityPct = w.humidityPct, windSpeedKmh = w.windSpeedKmh;
-  // Prefer the snapshot's current cloud cover; fall back to the OWM-blended outlook.
   var haveCloudData = (typeof w.currentCloudPct === 'number') || d.headlineSources > 0;
   var displayCloudPct = (typeof w.currentCloudPct === 'number') ? w.currentCloudPct : (d.headlineCloud || 0);
   var dict = {
@@ -699,7 +525,6 @@ function buildWeatherDict(d) {
     'WEATHER_ERROR_CODE': d.weatherErrorCode || 0
   };
   if (haveCloudData) {
-    // Order must match WEATHER_CLOUD_BLOB_OFFSETS in comms_decoder.c.
     dict['WEATHER_CLOUD_U8_BLOB'] = [
       displayCloudPct, 100 - displayCloudPct,
       overcastGrayColorByte(displayCloudPct), overcastGrayColorByte(displayCloudPct)
@@ -708,7 +533,6 @@ function buildWeatherDict(d) {
     dict['VIS_SCORE_DISPLAY'] = formatPercentDisplay(100 - displayCloudPct);
   }
   if (d.weatherOk) {
-    // Order must match WEATHER_MAIN_BLOB_OFFSETS in comms_decoder.c.
     dict['WEATHER_MAIN_U8_BLOB'] = [
       weatherCondition || 0,
       tempGradientColorByte(weatherTempC), tempGradientColorByte(tempHighC), tempGradientColorByte(tempLowC),
@@ -723,7 +547,6 @@ function buildWeatherDict(d) {
     ];
     if (haveCloudData) {
       dict['WEATHER_ICON_CATEGORY'] = weatherIconCategory(weatherCondition || 0, displayCloudPct);
-      // The icon's value and color are both PKJS-decided.
       dict['WEATHER_ICON_COLOR'] = weatherConditionColorByte(weatherCondition || 0, displayCloudPct, rainChancePct);
     }
     dict['WEATHER_TEMP_C'] = (typeof weatherTempC === 'number') ? Math.round(weatherTempC) : 0;
@@ -745,12 +568,6 @@ function buildWeatherDict(d) {
   return dict;
 }
 
-// ---- unit changes without a weather refresh -----------------------------------------
-//
-// The *_DISPLAY strings that depend on a unit setting (temperatures, wind speed, altitude,
-// air quality scale) are formatted here, when weather is sent. Changing a unit therefore
-// used to show on the watch only after the next weather push. The raw inputs of the last
-// push are remembered so the strings can be re-formatted and sent the moment a unit changes.
 var UNIT_INPUTS_KEY = 'LAST_UNIT_INPUTS';
 function rememberUnitInputs(d) {
   try {
@@ -759,7 +576,7 @@ function rememberUnitInputs(d) {
       ok: !!d.weatherOk, tempC: w.tempC, highC: w.tempHighC, lowC: w.tempLowC, humidity: w.humidityPct, windKmh: w.windSpeedKmh,
       dewC: e.dewPointC, altM: e.altitudeMeters, forecastTempC: e.forecastTempC, aqiUs: e.aqiUs, aqiEu: e.aqiEu
     }));
-  } catch (err) { /* storage unavailable: units then apply with the next weather push */ }
+  } catch (err) { }
 }
 function unitDisplayDict() {
   var raw = null;
@@ -788,8 +605,6 @@ function unitDisplayDict() {
   }
   return Object.keys(dict).length ? dict : null;
 }
-// Sends the re-formatted strings to the watch and updates the cached full dict, so a later
-// resend of it does not bring the old units back. Returns false when nothing was sent yet.
 function resendUnitDisplays() {
   var dict = unitDisplayDict();
   if (!dict) return false;
@@ -799,12 +614,11 @@ function resendUnitDisplays() {
       Object.keys(dict).forEach(function (k) { cached[k] = dict[k]; });
       localStorage.setItem('LAST_FULL_COMPUTED_DICT', JSON.stringify(cached));
     }
-  } catch (err) { /* nothing cached yet */ }
+  } catch (err) { }
   enqueueFlatDict(dict);
   return true;
 }
 
-// Full data dict: weather + astronomy + extra weather + ISS fields.
 function sendWeatherData(d) {
   rememberUnitInputs(d);
   var dict = buildWeatherDict(d);
@@ -813,9 +627,6 @@ function sendWeatherData(d) {
   sendFlatDict(dict);
 }
 
-// Settings-page "Fake weather" debug panel: raw slider values (legacy
-// field names, see buildFakeWeatherDict() in config-page.js) -> a WEATHER
-// dict in the real wire format, enqueued as-is (nothing persisted).
 function sendFakeWeather(v) {
   var weather = {
     condition: v.WEATHER_CONDITION, tempC: v.WEATHER_TEMP_C, tempHighC: v.WEATHER_TEMP_HIGH_C,

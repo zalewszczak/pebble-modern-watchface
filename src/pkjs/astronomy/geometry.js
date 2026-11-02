@@ -1,10 +1,4 @@
-// ---- sun/moon/planet geometry and rise/set search ----------------------
-//
-// computeGeometry() resolves a moment down to topocentric altitude/azimuth
-// for the Sun, Moon and planets (plus Saturn's ring tilt); findRiseSet()
-// scans a day for a body's horizon crossings. Everything the features need
-// (sun event, planets visible, next planet rise, moon, Saturn rings).
-
+// sun/moon/planet geometry and rise/set search
 var angles = require('./angles');
 var cosd = angles.cosd;
 var atan2d = angles.atan2d;
@@ -29,10 +23,6 @@ var SATURN_ELEMENTS = planets.SATURN_ELEMENTS;
 var planetPosition = planets.planetPosition;
 var saturnRingAngle = planets.saturnRingAngle;
 
-/**
- * Computes the full picture for a given moment: geocentric Sun,
- * topocentric Moon, their separation and each one's apparent radius.
- */
 function computeGeometry(date, latDeg, lonDeg) {
   var jd = julianDay(date);
   var T = julianCenturies(jd);
@@ -43,10 +33,6 @@ function computeGeometry(date, latDeg, lonDeg) {
 
   var sep = angularSeparation(sun.ra, sun.dec, moon.ra, moon.dec);
   var sunAlt = sunAltitude(sun, latDeg, lst);
-  // sunAltitude() above only ever returns altitude (it's the simpler,
-  // slightly cheaper of the two -- fine for the many places that only
-  // ever needed alt), so azimuth needs this project's own general
-  // altAz() instead, same as the Moon/planets already use just below.
   var sunAz = altAz(sun.ra, sun.dec, latDeg, lst).az;
   var moonAltAz = altAz(moon.ra, moon.dec, latDeg, lst);
   var moonAlt = moonAltAz.alt;
@@ -90,23 +76,8 @@ function computeGeometry(date, latDeg, lonDeg) {
   };
 }
 
-/**
- * Finds the (first) rise and set time of a body within a calendar
- * day, by scanning at fine resolution and linearly interpolating the
- * altitude-zero crossing. Used for the watchface's rise/set
- * animation rather than the coarse hourly grid, since a 3-minute
- * transition window needs better than hourly precision to land in
- * the right place.
- *
- * @param {Date} dayStart
- * @param {function(object):number} altGetter  pulls the body's
- *   altitude (degrees) out of a computeGeometry() result
- * @returns {object} { rise: Date|null, set: Date|null } -- null for
- *   either means the body doesn't cross the horizon that day (up or
- *   down the whole time, e.g. near the poles)
- */
 function findRiseSet(dayStart, latDeg, lonDeg, altGetter) {
-  var stepMs = 5 * 60000; // 5 minutes
+  var stepMs = 5 * 60000;
   var steps = Math.floor((24 * 3600000) / stepMs);
   var prevT = dayStart, prevAlt = altGetter(computeGeometry(dayStart, latDeg, lonDeg));
   var rise = null, set = null;
@@ -132,9 +103,6 @@ function findRiseSet(dayStart, latDeg, lonDeg, altGetter) {
   return { rise: rise, set: set };
 }
 
-/**
- * Saturn ring opening as 0-100 % of its maximum tilt, sampled at `date`.
- */
 function saturnRingOpenPct(date, latDeg, lonDeg) {
   var geo = computeGeometry(date, latDeg, lonDeg);
   return Math.max(0, Math.min(100, Math.round((Math.abs(geo.saturnRingB) / 26.7) * 100)));

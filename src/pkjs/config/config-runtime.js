@@ -1,17 +1,10 @@
 // Builds the settings object in the configuration webview and returns it
-// to PKJS through Pebble's return_to navigation protocol. The save handler
-// recalculates dependent slot availability before collecting the values.
-
 module.exports =
 'function collectSettings(forceRefresh) {' +
 '  var mins = parseInt(document.getElementById("updateMins").value, 10);' +
 '  if (isNaN(mins) || mins < 5) mins = 20;' +
 '  var showSecondsVal = document.getElementById("showSeconds").checked;' +
 '  var avail = computeSlotAvailability();' +
-// Which edge-line / corner fields apply is re-derived here at save time
-// (computeSlotAvailability()) instead of trusting earlier UI events. Edge
-// slots keep their legacy "_ANALOG" storage suffix so existing installs keep
-// their choices; there is no longer a second (digital) context.
 '  function dualCtxVal(base, field, ctx) {' +
 '    var el = document.getElementById(base + field);' +
 '    return el ? el.value : "0";' +
@@ -77,12 +70,6 @@ module.exports =
 '    CONFIG_UPPER_MIDDLE_LINE2_COLOR_ANALOG: dualCtxVal("upperMiddleLine2", "Color", "analog"),' +
 '    CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT_ANALOG: dualCtxVal("bottomMiddleLine1", "Content", "analog"),' +
 '    CONFIG_BOTTOM_MIDDLE_LINE1_COLOR_ANALOG: dualCtxVal("bottomMiddleLine1", "Color", "analog"),' +
-// Analog-only -- a single plain setting, not a dual-context pair (see
-// index.js\'s own bottomMiddleLine2ContentCode() comment). Still zeroed
-// when avail.bottom says THIS marker style has no room for it while
-// Analog is active (unchanged from before) -- just no longer zeroed
-// purely for being in Digital mode, which was never a legitimate
-// "unavailable" in the first place, only a different, irrelevant mode.
 '    CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT: !avail.bottom ? "0" : document.getElementById("bottomMiddleLine2Content").value,' +
 '    CONFIG_BOTTOM_MIDDLE_LINE2_COLOR: document.getElementById("bottomMiddleLine2Color").value,' +
 '    CONFIG_MIDDLE_LEFT_LINE1_CONTENT_ANALOG: dualCtxVal("middleLeftLine1", "Content", "analog"),' +
@@ -108,12 +95,6 @@ module.exports =
 '    CONFIG_CORNER_TR_COLOR: document.getElementById("cornerTRColor").value,' +
 '    CONFIG_CORNER_BL_COLOR: document.getElementById("cornerBLColor").value,' +
 '    CONFIG_CORNER_BR_COLOR: document.getElementById("cornerBRColor").value,' +
-// Read
-// independently of avail.cornersGrayed above, same as the *_COLOR
-// fields -- a corner being grayed out in the current layout doesn't
-// change what's saved for it (features_layer.c already trusts a
-// content of 0 to mean "off"; a custom sequence for an inactive
-// corner is equally inert, not worth a special case to suppress).
 '    CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG: dualCtxVal("upperMiddleLine1", "CustomPrims", "analog"),' +
 '    CONFIG_UPPER_MIDDLE_LINE2_CUSTOM_PRIMS_ANALOG: dualCtxVal("upperMiddleLine2", "CustomPrims", "analog"),' +
 '    CONFIG_BOTTOM_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG: dualCtxVal("bottomMiddleLine1", "CustomPrims", "analog"),' +
@@ -234,14 +215,7 @@ module.exports =
 '    CONFIG_HOURLY_VIBE_DAYS_MASK: document.getElementById("hourlyVibeDaysMask").value,' +
 '    CONFIG_HOURLY_VIBE_OVERRIDE_QUIET: (function () { var el = document.getElementById("hourlyVibeOverrideQuiet"); return el ? el.checked : true; })()' +
 '  };' +
-// Transient, one-shot -- read once by index.js's webviewclosed
-// handler to decide whether this save should force an immediate
-// network refetch ("Force refresh now") or just apply cosmetic
-// settings and let the normal refresh cadence pick up anything that
-// actually needs new data -- never itself persisted via setSetting.
 '  settings.CONFIG_FORCE_REFRESH = !!forceRefresh;' +
-// Pebble plugins: weather source (kept as stored while the select is disabled) and
-// the watch's plugin slot assignment, freed of sources no feature uses any more.
 '  var wsEl = document.getElementById("weatherSource");' +
 '  settings.CONFIG_WEATHER_SOURCE = wsEl ? (wsEl.disabled ? wsEl.getAttribute("data-stored") : wsEl.value) : "plugin";' +
 '  pluginGcSlots();' +
@@ -254,21 +228,11 @@ module.exports =
 '  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
 '  document.location = returnTo + encodeURIComponent(JSON.stringify(settings));' +
 '}' +
-// Debug sends (full keyset / fake weather) and "back": navigate in the existing flow,
-// message PKJS in the live one.
 'function phoneAction(payload) {' +
 '  if (LIVE.active) { return Pebble.sendMessage("pkjs", { type: "action", payload: payload }).then(function () { liveStatus("Sent"); }, function () { liveStatus("Not sent: no connection to the phone app", true); }); }' +
 '  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
 '  document.location = returnTo + encodeURIComponent(JSON.stringify(payload));' +
 '}' +
-// ---- live mode: changes go to the phone (and on to the watch) as they happen -------
-//
-// Only when this page was opened by a Pebble app that bundles settings pages and
-// offers Pebble.sendMessage (LIVE_MODE is baked in by PKJS, which only builds the
-// page that way when serving it over that bridge). Every 800 ms the settings are
-// collected; once they have stopped changing for one tick and differ from what was
-// last sent, they are sent. Polling instead of listening to events catches every
-// programmatic change too (style presets, pickers, sliders).
 'var LIVE = { active: false, last: "", seen: "", busy: false, timer: null };' +
 'function liveStatus(text, isError) {' +
 '  var el = document.getElementById("liveStatus");' +
@@ -309,10 +273,6 @@ module.exports =
 '  if (json !== LIVE.seen) { LIVE.seen = json; return; }' +
 '  liveSend(settings, false);' +
 '}' +
-// Visible proof of which way this page was loaded: the bottom button (and the page title). LIVE = bundled page + plugin API (button "Send", changes stream to the
-// watch); LEGACY = classic showConfiguration data: URI page (button "Save", settings are
-// returned when the page closes); BUNDLED = served as a bundled page but the
-// Pebble.sendMessage bridge is missing, so it falls back to the legacy Save behaviour.
 'function setModeUi(kind) {' +
 '  var btn = document.getElementById("saveBtn");' +
 '  if (btn) btn.textContent = (kind === "live") ? "Send" : "Save";' +

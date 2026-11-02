@@ -1,17 +1,4 @@
-// ---- settings page: Pebble plugins (HTML + client script) -----------------------------
-//
-// The phone app's plugin catalogue is computed by PKJS (plugins/plugin-manager.js) and
-// handed to the page as current.pluginCatalogue = { status, message, sources[] }, with
-// current.pluginSlots = the 12 watch slots' assigned source keys.
-//
-// A data source the user picks (in the Features "Plugins" category, or as a
-// "Plugin data" element in the custom feature builder) is assigned one of 12 watch
-// text slots; the page owns that assignment (PLUGIN_SLOTS) and saves it as
-// CONFIG_PLUGIN_SLOTS. Slots no longer referenced by any feature are freed on save.
-//
-// When plugins are not available (old Pebble app, or switched off) the weather source
-// select and the plugin dropdown are disabled and the page says plugins are not enabled.
-
+// settings page: Pebble plugins (HTML + client script)
 var esc = require('./config-template').esc;
 
 function catalogueOf(current) {
@@ -22,7 +9,6 @@ function catalogueOf(current) {
   return c;
 }
 
-// Weather section: data source select + plugin status.
 function weatherSourceHtml(current) {
   var cat = catalogueOf(current);
   var ok = cat.status === 'ok';
@@ -61,8 +47,6 @@ function pluginScript(current) {
 '  if (PLUGIN_INFO.status !== "ok") return PLUGIN_INFO.message || "Plugins are not enabled.";\n' +
 '  return PLUGIN_INFO.sources.length ? "No free plugin slot (12 at most): remove a plugin feature first." : "No plugin provides data right now.";\n' +
 '}\n' +
-// Keys: "<uuid>|<category>|<item>|<property>[#<instance>]"; an empty uuid (the user\'s preferred
-// complications) means any plugin serving that category/item/property.
 'function pluginKeyParts(key) {\n' +
 '  var p = String(key || "").split("|");\n' +
 '  if (p.length < 4) return null;\n' +
@@ -103,7 +87,6 @@ function pluginScript(current) {
 '  var kp = pluginKeyParts(key);\n' +
 '  return (kp && !kp.plugin) ? pluginHumanize(kp.property) + pluginIndexSuffix(key) : "(unavailable)";\n' +
 '}\n' +
-// Slots referenced by saved features and by the slot editor's open draft.
 'function pluginSlotsInUse() {\n' +
 '  var used = {};\n' +
 '  var els = document.querySelectorAll("input, select");\n' +
@@ -136,7 +119,6 @@ function pluginScript(current) {
 '  var used = pluginSlotsInUse();\n' +
 '  for (var i = 0; i < PLUGIN_SLOT_COUNT; i++) if (!used[i]) PLUGIN_SLOTS[i] = "";\n' +
 '}\n' +
-'// Two-tier picking: first a provider (plugin name + category), then one of its data points.\n' +
 'var PLUGIN_PROV = {};\n' +
 'function pluginProvKey(src) { return src.plugin; }\n' +
 'function pluginProvLabel(src) { return src.pluginName + " – " + src.category; }\n' +
@@ -154,7 +136,6 @@ function pluginScript(current) {
 '  return src ? pluginProvKey(src) : "";\n' +
 '}\n' +
 'function pluginDataLabel(src) { return src.category + " / " + src.item + ": " + src.label; }\n' +
-'// Provider select that sits right before dataSel (created on first use).\n' +
 'function pluginProvSelect(dataSel) {\n' +
 '  var id = dataSel.id + "Prov";\n' +
 '  var prov = document.getElementById(id);\n' +
@@ -191,7 +172,6 @@ function pluginScript(current) {
 '  var prov = document.getElementById(dataSel.id + "Prov");\n' +
 '  if (prov) prov.style.display = "none";\n' +
 '}\n' +
-'// Composer values: "c<i>" = catalogue source i not yet in a slot, "<n>" = slot n.\n' +
 'function pluginParamOptions(providerKey) {\n' +
 '  var out = [], seen = {};\n' +
 '  PLUGIN_INFO.sources.forEach(function (src, i) {\n' +
@@ -209,7 +189,6 @@ function pluginScript(current) {
 '  }\n' +
 '  return out;\n' +
 '}\n' +
-'// Fills dataSel for the provider chosen in its provider select (composer pickers).\n' +
 'function pluginRefillData(dataSel, wantedValue) {\n' +
 '  var cur = PLUGIN_PROV[dataSel.id] || "";\n' +
 '  var popts = pluginParamOptions(cur);\n' +
@@ -232,7 +211,6 @@ function pluginScript(current) {
 '  var n = parseInt(value, 10);\n' +
 '  return isNaN(n) ? -1 : n;\n' +
 '}\n' +
-'// Slot editor, Plugins category: option value is the content id (200 + slot) or "plug:<i>".\n' +
 'function pluginItemOptionsHtml(selectedContentId) {\n' +
 '  var dataSel = document.getElementById("slotEditContent");\n' +
 '  if (!pluginsAvailable()) {\n' +
@@ -261,7 +239,6 @@ function pluginScript(current) {
 '  if (sel >= 0 && sel < PLUGIN_SLOT_COUNT && !pluginProviderOfSlot(sel)) html = "<option value=\\"" + selectedContentId + "\\" selected>(unavailable) " + esc(PLUGIN_SLOTS[sel] || "") + "</option>" + html;\n' +
 '  return html;\n' +
 '}\n' +
-'// Slot editor: provider changed -> list that provider\'s data points.\n' +
 'function pluginSlotEditProviderChanged() {\n' +
 '  var dataSel = document.getElementById("slotEditContent");\n' +
 '  dataSel.innerHTML = pluginItemOptionsHtml("");\n' +
@@ -295,8 +272,6 @@ function pluginScript(current) {
 '    help.style.display = "none";\n' +
 '  }\n' +
 '}\n' +
-'// ---- Pebble app user preferences: "Load user preferences" (Features) and "Load units" (Weather) ----\n' +
-'// PREFERENCES = what PKJS last read from preferences/units and preferences/complications.\n' +
 'var PREF_FEATURE_SLOTS = ["upperMiddleLine2", "bottomMiddleLine1", "middleLeftLine1", "middleRightLine1"];\n' +
 'function prefStatus(id, text, isError) {\n' +
 '  var el = document.getElementById(id);\n' +
@@ -305,7 +280,6 @@ function pluginScript(current) {
 '  el.style.color = isError ? "#d9822b" : "";\n' +
 '  el.style.display = text ? "" : "none";\n' +
 '}\n' +
-'// Fresh values through the live bridge when there is one, else what the page was built with.\n' +
 'function prefFetch(done) {\n' +
 '  if (typeof LIVE !== "undefined" && LIVE.active && typeof Pebble !== "undefined") {\n' +
 '    Pebble.sendMessage("pkjs", { type: "preferences" }).then(function (r) {\n' +

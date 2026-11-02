@@ -1,37 +1,13 @@
 // Plugin background (background style PLUGIN): follows one plugin image source
-// and keeps the latest picture ready for the watch.
-//
-// Settings (localStorage, written by the settings page):
-//   CONFIG_USE_PLUGIN_BG     'true' | 'false'
-//   CONFIG_PLUGIN_BG_SOURCE  source key "<plugin uuid>|<category>|<item>|<property>[#<instance>]"
-//   CONFIG_PLUGIN_BG_DITHER  none | fs | atkinson | bayer4 | bayer8
-//   CONFIG_PLUGIN_BG_COLOR   neutral | vivid | bw | sepia
-//   CONFIG_PLUGIN_BG_FIT     fill | full | 75 | 50 | center
-//
-// While the style is PLUGIN this module holds one subscription to the chosen
-// source (asking for bitmaps with iconPixelSize). Each picture is turned into the
-// watch's 64-colour format right here (plugin-image.js), so the watch needs to
-// know nothing about the style options. The result lives only in memory: it is
-// NOT saved anywhere on the phone either -- after a restart of this script the
-// subscription simply delivers the picture again. bg-image-sync.js sends it to
-// the watch's volatile slot (and re-sends it whenever the watch reports that it
-// no longer holds it, e.g. after the watchface restarted).
-//
-// When the source reports no picture (the instance or its image property is
-// missing/empty), the picture is dropped here and bg-image-sync.js empties the
-// watch's slot. Errors do not drop it: the next update may succeed.
-
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var pluginImage = require('./plugin-image');
 
-// Largest bitmap Pebble allows a subscriber to ask for. The plugin may hand back
-// something smaller; the real size is in the payload.
 var REQUEST_SIZE = { w: 260, h: 260 };
 
-var s_sub = null;       // { key, handle }
-var s_raw = null;       // last decoded picture { w, h, rgba, signature }
-var s_out = null;       // rendered { w, h, bytes, stamp, optionsKey }
+var s_sub = null;
+var s_raw = null;
+var s_out = null;
 var s_onChange = null;
 var s_loggedShape = false;
 
@@ -55,7 +31,6 @@ function optionsKey(o) { return o.dither + '|' + o.color + '|' + o.fit; }
 
 function sourceKey() { return String(getSetting('CONFIG_PLUGIN_BG_SOURCE', '') || ''); }
 
-// Same key format as plugin-manager.js (kept local: the text slots' module is not needed here).
 function parseKey(key) {
   var p = String(key).split('|');
   if (p.length < 4) return null;
@@ -66,22 +41,17 @@ function parseKey(key) {
   return { plugin: p[0], category: p[1], item: p[2], property: property, index: index };
 }
 
-// A one-line "what is happening" for the settings page (PLUGIN panel), so a missing
-// picture can be traced to the plugin, the Pebble app or this watchface. Kept under a
-// non-CONFIG key: it is diagnostics, not a setting.
 var STATUS_KEY = 'PLUGIN_BG_STATUS';
 function setStatus(text) {
   var d = new Date();
   var hh = (d.getHours() < 10 ? '0' : '') + d.getHours(), mm = (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
-  try { localStorage.setItem(STATUS_KEY, hh + ':' + mm + ' ' + text); } catch (e) { /* storage unavailable */ }
+  try { localStorage.setItem(STATUS_KEY, hh + ':' + mm + ' ' + text); } catch (e) { }
   console.log('modern: plugin background - ' + text);
 }
 function status() {
   try { return localStorage.getItem(STATUS_KEY) || ''; } catch (e) { return ''; }
 }
 
-// The picture of a property: normally under "image", but fall back to "icon" or any
-// shape that carries { pixels, palette } so a differently named shape still works.
 function findImagePayload(prop) {
   if (!prop || typeof prop !== 'object') return null;
   var names = ['image', 'icon'];
@@ -97,8 +67,6 @@ function notify() {
   }
 }
 
-// ---- rendering --------------------------------------------------------------------
-
 function renderNow() {
   if (!s_raw) { s_out = null; return; }
   var o = options();
@@ -111,12 +79,9 @@ function renderNow() {
   }
 }
 
-// What bg-image-sync.js should deliver: { w, h, bytes, stamp } or null (= no picture).
 function getOutput() {
   return (enabled() && s_out) ? s_out : null;
 }
-
-// ---- subscription -----------------------------------------------------------------
 
 function shapeInfo(img) {
   try {
@@ -146,11 +111,10 @@ function onData(parsed, envelope) {
   }
 
   if (!img) {
-    // The source has no picture (any more): the watch's copy goes too.
     if (s_raw || s_out) { s_raw = null; s_out = null; notify(); }
     return;
   }
-  if (s_raw && s_raw.signature === img.signature && s_out && s_out.optionsKey === optionsKey(options())) return; // same picture again
+  if (s_raw && s_raw.signature === img.signature && s_out && s_out.optionsKey === optionsKey(options())) return;
   s_raw = img;
   renderNow();
   notify();
@@ -160,7 +124,7 @@ function unsubscribe() {
   var sub = s_sub;
   s_sub = null;
   if (sub && sub.handle && typeof sub.handle.unsubscribe === 'function') {
-    try { sub.handle.unsubscribe(); } catch (e) { /* already gone */ }
+    try { sub.handle.unsubscribe(); } catch (e) { }
   }
 }
 
@@ -191,8 +155,6 @@ function subscribe(key) {
   setStatus('subscribed, waiting for the plugin to send data');
 }
 
-// Brings the subscription and the rendered picture in line with the settings.
-// Call after any settings change and once at start-up. Safe without plugins.
 function apply() {
   var key = sourceKey();
   var want = enabled() && key !== '';
@@ -207,10 +169,9 @@ function apply() {
   if (s_sub && s_sub.key !== key) {
     unsubscribe();
     s_raw = null; s_out = null;
-    notify(); // the old source's picture must not stay on the watch
+    notify();
   }
   if (!s_sub) subscribe(key);
-  // Dither / colour / fit changed: render the picture we hold again.
   if (s_raw && (!s_out || s_out.optionsKey !== optionsKey(options()))) {
     renderNow();
     notify();

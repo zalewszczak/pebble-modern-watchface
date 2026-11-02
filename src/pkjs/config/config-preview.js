@@ -1,8 +1,4 @@
-// ---- Miniature watch preview renderer ------------------------------------
-// Exports client-side JavaScript source for the settings webview. The code
-// draws the watch preview from resolved settings and a canvas context; UI
-// event handling remains in config-page.js.
-
+// Miniature watch preview renderer
 module.exports =
 'function hasPreviewContent(contentId) {' +
 '  var el = document.getElementById(contentId);' +
@@ -31,11 +27,6 @@ module.exports =
 '  var colorEl = document.getElementById(colorId);' +
 '  if (!contentEl || !colorEl) return;' +
 '  var content = parseInt(contentEl.value, 10);' +
-// A slot's custom sequence (hidden input "<slot>CustomPrims": the content
-// id with any trailing "Content" dropped, so cornerTL -> cornerTLCustomPrims
-// and upperMiddleLine1Content -> upperMiddleLine1CustomPrims) overrides the
-// Content label -- the watch does the same, and does it even when Content is
-// None.
 '  var customEl = document.getElementById(contentId.replace(/Content$/, \"\") + \"CustomPrims\");' +
 '  var label = (customEl && customEl.value) ? composerPreviewLabel(customEl.value) : \"\";' +
 '  if (!label) label = primitiveDecompositionText(content, true);' +
@@ -51,8 +42,6 @@ module.exports =
 '  ctx.textBaseline = "top";' +
 '  ctx.globalAlpha = alpha;' +
 '  ctx.fillStyle = color;' +
-// Split the label into text runs and "(token)" icon placeholders; every
-// token with embedded art becomes a real icon, the rest stay text.
 '  var segs = previewLabelSegments(label, fontPx);' +
 '  var total = 0, i;' +
 '  for (i = 0; i < segs.length; i++) {' +
@@ -77,13 +66,6 @@ module.exports =
 '  ctx.globalAlpha = 1;' +
 '}' +
 
-// ---- real icon art in the preview -----------------------------------------
-// The watch draws feature icons from the resource PNGs (simple/hollow are
-// 2-colour palette art tinted to the feature colour, full color is drawn as
-// is; an outline pass draws offset silhouettes first). This mirrors
-// feature_icon_assets.c in the canvas: PREVIEW_ICON_IMAGES[style][name] holds
-// the embedded PNGs (scripts/generate-preview-icons.js), PREVIEW_ICON_TOKENS
-// maps the "(token)" placeholders onto them.
 'var PREVIEW_ICON_OUTLINE_THIN = [[-1,0],[1,0],[0,-1],[0,1]];' +
 'var PREVIEW_ICON_OUTLINE_THICK = [[-1,0],[1,0],[0,-1],[0,1],[-2,0],[2,0],[0,-2],[0,2],[1,1],[-1,1],[-1,-1],[1,-1]];' +
 'var PREVIEW_TINT_CACHE = {};' +
@@ -93,9 +75,6 @@ module.exports =
 '  return set ? set[name] : null;' +
 '}' +
 
-// {name, style, width, height} for a token that has embedded art in the
-// current Icons style (full color also needs the hollow art for its outline
-// when outlines are on), else null so the caller keeps the text.
 'function previewIconForToken(token, iconPx) {' +
 '  if (typeof PREVIEW_ICON_TOKENS === "undefined") return null;' +
 '  var name = PREVIEW_ICON_TOKENS[token];' +
@@ -111,8 +90,6 @@ module.exports =
 '}' +
 
 'function previewLabelSegments(label, fontPx) {' +
-// "\\uE000" marks the watch's one automatic gap in a built-in feature: next
-// to an icon (about 0.4 em of the feature font). Text runs sit flush.
 '  var parts = label.split(/(\\([A-Za-z]+\\)|\\uE000)/);' +
 '  var iconPx = Math.max(8, Math.round(fontPx * 1.15));' +
 '  var out = [];' +
@@ -133,9 +110,6 @@ module.exports =
 '  return ((c.r >> 6) * 3 + (c.g >> 6) * 6 + (c.b >> 6));' +
 '}' +
 
-// Same rule as feature_icon_assets.c's tint: with a transparent palette
-// entry, the opaque pixels are the ink; with two opaque entries the darker
-// one is. Ink becomes `hex`, everything else clear.
 'function tintPreviewIcon(img, hex) {' +
 '  var key = img.src.length + ":" + img.src.slice(-40) + ":" + hex;' +
 '  if (PREVIEW_TINT_CACHE[key]) return PREVIEW_TINT_CACHE[key];' +
@@ -173,7 +147,6 @@ module.exports =
 '  ctx.imageSmoothingEnabled = false;' +
 '  if (outline) {' +
 '    var outHex = previewHexLuma(hex) >= 9 ? "#000000" : "#ffffff";' +
-// Full color art has no ink channel: its outline borrows the hollow silhouette.
 '    var sil = img;' +
 '    if (ic.style === "2") {' +
 '      var hs = previewIconSource("1", ic.name);' +
@@ -193,34 +166,14 @@ module.exports =
 '  ctx.imageSmoothingEnabled = prevSmooth;' +
 '}' +
 
-// Direct port of features_recompute_layout()'s own margin computation
-// (background_layer.c/features_layer.c) -- how far in from each edge
-// the "middle" feature slots (upper/bottom-middle, middle-left/right)
-// have to start so they land INSIDE the empty area the current marker
-// style/hands actually leave clear, rather than overlapping the
-// marker ring. 44/40/30/30 are the same defaults (and BITMAP_STYLE_
-// MARGINS\' own values, identical across all 5 bitmap styles) the
-// watch falls back to; for the procedural presets (0-2) and custom (8)
-// the margin instead grows to wherever that style\'s own inner ring
-// boundary reaches at each of the 4 cardinal points, via the exact
-// same point_on_ring() technique the marker ring itself is drawn with.
-// Values returned are already scaled into this canvas\'s own pixel
-// space (see readHandConfig()\'s own `scale` comment for why that\'s
-// needed at all).
-// Bitmap marker styles: 3-7 and the Modern/Roman variants 11-19 (see marker_style_is_bitmap() in marker_bitmap.h).
 'function isBitmapMarkerStyleId(n) { return (n >= 3 && n <= 7) || (n >= 11 && n <= 19); }' +
 'function computeMiddleFeatureMargins(w, h) {' +
 '  var scale = w / 200;' +
 '  var margins = { top: 44 * scale, bottom: 40 * scale, left: 30 * scale, right: 30 * scale };' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
 '  var isBitmapStyle = isBitmapMarkerStyleId(markerStyle);' +
-'  if (isBitmapStyle) return margins;' + // BITMAP_STYLE_MARGINS's 5 entries are all identical to the defaults above -- nothing to differ
+'  if (isBitmapStyle) return margins;' +
 '  var pct, ecc;' +
-// Every non-bitmap style (Custom AND the Minimal/Braun/Swiss/Classy
-// presets) reads the customHour* fields here: picking a preset copies
-// its values into them (applyMarkerStylePresetToCustom() in
-// config-page.js), and the watch is sent style 8 for all of them, so
-// this matches what the watch lays out.
 '  var hourCfg = readCustomMarkerConfig("hour");' +
 '  pct = hourCfg.innerBorderPct; ecc = hourCfg.innerEccentricity;' +
 '  var cx = w / 2, cy = h / 2;' +
@@ -237,30 +190,6 @@ module.exports =
 '  return margins;' +
 '}' +
 
-// skyTop defaults to 0 (TL/TR sit right at the screen's own top edge --
-// Analog and Digital bar both have open sky there). Digital top's own
-// call passes the panel's height instead, since that layout's TL/TR
-// corners sit at the sky's own top edge instead -- right below the
-// transparent clock panel -- mirroring skyBottom\'s existing job of
-// pulling BL/BR up above Digital bar\'s own panel the other way.
-// Corner/edge feature text used to always render as a flat "bold 9px
-// sans-serif" regardless of whatever font was actually picked in the
-// Features section's own Font control -- misleading the same way the
-// old flat-26px clock preview was, just for the corner readouts
-// instead. Now mirrors that same fix: pulls the currently-selected
-// cornerFont's real family/weight (via canvasFontFor(), same helper
-// the clock preview uses) and its FONT_LOOKUP `height` -- not
-// `sizePx`, which is specifically the *big/mainClock* bake size; corner
-// text uses the small/row-height reading `height` already represents
-// (see font_lookup.c's own font_lookup_height(), "for sizing/
-// vertically-centering text boxes", the exact same job this preview
-// text is doing) -- scaled into this canvas's own pixel space by the
-// same w/200 ratio computeMiddleFeatureMargins() already uses. Loosely
-// clamped (7-22px) since a user CAN pick one of the 48px-bake big
-// fonts here too (cornerFont's own picker isn't mainClock-restricted),
-// and letting a corner readout balloon to a near-clock-sized readout
-// would blow out these small, fixed-position boxes rather than just
-// looking accurately big.
 'function drawCornersAndEdges(ctx, w, h, colors, skyBottom, skyTop) {' +
 '  var bottomY = (typeof skyBottom === "number") ? skyBottom : h;' +
 '  var topY = (typeof skyTop === "number") ? skyTop : 0;' +
@@ -299,32 +228,12 @@ module.exports =
 '  }' +
 '}' +
 
-// ---- hand preview geometry --------------------------------------------
-// A direct port of hand_layer.c's compute_hand_geometry_fp() (and the
-// draw passes around it) from the watch's own fixed-point trig into
-// plain floating-point canvas math -- there\'s no fixed-point precision
-// need here the way the watch has, so every SUBPIXEL_BITS/int64 step
-// over there is just its equivalent float multiply/sin/cos here. Kept
-// in the exact same per-style order/shape as compute_hand_geometry_fp()
-// so the two stay easy to compare side by side; see that function\'s
-// own per-style comments in hand_layer.c for what each shape/field
-// combination actually means -- not re-explained per style here.
-//
-// angle is in radians, same clockwise-from-12 convention already used
-// elsewhere on this page (see hourAngle/minAngle below): x = cx +
-// axial*sin(angle), y = cy - axial*cos(angle), matching
-// point_at_axial_fp()\'s own dx/dy exactly.
 'function handAxialPoint(cx, cy, angle, axial) {' +
 '  return { x: cx + axial * Math.sin(angle), y: cy - axial * Math.cos(angle) };' +
 '}' +
 'function handPerpOffset(angle, halfW) {' +
 '  return { dx: halfW * Math.cos(angle), dy: halfW * Math.sin(angle) };' +
 '}' +
-// cfg fields here are already SCALED to canvas px by the caller (see
-// readHandConfig()\'s own comment) -- this function itself has no idea
-// the watch is really 200x228; it just draws in whatever unit its
-// inputs are given in, same as compute_hand_geometry_fp() does with
-// its own already-fixed-point inputs.
 'function computeHandGeometry(cx, cy, angle, cfg) {' +
 '  var len = cfg.length, back = -cfg.backOffset, mid = cfg.middleOffset;' +
 '  var halfW = Math.max(0.5, cfg.width / 2), halfSW = Math.max(0.5, cfg.secondaryWidth / 2);' +
@@ -345,15 +254,15 @@ module.exports =
 '  }' +
 
 '  switch (cfg.style) {' +
-'    case 1: { var outer = axial(len); taper(back, halfW, outer); break; }' + // triangle
+'    case 1: { var outer = axial(len); taper(back, halfW, outer); break; }' +
 
-'    case 3: {' + // dauphine
+'    case 3: {' +
 '      var effBack = Math.max(cfg.backOffset, cfg.middleOffset);' +
 '      var backTip = axial(-effBack), topTip = axial(len), midPt = axial(mid), p = perp(halfW);' +
 '      polys.push([backTip, { x: midPt.x - p.dx, y: midPt.y - p.dy }, topTip, { x: midPt.x + p.dx, y: midPt.y + p.dy }]);' +
 '      break;' +
 '    }' +
-'    case 4: {' + // sword
+'    case 4: {' +
 '      var midAx = Math.min(mid, len);' +
 '      var top = axial(len), base = axial(back), midPt = axial(midAx);' +
 '      var pw = perp(halfW), psw = perp(halfSW);' +
@@ -363,9 +272,9 @@ module.exports =
 '      ]);' +
 '      break;' +
 '    }' +
-'    case 5: capsule(mid, len, halfW, true); capsule(back, mid, halfSW, false); break;' + // pomme
+'    case 5: capsule(mid, len, halfW, true); capsule(back, mid, halfSW, false); break;' +
 
-'    case 6: {' + // spade
+'    case 6: {' +
 '      capsule(back, len, halfW, true);' +
 '      var tip = axial(len);' +
 '      circles.push({ x: tip.x, y: tip.y, r: halfSW });' +
@@ -376,14 +285,14 @@ module.exports =
 '      }' +
 '      break;' +
 '    }' +
-'    case 7: {' + // arrow
+'    case 7: {' +
 '      var tip = axial(len);' +
 '      taper(back, halfW, tip);' +
 '      var apex = axial(len + mid), psw = perp(halfSW);' +
 '      polys.push([{ x: tip.x - psw.dx, y: tip.y - psw.dy }, { x: tip.x + psw.dx, y: tip.y + psw.dy }, apex]);' +
 '      break;' +
 '    }' +
-'    case 8: {' + // leaf
+'    case 8: {' +
 '      var centerAx = (back + len) / 2, peakAx = centerAx + mid;' +
 '      if (peakAx < back) peakAx = back;' +
 '      if (peakAx > len) peakAx = len;' +
@@ -415,7 +324,7 @@ module.exports =
 '      polys.push(pts);' +
 '      break;' +
 '    }' +
-'    case 9: {' + // syringe
+'    case 9: {' +
 '      capsule(back, len, halfW, false);' +
 '      var cornerAx = len + mid, taperLen = Math.max(0.5, halfW - halfSW), tipAx = cornerAx + taperLen;' +
 '      var corner = axial(cornerAx), tip = axial(tipAx), pw = perp(halfW), psw = perp(halfSW);' +
@@ -425,7 +334,7 @@ module.exports =
 '      ]);' +
 '      break;' +
 '    }' +
-'    case 10: {' + // serpentine
+'    case 10: {' +
 '      var SEG = 6;' +
 '      var amp = Math.max(0, halfSW - halfW);' +
 '      var diameter = Math.abs(cfg.middleOffset); if (diameter < 4) diameter = 4;' +
@@ -448,7 +357,7 @@ module.exports =
 '      }' +
 '      break;' +
 '    }' +
-'    case 0: case 2: default: capsule(back, len, halfW, cfg.style === 0); break;' + // dot / square
+'    case 0: case 2: default: capsule(back, len, halfW, cfg.style === 0); break;' +
 '  }' +
 '  return { polys: polys, circles: circles };' +
 '}' +
@@ -459,13 +368,6 @@ module.exports =
 '  for (var i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);' +
 '  ctx.closePath();' +
 '}' +
-// Approximates fill_polygon_ring_fp()/fill_circle_ring_fp() (an inward
-// polygon/circle offset, filled only between the original boundary and
-// that offset) with clip+stroke: clip to the exact shape, then stroke
-// its own path at 2x the requested thickness -- centered strokes put
-// half their width outside the clip (discarded) and half inside,
-// leaving exactly a `thickness`-px ring along the inside of the
-// boundary, same as the real inset ring.
 'function handFillRing(ctx, pathFn, thicknessPx, color) {' +
 '  ctx.save();' +
 '  pathFn(); ctx.clip();' +
@@ -476,11 +378,6 @@ module.exports =
 '  return geo.polys.map(function (pts) { return function (ctx) { handPathPolygon(ctx, pts); }; })' +
 '    .concat(geo.circles.map(function (c) { return function (ctx) { ctx.beginPath(); ctx.arc(c.x, c.y, Math.max(0, c.r), 0, 2 * Math.PI); }; }));' +
 '}' +
-// Mirrors draw_hand_shape_from_geometry(): hollow (thickness<=1 = a
-// plain 1px stroke, else the inset-ring approximation above) or a
-// solid fill, dithering approximated as ~50% opacity throughout this
-// preview (same simplification the old placeholder hand preview always
-// than a genuine Bayer stipple).
 'function drawHandGeometryFill(ctx, geo, color, translucent, hollow, hollowThicknessPx) {' +
 '  ctx.globalAlpha = translucent ? 0.5 : 1;' +
 '  ctx.fillStyle = color; ctx.strokeStyle = color; ctx.lineWidth = 1;' +
@@ -492,20 +389,12 @@ module.exports =
 '  });' +
 '  ctx.globalAlpha = 1;' +
 '}' +
-// Mirrors draw_hand_outline_from_geometry(): a genuine 1px perimeter
-// trace, drawn OUTSIDE hollow\'s own inline ring (this is a completely
-// separate pass/setting on the watch -- see HandConfig.outline_enabled).
 'function drawHandGeometryOutline(ctx, geo, color, translucent) {' +
 '  ctx.globalAlpha = translucent ? 0.5 : 1;' +
 '  ctx.strokeStyle = color; ctx.lineWidth = 1;' +
 '  handGeometryPaths(geo).forEach(function (pathFn) { pathFn(ctx); ctx.stroke(); });' +
 '  ctx.globalAlpha = 1;' +
 '}' +
-// Mirrors draw_hand_shadow_once_fp(): the same geometry, translated by
-// shadowDistancePx in shadowAngleDeg\'s direction (a shared light-
-// source angle, not rotated with the hand), filled solid or at reduced
-// opacity in black -- ~50%/~25% approximating the real ~50%/~25%
-// Bayer-dithered density (see that function\'s own threshold comment).
 'function drawHandShadow(ctx, cx, cy, angle, cfg, shadowAngleDeg, shadowTranslucentStyle) {' +
 '  if (!cfg.shadowEnabled) return;' +
 '  var shadowAngleRad = (shadowAngleDeg || 0) * Math.PI / 180;' +
@@ -516,25 +405,12 @@ module.exports =
 '  handGeometryPaths(geo).forEach(function (pathFn) { pathFn(ctx); ctx.fill(); });' +
 '  ctx.globalAlpha = 1;' +
 '}' +
-// 0=main, 1=accent, 2=background, 3=none -- same HandConfig.color enum
-// handHourColor/handMinColor/handSecColor use. Returns null for "none"
-// so callers can skip the fill entirely (see hand_layer_draw()\'s own
-// `if (cfg->color != 3)` gate) instead of silently drawing main color.
 'function resolveHandPreviewColor(colorVal, colors) {' +
 '  if (colorVal === "1") return colors.accent;' +
 '  if (colorVal === "2") return colors.bg;' +
 '  if (colorVal === "3") return null;' +
 '  return colors.text;' +
 '}' +
-// Reads one hand\'s full HandConfig, scaled from real watch pixels
-// (every slider in the editor is a real on-watch px value, 200x228
-// screen) into this preview canvas\'s own smaller pixel space via
-// `scale` -- length/width/offsets/shadow distance all need it,
-// anything already a ratio/flag/enum doesn\'t. Reads the popup\'s own
-// LIVE draft fields (hePopupPrefix) while that hand\'s editor is open
-// (s_openHandEditorKind), so every slider drag updates the preview in
-// real time -- see s_openHandEditorKind\'s own comment -- and the
-// committed handHour*/handMin*/handSec* hidden fields otherwise.
 'function readHandConfig(kind, scale) {' +
 '  var prefix = (s_openHandEditorKind === kind) ? hePopupPrefix(kind) : heHiddenPrefix(kind);' +
 '  function num(field, def) { var el = document.getElementById(prefix + field); var v = el ? parseFloat(el.value) : NaN; return isNaN(v) ? def : v; }' +
@@ -561,8 +437,6 @@ module.exports =
 '    hollowThickness: num("HollowThickness", 1) * scale' +
 '  };' +
 '}' +
-// Full hand draw: shadow, then outline (if enabled), then fill (unless
-// color is "none") -- same order/gating as hand_layer_draw() itself.
 'function drawHandFull(ctx, cx, cy, angle, cfg, colors, shadowAngleDeg, shadowTranslucentStyle) {' +
 '  drawHandShadow(ctx, cx, cy, angle, cfg, shadowAngleDeg, shadowTranslucentStyle);' +
 '  var geo = computeHandGeometry(cx, cy, angle, cfg);' +
@@ -573,12 +447,6 @@ module.exports =
 '  if (fillColor) drawHandGeometryFill(ctx, geo, fillColor, cfg.translucent, cfg.hollow, cfg.hollowThickness);' +
 '}' +
 
-// Loaded lazily and cached per style -- base64 data: URIs decode
-// effectively instantly in practice, but img.complete is checked
-// before drawing rather than assumed, so a not-yet-ready image is
-// simply skipped for this tick (the next one, ~1s later via the
-// preview\'s own refresh interval, picks it up once ready) instead of
-// drawing nothing or throwing.
 'var MARKER_PREVIEW_IMG_CACHE = {};' +
 'function getMarkerPreviewImg(styleVal) {' +
 '  var src = MARKER_PREVIEW_IMAGES[styleVal];' +
@@ -596,14 +464,6 @@ module.exports =
 '  if (!m) return { r: 0, g: 0, b: 0 };' +
 '  return { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) };' +
 '}' +
-// Recolors an offscreen copy of the image by directly rewriting pixel
-// RGB values while leaving each pixel\'s own alpha untouched -- unlike
-// relying on globalCompositeOperation (which isn\'t consistently
-// supported across the range of embedded WebViews Pebble phones
-// actually ship), this works the same everywhere and mirrors exactly
-// what the watch\'s own tint_marker_bitmap() does. Cached per
-// style+color combination since it\'s real per-pixel work and the
-// preview redraws roughly once a second.
 'var MARKER_TINT_CACHE = {};' +
 'function getTintedMarkerCanvas(styleVal, tintColor) {' +
 '  var cacheKey = styleVal + "|" + tintColor;' +
@@ -634,9 +494,6 @@ module.exports =
 '    return null;' +
 '  }' +
 '}' +
-// Draws the tinted mask stretched to fill (w, h). Returns whether it
-// actually drew anything, so the caller can fall back to a
-// placeholder when no preview image exists yet for this style.
 'function drawTintedMarkerBitmap(ctx, styleVal, w, h, tintColor) {' +
 '  var tinted = getTintedMarkerCanvas(styleVal, tintColor);' +
 '  if (!tinted) return false;' +
@@ -644,20 +501,6 @@ module.exports =
 '  return true;' +
 '}' +
 
-// Same getImageData/putImageData recolor approach getTintedMarkerCanvas()
-// above already uses, reused here for the font-preview clock images
-// drawDigitalPreview() draws -- NOT the save()/globalCompositeOperation
-// "source-in"/restore() trick this used to be: that one composites the
-// fill against whatever's ALREADY on the live preview canvas at that
-// spot (the sky/background, already opaque there by the time this
-// runs), not just the freshly-drawn image's own alpha, so it painted a
-// solid tintColor-filled rectangle over the whole image's bounding box
-// instead of just its glyph pixels -- on a light text color, that's a
-// blank-looking rectangle standing in for the clock, exactly what this
-// was reported as. Recoloring on an isolated OFFSCREEN canvas first
-// (starts fully transparent, nothing else drawn on it to composite
-// against) and only then drawing the correctly-recolored RESULT onto
-// the live canvas avoids that entirely.
 'var FONT_IMG_TINT_CACHE = {};' +
 'function getTintedFontImageCanvas(src, tintColor) {' +
 '  var cacheKey = src + "|" + tintColor;' +
@@ -688,15 +531,6 @@ module.exports =
 '  }' +
 '}' +
 
-// ---- marker ring preview -------------------------------------------------
-// Direct port of background_layer.c's point_on_ring_fp()/point_on_ring():
-// blends a point on a circle of radius reach(pct) with a point on a
-// screen-proportioned rectangle of the same reach along its dominant
-// axis, by eccentricityPct (0=circle, 100=rectangle). w/h here are this
-// canvas\'s own pixel dimensions -- the same 200:228 aspect ratio the
-// real watch screen has (see the canvas element\'s own width/height), so
-// the ratios this function relies on come out identical without any
-// separate scale factor the way hand lengths need.
 'function markerReach(w, h, pct) {' +
 '  var reachMin = Math.min(w / 4, h / 4), reachMax = Math.max(w / 2, h / 2);' +
 '  return reachMin + (reachMax - reachMin) * pct / 100;' +
@@ -717,14 +551,6 @@ module.exports =
 '    y: circlePt.y + (rectPt.y - circlePt.y) * eccentricityPct / 100' +
 '  };' +
 '}' +
-// Direct port of draw_ring_mark_fp(): a straight quad from inner to
-// outer, with the requested cap style -- 0=dot (round, via circles at
-// both ends), 1=line (flush ends), 2=square (ends extended outward by
-// their own half-thickness, like stroke-linecap:square), 4=tapered
-// (same square-style extension as 2, but innerHalfThick/outerHalfThick
-// can differ, turning the quad into a trapezoid -- see
-// draw_ring_mark_fp()\'s own comment in background_layer.c for why
-// each style besides 4 always passes the same value for both).
 'function drawRingMark(ctx, inner, outer, angle, innerHalfThick, outerHalfThick, style, color, translucent) {' +
 '  ctx.globalAlpha = translucent ? 0.5 : 1;' +
 '  ctx.fillStyle = color;' +
@@ -751,13 +577,6 @@ module.exports =
 '  }' +
 '  ctx.globalAlpha = 1;' +
 '}' +
-// Direct port of draw_marker_ring() (no startup-animation handling --
-// nothing here to preview, the watch\'s own marks always settle at
-// their final positions almost immediately). cfg: {style, thickness,
-// innerThickness, innerEccentricity, outerEccentricity, innerBorderPct,
-// outerBorderPct, translucent, color}. skipStep mirrors the C call\'s
-// own use (5, for the 60-mark second ring, to skip the marks that
-// coincide with hour positions) -- 0 means "skip none".
 'function drawMarkerRing(ctx, cx, cy, w, h, cfg, marks, skipStep, colors) {' +
 '  if (!cfg || !cfg.thickness) return;' +
 '  var color = resolveHandPreviewColor(String(cfg.color), colors) || colors.text;' +
@@ -772,14 +591,6 @@ module.exports =
 '    drawRingMark(ctx, inner, outer, angle, innerHalfThick, outerHalfThick, cfg.style, color, cfg.translucent);' +
 '  }' +
 '}' +
-// The Minimal/Braun/Swiss/Classy ring values themselves live in
-// presets-lookups.js (MARKER_STYLE_HOUR_PRESETS/MARKER_STYLE_SECOND_PRESETS)
-// -- picking one copies them into the customHour*/customSec* fields
-// (applyMarkerStylePresetToCustom() in config-page.js), so everything
-// below just reads those fields, preset or not.
-// Reads the customHour*/customSec* hidden fields into a cfg object in
-// drawMarkerRing()\'s own shape, same field-per-field mapping
-// customMarkerHiddenInputsHtml() writes them with.
 'function readCustomMarkerConfig(kind) {' +
 '  var p = "custom" + (kind === "hour" ? "Hour" : "Sec");' +
 '  function v(f) { var el = document.getElementById(p + f); return el ? el.value : null; }' +
@@ -795,12 +606,6 @@ module.exports =
 '    color: parseInt(v("Color"), 10) || 0' +
 '  };' +
 '}' +
-// Direct port of draw_text_markers() -- called for every ring-based
-// marker style (Custom and the presets alike), same as on the watch.
-// hourCfg/secCfg are whichever MarkerRingConfig-shaped objects the
-// caller is currently using for those two rings (preset or custom),
-// since text markers piggyback on that ring\'s own innerBorderPct/
-// innerEccentricity to decide where the numeral sits.
 'function romanNumeral(num) {' +
 '  if (num <= 0) return String(num);' +
 '  var VALUES = [50, 40, 10, 9, 5, 4, 1], SYMBOLS = ["L", "XL", "X", "IX", "V", "IV", "I"];' +
@@ -836,13 +641,8 @@ module.exports =
 
 'function drawBigAnalogPreview(ctx, colors, now, showSeconds, w, h, markerImageDrawn) {' +
 '  var cx = w / 2, cy = h / 2;' +
-'  var scale = w / 200;' + // every hand/shadow dimension below is a real on-watch px value (200x228 screen) -- see readHandConfig()'s own comment
+'  var scale = w / 200;' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
-// Every non-bitmap style (3-7 are the bitmap ones) -- Custom (8) and the
-// None/Braun/Swiss/Classy/Minimal presets (0/1/2/9/10) alike -- draws from
-// the customHour*/customSec*/markerText* fields: picking a preset copies
-// its rings AND numerals values in (see applyMarkerStylePresetToCustom()),
-// and the watch is sent those same values as a Custom marker.
 '  if (!isBitmapMarkerStyleId(markerStyle)) {' +
 '    var secCfg = readCustomMarkerConfig("sec"), hourCfg = readCustomMarkerConfig("hour");' +
 '    drawMarkerRing(ctx, cx, cy, w, h, secCfg, 60, 5, colors);' +
@@ -876,12 +676,6 @@ module.exports =
 '}' +
 
 'var PREVIEW_IMAGE_CACHE = {};' +
-// Cached Image objects for the font-preview PNGs (see FONT_PREVIEW_IMAGES\'s
-// own comment) -- data-URIs decode almost instantly, but img.complete can
-// still read false for the very first frame drawn right after creating
-// one, so this triggers a follow-up updatePreview() once it\'s actually
-// ready rather than leaving the fallback text rendering up for a whole
-// second until the next scheduled tick.
 'function getCachedImage(src) {' +
 '  var img = PREVIEW_IMAGE_CACHE[src];' +
 '  if (!img) {' +
@@ -893,8 +687,6 @@ module.exports =
 '  return img;' +
 '}' +
 'function updatePreview() {' +
-// A font or icon image that finishes loading lands here: keep the slot
-// editor's own preview (if it is open) in step with the main one.
 '  if (typeof CURRENT_SLOT_KEY !== "undefined" && CURRENT_SLOT_KEY && typeof renderSlotEditPreview === "function") { try { renderSlotEditPreview(); } catch (e) {} }' +
 '  var canvas = document.getElementById("previewCanvas");' +
 '  if (!canvas || !canvas.getContext) return;' +
@@ -903,8 +695,6 @@ module.exports =
 '  ctx.clearRect(0, 0, w, h);' +
 
 '  var now = new Date();' +
-// Night colors take over the preview only when night mode is on and it is
-// (approximately) night -- the watch decides the same from sunrise/sunset.
 '  var nightActive = document.getElementById("nightEnabled").checked && isNightNowApprox();' +
 '  var colors = nightActive ? nightColors() : dayColors();' +
 '  var secondsBox = document.getElementById("showSeconds");' +

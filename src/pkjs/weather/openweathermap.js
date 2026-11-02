@@ -1,12 +1,6 @@
-// ---- OpenWeatherMap provider ----------------------------------------------
-//
-// Optional second cloud-cover source. Used only when an API key is
-// configured; weather.js combines its result with Open-Meteo data.
-
+// OpenWeatherMap provider
 var xhrGetJSON = require('./http').xhrGetJSON;
 
-// OpenWeatherMap "One Call" style hourly cloud-cover, only used if
-// the user supplied an API key in settings.
 function fetchOpenWeatherMap(lat, lon, apiKey, fromDate, toDate, cb) {
   var url = 'https://api.openweathermap.org/data/2.5/forecast' +
             '?lat=' + encodeURIComponent(lat) +

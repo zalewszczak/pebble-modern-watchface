@@ -1,21 +1,4 @@
-// ---- live webfont manager for the embedded settings webview ------------
-//
-// This module exports JavaScript source text, just like config-preview.js.
-// The resulting code runs inside the phone's settings WebView, not inside
-// PKJS, so it deliberately uses browser APIs only and does not require().
-//
-// Goals:
-//   * make the live canvas preview use the actual webfont when available;
-//   * load remote font binaries lazily instead of downloading every font;
-//   * accept a user-supplied TTF/OTF/WOFF/WOFF2 file as a preview override;
-//   * persist imported font binaries best-effort between settings sessions;
-//   * fall back cleanly to the existing CSS font / generated PNG previews.
-//
-// The watch-side font resource is NOT changed by an imported file. A custom
-// file is a settings-preview override only; the selected watch font remains
-// the normal FONT_LOOKUP/resource selection unless the app itself is rebuilt
-// with that font as a resource.
-
+// live webfont manager for the embedded settings webview
 module.exports =
 'var FontManager = (function () {' +
 '  var entries = [];' +

@@ -1,5 +1,4 @@
 // Packs an opaque RGB color into Pebble's one-byte GColor8 format.
-// Each channel is truncated to its two most significant bits.
 function packGColorByte(r, g, b) {
   var a2 = 3;
   var r2 = (r >> 6) & 0x03;

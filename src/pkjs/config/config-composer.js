@@ -1,26 +1,4 @@
 // Custom feature-sequence editor used by the settings page.
-//
-// Same non-Node-module shape as config-preview.js/config-runtime.js: this
-// file exports client JS *source text* that config-page.js splices into the
-// generated <script>. Unlike those, the code below is written as real
-// function declarations (embedded via Function.prototype.toString) rather
-// than as concatenated string literals, so `node --check` validates it
-// directly and there is no quote-escaping to get wrong -- the class of bug
-// an embedded line comment in generated script text.
-//
-// Nothing in composerClientBody() ever runs in PKJS; it only runs inside the
-// settings page, where these globals exist (defined elsewhere in the
-// generated script): esc(), PRIMITIVE_PALETTE, PRIMITIVE_LABEL_BY_ID,
-// PRIMITIVE_TRANSPORT_SEQUENCES, PRIMITIVE_TRANSPORT_AUX, TIMEZONE_ZONES,
-// PRIM_SPACE_ID, COMPOSER_MAX, PRIMITIVE_PREVIEW_TEXT, FORECAST_SLOTS.
-//
-// Edits stay in a working copy until saveSlotEditor() validates and commits
-// them. Canceling the editor discards the changes.
-//
-// Storage format of the hidden input / CONFIG_CORNER_*_CUSTOM_PRIMS setting:
-// comma-separated "id" or "id:aux" entries (aux omitted when 0). See
-// parseCustomPrimsSetting() in primitive-decompose.js, the PKJS-side parser.
-
 function composerClientBody() {
   var COMPOSER = { items: [], selected: -1, addGroup: 0, dragFrom: -1 };
 
@@ -32,8 +10,6 @@ function composerClientBody() {
         if (it.id === id && !!it.customText === isTxt) return it;
       }
     }
-    // Elements no longer offered for building (e.g. the old "H"/"L" labels) still show up in
-    // features that were started from a prebuilt one.
     return PRIMITIVE_LABEL_BY_ID[id] ? { id: id, label: PRIMITIVE_LABEL_BY_ID[id] } : null;
   }
   function composerPaletteByValue(value) {
@@ -60,7 +36,6 @@ function composerClientBody() {
     return z ? (z.abbr || z.label.split(" ")[0]) : ("zone " + aux);
   }
 
-  // Supplies the option list and row label for each parameterized element.
   var PARAM_OPTIONS = { timezone: TIMEZONE_ZONES, forecast: FORECAST_SLOTS };
   var PARAM_ROW_LABEL = { timezone: "Zone", forecast: "Forecast slot", plugin: "Plugin data source" };
   function composerParamShortLabel(param, aux) {
@@ -97,11 +72,6 @@ function composerClientBody() {
     return items.map(function (it) { return it.aux ? (it.id + ":" + it.aux) : String(it.id); }).join(",");
   }
 
-  // A prebuilt feature starts with its default primitive sequence.
-  // content id transports as, including per-position aux (zone
-  // index for the time-zone contents). Empty when that content has no
-  // transport sequence (None, astronomy, composites that aren't
-  // transport-enabled yet).
   function composerItemsForContent(contentVal) {
     var cid = parseInt(contentVal, 10);
     var seq = PRIMITIVE_TRANSPORT_SEQUENCES[cid] || [];
@@ -113,11 +83,6 @@ function composerClientBody() {
     return out;
   }
 
-  // Text the settings page's watch preview draws for a corner's stored
-  // custom sequence ("id" / "id:aux" entries), or "" when there is none
-  // (so the caller falls back to the Content dropdown's label). Zone
-  // primitives are rendered from their aux byte: name, a fixed sample
-  // time, and PM.
   function composerPreviewLabel(stored) {
     var items = composerParse(stored);
     if (!items.length) return "";
@@ -149,7 +114,6 @@ function composerClientBody() {
     var strip = document.getElementById("composerStrip");
     strip.innerHTML = COMPOSER.items.map(function (it, idx) {
       var cls = "composer-chip" + (idx === COMPOSER.selected ? " selected" : "");
-      // Dragging supplements the arrow controls, which remain keyboard accessible.
       return "<button type=\"button\" class=\"" + cls + "\" draggable=\"true\"" +
         " ondragstart=\"composerDragStart(" + idx + ")\" ondragover=\"composerDragOver(event)\" ondrop=\"composerDrop(" + idx + ")\"" +
         " onclick=\"composerSelect(" + idx + ")\">" +
@@ -162,7 +126,6 @@ function composerClientBody() {
     document.getElementById("composerLeft").disabled = (sel <= 0);
     document.getElementById("composerRight").disabled = (sel < 0 || sel >= n - 1);
     document.getElementById("composerDelete").disabled = (sel < 0 || n <= 1);
-    // Zone picker for the *selected* primitive, only when it takes a zone.
     var zoneRow = document.getElementById("composerSelZoneRow");
     var selPal = sel >= 0 ? composerFindPaletteItem(COMPOSER.items[sel].id, COMPOSER.items[sel].aux) : null;
     if (selPal && selPal.param) {
@@ -182,8 +145,6 @@ function composerClientBody() {
     } else {
       txtRow.style.display = "none";
     }
-    // The result is drawn as it would look on the watch by renderSlotEditPreview()
-    // (top of the popup), not as chips.
     renderSlotEditPreview();
     composerUpdateAddZoneVisibility();
   }
@@ -194,9 +155,6 @@ function composerClientBody() {
     composerRender();
   }
 
-  // The top-row "+" control appends a Space element.
-  // editable default -- and selects it so the person can immediately swap
-  // it via the palette below or move it.
   function composerPlus() {
     COMPOSER.items.push({ id: PRIM_SPACE_ID, aux: 0 });
     COMPOSER.selected = COMPOSER.items.length - 1;
@@ -253,10 +211,8 @@ function composerClientBody() {
     COMPOSER.dragFrom = idx;
   }
   function composerDragOver(ev) {
-    ev.preventDefault(); // required for drop to fire (native HTML5 DnD)
+    ev.preventDefault();
   }
-  // Move the dragged item to the drop target. Arrow controls provide
-  // the same reordering action for keyboard users.
   function composerDrop(idx) {
     var from = COMPOSER.dragFrom;
     COMPOSER.dragFrom = -1;
@@ -267,10 +223,6 @@ function composerClientBody() {
     composerRender();
   }
 
-  // ---- add-from-palette ------------------------------------------------
-  // Plugin data sources are listed from what the Pebble app reports (see
-  // config-plugins.js); a source not yet assigned a watch slot is offered as
-  // "c<catalogue index>" and gets its slot only when actually chosen.
   function composerParamValueToAux(param, value) {
     if (param === "plugin") return pluginAuxFromValue(value);
     return parseInt(value, 10) || 0;
@@ -290,7 +242,7 @@ function composerClientBody() {
 
   function composerBuildPalette() {
     var groupSel = document.getElementById("composerAddGroup");
-    if (groupSel.getAttribute("data-built")) return; // static, build once
+    if (groupSel.getAttribute("data-built")) return;
     groupSel.setAttribute("data-built", "1");
     groupSel.innerHTML = PRIMITIVE_PALETTE.map(function (g, gi) {
       return "<option value=\"" + gi + "\">" + esc(g.group) + "</option>";
@@ -320,9 +272,6 @@ function composerClientBody() {
     }
   }
 
-  // Selecting a primitive from the palette appends it;
-  // it never replaces the selected one -- use Delete + Add, or, for a
-  // parametrized primitive, the zone picker above the palette.
   function composerAddFromPalette() {
     var pal = composerPaletteByValue(document.getElementById("composerAddItem").value);
     if (!pal) return;
@@ -344,7 +293,6 @@ function composerClientBody() {
     composerRender();
   }
 
-  // ---- lifecycle hooks called from the slot editor ----------------------
   function composerOpen(def) {
     var section = document.getElementById("slotEditCustomPrimsSection");
     if (!def.customPrimsId) { section.style.display = "none"; section.setAttribute("data-available", "0"); document.getElementById("slotEditCustomPrimsToggle").checked = false; document.getElementById("slotEditPrebuiltBlock").style.display = ""; COMPOSER.items = []; slotEditUpdateKindButtons(); return; }
@@ -357,7 +305,6 @@ function composerClientBody() {
     COMPOSER.dragFrom = -1;
     document.getElementById("slotEditCustomPrimsToggle").checked = (COMPOSER.items.length > 0);
     document.getElementById("slotEditCustomPrimsBody").style.display = COMPOSER.items.length ? "" : "none";
-    // Building from elements replaces the Category/Content pickers.
     document.getElementById("slotEditPrebuiltBlock").style.display = COMPOSER.items.length ? "none" : "";
     setSlotEditorColorGroupVisibility(document.getElementById("slotEditContent").value);
     composerSetError("");
@@ -365,28 +312,19 @@ function composerClientBody() {
     composerRender();
   }
 
-  // Turning the toggle on with an empty working copy seeds it from the
-  // Content dropdown's current choice ("start from what's already there").
-  // Turning it off keeps the working copy (re-enabling restores it) but
-  // saveSlotEditor() then commits nothing.
   function slotEditUpdateKindButtons() {
-    // Three states: OFF (nothing shown: content 0, no custom elements), PREDEFINED, CUSTOM.
     var on = document.getElementById("slotEditCustomPrimsToggle").checked;
     var off = !on && document.getElementById("slotEditContent").value === "0";
     var active = on ? 2 : (off ? 0 : 1);
     var group = document.getElementById("slotEditKindGroup");
     var btns = group.getElementsByClassName("mode-btn");
     for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + (i === active ? " active" : "");
-    // Slots without custom support lose only the CUSTOM button, not the whole selector.
     var customAvail = document.getElementById("slotEditCustomPrimsSection").getAttribute("data-available") !== "0";
     if (btns[2]) btns[2].style.display = customAvail ? "" : "none";
-    // Category / Content only make sense for PREDEFINED.
     document.getElementById("slotEditPrebuiltBlock").style.display = (on || off) ? "none" : "";
   }
   function slotEditSetKind(custom) {
     if (!custom && document.getElementById("slotEditContent").value === "0") {
-      // Nothing chosen yet (coming from OFF or from an empty custom): start on the first real
-      // category and its first item.
       document.getElementById("slotEditCustomPrimsToggle").checked = false;
       document.getElementById("slotEditCustomPrimsBody").style.display = "none";
       selectSlotEditCategory(CORNER_CATEGORIES[1].id);
@@ -396,7 +334,6 @@ function composerClientBody() {
     document.getElementById("slotEditCustomPrimsToggle").checked = !!custom;
     composerOnToggle();
   }
-  // OFF: the feature shows nothing. Replaces the old "None" category button.
   function slotEditSetOff() {
     document.getElementById("slotEditCustomPrimsToggle").checked = false;
     COMPOSER.items = [];
@@ -417,8 +354,6 @@ function composerClientBody() {
   function composerOnToggle() {
     var on = document.getElementById("slotEditCustomPrimsToggle").checked;
     document.getElementById("slotEditCustomPrimsBody").style.display = on ? "" : "none";
-    // Category and Content (with their labels) are hidden while building from
-    // elements; the style buttons stay, and the preview follows them.
     document.getElementById("slotEditPrebuiltBlock").style.display = on ? "none" : "";
     setSlotEditorColorGroupVisibility(document.getElementById("slotEditContent").value);
     if (on && !COMPOSER.items.length) {
@@ -430,11 +365,6 @@ function composerClientBody() {
     composerRender();
   }
 
-  // ---- live preview at the top of the popup ------------------------------
-  // Draws the feature the way the watch shows it: the feature font, the
-  // current background colour, the selected style (MONO / ACC / PILL / COLOR)
-  // and the outline setting. Icons are the real icon art (same helpers as the
-  // main preview). Called whenever anything that affects it changes.
   function slotEditPreviewLabel() {
     var customOn = document.getElementById("slotEditCustomPrimsToggle").checked;
     if (customOn) return composerPreviewLabel(composerSerialize(COMPOSER.items));
@@ -459,9 +389,6 @@ function composerClientBody() {
     var colors = nightActive ? nightColors() : dayColors();
     var mode = SLOT_EDITOR_DRAFT_COLOR;
 
-    // Background: the watch's background colour. With PILL a faint pattern sits
-    // behind the capsule, since a pill in the background colour is otherwise
-    // invisible on a plain background.
     ctx.fillStyle = colors.bg;
     ctx.fillRect(0, 0, cssW, cssH);
     if (mode === 2) {
@@ -535,9 +462,6 @@ function composerClientBody() {
     }
   }
 
-  // Returns the string to store in the slot's hidden input, or null if the
-  // composer refuses to commit (a message is shown and the popup must stay
-  // open; sequences are never silently truncated).
   function composerCommitValue() {
     if (!document.getElementById("slotEditCustomPrimsToggle").checked) return "";
     var n = COMPOSER.items.length;
@@ -547,7 +471,5 @@ function composerClientBody() {
   }
 }
 
-// Strip the function wrapper: what remains is the plain function
-// declarations, ready to be spliced into the generated <script> as globals.
 var src = composerClientBody.toString();
 module.exports = src.slice(src.indexOf('{') + 1, src.lastIndexOf('}'));

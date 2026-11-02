@@ -1,11 +1,4 @@
-// ---- planets (low-precision Keplerian elements, valid ~1800-2050,
-// from the standard set published for approximate major-planet
-// positions -- accurate to a few arcminutes, which is all a <=10px
-// decorative dot needs). Orbital periods implied by each LDot were
-// checked against the real values before use (Mercury 87.97d, Venus
-// 224.7d, Mars 1.881yr, Jupiter 11.86yr, Saturn 29.45yr -- all match).
-//
-
+// planets (low-precision Keplerian elements, valid ~1800-2050,
 var angles = require('./angles');
 var DEG = angles.DEG;
 var sind = angles.sind;
@@ -56,9 +49,6 @@ var SATURN_ELEMENTS = {
   node0: 113.66242448, nodeDot: -0.28867794
 };
 
-// Solves Kepler's equation M = E - e*sin(E) for the eccentric
-// anomaly E (degrees) via Newton-Raphson, working in radians
-// internally since that's what the iteration needs.
 function solveKeplerDeg(Mdeg, e) {
   var M = Mdeg * DEG;
   var E = M;
@@ -70,8 +60,6 @@ function solveKeplerDeg(Mdeg, e) {
   return E / DEG;
 }
 
-// Heliocentric ecliptic rectangular coordinates (AU) of a body given
-// its Keplerian elements at Julian century T.
 function heliocentricEcliptic(elements, T) {
   var a = elements.a0 + elements.aDot * T;
   var e = elements.e0 + elements.eDot * T;
@@ -100,20 +88,12 @@ function heliocentricEcliptic(elements, T) {
   return { x: xh, y: yh, z: zh };
 }
 
-// Earth's own heliocentric position, derived from the Sun's already-
-// computed geocentric apparent longitude/distance rather than a
-// separate set of Earth elements -- the Sun's apparent position lies
-// in the ecliptic (latitude 0) by definition, so Earth's heliocentric
-// longitude is just the Sun's geocentric longitude + 180 degrees.
 function earthHeliocentric(sun) {
   var lonEarth = norm360(sun.eclipticLon + 180);
   var R = sun.distanceAU;
   return { x: R * cosd(lonEarth), y: R * sind(lonEarth), z: 0 };
 }
 
-// Generic geocentric position for any body given its Keplerian
-// elements -- returns geocentric ecliptic lon/lat too (not just
-// RA/Dec), since Saturn's ring-angle calculation needs those.
 function planetPosition(elements, T, sun) {
   var helio = heliocentricEcliptic(elements, T);
   var earth = earthHeliocentric(sun);
@@ -125,25 +105,13 @@ function planetPosition(elements, T, sun) {
   var dist = Math.sqrt(x * x + y * y + z * z);
   var lat = asind(z / dist);
 
-  var eps0 = 23.4392911 - 0.0130042 * T; // mean obliquity, low precision
+  var eps0 = 23.4392911 - 0.0130042 * T;
   var ra = norm360(atan2d(sind(lon) * cosd(eps0) - tand(lat) * sind(eps0), cosd(lon)));
   var dec = asind(sind(lat) * cosd(eps0) + cosd(lat) * sind(eps0) * sind(lon));
 
   return { ra: ra, dec: dec, distanceAU: dist, eclipticLon: lon, eclipticLat: lat };
 }
 
-/**
- * Saturn's ring-opening angle B (degrees, -26.7..+26.7) as seen from
- * Earth -- 0 means the rings are edge-on (invisible/a thin line),
- * +-26.7 means maximally open. Real ring-plane crossings happen
- * roughly every ~15 years (most recently March 2025); this is why
- * the rings look "narrow" right now and will visibly widen over the
- * next several years. Standard formula (Meeus ch. 45), using
- * Saturn's ring-plane inclination/node (distinct from its orbital
- * elements above -- the ring plane is Saturn's *equatorial* plane,
- * tilted ~26.7 deg to its orbit) and Saturn's own geocentric
- * ecliptic longitude/latitude.
- */
 function saturnRingAngle(T, saturnLon, saturnLat) {
   var i = 28.075216 - 0.012998 * T + 0.000004 * T * T;
   var omega = 169.508470 + 1.394681 * T + 0.000412 * T * T;

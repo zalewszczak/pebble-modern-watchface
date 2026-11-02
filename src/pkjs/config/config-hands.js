@@ -1,13 +1,6 @@
-// ---- Hand settings and per-hand editor ----------------------------------
-
+// Hand settings and per-hand editor
 var esc = require('./config-template').esc;
 var schemeColorOptionsHtml = require('./config-colors').schemeColorOptionsHtml;
-
-// The 14 fields per hand (hour/min/sec -- 42 total) that get sent to the
-// watch, kept as hidden inputs edited via the 3 popups below, same
-// pattern as customMarkerHiddenInputsHtml() (config-markers.js).
-// Defaults approximate the "Pointy" procedural style so hands are
-// visible immediately, rather than defaulting to width/length 0.
 
 function handHiddenInputsHtml(current) {
   var d = {
@@ -35,17 +28,11 @@ function handHiddenInputsHtml(current) {
   return html;
 }
 
-// The hour/minute/second custom-hand popup -- kind is 'hour', 'min', or
-// 'sec'. Same "draft in the popup, commit on OK" pattern as
-// customMarkerModalHtml().
-// Copy-preset direction is fixed per hand (not "the other one" generically,
-// per how this was asked for): hour offers to copy minute's settings,
-// minute offers hour's, second offers minute's.
 var HAND_COPY_SOURCE = { hour: 'min', min: 'hour', sec: 'min' };
 var HAND_COPY_SOURCE_LABEL = { hour: 'minute', min: 'hour', sec: 'minute' };
 
 function handEditorModalHtml(kind, title) {
-  var p = 'he' + kind.charAt(0).toUpperCase() + kind.slice(1); // heHour / heMin / heSec
+  var p = 'he' + kind.charAt(0).toUpperCase() + kind.slice(1);
   return (
 '<div class="modal-overlay" id="handEditorModal-' + kind + '" onclick="if (event.target === this) closeHandEditor(\'' + kind + '\');">' +
 '  <div class="modal-box">' +

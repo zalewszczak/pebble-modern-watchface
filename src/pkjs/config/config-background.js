@@ -1,31 +1,4 @@
-// ---- custom background: settings-page half -------------------------------------
-//
-// "Use custom background" in the Style section: a gallery of predefined
-// images (resources/backgrounds/<n>.png, baked into the page by
-// scripts/generate-backgrounds.js) plus 9 "My images" slots the user fills
-// from their own photos through a crop / zoom / style / dither editor.
-//
-// Wire/storage format of one user image (what a slot stores, and what the
-// phone sends to the watch): the screen is W x H = 200 x 228 (Pebble Time 2),
-// each pixel is a 64-colour value v = (r2 << 4) | (g2 << 2) | b2 where each
-// 2-bit channel level 0..3 means 0/85/170/255. Row-major (y * 200 + x); four
-// pixels are packed into three bytes:
-//   b0 = (v0 << 2) | (v1 >> 4)
-//   b1 = ((v1 & 15) << 4) | (v2 >> 2)
-//   b2 = ((v2 & 3) << 6) | v3
-// 45600 pixels -> exactly 34200 bytes. A slot holds those bytes as base64url
-// (A-Za-z0-9-_, no padding): 45600 characters. An empty slot is absent / "".
-//
-// Page <-> phone contract: the page receives current.useCustomBg,
-// current.bgSource ("p:<n>" predefined / "u:<k>" my image) and
-// current.bgSlots ({ "<k>": base64url }); it returns #useCustomBg, #bgSource
-// and the JS global bgSlotUpdates ({ "<k>": base64url, or "" = deleted },
-// only slots changed this session).
-//
-// Everything browser-side is emitted as one script chunk by backgroundScript();
-// the pure image helpers in it (pack/unpack, base64url, style, dither) have no
-// DOM dependency, so they can be exercised from Node (see the scratchpad test).
-
+// custom background: settings-page half
 var esc = require('./config-template').esc;
 var bgImages = require('../data/generated/background-images');
 var weatherBgs = require('../data/generated/weather-backgrounds');
@@ -33,7 +6,7 @@ var weatherBgs = require('../data/generated/weather-backgrounds');
 var BG_W = 200;
 var BG_H = 228;
 var BG_SLOT_COUNT = 9;
-var BG_PACKED_B64_LENGTH = 45600; // ceil(200 * 228 / 4 * 3 * 4 / 3)
+var BG_PACKED_B64_LENGTH = 45600;
 
 function parseSource(current) {
   var m = /^([pu]):([0-9]+)$/.exec(String((current && current.bgSource) || ''));
@@ -67,8 +40,6 @@ function isOn(current) {
   return !!current && (current.useCustomBg === true || current.useCustomBg === 'true');
 }
 
-// Background style PLUGIN: a picture supplied by a Pebble plugin, processed on the
-// phone (plugin-image.js) with the options below and sent to the watch's volatile slot.
 function isPluginOn(current) {
   return !!current && (current.usePluginBg === true || current.usePluginBg === 'true') && !isOn(current) && !isWeatherOn(current);
 }
@@ -91,8 +62,6 @@ function pluginSourceLabel(src) {
   return String(src.pluginName || 'Plugin') + ' - ' + src.category + ' / ' + src.item + ': ' + src.label;
 }
 
-// The sources that can deliver a picture right now. A saved source that is no
-// longer offered stays selectable (so a save does not silently change it).
 function pluginSourceOptions(current) {
   var cat = current && current.pluginCatalogue;
   var list = (cat && cat.status === 'ok' && Array.isArray(cat.imageSources)) ? cat.imageSources : [];
@@ -122,8 +91,6 @@ function weatherStyleOptions(current) {
   }).join('');
 }
 
-// The checkbox row + the (collapsed-until-checked) gallery panel. Lives inside
-// #section-style so #useCustomBg / #bgSource are captured by style presets.
 function backgroundSectionHtml(current) {
   var numbers = bgImages.numbers || [];
   var pluginSrc = pluginSourceOptions(current);
@@ -138,9 +105,6 @@ function backgroundSectionHtml(current) {
   } else {
     presetHtml = '<div class="help">No predefined backgrounds yet.</div>';
   }
-  // Returns only the INNER content: config-page.js wraps it in the same
-  // collapsible subsection (subsectionLegendHtml + .subsection-body) that
-  // Hands style and Indices style use.
   return '' +
 '    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
 '      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) && !isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
@@ -149,8 +113,6 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
 '    </div>' +
 '    <div class="help"><b>IMAGE</b> = a predefined image or your own photo, <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
-// The two checkboxes stay as the (hidden) state behind the buttons: presets, save() and the
-// preview all read them, so nothing else needs to know about the button group.
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
@@ -193,8 +155,6 @@ function backgroundSectionHtml(current) {
 '    </div>';
 }
 
-// The crop/zoom/style/dither editor. Page-level (NOT inside #section-style) so
-// its controls never leak into style presets.
 function backgroundModalHtml() {
   return '' +
 '<div class="modal-overlay" id="bgEditorModal">' +
@@ -243,7 +203,6 @@ function backgroundModalHtml() {
 }
 
 var CLIENT_BODY =
-'// ---- Custom background: pure image helpers (no DOM) ---------------------------\n' +
 'var BG_B64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";\n' +
 'var BG_B64_REV = null;\n' +
 'function bgB64urlEncode(bytes) {\n' +
@@ -280,8 +239,6 @@ var CLIENT_BODY =
 '  }\n' +
 '  return out;\n' +
 '}\n' +
-'// 4 six-bit pixel values -> 3 bytes (see the wire format comment in\n' +
-'// config-background.js).\n' +
 'function bgPackPixels(vals) {\n' +
 '  var n = vals.length;\n' +
 '  var out = new Uint8Array(Math.ceil(n / 4) * 3);\n' +
@@ -309,7 +266,6 @@ var CLIENT_BODY =
 '  }\n' +
 '  return vals;\n' +
 '}\n' +
-'// 6-bit pixel values (rrggbb) -> RGBA bytes with channel levels 0/85/170/255.\n' +
 'function bgValsToRgba(vals, rgba) {\n' +
 '  for (var i = 0, n = vals.length; i < n; i++) {\n' +
 '    var v = vals[i];\n' +
@@ -321,8 +277,6 @@ var CLIENT_BODY =
 '  }\n' +
 '}\n' +
 'function bgClamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }\n' +
-'// RGBA bytes -> float RGB (alpha composited over black) with the chosen\n' +
-'// image style applied. style: "neutral" | "bw" | "sepia" | "vivid".\n' +
 'function bgStyleRgb(rgba, n, style) {\n' +
 '  var f = new Float32Array(n * 3);\n' +
 '  for (var i = 0; i < n; i++) {\n' +
@@ -365,8 +319,6 @@ var CLIENT_BODY =
 '  var l = Math.floor(v / 85 + 0.5);\n' +
 '  return l < 0 ? 0 : (l > 3 ? 3 : l);\n' +
 '}\n' +
-'// Float RGB (0-255) -> 6-bit pixel values, 4 levels per channel.\n' +
-'// mode: "none" | "fs" (Floyd-Steinberg) | "atkinson" | "bayer4" | "bayer8".\n' +
 'function bgQuantize(f, w, h, mode) {\n' +
 '  var n = w * h;\n' +
 '  var vals = new Uint8Array(n);\n' +
@@ -426,7 +378,6 @@ var CLIENT_BODY =
 '  return off;\n' +
 '}\n' +
 '\n' +
-'// ---- Custom background: page state ----------------------------------------------\n' +
 'var bgSlotUpdates = {};\n' +
 'var bgSlotCanvas = {};\n' +
 'var bgSlotThumb = {};\n' +
@@ -469,7 +420,6 @@ var CLIENT_BODY =
 '  return bgSlotThumb[k];\n' +
 '}\n' +
 '\n' +
-'// What the main preview should draw behind the indices right now, or null.\n' +
 'function bgActiveSource() {\n' +
 '  if (bgEd.open) return bgEd.src ? bgEl("bgEdCanvas") : null;\n' +
 '  var wbox = bgEl("useWeatherBg");\n' +
@@ -507,7 +457,6 @@ var CLIENT_BODY =
 '  var dw = nw * w / BG_W, dh = nh * h / BG_H;\n' +
 '  var trans = bgEl("bgTranslucent");\n' +
 '  if (trans && trans.checked) {\n' +
-'    // Same checkerboard as the watch: keep the even (x + y) pixels, the plain background shows through the rest.\n' +
 '    try {\n' +
 '      var tmp = document.createElement("canvas"); tmp.width = w; tmp.height = h;\n' +
 '      var tctx = tmp.getContext("2d");\n' +
@@ -534,7 +483,6 @@ var CLIENT_BODY =
 '  return BG_PRESET_NUMBERS.length ? " + background " + s.n : "";\n' +
 '}\n' +
 '\n' +
-'// ---- Custom background: gallery ------------------------------------------------\n' +
 'function bgSyncUi() {\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var panel = bgEl("bgPanel");\n' +
@@ -572,7 +520,6 @@ var CLIENT_BODY =
 '  }\n' +
 '  host.innerHTML = html;\n' +
 '}\n' +
-'// Collapsed-header thumbnail + sub-header for the Background style subsection.\n' +
 'function refreshBackgroundSubsectionPreview() {\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var html = "", title = "Plain background color";\n' +
@@ -612,7 +559,6 @@ var CLIENT_BODY =
 '  if (wb) wb.checked = (m === 2);\n' +
 '  if (pb) pb.checked = (m === 3);\n' +
 '  if (m === 2) {\n' +
-'    // Night pictures go with the night color scheme: switch it on.\n' +
 '    var ne = bgEl("nightEnabled");\n' +
 '    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
 '  }\n' +
@@ -629,7 +575,6 @@ var CLIENT_BODY =
 '  if (wb && wb.checked) {\n' +
 '    if (cb) cb.checked = false;\n' +
 '    if (pb) pb.checked = false;\n' +
-'    // Night pictures go with the night color scheme: switch it on.\n' +
 '    var ne = bgEl("nightEnabled");\n' +
 '    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
 '  }\n' +
@@ -649,7 +594,6 @@ var CLIENT_BODY =
 '    bgRefresh();\n' +
 '  }, { danger: true, confirmLabel: "Delete" });\n' +
 '}\n' +
-'// Called after a style preset / example style has rewritten #useCustomBg and #bgSource.\n' +
 'function bgAfterStyleApplied() {\n' +
 '  var cb0 = bgEl("useCustomBg"), wb0 = bgEl("useWeatherBg"), pb0 = bgEl("usePluginBg");\n' +
 '  if (cb0 && wb0 && cb0.checked) wb0.checked = false;\n' +
@@ -659,7 +603,6 @@ var CLIENT_BODY =
 '  bgSyncUi();\n' +
 '}\n' +
 '\n' +
-'// ---- Custom background: editor modal ---------------------------------------------\n' +
 'function bgEdSchedule() {\n' +
 '  if (bgEd.raf) return;\n' +
 '  var raf = window.requestAnimationFrame || function (fn) { return setTimeout(fn, 16); };\n' +
@@ -682,8 +625,6 @@ var CLIENT_BODY =
 '  var rctx = bgEd.raw.getContext("2d");\n' +
 '  rctx.fillStyle = "#000";\n' +
 '  rctx.fillRect(0, 0, BG_W, BG_H);\n' +
-'  // Pick the mip level whose own scale lands in (0.5, 1] so big photos are\n' +
-'  // box-filtered down instead of aliasing.\n' +
 '  var lvl = 0, s = bgEd.scale;\n' +
 '  while (lvl + 1 < bgEd.mips.length && s * 2 <= 1.0001) { s *= 2; lvl++; }\n' +
 '  var mip = bgEd.mips[lvl];\n' +
@@ -705,7 +646,6 @@ var CLIENT_BODY =
 '  bgEd.offX = bgClampOff(bgEd.offX, bgEd.sw * bgEd.scale, BG_W);\n' +
 '  bgEd.offY = bgClampOff(bgEd.offY, bgEd.sh * bgEd.scale, BG_H);\n' +
 '}\n' +
-'// Zoom keeping the viewport point (cx, cy) fixed.\n' +
 'function bgEdZoomAt(zoom, cx, cy) {\n' +
 '  if (!bgEd.src) return;\n' +
 '  if (zoom < 1) zoom = 1;\n' +

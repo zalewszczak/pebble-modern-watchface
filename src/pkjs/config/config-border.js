@@ -1,16 +1,4 @@
-// ---- weather border: settings-page half ----------------------------------------
-//
-// "Border style" subsection of the Style section. The watch draws a band
-// (2-40 px) along the screen edge into the cached background, below the
-// indices; each clock-position sector shows the weather for the hour that
-// will next be at that position (see src/c/rendering/dial/weather_border.c,
-// which this page's drawing mirrors).
-//
-// Page <-> phone contract: hidden input #borderWeatherMode ("0" off,
-// "1" conditions, "2" temperature) and range #borderWeatherPx (2-40).
-// The checkbox #borderWeatherEnabled and select #borderWeatherModeSel only
-// drive the hidden input.
-
+// weather border: settings-page half
 var esc = require('./config-template').esc;
 var SEVEN_STOPS = require('../weather/weather-normalize').SEVEN_STOP_GRADIENT_STOPS;
 
@@ -91,9 +79,6 @@ function borderCss() { return CSS_TEXT; }
 function borderScript() {
   return '' +
 'var BORDER_STOPS = ' + JSON.stringify(SEVEN_STOPS) + ';\n' +
-// Mirrors src/c/rendering/dial/weather_border.c (keep the two in step).
-// Weather classes: 0 clear, 1 partly, 2 overcast, 3 fog, 4 drizzle, 5 rain,
-// 6 heavy rain, 7 snow, 8 thunder, 9 sleet.
 'var BORDER_WX_NAMES = ["Clear", "Partly cloudy", "Overcast", "Fog", "Drizzle", "Rain", "Heavy rain", "Snow", "Thunderstorm", "Sleet"];\n' +
 'var BORDER_WX_DETAILED = [null, [170,170,170], null, [85,85,85], [170,255,255], [0,85,255], [0,0,170], [255,255,255], [255,255,0], [85,170,255]];\n' +
 'var BORDER_WX_HAZARD = [null, [170,255,170], [0,255,0], [255,255,85], [255,255,0], [255,170,0], [255,0,0], [170,0,255], [255,0,255], [255,0,170]];\n' +
@@ -106,11 +91,9 @@ function borderScript() {
 '  3: ["White to turquoise", "Blue ramp", "Traffic light (steps)"],\n' +
 '  4: ["Default colors of each", "Alternative 1 of each", "Alternative 2 of each"]\n' +
 '};\n' +
-// Sample 12 h outlook (index 0 = +1 h) used for the diagram and the preview.
 'var BORDER_SAMPLE_WX = [0, 1, 2, 3, 4, 5, 6, 8, 7, 9, 1, 0];\n' +
 'var BORDER_SAMPLE_RAIN = [0, 10, 20, 30, 45, 60, 85, 90, 70, 55, 15, 0];\n' +
 'var BORDER_SAMPLE_TEMP = [-5, 0, 5, 10, 14, 18, 22, 26, 30, 24, 16, 8];\n' +
-// GColorFromRGB keeps the top 2 bits of each channel (0/85/170/255).
 'function borderQ(v) { return Math.max(0, Math.min(3, v >> 6)) * 85; }\n' +
 'function borderRgb(r, g, b) { return [borderQ(r), borderQ(g), borderQ(b)]; }\n' +
 'function borderLerp(stops, value, minV, maxV) {\n' +
@@ -131,7 +114,6 @@ function borderScript() {
 '  var f = Math.trunc((Math.max(0, Math.min(100, p)) * 1000) / 100);\n' +
 '  return borderRgb(255 - Math.trunc((191 * f) / 1000), 255 - Math.trunc((31 * f) / 1000), 255 - Math.trunc((47 * f) / 1000));\n' +
 '}\n' +
-// Each fill returns [c0, c1] (null = transparent).
 'function borderFillConditions(wx, scheme) {\n' +
 '  var G1 = [85, 85, 85], G2 = [170, 170, 170], none = [null, null];\n' +
 '  if (wx === 0) return none;\n' +
@@ -154,7 +136,6 @@ function borderScript() {
 '  else { if (p < 20) return [null, null]; c = p < 50 ? [255, 255, 0] : (p < 80 ? [255, 170, 0] : [255, 0, 0]); }\n' +
 '  return [c, c];\n' +
 '}\n' +
-// -> layers[layer][sector] = [c0, c1]; hours[sector] = hours ahead. Layer 0 = outermost.
 'function borderSectorColors(mode, scheme, hour12) {\n' +
 '  var nl = mode === 4 ? 3 : 1, layers = [], hours = [], l, s;\n' +
 '  for (l = 0; l < nl; l++) { var row = []; for (s = 0; s < 12; s++) row.push([null, null]); layers.push(row); }\n' +
@@ -172,14 +153,12 @@ function borderScript() {
 '  }\n' +
 '  return { layers: layers, hours: hours };\n' +
 '}\n' +
-// Same integer sector math as weather_border.c's sector_of().
 'function borderSectorOf(dx, dy) {\n' +
 '  var ax = Math.abs(dx), ay = Math.abs(dy), band;\n' +
 '  if (ax * 1000 < ay * 268) band = 0; else if (ax < ay) band = 1; else if (ax * 1000 < ay * 3732) band = 2; else band = 3;\n' +
 '  if (dy < 0) return dx >= 0 ? band : (12 - band) % 12;\n' +
 '  return dx >= 0 ? 6 - band : (6 + band) % 12;\n' +
 '}\n' +
-// Draws the band onto ctx (size w x h, thickness px in 200-px watch units).
 'function drawBorderBand(ctx, w, h, px, look, semi) {\n' +
 '  var scale = w / 200, t = Math.max(1, Math.round(px * scale)), nl = look.layers.length;\n' +
 '  var id = ctx.createImageData(w, h), d = id.data;\n' +
@@ -201,8 +180,6 @@ function borderScript() {
 'function borderScheme() { var el = document.getElementById("borderWeatherScheme"); var v = el ? parseInt(el.value, 10) : 0; return (v === 1 || v === 2) ? v : 0; }\n' +
 'function borderSemi() { var el = document.getElementById("borderWeatherSemi"); return !!(el && el.checked); }\n' +
 'function borderPx() { var el = document.getElementById("borderWeatherPx"); var v = el ? parseInt(el.value, 10) : 8; return isNaN(v) ? 8 : Math.max(2, Math.min(40, v)); }\n' +
-// Main preview hook (called from updatePreview(), between background and indices).
-// Shake-only borders are shown here too: the preview is always "awake".
 'function drawWeatherBorderPreview(ctx, w, h) {\n' +
 '  var mode = borderMode();\n' +
 '  if (!mode) return;\n' +
@@ -211,8 +188,6 @@ function borderScript() {
 'function borderCss3(c) { return c ? "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" : "transparent"; }\n' +
 'function borderTitle(mode) { return ["", "Weather conditions", "Temperature", "Rain chance", "All three"][mode]; }\n' +
 'function borderGradientCss(fn, n) { var g = []; for (var i = 0; i <= n; i++) g.push(borderCss3(fn(i / n))); return "linear-gradient(90deg," + g.join(",") + ")"; }\n' +
-// Legend scale: a tick and a label at 0, 25, 50, 75 and 100 % of the bar. The temperature bar
-// spans -10..40 C; its labels follow the temperature unit picked in the Weather section (whole numbers; the unit sits beside the bar).
 'function borderScale(ticks) {\n' +
 '  var html = \'<div class="scale">\';\n' +
 '  ticks.forEach(function (t, i) {\n' +
@@ -225,7 +200,6 @@ function borderScript() {
 '  var el = document.getElementById("tempUnit"), unit = el ? el.value : "C";\n' +
 '  return unit === "F" ? "&deg;F" : (unit === "K" ? "K" : "&deg;C");\n' +
 '}\n' +
-// Whole numbers only (rounded, no fractions) and no unit on the labels: the unit is shown once, beside the bar.
 'function borderTempTicks() {\n' +
 '  var el = document.getElementById("tempUnit"), unit = el ? el.value : "C";\n' +
 '  var out = [];\n' +
@@ -259,8 +233,6 @@ function borderScript() {
 '  }\n' +
 '  return html;\n' +
 '}\n' +
-// The labelled diagram inside the expanded section: a mini watch whose edge
-// carries the border, with the "+N h" label of every sector at its clock position.
 'function renderBorderDiagram() {\n' +
 '  var cv = document.getElementById("borderDiagram");\n' +
 '  if (!cv || !cv.getContext) return;\n' +
@@ -313,7 +285,6 @@ function borderScript() {
 '  if (panel) panel.style.display = mode ? "" : "none";\n' +
 '  var pv = document.getElementById("borderWeatherPxVal");\n' +
 '  if (pv) pv.textContent = borderPx() + "px";\n' +
-// Scheme names depend on the style; keep the chosen index.
 '  var sc = document.getElementById("borderWeatherScheme");\n' +
 '  if (sc) { var names = BORDER_SCHEME_NAMES[mode || 1]; for (var i = 0; i < 3; i++) sc.options[i].text = names[i]; }\n' +
 '  var warn = document.getElementById("borderCombinedWarn");\n' +

@@ -1,14 +1,4 @@
-/**
- * astro.js -- phone-side (PKJS) astronomy facade.
- *
- * Low-precision Meeus series for the Sun, Moon and planets, used by
- * the watch features (moon phase, sun event, planets visible, next
- * planet rise, Saturn rings, meteor showers, ISS passes, aurora).
- * Domain modules live under astronomy/: angles.js, sun.js, moon.js,
- * planets.js, geometry.js (alt/az + rise/set), meteors.js, aurora.js,
- * iss-orbit.js. This file re-exports the public API.
- */
-
+// astro.js -- phone-side (PKJS) astronomy facade.
 var geometry = require('./astronomy/geometry');
 var moon = require('./astronomy/moon');
 var meteors = require('./astronomy/meteors');

@@ -1,5 +1,4 @@
-// ---- Marker controls: index grids, rings, and marker text ----------------
-
+// Marker controls: index grids, rings, and marker text
 var configTemplate = require('./config-template');
 var esc = configTemplate.esc;
 var modeButtonGroupHtml = configTemplate.modeButtonGroupHtml;
@@ -22,19 +21,6 @@ function markBtnGridHtml(kind, maskStr) {
   return html + '</div>';
 }
 
-// The 16 fields that actually get sent to the watch for the custom
-// marker system -- kept as hidden inputs (same pattern as the corner
-// slots' hidden color inputs) since they're edited inside the two
-// popups, not directly on the page. Defaults approximate the "Big"
-// procedural preset so the ring is visible rather than invisible
-// (thickness 0) the first time someone picks "Custom".
-// Border sliders are 0-100% "reach" values -- see marker_reach_px() in
-// marker_layer.c for the exact mapping. On a 200x228 screen that's a
-// px range of [100,114]: 0% is the largest circle guaranteed to stay
-// fully on-screen (min(w,h)/2), 100% is the screen-fitted rectangle's
-// own far edge (max(w,h)/2). Deliberately narrow -- the range only
-// widens on a screen with a more extreme aspect ratio -- because it's
-// derived directly from "never let a marker end up off the screen".
 var MARKER_BORDER_MIN = 0;
 var MARKER_BORDER_MAX = 100;
 
@@ -55,13 +41,6 @@ function customMarkerHiddenInputsHtml(current) {
   return html;
 }
 
-// The hour/second custom-marker popup -- kind is 'hour' or 'sec', used
-// as an id suffix throughout (cmStyle-hour, cmStyle-sec, ...) so one
-// generator serves both. thicknessMax is 20 for hour, 10 for second
-// (see MarkerRingConfig in marker_layer.h). All fields here are drafted
-// in the popup and only committed to the real customHour*/customSec*
-// hidden inputs when OK is pressed -- same "don't touch the real
-// settings until Save" pattern as the corner slot editor.
 function customMarkerModalHtml(kind, title, thicknessMax) {
   var p = kind === 'hour' ? 'cmHour' : 'cmSec';
   var styleChangeFn = kind === 'hour' ? 'cmHourStyleChange' : 'cmSecStyleChange';
@@ -169,11 +148,6 @@ function customMarkerModalHtml(kind, title, thicknessMax) {
   );
 }
 
-// The "Edit numerals" popup -- numerals shown on the hour or second
-// custom-index ring (never both). Everything here commits live (same
-// as the hour/second button grids always have) rather than draft-then-
-// Save, since there's no risk of an inconsistent in-between state the
-// way there is with the ring geometry popups.
 function textMarkerModalHtml(current) {
   var markerTextFontId = parseInt(current.markerTextFont || '0', 10);
   var markerTextRomanOk = fontFlag(fontLookupEntry(markerTextFontId).romanOk);

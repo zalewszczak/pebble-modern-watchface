@@ -1,67 +1,15 @@
-/**
- * presets-lookups.js -- every hand-curated, largely-static lookup table
- * config-page.js needs: font metadata, color scheme presets, the
- * corner/edge feature content catalogue (grouped into categories for
- * the picker, complete with each item's own live-preview text),
- * the starter hand-style presets, and the built-in marker presets
- * (None/Minimal/Braun/Swiss/Classy -- rings + numerals). Pulled out into its own plain
- * JS module -- real object/array literals, no string-concatenation
- * escaping -- specifically so these are easy to read and hand-edit
- * (add a font, retune a color preset, add a new feature id) without
- * hunting through buildConfigHtml()'s own giant HTML-template string.
- *
- * CORNER_CATEGORIES is the single source of truth for every corner/
- * edge feature content id: config-page.js derives both the flat,
- * id-ordered options list the hidden per-slot <select>s use (see
- * cornerContentOptionsHtml()) AND the categorized picker's own
- * grouped view from this one array, and pulls each item's live-
- * preview text from the same place its label lives. Previously these
- * were 3 independently hand-maintained lists (a flat id+label array,
- * a separate category-grouped id+label copy, and a separate id-
- * >preview-text map) that could -- and did -- drift apart: id 104
- * ("Current UV index") had a category entry and a real on-watch
- * renderer but no preview text, so it silently failed to draw in the
- * live preview/slot buttons until re-picked; a few other ids had
- * subtly different wording (even a plain typo, "Tinute") between the
- * flat and categorized copies. One array per id now makes that whole
- * class of bug structurally impossible: there's nowhere left for a
- * new id to be added to one list and forgotten in another.
- *
- * Every content id features_layer.c actually implements (0-115,
- * minus the retired id 33) must appear in exactly one category's
- * items list, with an id matching its case in draw_corner_item()'s
- * switch exactly.
- */
-
-// One canonical font table, id-for-id identical to font_lookup.c's FONT_TABLE
-// on the watch -- every font this app uses anywhere, custom-resource or
-// system. The font pickers (marker text, corner/edge Feature text) draw their
-// <option>s from this SAME list, so picking (for example) "Bebas" always
-// means the same id and the same resource everywhere.
-//
-// Per-entry fields: `label`, `height` (px), `preview` (CSS used on the
-// settings page), `small`/`grid` (picker grouping), `sizeCategory`
-// (XS/S/M/L, feeds the picker's size filters), `categories` (tags shown in the
-// picker; the filter row is FONT_CATEGORIES below -- 'all' is picker-only),
-// `google`/`webfontFamily`/`webfontUrl` (where the settings page fetches a
-// preview webfont from), and `resourceName`/`fileName`, which mirror
-// FontLookupEntry.resource_name/file_name in font_lookup.c (FONT_KEY_* name
-// for a system font, or the package.json media name/file for a custom one).
-// The legacy `mainClock`/`sidesAllowed`/`sidesWithSeconds` flags only
-// described the removed digital clock layouts and are ignored.
-
-// IMPORTANT: For best results use js table editor located in scripts folder, copy contents of this table and parse it in there
+// presets-lookups.js -- every hand-curated, largely-static lookup table
 var FONT_LOOKUP = [
-  { id: 0 , grid: false, label: 'Gothic'             , height: 14, preview: 'font-family: Arial, sans-serif;'                                                                         , small: true , google: null                   , sizePx: 14, sizeCategory: 'XS', approx: true, categories: ['pebbleos', 'modern']                                      , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14'               , fileName: null                                       },                                                                                                                                                  // Pebble's built-in "Gothic" system font -- no Google Fonts equivalent by name; Arial/Helvetica is the closest common grotesque.
-  { id: 1 , grid: false, label: 'Gothic'             , height: 18, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 14, sizeCategory: 'S' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14_BOLD'          , fileName: null                                       },                                                                                                                                                  // see id 0
-  { id: 2 , grid: false, label: 'Gothic'             , height: 24, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 17, sizeCategory: 'S' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_18_BOLD'          , fileName: null                                       },                                                                                                                                                  // see id 0
-  { id: 3 , grid: true , label: 'Gothic'             , height: 32, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 24, sizeCategory: 'M' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_24_BOLD'          , fileName: null                                       },                                                                                                                                                  // see id 0
-  { id: 4 , grid: true , label: 'Gothic'             , height: 36, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 28, sizeCategory: 'M' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_28_BOLD'          , fileName: null                                       },                                                                                                                                                  // see id 0
+  { id: 0 , grid: false, label: 'Gothic'             , height: 14, preview: 'font-family: Arial, sans-serif;'                                                                         , small: true , google: null                   , sizePx: 14, sizeCategory: 'XS', approx: true, categories: ['pebbleos', 'modern']                                      , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14'               , fileName: null                                       },
+  { id: 1 , grid: false, label: 'Gothic'             , height: 18, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 14, sizeCategory: 'S' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14_BOLD'          , fileName: null                                       },
+  { id: 2 , grid: false, label: 'Gothic'             , height: 24, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 17, sizeCategory: 'S' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_18_BOLD'          , fileName: null                                       },
+  { id: 3 , grid: true , label: 'Gothic'             , height: 32, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 24, sizeCategory: 'M' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_24_BOLD'          , fileName: null                                       },
+  { id: 4 , grid: true , label: 'Gothic'             , height: 36, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 28, sizeCategory: 'M' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_28_BOLD'          , fileName: null                                       },
   { id: 5 , grid: true , label: 'Leco'               , height: 28, preview: 'font-family: \'LECO 1976-Regular\', Arial; font-weight: 300;'                                            , small: false, sizePx: 28, sizeCategory: 'M' , categories: ['pebbleos', 'digital', 'thin']                             , sidesAllowed: '2' , sidesWithSeconds: '2' , romanOk: true , resourceName: 'FONT_KEY_LECO_28_LIGHT_NUMBERS'   , fileName: null                                      , webfontFamily: 'LECO 1976-Regular', webfontUrl: 'https://static.wfonts.com/download/data/2016/05/28/leco-1976/LECO 1976-Regular.woff'   , webfontFormat: 'woff', mainClock: true  },
   { id: 6 , grid: true , label: 'Leco'               , height: 32, preview: 'font-family: \'LECO 1976-Regular\', Arial, sans-serif;'                                                  , small: false, sizePx: 32, sizeCategory: 'M' , categories: ['pebbleos', 'digital', 'bold']                             , sidesAllowed: 2   , sidesWithSeconds: '2' , romanOk: true , resourceName: 'FONT_KEY_LECO_32_BOLD_NUMBERS'    , fileName: null                                      , webfontFamily: 'LECO 1976-Regular', webfontUrl: 'https://static.wfonts.com/download/data/2016/05/28/leco-1976/LECO 1976-Regular.woff'   , webfontFormat: 'woff', mainClock: true  },
   { id: 7 , grid: true , label: 'Leco'               , height: 36, preview: 'font-family: \'LECO 1976-Regular\', Arial, sans-serif; font-weight: 700;'                                , small: false, sizePx: 36, sizeCategory: 'L' , categories: ['pebbleos', 'digital', 'bold']                             , sidesAllowed: 2   , sidesWithSeconds: '1' , romanOk: true , resourceName: 'FONT_KEY_LECO_36_BOLD_NUMBERS'    , fileName: null                                      , webfontFamily: 'LECO 1976-Regular', webfontUrl: 'https://static.wfonts.com/download/data/2016/05/28/leco-1976/LECO 1976-Regular.woff'   , webfontFormat: 'woff', mainClock: true  },
   { id: 8 , grid: true , label: 'Leco'               , height: 42, preview: 'font-family: \'LECO 1976-Regular\', Arial, sans-serif; font-weight: 700;'                                , small: false, sizePx: 42, sizeCategory: 'L' , categories: ['pebbleos', 'digital', 'bold']                             , sidesAllowed: 2   , sidesWithSeconds: '0' , romanOk: true , resourceName: 'FONT_KEY_LECO_42_NUMBERS'         , fileName: null                                      , webfontFamily: 'LECO 1976-Regular', webfontUrl: 'https://static.wfonts.com/download/data/2016/05/28/leco-1976/LECO 1976-Regular.woff'   , webfontFormat: 'woff', mainClock: true  },
-  { id: 9 , grid: true , label: 'Droid Serif'        , height: 28, preview: 'font-family: \'Droid Serif\', Georgia, serif; font-weight: 700;'                                         , small: true , google: 'Droid Serif'          , sizePx: 28, sizeCategory: 'M' , categories: ['pebbleos', 'serif', 'bold']                               , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_DROID_SERIF_28_BOLD'     , fileName: null                                      , weight: 700 },                                                                                                                                                   // still genuinely on Google Fonts (legacy listing, but live)
+  { id: 9 , grid: true , label: 'Droid Serif'        , height: 28, preview: 'font-family: \'Droid Serif\', Georgia, serif; font-weight: 700;'                                         , small: true , google: 'Droid Serif'          , sizePx: 28, sizeCategory: 'M' , categories: ['pebbleos', 'serif', 'bold']                               , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_DROID_SERIF_28_BOLD'     , fileName: null                                      , weight: 700 },
   { id: 10, grid: false, label: 'Roboto Condensed'   , height: 21, preview: 'font-family: \'Roboto Condensed\', Arial, sans-serif;'                                                   , small: true , google: 'Roboto Condensed'     , sizePx: 21, sizeCategory: 'S' , categories: ['pebbleos', 'modern', 'narrow']                            , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_ROBOTO_CONDENSED_21'     , fileName: null                                      , weight: 400 },
   { id: 11, grid: false, label: 'Roboto'             , height: 49, preview: 'font-family: \'Roboto\', Arial, sans-serif; font-weight: 700;'                                           , small: false, google: 'Roboto'               , sizePx: 49, sizeCategory: 'L' , categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: '1' , sidesWithSeconds: '0' , romanOk: false, resourceName: 'FONT_KEY_ROBOTO_BOLD_SUBSET_49'   , fileName: null                                      , mainClock: true , weight: 700 },
   { id: 12, grid: true , label: 'Bitham'             , height: 30, preview: 'font-family: \'Montserrat\', \'Century Gothic\', sans-serif; font-weight: 700;'                          , small: false, google: 'Montserrat'           , sizePx: 30, sizeCategory: 'M' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: 2   , sidesWithSeconds: '1' , romanOk: true , resourceName: 'FONT_KEY_BITHAM_30_BLACK'         , fileName: null                                      , mainClock: true , weight: 700 },
@@ -73,40 +21,19 @@ var FONT_LOOKUP = [
   { id: 18, grid: true , label: 'Bytesized'          , height: 16, preview: 'font-family: \'Bytesized\', Impact, \'Arial Narrow\', sans-serif; font-weight: 400;'                     , small: true , google: 'Bytesized'            , sizePx: 16, sizeCategory: 'XS', categories: ['pixelated']                                               , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'BYTESIZED_FONT_16'                , fileName: 'fonts/Bytesized-Regular.ttf'             , mainClock: false, weight: 400 },
   { id: 19, grid: true , label: 'M Plus 1C'          , height: 16, preview: 'font-family: \'M PLUS 1 Code\', Impact, \'Arial Narrow\', sans-serif; font-weight: 700;'                 , small: true , google: 'M PLUS 1 Code'        , sizePx: 16, sizeCategory: 'XS', categories: ['modern', 'bold']                                          , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'MPLUSBLACK_FONT_16'               , fileName: 'fonts/MPLUSRounded1c-Black.ttf'          , mainClock: false, weight: 700 },
   { id: 20, grid: false, label: 'Noto Serif'         , height: 18, preview: 'font-family: \'Noto Serif\', Impact, \'Arial Narrow\', sans-serif; font-weight: 500; font-style: italic;', small: true , google: 'Noto Serif'           , sizePx: 18, sizeCategory: 'S' , categories: ['serif', 'italic']                                         , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'NOTOITALIC_FONT_18'               , fileName: 'fonts/NotoSerif-MediumItalic.ttf'        , mainClock: false, weight: 500, italic: true },
-  { id: 21, grid: false, label: 'Arcade'             , height: 18, preview: 'font-family: \'ArcadeClassic\', \'Courier New\', monospace;'                                             , small: true, sizePx: 18, sizeCategory: 'S' , categories: ['digital', 'pixelated']                                    , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'ARCADE_FONT_18'                   , fileName: 'fonts/ArcadeClassic.ttf'                 , mainClock: false, cdn: 'arcadeclassic' },                                                                                                                                                         // ArcadeClassic (Pizzadude, dafont-only) is hosted on cdnfonts.com as a webfont under its own name -- see cdnFontLinks() below.
-  { id: 22, grid: false, label: 'DS Digital'         , height: 20, preview: 'font-family: \'DS-Digital\', \'Courier New\', monospace; font-weight: 700;'                              , small: true, sizePx: 20, sizeCategory: 'S' , categories: ['digital', 'bold']                                         , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DSDIGIB_FONT_20'                  , fileName: 'fonts/DS-DIGIB.TTF'                      , mainClock: false, cdn: 'ds-digital'    },                                                                                                                                                         // DS-Digital is hosted on cdnfonts.com as a webfont -- see cdnFontLinks() below.
-  { id: 23, grid: false, label: 'DS Digital (Italic)', height: 20, preview: 'font-family: \'DS-Digital\', \'Courier New\', monospace; font-weight: 700; font-style: italic;'          , small: true , sizePx: 20, sizeCategory: 'S' , categories: ['digital', 'bold', 'italic']                               , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DSDIGIT_FONT_20'                  , fileName: 'fonts/DS-DIGIT.TTF'                      , mainClock: false, cdn: 'ds-digital'    },                                                                                                                                                         // see id 48
-  { id: 24, grid: false, label: 'LCD'                , height: 18, preview: 'font-family: \'LCD Solid\', \'Courier New\', monospace;'                                                 , small: true , sizePx: 18, sizeCategory: 'S' , categories: ['digital', 'pixelated']                                    , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'LCDSOLID_FONT_18'                 , fileName: 'fonts/LCD_Solid.ttf'                     , webfontFamily: 'LCD Solid'        , webfontUrl: 'https://static.wfonts.com/download/data/2015/12/12/lcd-solid/LCD_Solid.woff'           , webfontFormat: 'woff', mainClock: false, weight: 400 }, // LCD Solid isn't on Google Fonts or cdnfonts.com, but wfonts.com hosts the actual font as a direct .woff download (https://www.wfonts.com/font/lcd-solid) -- linked via webfontUrl/@font-face (see directWebfontStyle() in config-fonts.js)
-  { id: 25, grid: true , label: 'Radioland'          , height: 16, preview: 'font-family: \'Radioland\', \'Courier New\', monospace;'                                                 , small: true , sizePx: 16, sizeCategory: 'S' , categories: ['digital']                                                 , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'RADIOLAND_FONT_16'                , fileName: 'fonts/RADIOLAND.ttf'                     , mainClock: false, cdn: 'radioland'     },                                                                                                                                                         // Radioland (Pizzadude, dafont-only) is hosted on cdnfonts.com as a webfont under its own name -- see cdnFontLinks() below.
+  { id: 21, grid: false, label: 'Arcade'             , height: 18, preview: 'font-family: \'ArcadeClassic\', \'Courier New\', monospace;'                                             , small: true, sizePx: 18, sizeCategory: 'S' , categories: ['digital', 'pixelated']                                    , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'ARCADE_FONT_18'                   , fileName: 'fonts/ArcadeClassic.ttf'                 , mainClock: false, cdn: 'arcadeclassic' },
+  { id: 22, grid: false, label: 'DS Digital'         , height: 20, preview: 'font-family: \'DS-Digital\', \'Courier New\', monospace; font-weight: 700;'                              , small: true, sizePx: 20, sizeCategory: 'S' , categories: ['digital', 'bold']                                         , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DSDIGIB_FONT_20'                  , fileName: 'fonts/DS-DIGIB.TTF'                      , mainClock: false, cdn: 'ds-digital'    },
+  { id: 23, grid: false, label: 'DS Digital (Italic)', height: 20, preview: 'font-family: \'DS-Digital\', \'Courier New\', monospace; font-weight: 700; font-style: italic;'          , small: true , sizePx: 20, sizeCategory: 'S' , categories: ['digital', 'bold', 'italic']                               , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DSDIGIT_FONT_20'                  , fileName: 'fonts/DS-DIGIT.TTF'                      , mainClock: false, cdn: 'ds-digital'    },
+  { id: 24, grid: false, label: 'LCD'                , height: 18, preview: 'font-family: \'LCD Solid\', \'Courier New\', monospace;'                                                 , small: true , sizePx: 18, sizeCategory: 'S' , categories: ['digital', 'pixelated']                                    , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'LCDSOLID_FONT_18'                 , fileName: 'fonts/LCD_Solid.ttf'                     , webfontFamily: 'LCD Solid'        , webfontUrl: 'https://static.wfonts.com/download/data/2015/12/12/lcd-solid/LCD_Solid.woff'           , webfontFormat: 'woff', mainClock: false, weight: 400 },
+  { id: 25, grid: true , label: 'Radioland'          , height: 16, preview: 'font-family: \'Radioland\', \'Courier New\', monospace;'                                                 , small: true , sizePx: 16, sizeCategory: 'S' , categories: ['digital']                                                 , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'RADIOLAND_FONT_16'                , fileName: 'fonts/RADIOLAND.ttf'                     , mainClock: false, cdn: 'radioland'     },
   { id: 26, grid: false, label: 'Nunito'             , height: 21, preview: 'font-family: \'Nunito\', \'Courier New\', monospace;'                                                    , small: true , google: 'Nunito'               , sizePx: 21, sizeCategory: 'S' , categories: ['stylish', 'modern', 'digital']                            , romanOk: true , resourceName: 'NUNITO_FONT_21'                   , fileName: 'fonts/Nunito-Bold.ttf'                   , mainClock: false, weight: 400, cdn: null            },
-  { id: 27, grid: true , label: 'Digital Dream'      , height: 13, preview: 'font-family: \'Digital dream\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 13, sizeCategory: 'XS', categories: ['digital']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAM_FONT_13'             , fileName: 'fonts/DIGITALDREAM.ttf'                  , cdn: 'digital-dream' },                                                                                                                                                                           // Digital Dream (Pizzadude, dafont-only) isn't on Google Fonts, but the exact same font is hosted on cdnfonts.com as a webfont -- see cdnFontLinks() in config-page.js for how the extra <link> gets added.
-  { id: 28, grid: true , label: 'Digital Dream Narrow'      , height: 14, preview: 'font-family: \'Digital dream Narrow\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 14, sizeCategory: 'S', categories: ['digital', 'narrow']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAMNARROW_FONT_14'             , fileName: 'fonts/DIGITALDREAMNARROW.ttf'                  , cdn: 'digital-dream-narrow' },                                                                                                                                                                           // Digital Dream (Pizzadude, dafont-only) isn't on Google Fonts, but the exact same font is hosted on cdnfonts.com as a webfont -- see cdnFontLinks() in config-page.js for how the extra <link> gets added.
-  { id: 29, grid: true , label: 'Digital Dream Fat'      , height: 15, preview: 'font-family: \'Digital dream Fat\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 15, sizeCategory: 'S', categories: ['digital', 'bold']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAMFAT_FONT_15'             , fileName: 'fonts/DIGITALDREAMFAT.ttf'                  , cdn: 'digital-dream-fat' },                                                                                                                                                                           // Digital Dream (Pizzadude, dafont-only) isn't on Google Fonts, but the exact same font is hosted on cdnfonts.com as a webfont -- see cdnFontLinks() in config-page.js for how the extra <link> gets added.
-]; // FONT_MAX_CONTENT_ID below is derived from this array's own ids --
-   // no more "remember to bump" comment needed.
+  { id: 27, grid: true , label: 'Digital Dream'      , height: 13, preview: 'font-family: \'Digital dream\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 13, sizeCategory: 'XS', categories: ['digital']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAM_FONT_13'             , fileName: 'fonts/DIGITALDREAM.ttf'                  , cdn: 'digital-dream' },
+  { id: 28, grid: true , label: 'Digital Dream Narrow'      , height: 14, preview: 'font-family: \'Digital dream Narrow\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 14, sizeCategory: 'S', categories: ['digital', 'narrow']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAMNARROW_FONT_14'             , fileName: 'fonts/DIGITALDREAMNARROW.ttf'                  , cdn: 'digital-dream-narrow' },
+  { id: 29, grid: true , label: 'Digital Dream Fat'      , height: 15, preview: 'font-family: \'Digital dream Fat\', \'Courier New\', monospace; letter-spacing: 1px;'                        , small: true , sizePx: 15, sizeCategory: 'S', categories: ['digital', 'bold']                                       , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'DIGITALDREAMFAT_FONT_15'             , fileName: 'fonts/DIGITALDREAMFAT.ttf'                  , cdn: 'digital-dream-fat' },
+];
 
-// The highest FONT_LOOKUP id currently in use -- used wherever a font
-// choice (clock font, corner/edge font, marker text font) gets
-// validated/clamped, e.g. clampFontId() in index.js. Computed from
-// FONT_LOOKUP itself rather than hand-maintained as a separate number,
-// so adding a new font entry above can never leave this stale the way
-// a hardcoded copy repeatedly has.
 var FONT_MAX_CONTENT_ID = FONT_LOOKUP.reduce(function (max, f) { return Math.max(max, f.id); }, 0);
 
-// Font picker category filter row -- 'all' is a special case handled
-// entirely client-side (see fontMatchesCategoryFilters() in
-// config-page.js): it's never listed in any font's own `categories`
-// array, always shows every font (still subject to the "Show
-// incompatible fonts" checkbox, same as every other filter
-// combination), and picking it clears/replaces whatever combination
-// of the other categories was active. Order here is the order the
-// picker's horizontal scroll row shows them in.
-// Entries carrying a `sizeCategory` (large/medium/small/tiny) are the
-// size filters: they don't look at a font's `categories` array but
-// compare against its own `sizeCategory` field (see
-// fontMatchesCategoryFilters() in config-page.js), and they never
-// show up as tags on a font's picker button (its size label already
-// covers that).
 var FONT_CATEGORIES = [
   { id: 'all', label: 'All' },
   { id: 'digital', label: 'Digital' },
@@ -128,10 +55,7 @@ var FONT_CATEGORIES = [
   { id: 'handwritten', label: 'Handwritten' }
 ];
 
-// Must match get_color_scheme() in src/c/comms/comms_decoder.c exactly --
-// same order, same id, same colors.
 var COLOR_SCHEMES = [
-  // Proven classics retained from the original set.
   { id: 0, grid: true, label: 'Ink on Snow', altLabel: 'Black on White', bg: '#ffffff', text: '#000000', accent: '#000000', mode: 'both' },
   { id: 1, grid: true, label: 'Chalk on Coal', altLabel: 'White on Black', bg: '#000000', text: '#ffffff', accent: '#ffffff', mode: 'both' },
   { id: 2, grid: true, label: 'Ruby Night', altLabel: 'Red on Black', bg: '#000000', text: '#ff0000', accent: '#ff0000', mode: 'both' },
@@ -141,60 +65,31 @@ var COLOR_SCHEMES = [
   { id: 4, grid: true, label: 'Signal Gold', altLabel: 'Yellow on Dark Blue', bg: '#000055', text: '#ffff00', accent: '#ffff00', mode: 'both' },
   { id: 8, grid: true, label: 'Ruby & Snow', altLabel: 'Red on Black, White accent', bg: '#000000', text: '#ff0000', accent: '#ffffff', mode: 'both' },
 
-  // Day presets: reflective-screen friendly, light backgrounds with strong
-  // dark/saturated foregrounds. New entries deliberately avoid midtone-on-
-  // midtone combinations that tend to wash together on e-paper.
-  { id: 12, grid: true, label: 'Cobalt Paper', altLabel: 'Dark blue on White, Blue accent', bg: '#ffffff', text: '#000055', accent: '#0000ff', mode: 'day' }, // Blueprint Snow
-  { id: 13, grid: true, label: 'Forest Ink', altLabel: 'Dark green on White, Orange accent', bg: '#ffffff', text: '#005500', accent: '#ff5500', mode: 'day' }, //Pine on Paper
-  { id: 14, grid: true, label: 'Violet Ledger', altLabel: 'Violet on White, Yellow accent', bg: '#ffffff', text: '#550055', accent: '#ffff00', mode: 'day' }, // Plum & Sun
-  { id: 15, grid: true, label: 'Teal Signal', altLabel: 'Green on White, Orange accent', bg: '#ffffff', text: '#005555', accent: '#ff5500', mode: 'day' }, // Harbor Ink
-  { id: 16, grid: true, label: 'Garnet Paper', altLabel: 'Brown on White, Blue accent', bg: '#ffffff', text: '#550000', accent: '#0000aa', mode: 'day' }, // Crimson Ledger
-  { id: 17, grid: true, label: 'Navy Ember', altLabel: 'Dark blue on White, Red accent', bg: '#ffffff', text: '#000055', accent: '#ff0000', mode: 'day' }, // Midnight Ink
-  { id: 18, grid: true, label: 'Evergreen Gold', altLabel: 'Green on Yellow, Orange accent', bg: '#ffffaa', text: '#005500', accent: '#aa5500', mode: 'day' }, // Pine & Brass
-  { id: 19, grid: true, label: 'Sunlit Indigo', altLabel: 'Dark Blue on Yellow, Orange accent', bg: '#ffffaa', text: '#000055', accent: '#aa0000', mode: 'day' }, // Ochre & Cobalt
-  { id: 20, grid: true, label: 'Skyline Ink', altLabel: 'Dark Blue on Light Violet, Blue accent', bg: '#aaaaff', text: '#000000', accent: '#0000aa', mode: 'day' }, // Azure Paper
-  { id: 21, grid: true, label: 'Mint & Charcoal', altLabel: 'Dark Green on Lime, Green accent', bg: '#aaffaa', text: '#000000', accent: '#005500', mode: 'day' }, // Frosted Forest
+  { id: 12, grid: true, label: 'Cobalt Paper', altLabel: 'Dark blue on White, Blue accent', bg: '#ffffff', text: '#000055', accent: '#0000ff', mode: 'day' },
+  { id: 13, grid: true, label: 'Forest Ink', altLabel: 'Dark green on White, Orange accent', bg: '#ffffff', text: '#005500', accent: '#ff5500', mode: 'day' },
+  { id: 14, grid: true, label: 'Violet Ledger', altLabel: 'Violet on White, Yellow accent', bg: '#ffffff', text: '#550055', accent: '#ffff00', mode: 'day' },
+  { id: 15, grid: true, label: 'Teal Signal', altLabel: 'Green on White, Orange accent', bg: '#ffffff', text: '#005555', accent: '#ff5500', mode: 'day' },
+  { id: 16, grid: true, label: 'Garnet Paper', altLabel: 'Brown on White, Blue accent', bg: '#ffffff', text: '#550000', accent: '#0000aa', mode: 'day' },
+  { id: 17, grid: true, label: 'Navy Ember', altLabel: 'Dark blue on White, Red accent', bg: '#ffffff', text: '#000055', accent: '#ff0000', mode: 'day' },
+  { id: 18, grid: true, label: 'Evergreen Gold', altLabel: 'Green on Yellow, Orange accent', bg: '#ffffaa', text: '#005500', accent: '#aa5500', mode: 'day' },
+  { id: 19, grid: true, label: 'Sunlit Indigo', altLabel: 'Dark Blue on Yellow, Orange accent', bg: '#ffffaa', text: '#000055', accent: '#aa0000', mode: 'day' },
+  { id: 20, grid: true, label: 'Skyline Ink', altLabel: 'Dark Blue on Light Violet, Blue accent', bg: '#aaaaff', text: '#000000', accent: '#0000aa', mode: 'day' },
+  { id: 21, grid: true, label: 'Mint & Charcoal', altLabel: 'Dark Green on Lime, Green accent', bg: '#aaffaa', text: '#000000', accent: '#005500', mode: 'day' },
 
-  // Night presets: black/deep-colour backgrounds with very bright text or
-  // accents. These favour high luminance contrast when the backlight is off.
-  { id: 22, grid: true, label: 'Moonlit Cobalt', altLabel: 'White on Dark Blue, Light Blue accent', bg: '#000055', text: '#ffffff', accent: '#55ffff', mode: 'night' }, // Ice on Navy
-  { id: 23, grid: true, label: 'Ember Night', altLabel: 'White on Black, Orange accent', bg: '#000000', text: '#ffffff', accent: '#ff5500', mode: 'night' }, // Snow & Flame
-  { id: 24, grid: true, label: 'Aurora Green', altLabel: 'Light Green on Black, Green accent', bg: '#000000', text: '#aaffaa', accent: '#00aa00', mode: 'night' }, // Frost & Pine
-  { id: 25, grid: true, label: 'Violet Moon', altLabel: 'White on Dark Blue, violet accent', bg: '#000055', text: '#ffffff', accent: '#ff55ff', mode: 'night' }, // Lilac Signal
-  { id: 26, grid: true, label: 'Arctic Teal', altLabel: 'Light Blue on Black, Green accent', bg: '#000000', text: '#aaffff', accent: '#00aaaa', mode: 'night' }, // Icewater Night
-  { id: 27, grid: true, label: 'Solar Flare', altLabel: 'Yellow on Black, Orange Accent', bg: '#000000', text: '#ffff00', accent: '#ff5500', mode: 'night' }, // Gold on Ink
-  { id: 28, grid: true, label: 'Ruby Eclipse', altLabel: 'White on Dark Red, Orange accent', bg: '#550000', text: '#ffffff', accent: '#ff5555', mode: 'night' }, // White & Ruby
-  { id: 29, grid: true, label: 'Deep Forest', altLabel: 'White on Dark Green, Lime accent', bg: '#005500', text: '#ffffff', accent: '#aaff55', mode: 'night' }, // Moon & Moss
-  { id: 30, grid: true, label: 'Royal Night', altLabel: 'Light Yellow on Dark Blue, Light Blue accent', bg: '#000055', text: '#ffffaa', accent: '#aaaaff', mode: 'night' }, // Crown & Cobalt
-  { id: 31, grid: true, label: 'Copper Midnight', altLabel: 'Orange on Black, White accent', bg: '#000000', text: '#ffaa00', accent: '#ffffff', mode: 'night' } // Amber on Coal
+  { id: 22, grid: true, label: 'Moonlit Cobalt', altLabel: 'White on Dark Blue, Light Blue accent', bg: '#000055', text: '#ffffff', accent: '#55ffff', mode: 'night' },
+  { id: 23, grid: true, label: 'Ember Night', altLabel: 'White on Black, Orange accent', bg: '#000000', text: '#ffffff', accent: '#ff5500', mode: 'night' },
+  { id: 24, grid: true, label: 'Aurora Green', altLabel: 'Light Green on Black, Green accent', bg: '#000000', text: '#aaffaa', accent: '#00aa00', mode: 'night' },
+  { id: 25, grid: true, label: 'Violet Moon', altLabel: 'White on Dark Blue, violet accent', bg: '#000055', text: '#ffffff', accent: '#ff55ff', mode: 'night' },
+  { id: 26, grid: true, label: 'Arctic Teal', altLabel: 'Light Blue on Black, Green accent', bg: '#000000', text: '#aaffff', accent: '#00aaaa', mode: 'night' },
+  { id: 27, grid: true, label: 'Solar Flare', altLabel: 'Yellow on Black, Orange Accent', bg: '#000000', text: '#ffff00', accent: '#ff5500', mode: 'night' },
+  { id: 28, grid: true, label: 'Ruby Eclipse', altLabel: 'White on Dark Red, Orange accent', bg: '#550000', text: '#ffffff', accent: '#ff5555', mode: 'night' },
+  { id: 29, grid: true, label: 'Deep Forest', altLabel: 'White on Dark Green, Lime accent', bg: '#005500', text: '#ffffff', accent: '#aaff55', mode: 'night' },
+  { id: 30, grid: true, label: 'Royal Night', altLabel: 'Light Yellow on Dark Blue, Light Blue accent', bg: '#000055', text: '#ffffaa', accent: '#aaaaff', mode: 'night' },
+  { id: 31, grid: true, label: 'Copper Midnight', altLabel: 'Orange on Black, White accent', bg: '#000000', text: '#ffaa00', accent: '#ffffff', mode: 'night' }
 ];
 
-// Roman-numeral compatibility lives on FONT_LOOKUP itself now (each
-// entry's own `romanOk` field, right alongside every other font
-// capability flag) rather than as a second id-keyed table a caller had
-// to cross-reference against FONT_LOOKUP by hand -- see fontLookupEntry()
-// in config-fonts.js for the normal way to read it. This is the phone-
-// side copy of the same data font_lookup.c tracks per-font as
-// FontLookupEntry.roman_ok (JS and the watch app are separate runtimes
-// that can't share a table, so keep the two in sync by hand) -- see its
-// own comment there for exactly how each value was determined: official
-// Pebble system-font documentation for ids 0-15, and each custom font's
-// own package.json characterRegex for ids 16+. int_to_roman() in
-// marker_text.c only ever needs I, V, X, L (it covers 0-55: the hour
-// ring's 1-12 and the second/minute ring's 0/5/.../55), never C, D or M.
-
-// Must match draw_corner_item()'s color_mode switch exactly.
 var CORNER_COLOR_MODE_LABELS = ['MONO', 'ACC', 'PILL', 'COLOR'];
 
-// The corner/edge feature content catalogue -- see this file's own
-// header comment for why this is the one place all of id, label,
-// category and live-preview text live together. `icon` is the SVG
-// glyph shown on that category's own picker button; `preview` is
-// the illustrative (not live) sample text shown in the live preview
-// canvas and the slot-picker diagram's own buttons for that item --
-// omitted for id 0 ("None"), which never draws anything. Item order
-// within a category is deliberately curated (most useful/common
-// first), not id-ascending.
 var CORNER_CATEGORIES = [
   {
     "id": "none",
@@ -887,37 +782,10 @@ var CORNER_CATEGORIES = [
   }
 ];
 
-// The highest corner/edge content id currently in use -- every content
-// id features_layer.c implements (see this file's own comment above
-// CORNER_CATEGORIES) must appear somewhere in that array, so its
-// highest id IS this number; computed here rather than hand-maintained
-// as a separate constant, since a stale hardcoded copy (index.js's own
-// MAX_FEATURES sat at 104 for a while after content ids up to 115 were
-// added elsewhere in this same file, silently rejecting every one of
-// them back down to "None" until this was caught) is exactly the
-// failure mode FONT_MAX_CONTENT_ID's own comment already flagged for
-// FONT_LOOKUP.
 var MAX_FEATURES = CORNER_CATEGORIES.reduce(function (max, cat) {
   return cat.items.reduce(function (m, item) { return Math.max(m, item.id); }, max);
 }, 0);
 
-// Starter hand-style presets for the Style section's "Hand style"
-// picker -- keyed "1"."9" to match HAND_STYLE_IMAGES/
-// HAND_STYLE_DIAGRAM_IMAGES's own filenames, each with a display
-// title plus hour/min/sec field sets in the same shape
-// applyHandPresetToKind() (config-page.js) writes into the hidden
-// custom-hand inputs, PLUS a centerCircle and shadow field set
-// applied the same way to the standalone Center circle/Shadow style
-// settings (see applyHandPresetExtras()) -- those two aren't
-// per-hand, but still look like part of "the hand style" to anyone
-// picking a preset, so a preset sets them too instead of leaving
-// whatever was there before. Picking a preset is a one-shot copy
-// into those same fields the manual "Edit ... hand" / Center
-// circle/Shadow style editors use -- nothing about it is remembered
-// as a distinct "preset" afterward, on this page or on the watch.
-// These 9 are placeholders pairing the existing style shapes with
-// generic starter numbers -- replace the images and retune the
-// field sets here once real example styles are worked out.
 var HAND_PRESETS = {
   "1": {
     "title": "Pebble",
@@ -1229,66 +1097,30 @@ var HAND_PRESETS = {
   }
 };
 
-// Built-in marker presets -- the "Indices style" picker's None
-// (bigAnalogMarkerStyle 0), Braun (1), Swiss (2), Classy (9) and
-// Minimal (10) tiles. (Minimal used to be 0 and None used to be 9;
-// settings-migration.js remaps stored values.)
-// The watch itself has no concept of these: picking one on the
-// settings page copies its hour ring, second ring AND numerals (marker
-// text) values into the same customHour*/customSec*/markerText* fields
-// the "Custom" style edits (see applyMarkerStylePresetToCustom() in
-// config-page.js), and settings-codecs.js sends the watch style 8
-// ("Custom") plus those values whenever one of these is the selected
-// style. The selected preset itself is still what's stored and shown in
-// the menu.
-//
-// One entry per preset, index-aligned across all three arrays:
-//   0 = Minimal, 1 = Braun, 2 = Swiss, 3 = Classy, 4 = None
-// (MARKER_STYLE_PRESET_INDEX below maps a bigAnalogMarkerStyle value to
-// that index). Ring field meanings/ranges are MarkerRingConfig's own --
-// see marker_types.h and customMarkerStyleCode() etc. in
-// settings-codecs.js. `style`: 0 dot, 1 line, 2 square, 4 tapered;
-// `thickness` 0 means that ring draws nothing at all;
-// `innerThickness` is only read by style 4; `color`: 0 main, 1
-// accent, 2 background.
 var MARKER_STYLE_HOUR_PRESETS = [
-  { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 66,  outerBorderPct: 100, translucent: false, color: 0 }, // Minimal
-  { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 48,  outerBorderPct: 100, translucent: false, color: 0 }, // Braun
-  { style: 2, thickness: 7,  innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 100, innerBorderPct: 75,  outerBorderPct: 100, translucent: false, color: 0 }, // Swiss
-  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 }, // Classy
-  { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }  // None (draws nothing)
+  { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 66,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 48,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 7,  innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 100, innerBorderPct: 75,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
 var MARKER_STYLE_SECOND_PRESETS = [
-  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 }, // Minimal (no second indices)
-  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 }, // Braun
-  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 75,  innerBorderPct: 75,  outerBorderPct: 80,  translucent: false, color: 0 }, // Swiss
-  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 }, // Classy
-  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }  // None (draws nothing)
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 75,  innerBorderPct: 75,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
-// Numerals (marker text) for each preset -- same fields as the Custom
-// style's "Numerals" popup / MarkerTextConfig. `target`: 0 off, 1 hour
-// ring, 2 second ring; while it's 0 (every preset for now) nothing is
-// drawn and the rest is inert, but still sent as-is so a preset that
-// wants numerals only has to fill its row in here. `font` is a
-// FONT_LOOKUP content id; `offset` -50..50 px from the ring's inner
-// edge; `hourMask`/`secondMask` 12-bit bitmasks of which of the 12
-// hour/5-second marks get a label (4095 = all); `roman` I, II, III...
 var MARKER_STYLE_TEXT_PRESETS = [
-  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }, // Minimal
-  { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 }, // Braun
-  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }, // Swiss
-  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }, // Classy
-  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }  // None
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }
 ];
 
-// bigAnalogMarkerStyle value -> index into the three arrays above. Any
-// style not listed here (3-7 bitmap, 8 custom) isn't a marker preset.
 var MARKER_STYLE_PRESET_INDEX = { '10': 0, '1': 1, '2': 2, '9': 3, '0': 4 };
 
-// One ring preset in the exact shape the config page's hidden
-// customHour*/customSec* inputs (and the popup editors' CM_FIELDS)
-// use: field name -> string value, so applying it is a plain
-// `element.value = fields[name]` loop with no per-field conversion.
 function markerRingPresetToFields(p) {
   return {
     Style: String(p.style),
@@ -1303,7 +1135,6 @@ function markerRingPresetToFields(p) {
   };
 }
 
-// Same idea for numerals: the markerText* inputs' own names/values.
 function markerTextPresetToFields(t) {
   return {
     Target: String(t.target),
@@ -1315,11 +1146,6 @@ function markerTextPresetToFields(t) {
   };
 }
 
-// bigAnalogMarkerStyle value ("0"/"1"/"2"/"9"/"10") -> { hour: {...},
-// sec: {...}, text: {...} } of the field values above. Built once here
-// from the three arrays so both consumers -- the config page
-// (serialized into the webview) and settings-codecs.js (what actually
-// goes to the watch) -- read the exact same numbers.
 var MARKER_STYLE_PRESET_FIELDS = {};
 Object.keys(MARKER_STYLE_PRESET_INDEX).forEach(function (styleId) {
   var i = MARKER_STYLE_PRESET_INDEX[styleId];
@@ -1330,9 +1156,6 @@ Object.keys(MARKER_STYLE_PRESET_INDEX).forEach(function (styleId) {
   };
 });
 
-
-// FAQ lookup table used by the settings-page FAQ section. Kept here with the
-// other static lookup data so config-page.js only owns rendering/interaction.
 var FAQ_ITEMS = [
     ['What is Modern?', 'Modern is an analog watchface that I have made a long long time ago that has resonated greatly with pebble community. For long time it was a doormant project that I decided to resurrect and enrich for the next decade of pebbles.'],
     ['Can I use my own picture as the background?', 'Yes. In Style, tick "Use custom background" and pick one of the predefined images, or upload your own into one of 9 slots: crop, pan and zoom it, choose a dithering method and an image style (neutral, black & white, sepia, vivid) and watch the live preview. The picture is converted to the watch\'s 64 colors and sent to the watch when you press Save (it can take around 20 seconds); after that it is stored on the watch and drawn behind the indices. Your 9 images are kept on the phone, so you can switch between them for different styles.'],

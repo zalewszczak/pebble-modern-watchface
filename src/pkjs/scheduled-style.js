@@ -1,55 +1,11 @@
-// ---- Scheduled "My styles" -------------------------------------------------
-//
-// Each of the six My Style slots can carry a schedule ("apply this style at
-// 08:00 on these weekdays"). The settings page stores it in
-// CONFIG_PRESET_<n>_SCHEDULE as JSON: {"enabled":true,"days":127,"time":"08:00"}
-// (days: bit 0 = Sunday ... bit 6 = Saturday, same as the hourly vibration).
-//
-// PKJS cannot be trusted to wake itself up: it only exists while the watchface
-// is running, and timers in a backgrounded phone app are best-effort at
-// most. The watch, however, is always running the watchface and always knows
-// what time it is. So the split is:
-//
-//   phone  -> watch : NEXT_STYLE_CHECK, the epoch second of the next schedule
-//                     occurrence that has not been served yet (0 = none).
-//                     Added to every settings push (see populateSettingsFields).
-//   watch  -> phone : REQUEST_SCHEDULED_STYLE, sent from the watch's tick
-//                     handler once that time has passed. That message is what
-//                     starts/wakes PKJS. If the phone is out of reach the watch
-//                     just asks again a minute later until it gets through.
-//   phone  -> watch : the style (a normal settings push) plus a new
-//                     NEXT_STYLE_CHECK, which is what ends the retries.
-//
-// Bookkeeping lives in localStorage so it survives PKJS restarts:
-//   SCHEDULE_ARMED_AT_<n>     when the current schedule was saved. Occurrences
-//                             before this never fire, so enabling a schedule at
-//                             09:30 for 08:00 does not apply the style at once.
-//   SCHEDULE_LAST_APPLIED_<n> occurrence time last served for this slot.
-// An occurrence is "unserved" if it is later than both. Missed ones (phone off,
-// watch away from the watchface) are caught up when the watch next asks, or
-// when PKJS starts: the most recent missed occurrence across all slots wins,
-// and older missed ones are marked served without being applied.
-
+// Scheduled "My styles"
 var settings = require('./settings/settings');
 var getSetting = settings.getSetting;
 var setSetting = settings.setSetting;
 
 var SLOT_COUNT = 6;
 var DAY_MS = 24 * 60 * 60 * 1000;
-// The watch and phone clocks can disagree by a few seconds; treat an
-// occurrence slightly in the phone's future as due.
 var DUE_TOLERANCE_MS = 90 * 1000;
-
-// ---- preset JSON -> stored settings ------------------------------------------
-//
-// A saved style is the settings page's own DOM snapshot (collectStyleCornersJson():
-// element id -> value). Applying one from PKJS means doing what the page's
-// save() + the webviewclosed handler would do for those elements. The table
-// below is the element id -> CONFIG_* key mirror of save()'s payload
-// ('s' = stored as the string, 'b' = checkbox / "true" string -> 'true'|'false').
-// scripts/check-scheduled-style-map.js verifies it against config-runtime.js,
-// and the settings page warns in the schedule popup if a style contains an
-// element id that is neither listed here nor in UI_ONLY_IDS.
 
 var FIELD_MAP = {
   showSeconds: ['CONFIG_SHOW_SECONDS', 'b'],
@@ -180,8 +136,6 @@ var FIELD_MAP = {
   shakeLabelSeconds: ['CONFIG_SHAKE_LABEL_SECONDS', 's']
 };
 
-// Edge/middle slot fields: element id -> stored key (kept under the legacy
-// '_ANALOG' suffix so existing installs keep their choices).
 var DUAL_MAP = {
   upperMiddleLine1Content: ['CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG'],
   upperMiddleLine1Color: ['CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG'],
@@ -206,10 +160,6 @@ var DUAL_MAP = {
   middleRightLine2CustomPrims: ['CONFIG_MIDDLE_RIGHT_LINE2_CUSTOM_PRIMS_ANALOG']
 };
 
-// Elements in the preset scope that are UI state only, or that are handled
-// explicitly in applyPreset() below instead of through the tables.
-// borderWeatherEnabled / borderWeatherModeSel only drive the hidden
-// borderWeatherMode input (see config-border.js), which FIELD_MAP covers.
 var UI_ONLY_IDS = ['showAllColorPresets', '__pluginSlots', 'borderWeatherEnabled', 'borderWeatherModeSel'];
 
 function knownIds() {
@@ -225,8 +175,6 @@ function toStored(kind, v) {
   return String(v);
 }
 
-// Writes a preset's values into the stored settings. Only keys the preset
-// actually contains are touched. Returns the number of keys written.
 function applyPreset(preset) {
   var written = 0;
   var id;
@@ -235,8 +183,6 @@ function applyPreset(preset) {
     var v = preset[id];
     if (v === null || v === undefined || v === '') continue;
     if (id === '__pluginSlots') {
-      // The plugin data sources behind the plugin features' slot numbers (see
-      // collectStyleCornersJson() in config-page.js). index.js re-subscribes afterwards.
       if (Object.prototype.toString.call(v) === '[object Array]') {
         var slots = [];
         for (var si = 0; si < 12; si++) slots.push(typeof v[si] === 'string' ? v[si] : '');
@@ -259,8 +205,6 @@ function applyPreset(preset) {
   }
   return written;
 }
-
-// ---- schedule model -----------------------------------------------------------
 
 function parseSchedule(raw) {
   if (!raw) return null;
@@ -287,7 +231,6 @@ function readPreset(n) {
   } catch (e) { return null; }
 }
 
-// A slot only schedules if it is enabled AND still holds a saved style.
 function activeSchedule(n) {
   var s = parseSchedule(getSetting('CONFIG_PRESET_' + n + '_SCHEDULE', ''));
   if (!s) return null;
@@ -299,8 +242,6 @@ function numSetting(key) {
   return isNaN(v) ? 0 : v;
 }
 
-// Earliest occurrence strictly after afterMs (phone-local time, so DST and
-// travel are handled by the Date constructor).
 function occurrenceAfter(sched, afterMs) {
   var start = new Date(afterMs);
   for (var i = 0; i <= 8; i++) {
@@ -311,9 +252,8 @@ function occurrenceAfter(sched, afterMs) {
   return null;
 }
 
-// Latest occurrence in (afterMs, limitMs], or 0 if there is none.
 function latestOccurrenceUpTo(sched, afterMs, limitMs) {
-  var t = Math.max(afterMs, limitMs - 8 * DAY_MS); // any 8-day window holds one
+  var t = Math.max(afterMs, limitMs - 8 * DAY_MS);
   var last = 0;
   for (var i = 0; i < 16; i++) {
     var o = occurrenceAfter(sched, t);
@@ -324,9 +264,6 @@ function latestOccurrenceUpTo(sched, afterMs, limitMs) {
   return last;
 }
 
-// Occurrences before the schedule was saved, or at/before the last one served,
-// do not count. A schedule seen for the first time (e.g. local storage was
-// cleared) is armed now rather than fired retroactively.
 function baseMs(n, nowMs) {
   var armed = numSetting('SCHEDULE_ARMED_AT_' + n);
   if (!armed) {
@@ -336,9 +273,6 @@ function baseMs(n, nowMs) {
   return Math.max(armed, numSetting('SCHEDULE_LAST_APPLIED_' + n));
 }
 
-// Epoch seconds for the watch's NEXT_STYLE_CHECK: the earliest unserved
-// occurrence across all slots. May be in the past (something is pending); the
-// watch then asks right away. 0 when no slot has an active schedule.
 function nextCheckSeconds(nowMs) {
   var best = null;
   for (var n = 1; n <= SLOT_COUNT; n++) {
@@ -350,9 +284,6 @@ function nextCheckSeconds(nowMs) {
   return best === null ? 0 : Math.floor(best / 1000);
 }
 
-// Serves whatever is due: applies the most recent due style and marks every
-// due occurrence as served. Returns {applied: bool, slot: n}. The caller is
-// responsible for pushing the new settings to the watch.
 function applyDue(nowMs) {
   var limit = nowMs + DUE_TOLERANCE_MS;
   var due = [];
@@ -366,7 +297,6 @@ function applyDue(nowMs) {
 
   var winner = due[0];
   for (var i = 1; i < due.length; i++) {
-    // Most recent wins; two styles at the exact same minute: higher slot.
     if (due[i].at >= winner.at) winner = due[i];
   }
   for (var j = 0; j < due.length; j++) {
@@ -376,10 +306,6 @@ function applyDue(nowMs) {
   return { applied: true, slot: winner.slot };
 }
 
-// Called with the raw schedule string the settings page just saved. A changed
-// schedule is re-armed from now: nothing earlier fires, and the served marker
-// is reset. An unchanged one is left alone so saving other settings does not
-// disturb a schedule that is already in progress.
 function persistSlotSchedule(n, raw, nowMs) {
   raw = raw || '';
   var key = 'CONFIG_PRESET_' + n + '_SCHEDULE';

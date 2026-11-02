@@ -1,8 +1,4 @@
-// ---- Moon (reduced ELP2000 terms, Meeus ch.47) ------------------------
-//
-// Position, topocentric correction, and phase -- computeMoonPhase()
-// needs sun.js too (phase is a Sun-Moon geometry question).
-
+// Moon (reduced ELP2000 terms, Meeus ch.47)
 var angles = require('./angles');
 var sind = angles.sind;
 var cosd = angles.cosd;
@@ -52,12 +48,8 @@ var MOON_DIST_TERMS = [
   [0, 0, 0, 2, -3149]
 ];
 
-// Terms containing M (the Sun's mean anomaly) need scaling by E or
-// E^2 to account for the Earth orbit's eccentricity drifting over
-// time; none of our reduced terms use 2*M, so a single E factor
-// covers all of them.
 function eFactorForM(Mcoef) {
-  return Mcoef === 0 ? 1 : null; // marker, applied below by absolute value
+  return Mcoef === 0 ? 1 : null;
 }
 
 function moonPosition(T) {
@@ -91,7 +83,7 @@ function moonPosition(T) {
   var lat = sumB / 1000000;
   var distanceKm = 385000.56 + sumR / 1000;
 
-  var eps0 = 23.4392911 - 0.0130042 * T; // mean obliquity, low precision
+  var eps0 = 23.4392911 - 0.0130042 * T;
 
   var ra = norm360(atan2d(sind(lon) * cosd(eps0) - tand(lat) * sind(eps0), cosd(lon)));
   var dec = asind(sind(lat) * cosd(eps0) + cosd(lat) * sind(eps0) * sind(lon));
@@ -99,10 +91,8 @@ function moonPosition(T) {
   return { ra: ra, dec: dec, distanceKm: distanceKm, eclipticLon: norm360(lon) };
 }
 
-// Corrects the Moon's geocentric coordinates for the observer's location
-// using the parallax-in-right-ascension method (Meeus, chapter 40).
 function topocentricMoon(moon, latDeg, lonDeg, lstDeg) {
-  var pi = asind(6378.14 / moon.distanceKm); // equatorial horizontal parallax
+  var pi = asind(6378.14 / moon.distanceKm);
   var H = norm360(lstDeg - moon.ra);
 
   var num = -cosd(latDeg) * sind(pi) * sind(H);
@@ -113,7 +103,6 @@ function topocentricMoon(moon, latDeg, lonDeg, lstDeg) {
   var decNum = (sind(moon.dec) - sind(latDeg) * sind(pi)) * cosd(dRA);
   var decTopo = atan2d(decNum, den);
 
-  // Moon's angular semidiameter: true radius 1737.4 km / distance.
   var semidiameter = asind(1737.4 / moon.distanceKm);
 
   return { ra: raTopo, dec: decTopo, semidiameterDeg: semidiameter };

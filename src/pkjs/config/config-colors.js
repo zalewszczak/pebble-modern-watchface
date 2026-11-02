@@ -1,5 +1,4 @@
-// ---- Color-role dropdown options ----------------------------------------
-
+// Color-role dropdown options
 function schemeColorOptionsHtml(selected) {
   var sel = selected || '0';
   return (

@@ -5,7 +5,7 @@
 static void int_to_roman(int num, char *buf, size_t buf_size) {
   if (num <= 0) { snprintf(buf, buf_size, "%d", num); return; }
   static const int VALUES[] = {50, 40, 10, 9, 5, 4, 1};
-  static const char *SYMBOLS[] = {"L", "XL", "X", "IX", "V", "IV", "I"};
+  static const char *const SYMBOLS[] = {"L", "XL", "X", "IX", "V", "IV", "I"};
   size_t pos = 0;
   buf[0] = '\0';
   for (int i = 0; i < 7 && num > 0; i++) {

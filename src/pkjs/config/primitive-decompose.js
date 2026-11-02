@@ -1,15 +1,4 @@
 // Primitive-strip preview and phone-side feature compiler.
-//
-// Feature IDs exist only in settings and this module. Before communication,
-// every selectable feature is compiled into a bounded primitive-ID sequence
-// plus auxiliary parameters. The watch receives no feature/content IDs and
-// has no content resolver or rendering fallback.
-//
-// PRIMITIVE_PALETTE below exposes only IDs supported by primitive_resolver.c.
-// The preview uses the same sequence tables that the message encoder sends.
-// Dynamic values (time, battery, health, weather and astronomy) are resolved
-// by generic primitive handlers on the watch or supplied by PKJS as data.
-
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
 var PRIM = require('./primitive-ids-generated');
@@ -25,12 +14,6 @@ function space() { return { kind: 'space', text: ' ' }; }
 function slash() { return { kind: 'slash', text: '/' }; }
 function icon(text) { return { kind: 'icon', text: text }; }
 
-// The feature-to-sequence table below is the phone-side compiler source of
-// truth. Preview chips are derived from these same sequences later in this
-// module, so the UI and wire payload cannot drift independently.
-//
-// Numeric primitive IDs are generated from the C primitive enum. Every
-// selectable feature is represented here; zero is reserved for an empty slot.
 var PRIMITIVE_TRANSPORT_SEQUENCES = {
   4: [PRIM.PRIM_LABEL_HIGH_PREFIX, PRIM.PRIM_TEMP_HIGH_TEXT, PRIM.PRIM_SPACE, PRIM.PRIM_LABEL_LOW_PREFIX, PRIM.PRIM_TEMP_LOW_TEXT],
   12: [PRIM.PRIM_WEEKDAY_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH],
@@ -42,8 +25,6 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   98: [PRIM.PRIM_WEEKDAY_SHORT_UPPER, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH, PRIM.PRIM_SLASH, PRIM.PRIM_MONTH_NUMBER],
   99: [PRIM.PRIM_WEEKDAY_SHORT_UPPER, PRIM.PRIM_SPACE, PRIM.PRIM_MONTH_NUMBER, PRIM.PRIM_SLASH, PRIM.PRIM_DAY_OF_MONTH],
 
-  // Date components share a watch-computed gradient. Weather values and
-  // icons use the colors supplied with their resolved data.
   19: [PRIM.PRIM_LABEL_WK_PREFIX, PRIM.PRIM_SPACE, PRIM.PRIM_WEEK_NUMBER],
   22: [PRIM.PRIM_DAY_OF_MONTH],
   23: [PRIM.PRIM_WEEKDAY_SHORT_UPPER],
@@ -56,8 +37,6 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   106: [PRIM.PRIM_WEEKDAY_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_DAY_OF_MONTH, PRIM.PRIM_SPACE,
         PRIM.PRIM_MONTH_SHORT_MIXED, PRIM.PRIM_SPACE, PRIM.PRIM_LABEL_WK_PREFIX, PRIM.PRIM_WEEK_NUMBER],
 
-  // Health and status values are resolved from watch services. Each entry
-  // is already an atomic icon or text element.
   1: [PRIM.PRIM_HEART_RATE_ICON, PRIM.PRIM_HEART_RATE_VALUE],
   2: [PRIM.PRIM_STEPS_ICON, PRIM.PRIM_STEPS_VALUE],
   3: [PRIM.PRIM_STEPS_ICON, PRIM.PRIM_STEP_GOAL_PCT],
@@ -72,21 +51,14 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   41: [PRIM.PRIM_SLEEP_QUALITY_ICON, PRIM.PRIM_SLEEP_QUALITY_PCT],
   42: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT],
   43: [PRIM.PRIM_WAKE_TIME_ICON, PRIM.PRIM_WAKE_TIME_TEXT],
-  // Primitive sequences for the combined sleep and bed/wake displays.
-  // Individual resolvers provide their own unavailable-data messages.
   101: [PRIM.PRIM_BED_TIME_ICON, PRIM.PRIM_BED_TIME_TEXT, PRIM.PRIM_SLASH, PRIM.PRIM_WAKE_TIME_TEXT],
   104: [PRIM.PRIM_SLEEP_TOTAL_ICON, PRIM.PRIM_SLEEP_TOTAL_TEXT, PRIM.PRIM_SLEEP_RESTFUL_TEXT, PRIM.PRIM_SLEEP_QUALITY_PCT],
 
-  // Standalone weather values use distinct IDs from the combined displays.
   73: [PRIM.PRIM_CURRENT_TEMP_ONLY_TEXT],
   74: [PRIM.PRIM_TEMP_HIGH_ONLY_TEXT],
   75: [PRIM.PRIM_TEMP_LOW_ONLY_TEXT],
   77: [PRIM.PRIM_FEELS_LIKE_TEXT],
 
-  // Astronomy values are resolved on the watch from phone-supplied data
-  // or live watch state.
-  // compass sensor (85) and a passthrough name (13). Color rules copied
-  // 1:1 from feature_value_sky_compute().
   11: [PRIM.PRIM_MOON_PHASE_ICON, PRIM.PRIM_MOON_PHASE_NAME],
   13: [PRIM.PRIM_LOCATION_ICON, PRIM.PRIM_LOCATION_NAME],
   16: [PRIM.PRIM_SUN_EVENT_ICON, PRIM.PRIM_SUN_EVENT_TIME],
@@ -98,9 +70,6 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   84: [PRIM.PRIM_AURORA_ICON, PRIM.PRIM_AURORA_KP],
   85: [PRIM.PRIM_COMPASS_ICON, PRIM.PRIM_COMPASS_DIR_TEXT],
 
-  // Composite displays use fixed sequences when all elements are available.
-  // Sleep composites remain resolver-managed because their elements depend
-  // on whether sleep data is available. Clock and date values resolve on-watch.
   18: [PRIM.PRIM_TIME_HM],
   63: [PRIM.PRIM_TIME_HMS],
   64: [PRIM.PRIM_HOUR_24_PAD],
@@ -114,7 +83,6 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   72: [PRIM.PRIM_SECOND_ONES],
   86: [PRIM.PRIM_AMPM],
 
-  // Weather values are supplied by PKJS, with watch-side fallbacks where needed.
   5: [PRIM.PRIM_CURRENT_CONDITIONS_TEXT],
   6: [PRIM.PRIM_UV_DAILY_TEXT],
   107: [PRIM.PRIM_UV_CURRENT_TEXT],
@@ -135,10 +103,6 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
        PRIM.PRIM_LABEL_LOW_PREFIX, PRIM.PRIM_TEMP_LOW_TEXT],
   96: [PRIM.PRIM_WEATHER_LAST_UPDATE_LONG_TEXT],
   97: [PRIM.PRIM_WEATHER_REFRESH_ICON, PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT],
-  // 87-95 (forecast 1-6h / 1-3 days) all use the same two-primitive
-  // sequence; only the aux (forecast slot index, 0-8) differs. Composer
-  // items for these therefore need aux support the same way timezone
-  // primitives do -- see PRIMITIVE_PALETTE's 'Forecast' group below.
   87: [PRIM.PRIM_FORECAST_OFFSET_ICON, PRIM.PRIM_FORECAST_TEMP_TEXT],
   88: [PRIM.PRIM_FORECAST_OFFSET_ICON, PRIM.PRIM_FORECAST_TEMP_TEXT],
   89: [PRIM.PRIM_FORECAST_OFFSET_ICON, PRIM.PRIM_FORECAST_TEMP_TEXT],
@@ -160,46 +124,23 @@ var PRIMITIVE_TRANSPORT_SEQUENCES = {
   118: [PRIM.PRIM_BATTERY_ICON, PRIM.PRIM_BATTERY_PCT_TEXT, PRIM.PRIM_BLUETOOTH_ICON, PRIM.PRIM_QUIET_TIME_ICON]
 };
 
-// Timezone cluster (content 44-62): the one case in this table where a
-// primitive needs a per-position *parameter*, not just an ID -- which of
-// the 19 zones. Every entry uses the identical 5-primitive shape (abbr,
-// space, time, space, am/pm; the watch drops empty AM/PM and the spacer before it); PRIM_TIMEZONE_AMPM resolves to an empty,
-// zero-width primitive in 24h clock style rather than being included or
-// omitted conditionally, since the sequence itself can't react to a
-// runtime setting once sent -- see primitive_resolver.c's own comment.
-// Built programmatically (19 near-identical rows) rather than hand-
-// written, same reasoning as generate-primitive-ids.js: fewer places for
-// the zone-index arithmetic to drift.
 for (var tzContentId = 44; tzContentId <= 62; tzContentId++) {
   PRIMITIVE_TRANSPORT_SEQUENCES[tzContentId] = [
     PRIM.PRIM_TIMEZONE_ABBR, PRIM.PRIM_SPACE, PRIM.PRIM_TIMEZONE_TIME, PRIM.PRIM_SPACE, PRIM.PRIM_TIMEZONE_AMPM
   ];
 }
 
-// Per-position aux byte for the sequences above -- see
-// whose primitives need a non-zero aux appear here; every other content
-// id (and every position within it) is implicitly all-zero, which is
-// exactly right since none of the primitives used elsewhere in this file
-// read their aux at all.
 var PRIMITIVE_TRANSPORT_AUX = {};
 for (var tzAuxContentId = 44; tzAuxContentId <= 62; tzAuxContentId++) {
-  var zoneIdx = tzAuxContentId - 44; // matches feature_timezone_get()'s own index space
+  var zoneIdx = tzAuxContentId - 44;
   PRIMITIVE_TRANSPORT_AUX[tzAuxContentId] = [zoneIdx, 0, zoneIdx, 0, zoneIdx, 0, 0, 0, 0, 0];
 }
 
-// Forecast contents 87-95 each use [PRIM_FORECAST_OFFSET_ICON,
-// PRIM_FORECAST_TEMP_TEXT] with a fixed forecast-slot aux (0-8, matching
-// forecast_temp_c[]'s own index space) baked in per content id -- the
-// content number itself picks the slot, same idea as a timezone content id
-// picking a zone.
 for (var fcContentId = 87; fcContentId <= 95; fcContentId++) {
   var fcIdx = fcContentId - 87;
   PRIMITIVE_TRANSPORT_AUX[fcContentId] = [fcIdx, fcIdx, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
-// Pebble plugin data (content ids 200-211 = plugin slot 0-11): one generic text
-// primitive whose aux byte is the slot the source was assigned (see
-// plugins/plugin-manager.js).
 var PLUGIN_CONTENT_FIRST = 200;
 var PLUGIN_SLOT_COUNT = 12;
 for (var plugSlot = 0; plugSlot < PLUGIN_SLOT_COUNT; plugSlot++) {
@@ -207,11 +148,9 @@ for (var plugSlot = 0; plugSlot < PLUGIN_SLOT_COUNT; plugSlot++) {
   PRIMITIVE_TRANSPORT_AUX[PLUGIN_CONTENT_FIRST + plugSlot] = [plugSlot, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
-var PRIMITIVE_SEQUENCE_SLOT_COUNT = 10; // must match PRIMITIVE_FEATURE_MAX (primitives/primitive_storage.h)
+var PRIMITIVE_SEQUENCE_SLOT_COUNT = 10;
 var PRIMITIVE_TRANSPORT_CONTENT_IDS = Object.keys(PRIMITIVE_TRANSPORT_SEQUENCES).map(Number);
 
-// Zero-padded to PRIMITIVE_SEQUENCE_SLOT_COUNT bytes. Primitive ID zero
-// terminates a sequence and an all-zero sequence means the slot is disabled.
 function primitiveIdSequenceForContent(contentId) {
   var seq = PRIMITIVE_TRANSPORT_SEQUENCES[parseInt(contentId, 10)] || [];
   var out = seq.slice(0, PRIMITIVE_SEQUENCE_SLOT_COUNT);
@@ -219,10 +158,6 @@ function primitiveIdSequenceForContent(contentId) {
   return out;
 }
 
-// Companion to primitiveIdSequenceForContent(): the per-position aux byte
-// for that same content id (see PRIMITIVE_TRANSPORT_AUX above). All-zero
-// for every content id with no entry there, which is correct by
-// construction -- those primitives never read their aux.
 function primitiveAuxSequenceForContent(contentId) {
   var aux = PRIMITIVE_TRANSPORT_AUX[parseInt(contentId, 10)] || [];
   var out = aux.slice(0, PRIMITIVE_SEQUENCE_SLOT_COUNT);
@@ -230,26 +165,12 @@ function primitiveAuxSequenceForContent(contentId) {
   return out;
 }
 
-// Clamps/pads an arbitrary (person-composed) array of numeric primitive
-// IDs to exactly PRIMITIVE_SEQUENCE_SLOT_COUNT bytes the same way -- used
-// for a custom sequence from the settings-page composer instead of
-// one derived from a single content id.
 function normalizePrimitiveSequence(ids) {
   var out = (ids || []).slice(0, PRIMITIVE_SEQUENCE_SLOT_COUNT);
   while (out.length < PRIMITIVE_SEQUENCE_SLOT_COUNT) out.push(0);
   return out;
 }
 
-// ---- Custom primitive sequences -------------------------------------
-//
-// Only primitive IDs primitive_resolver.c actually resolves -- offering
-// anything else would let a person build a sequence that silently falls
-// back to a blank/legacy-content render on the watch (primitive_transport.c
-// bails the whole slot the moment one ID can't be resolved), which would
-// look like a bug rather than a real limit. Grouped and labeled for the
-// palette UI; kept in the same file as the transport sequences above so
-// adding resolver coverage for a new primitive is a one-place update
-// (add it here, and to primitive_resolver.c on the watch side).
 var PRIMITIVE_PALETTE = [
   { group: 'Spacers', items: [
     { id: PRIM.PRIM_SPACE, label: 'Space' },
@@ -274,10 +195,6 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_LABEL_WK_PREFIX, label: '"WK" label' },
     { id: PRIM.PRIM_WEEK_NUMBER, label: 'Week number' }
   ]},
-  // Parametrized primitives: `param: 'timezone'` tells the composer UI to
-  // show a zone picker for this item; the chosen zone index (0-18, same
-  // index space as feature_timezone_get()) travels as the primitive's aux
-  // byte (CORNER_PRIMITIVE_AUX) -- see primitive_resolver.c.
   { group: 'Time zone', items: [
     { id: PRIM.PRIM_TIMEZONE_ABBR, label: 'Zone name (LON)', param: 'timezone' },
     { id: PRIM.PRIM_TIMEZONE_TIME, label: 'Zone time', param: 'timezone' },
@@ -297,12 +214,6 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_SECOND_ONES, label: 'Second, ones digit' },
     { id: PRIM.PRIM_AMPM, label: 'AM/PM' }
   ]},
-  // Every element here is ONE value (or one icon / one label / one unit):
-  // nothing bundles a legend, unit or prefix with its number. Units and
-  // legends are separate elements ("Temp unit", "Wind unit", "H" label, ...)
-  // so a feature shows exactly what the person put in it. The bundled legacy
-  // primitives ("H 28", "UV6", "1013 hPa", "AQI 42", ...) still exist for the
-  // prebuilt features, they are just not offered for building.
   { group: 'Weather', items: [
     { id: PRIM.PRIM_WEATHER_CONDITION_ICON, label: 'Weather icon' },
     { id: PRIM.PRIM_CURRENT_TEMP_TEXT, label: 'Current temp' },
@@ -388,13 +299,9 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_LOCATION_ICON, label: 'Location icon' },
     { id: PRIM.PRIM_LOCATION_NAME, label: 'Location name' }
   ]},
-  // Free text typed by the user (e.g. "H", "L", "UV"). Travels as a fixed-text
-  // plugin slot (PRIM_PLUGIN_TEXT, slot key "text|<string>"), see plugin-manager.js.
   { group: 'Text', items: [
     { id: PRIM.PRIM_PLUGIN_TEXT, key: 'customtext', label: 'Custom text', customText: true }
   ]},
-  // One entry per plugin data source: the picker is filled at run time from the
-  // sources the Pebble app reports (see the 'plugin' param in config-composer.js).
   { group: 'Plugins', items: [
     { id: PRIM.PRIM_PLUGIN_TEXT, label: 'Plugin data', param: 'plugin' }
   ]}
@@ -404,26 +311,15 @@ PRIMITIVE_PALETTE.forEach(function (g) {
   g.items.forEach(function (it) { PRIMITIVE_LABEL_BY_ID[it.id] = it.label; });
 });
 
-// Zone picker options for parametrized primitives (index == content id - 44,
-// matching feature_timezone_get()'s own table and PRIMITIVE_TRANSPORT_AUX
-// above).
 var TIMEZONE_ZONES = [];
 (function () {
   for (var cid = 44; cid <= 62; cid++) {
     var item = CONTENT_ITEM_BY_ID[cid];
-    // abbr: the 3-letter code the existing zone previews already use
-    // ("DAC 18:34" -> "DAC"); shown on composer chips and in the preview.
     var abbr = item && item.preview ? String(item.preview).split(' ')[0] : ('Z' + (cid - 44));
     TIMEZONE_ZONES.push({ index: cid - 44, label: item ? item.label : ('Zone ' + (cid - 44)), abbr: abbr });
   }
 })();
 
-// Custom-sequence setting format: comma-separated
-// entries, each `id` or `id:aux`. Plain `id` (the original text-box format)
-// still parses, with aux 0, so anything saved by the earlier composer keeps
-// working. Invalid entries are dropped, never guessed at. The result is NOT
-// truncated to 10 here -- callers normalize (the settings page rejects >10
-// on save; the encoder clamps defensively).
 function parseCustomPrimsSetting(raw) {
   var ids = [];
   var aux = [];
@@ -440,19 +336,10 @@ function parseCustomPrimsSetting(raw) {
   return { ids: ids, aux: aux };
 }
 
-// Same as normalizePrimitiveSequence(), for the aux array.
 function normalizePrimitiveAux(aux) {
   return normalizePrimitiveSequence(aux);
 }
 
-// Sample text per primitive id, for the settings page's watch-face preview
-// canvas when a corner has a custom sequence (drawCornerSlot()). Values
-// deliberately match the existing CORNER_PREVIEW_LABELS samples (Monday,
-// SEP, day 15, 72/58 F, ...) so a custom sequence that reproduces a
-// prebuilt feature previews identically to it. Time-zone primitives are
-// zone-dependent and handled in composerPreviewLabel() from the aux byte,
-// so they are intentionally absent here. Icons use the same "(name)" style
-// the existing labels use for icon-only content.
 var PRIMITIVE_PREVIEW_TEXT = {};
 (function () {
   var t = PRIMITIVE_PREVIEW_TEXT;
@@ -583,12 +470,6 @@ var PRIMITIVE_PREVIEW_TEXT = {};
   t[PRIM.PRIM_PLUGIN_TEXT] = 'PLG';
 })();
 
-// Forecast slot options for PRIM_FORECAST_OFFSET_ICON/PRIM_FORECAST_TEMP_TEXT
-// (param: 'forecast'): index matches forecast_temp_c[]'s own space, same
-// idea as TIMEZONE_ZONES above -- 0-5 are 1-6 hours ahead, 6-8 are 1-3 days
-// ahead (content 87-95's own order), 9-14 are 7-12 hours ahead (added later,
-// so they come after the day slots to keep saved indices valid). The list is
-// ordered for the picker, NOT by index: always look a slot up by .index.
 var FORECAST_SLOTS = [
   { index: 0, label: '1 hour ahead' }, { index: 1, label: '2 hours ahead' },
   { index: 2, label: '3 hours ahead' }, { index: 3, label: '4 hours ahead' },
@@ -600,22 +481,11 @@ var FORECAST_SLOTS = [
   { index: 8, label: '3 days ahead' }
 ];
 
-// ---- Preview chips ---------------------------------------------------
-//
-// Reverse of PRIM (name -> id) and a param lookup built from
-// PRIMITIVE_PALETTE (the same "which primitives take an aux parameter, and
-// which" the composer itself uses) -- both are classification tables built
-// once from data that already exists elsewhere in this file, not
-// hand-duplicated.
 var PRIM_NAME_BY_ID = {};
 Object.keys(PRIM).forEach(function (name) { PRIM_NAME_BY_ID[PRIM[name]] = name; });
 var PRIM_PARAM_BY_ID = {};
 PRIMITIVE_PALETTE.forEach(function (g) { g.items.forEach(function (it) { if (it.param) PRIM_PARAM_BY_ID[it.id] = it.param; }); });
 
-// A chip's display kind, from the primitive's own name -- every primitive
-// ID in primitive_ids.h follows one consistent naming convention (an
-// _ICON suffix for icons, PRIM_LABEL_* for the constant-glyph prefixes),
-// so this needs no separate hand-kept id->kind table.
 function primitiveKindForId(id) {
   if (id === PRIM.PRIM_SPACE) return 'space';
   if (id === PRIM.PRIM_SLASH || id === PRIM.PRIM_DASH) return 'slash';
@@ -625,50 +495,31 @@ function primitiveKindForId(id) {
   return 'value';
 }
 
-// Sample text for a parametrized primitive at a given aux value (zone name
-// or forecast-slot label), or undefined for a non-parametrized primitive --
-// same substitution composerPreviewLabel() does for a person's custom
-// sequence, extracted here so both the reference preview (content-derived,
-// this file) and the composer (person-composed, config-composer.js) show
-// the identical label for the identical {id, aux} pair.
 function paramPrimitiveLabel(id, aux) {
   var param = PRIM_PARAM_BY_ID[id];
   if (!param) return undefined;
   if (param === 'timezone') {
     var zone = TIMEZONE_ZONES[aux];
     var zoneText = zone ? (zone.abbr || zone.label.split(' ')[0]) : ('zone ' + aux);
-    // Exact-id checks, not name substring matching -- every timezone
-    // primitive's name starts with "PRIM_TIMEZONE_", which itself contains
-    // "TIME", so a substring check on TIME/AMPM would misfire on the abbr
-    // primitive too.
     if (id === PRIM.PRIM_TIMEZONE_TIME) return '12:00';
     if (id === PRIM.PRIM_TIMEZONE_AMPM) return 'PM';
-    return zoneText; // PRIM_TIMEZONE_ABBR
+    return zoneText;
   }
-  if (param === 'forecast') return PRIMITIVE_PREVIEW_TEXT[id]; // slot-independent sample text
+  if (param === 'forecast') return PRIMITIVE_PREVIEW_TEXT[id];
   return undefined;
 }
 
-// Builds the chip list for an already-resolved {ids, aux} pair -- shared by
-// primitiveChipsForContent() (a content id's own sequence) and available for
-// a person-composed custom sequence too, so both paths render chips through
-// the same code. ids/aux are expected zero-padded (as
-// primitiveIdSequenceForContent()/primitiveAuxSequenceForContent() and
-// normalizePrimitiveSequence()/normalizePrimitiveAux() all produce); a
-// PRIM_ID_NONE (0) entry ends the sequence.
 function chipsFromSequence(ids, aux) {
   var chips = [];
   for (var i = 0; i < ids.length && ids[i] !== 0; i++) {
     var text = paramPrimitiveLabel(ids[i], aux[i]);
     if (text === undefined) text = PRIMITIVE_PREVIEW_TEXT[ids[i]];
-    if (text === undefined) text = '?'; // a resolver-covered id with no PRIMITIVE_PREVIEW_TEXT entry -- see this file's own header note
+    if (text === undefined) text = '?';
     chips.push({ kind: primitiveKindForId(ids[i]), text: text });
   }
   return chips;
 }
 
-// One chip per non-zero primitive in the phone-compiled sequence. Content
-// IDs are only local compiler inputs and never cross the wire.
 function primitiveChipsForContent(contentId) {
   var id = parseInt(contentId, 10);
   if (id === 0) return [];

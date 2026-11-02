@@ -1,7 +1,4 @@
 // GENERATED FILE -- do not edit by hand.
-// Produced by scripts/generate-infographics.js from
-// resources/infographics/hands<n>.png. Re-run that script after adding or
-// changing any hand-style picture, before `pebble build`.
 module.exports = {
   "1": "data:image/webp;base64,UklGRh4BAABXRUJQVlA4TBEBAAAvx8A4ABcgEEiS3B9lDYFAkj/nHgsEklz3Z3j+A38VOI5tu00kMuyhCKpwCeRUAlWoFC09v0vzZfz/1ZYQ0X9GbtuGUU8CnJuX7A3hz9PbnXlO50jTnM9T3Ctw5mkqcFJ4p8d2SgVfw+kKfqrgZ9e0GNMuz7JypO1sTWmftyIjcwk8rIzptQuxlsDHCC5BFjGEi7SD9ELo8osqXP5W1VZ+r9LlV1a2tHfYUn6/juCPvlUdLj+gMryJEB0qP6NDm4hRehMVaimBv6HwBk6q9AYWDcMbOKvCGzgV4X6a1H75Se1dHlKfbx2rwqO8PKgKfQ5LYgesF/jiJoX+cVBCB62bDlxjCLgGnLziaeLfc8LH8QsA",
   "2": "data:image/webp;base64,UklGRkYBAABXRUJQVlA4TDoBAAAvx8A4ABcgEEiS3B9lDYFAkj/nHgsEklz3Z3j+A38VQK6tt1GmSaRVdBNU4RII1jnUQBWsqYIlx2VOlD5NgD9G9J+RJElRClCL5TbYf6D/Jdt9hecZ8bxiasDBgGjBCr8Fr/dooFGrx0SyoFTPDq6BHVqPzAw+7LlCqKl8jkuB6pFrQJUrCkJqqL0VNS2e40Re01E1h9NQQ3fVFHMKlc+pVDkHuDi+ZU6nujlphaaiObWq5vQ1zc2y1GtXCWD+sNI5XSl0XxWEpq1v0G/8sWojIVA71GnMgT5bAIZF7VUvS+grFNUc8JXSkZMAznsfCN1u7OBcmeAcCzw+MXgY4GnCHyNFGClZG7AfxmMyyA1wE/4oJpzEIrYG8SgsZBh8gBE/GfEbhhG/E477sor4YhjxO+HQpxHx9BMZAg==",

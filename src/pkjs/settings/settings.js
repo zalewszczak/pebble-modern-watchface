@@ -1,7 +1,4 @@
-// ---- Local settings storage ----------------------------------------------
-// Reads and writes raw localStorage values. settings-codecs.js validates
-// and converts these values for the watch protocol.
-
+// Local settings storage
 function getSetting(key, fallback) {
   var v = localStorage.getItem(key);
   return (v === null || v === undefined || v === '') ? fallback : v;

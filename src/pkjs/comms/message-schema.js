@@ -1,32 +1,18 @@
-// ---- AppMessage schema: message types + key-to-chunk map -----------------
-//
-// Every send goes through sendFlatDict() (comms/message-encoder.js), which
-// buckets keys by subject into several smaller dictionaries (see
-// enqueueFlatDict() in message-queue.js) and sends them one at a time, each
-// tagged with MESSAGE_TYPE. Keep this enum in sync with the MsgType enum in
-// src/c/comms/comms_decoder.c.
+// AppMessage schema: message types + key-to-chunk map
 var MSG_TYPE = {
-  STATUS: 0,      // DATA_VALID, ERROR_CODE, LOCATION_NAME
-  WEATHER: 1,     // current conditions, forecast, air quality, altitude
-  ASTRONOMY: 2,   // sun/planet rise/set, moon phase, Saturn rings
-  SKY_EFFECTS: 3, // aurora, meteor shower, ISS pass
-  FEATURES: 4,    // primitive sequences and slot color modes
-  SETTINGS: 5     // look & feel: hands, markers, colors, units, vibes
+  STATUS: 0,
+  WEATHER: 1,
+  ASTRONOMY: 2,
+  SKY_EFFECTS: 3,
+  FEATURES: 4,
+  SETTINGS: 5
 };
 
-// STATUS first (DATA_VALID gates whether data fields are applied), then the
-// data chunks, then the purely cosmetic ones last.
 var MSG_TYPE_SEND_ORDER = [
   MSG_TYPE.STATUS, MSG_TYPE.WEATHER, MSG_TYPE.ASTRONOMY,
   MSG_TYPE.SKY_EFFECTS, MSG_TYPE.FEATURES, MSG_TYPE.SETTINGS
 ];
 
-// BG_IMG_BEGIN/INDEX/DATA/END (custom-background image transfer, sent raw by
-// bg-image/bg-image-sync.js) and BG_IMG_STAMP (watch -> phone) are deliberately
-// not in this table: they never go through the chunked flat-dict path.
-
-// Maps every AppMessage key (other than MESSAGE_TYPE itself) to the chunk it
-// belongs in. One table, so there is one place to check when a key is added.
 var KEY_TYPE_MAP = (function () {
   var map = {};
   function assign(type, keys) { keys.forEach(function (k) { map[k] = type; }); }

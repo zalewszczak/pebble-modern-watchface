@@ -1,13 +1,4 @@
-// ---- Data refresh coordination ------------------------------------------
-// Owns location lookup, optional data-source fetches, refresh scheduling,
-// and the cache used to avoid unnecessary requests and resends.
-//
-// Public API: refreshAndSend, scheduleRefresh, startBatterySaverHourlyCheck,
-// setBatterySaverPhase -- the last one exists because lastBatterySaverPhase
-// is written from index.js's own 'appmessage' handler (the watch reports
-// its phase there) but read only here, so index.js needs a setter rather
-// than reaching into this module's private state directly.
-
+// Data refresh coordination
 var astro = require('./astro');
 var weather = require('./weather/weather');
 var weatherSource = require('./weather/weather-source');
@@ -23,37 +14,11 @@ var sendWeatherData = messageEncoder.sendWeatherData;
 var sendFlatDict = messageEncoder.sendFlatDict;
 
 var refreshTimer = null;
-// Battery saver: last BATTERY_SAVER_PHASE the watch has reported (0=awake,
-// 1=sleep, 2=deep sleep -- see shake_anim_mode's neighboring comment block
-// the watch side). While non-zero, the watch itself has said nobody's
-// shaken it in 2h+, so the periodic refresh below holds off except right
-// at the top of the hour (see scheduleRefresh()/startBatterySaverHourlyCheck()) --
-// "stop requesting updates from the phone till full hour" only makes sense
-// here, phone-side, since the periodic refresh is a PKJS setInterval with
-// no watch-side equivalent to turn off.
 var lastBatterySaverPhase = 0;
-// Guards startBatterySaverHourlyCheck()'s once-a-minute check against
-// firing more than once inside the same top-of-hour minute -- a plain
-// "is it :00 right now" test alone would refresh every time that timer
-// callback happens to land during minute 0, not just the first.
 var lastHourlyRefreshHourKey = null;
 var batterySaverHourlyTimer = null;
-// Guards against a slow, older refresh's response arriving AFTER a
-// newer one and overwriting it with stale data -- e.g. the periodic
-// background timer firing (using the phone's real GPS location) right
-// as the user saves a manual-coordinates override in settings: without
-// this, if that older in-flight request's chain of network calls
-// happens to finish later than the new forced one, it would clobber
-// the correct new location/weather with the old location's data. Each
-// refreshAndSend() call claims the next generation number; only the
-// call that's still the current generation when its data is finally
-// ready is allowed to actually send it.
 var s_refreshGeneration = 0;
 
-// Parses an HTML5 datetime-local value ("YYYY-MM-DDTHH:mm", always in
-// this exact format per spec) into a local Date, by hand rather than
-// via Date.parse/new Date(string) -- PKJS's JS engine's string-parsing
-// support is not guaranteed to match a desktop browser's.
 function parseDateTimeLocal(str) {
   if (!str) return null;
   var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(str);
@@ -64,9 +29,6 @@ function parseDateTimeLocal(str) {
   );
 }
 
-// Astronomy values are refreshed by the phone-side data service.
-// Real time can be overridden in test mode to preview time-dependent
-// data. This changes phone-side calculations only, not the watch clock.
 function getEffectiveNow() {
   var testMode = getSetting('CONFIG_TEST_MODE', 'false') === 'true';
   if (testMode) {
@@ -80,13 +42,6 @@ function getEffectiveNow() {
   return new Date();
 }
 
-// ---- location naming (cached reverse geocode) -----------------------------
-
-// Only re-geocode when the location has moved more than ~5km (0.05
-// degrees is a rough approximation, fine at the scale this matters
-// for), so a stationary watch doesn't hit Nominatim on every refresh
-// -- keeps us well within their usage policy and avoids pointless
-// network calls for a name that isn't going to have changed.
 var GEOCODE_MOVE_THRESHOLD_DEG = 0.05;
 
 function getLocationName(lat, lon, cb) {
@@ -107,7 +62,7 @@ function getLocationName(lat, lon, cb) {
     servicelog.recordAttempt('geocode', err);
     if (err) {
       console.log('modern: reverse geocode failed - ' + err.message);
-      cb(cachedName || ''); // fall back to a stale name rather than nothing
+      cb(cachedName || '');
       return;
     }
     setSetting('CACHE_GEOCODE_LAT', String(lat));
@@ -124,7 +79,7 @@ function getLocation(cb) {
     var lat = parseFloat(getSetting('CONFIG_LAT', ''));
     var lon = parseFloat(getSetting('CONFIG_LON', ''));
     if (!isNaN(lat) && !isNaN(lon)) {
-      cb(null, lat, lon, null); // no altitude in manual-coordinates mode
+      cb(null, lat, lon, null);
       return;
     }
     console.log('modern: manual location selected but not set yet, falling back to GPS');
@@ -137,10 +92,6 @@ function getLocation(cb) {
 
   navigator.geolocation.getCurrentPosition(
     function (pos) {
-      // altitude is meters above the WGS84 ellipsoid when the device
-      // can supply it (GPS fix with altitude support) -- null on many
-      // phones/emulators, in which case we just skip the horizon-dip
-      // correction rather than guessing.
       cb(null, pos.coords.latitude, pos.coords.longitude, pos.coords.altitude);
     },
     function (err) {
@@ -153,8 +104,6 @@ function getLocation(cb) {
     { timeout: 15000, maximumAge: 600000, enableHighAccuracy: false }
   );
 }
-
-// ---- smart refresh (skip re-fetching if nothing's likely changed) --------
 
 function haversineKm(lat1, lon1, lat2, lon2) {
   var R = 6371;
@@ -172,17 +121,6 @@ function markRefreshDone(lat, lon) {
   setSetting('CACHE_LAST_FETCH_LON', String(lon));
 }
 
-// True if we fetched recently enough (within the user's refresh
-// interval) AND haven't moved more than ~10km since -- in which case
-// there's nothing meaningful to gain from hitting the network again.
-// A location change bypasses this regardless of how recently we
-// fetched, since that's exactly the case where stale data would
-// actually be wrong rather than just slightly dated. Works the same
-// way whether lat/lon came from GPS or the manual-coordinates setting
-// -- both flow through getLocation() into refreshAndSend() as plain
-// numbers before either shouldSkipRefresh() or markRefreshDone() ever
-// see them, so there's nothing location-source-specific for this
-// distance check to get wrong or needs to special-case.
 function shouldSkipRefresh(lat, lon) {
   var lastTs = parseInt(getSetting('CACHE_LAST_FETCH_TS', '0'), 10);
   var lastLat = parseFloat(getSetting('CACHE_LAST_FETCH_LAT', ''));
@@ -196,67 +134,6 @@ function shouldSkipRefresh(lat, lon) {
   return haversineKm(lat, lon, lastLat, lastLon) < 10;
 }
 
-// Called instead of a real refetch when refreshAndSend() was given
-// resendOnSkip=true AND shouldSkipRefresh() says there's nothing new
-// worth fetching -- but "nothing new to fetch" and "the watch already
-// has this" are NOT the same thing: the watch's own persisted data
-// can go missing independently of anything PKJS tracks (most commonly
-// right after a watch app update changes its data struct's layout,
-// which invalidates whatever was saved under the old one -- see
-// Watch data is serialized using the current schema.
-// happens the watch shows "No data yet, waiting for phone" and starts
-// asking for a resend via REQUEST_UPDATE (see request_retry_callback()
-// landed right back on shouldSkipRefresh() and got silently dropped,
-// since from PKJS's side nothing had changed since the last
-// successful fetch. Resending the last full computed result (cheap --
-// no network involved) instead of nothing at all is what actually
-// answers that request.
-//
-// resendOnSkip is deliberately NOT the default, and this function is
-// deliberately not called unconditionally on every skip -- it used to
-// be, which was itself a real bug: a settings save also goes through
-// refreshAndSend(), and its own skip (nothing location/weather-wise
-// needs refetching) would resend this cache anyway -- but the cache
-// only updates on a genuine full refresh, not the cosmetic-only push
-// a save already sends immediately (see sendFlatDict()'s own
-// LAST_FULL_COMPUTED_DICT comment), so it'd be resending whatever was
-// cached from BEFORE the save. From the watch's side that looked like
-// "I just changed a setting, and a few seconds later it reverted" --
-// every one of the 7 full-refresh chunks arriving right on the heels
-// of the save's own 2 cosmetic ones, carrying the old values. Only
-// the REQUEST_UPDATE handler passes resendOnSkip=true now, since
-// that's the one caller actually asking "does the watch have
-// anything at all," not "did anything change."
-//
-// Returns true if there was something to resend, false if the cache
-// was empty/corrupt (in which case the caller should fall through to
-// a real fetch instead).
-//
-// The cached dict's own settings fields are stale by construction --
-// it's only ever (re)written on a genuine full refresh (see
-// sendFlatDict()'s own LAST_FULL_COMPUTED_DICT comment), so any
-// settings save that happened since then (the common case: this
-// function's whole reason to exist is answering a REQUEST_UPDATE,
-// which the watch sends on every relaunch, including a completely
-// ordinary one long after the day's one real weather refresh already
-// ran) is invisible to it. Sending the cached dict as-is would still
-// be exactly the bug the comment above already describes fixing for
-// every OTHER caller ("I just changed a setting, and a bit later it
-// reverted") -- just via this one remaining path instead: settings
-// save correctly reaches the watch immediately (sendFlatDict({}) in
-// the webviewclosed handler) and it displays right, then the watch
-// happens to relaunch (locked/unlocked, app-switched away and back,
-// a plain reboot) before the next real weather refresh, its
-// REQUEST_UPDATE lands here, shouldSkipRefresh() correctly says
-// there's nothing weather-wise to refetch, and the stale cached
-// settings from before the save go right back out over the top of
-// the correct ones the watch already had. sendFlatDict(dict) re-
-// derives every settings field fresh into the cached dict before it
-// goes out (mutating it in place; harmless to the astronomy/weather
-// fields already in it, which sendFlatDict never touches) rather than
-// sending that dict unmodified -- and re-caches the corrected result
-// too, since sendFlatDict() re-checks for C1_TIME itself, so the
-// cache self-heals rather than staying stale until the next real fetch.
 function resendLastFullData() {
   try {
     var raw = localStorage.getItem('LAST_FULL_COMPUTED_DICT');
@@ -270,16 +147,6 @@ function resendLastFullData() {
   }
 }
 
-// Only fetches ISS elements when the user has explicitly opted in
-// (per the brief -- this needs a live external data source, unlike
-// the planets, so it's opt-in rather than always-on). Fails open: a
-// fetch error just means no ISS this cycle, not a hard refresh
-// failure -- everything else in the payload is still good. Fires
-// either when the sky-view "Show ISS" toggle is on, or when the
-// separate "Next ISS pass" corner content (id 83, text-only, no sky
-// dot) is picked anywhere -- same "only fetch if actually shown
-// somewhere" reasoning as fetchAirQualityIfEnabled below, since both
-// draw from the exact same Celestrak fetch + astro.js computation.
 function fetchIssIfEnabled(lat, lon, cb) {
   var nextPassInUse = AQI_SLOT_CONTENT_KEYS.some(function (key) { return getSetting(key, '0') === '83'; });
   if (!nextPassInUse) {
@@ -295,9 +162,6 @@ function fetchIssIfEnabled(lat, lon, cb) {
   });
 }
 
-// Same "only fetch if actually shown somewhere" gate as fetchIssIfEnabled
-// above -- there's no dedicated CONFIG_SHOW_AQI checkbox, so this checks
-// the 12 corner/edge slots directly for content id 36 ("Air quality").
 var AQI_SLOT_CONTENT_KEYS = ['CONFIG_CORNER_TL', 'CONFIG_CORNER_TR',
   'CONFIG_CORNER_BL', 'CONFIG_CORNER_BR',
   'CONFIG_UPPER_MIDDLE_LINE1_CONTENT', 'CONFIG_UPPER_MIDDLE_LINE2_CONTENT',
@@ -317,8 +181,6 @@ function fetchAirQualityIfEnabled(lat, lon, cb) {
   });
 }
 
-// Fetches the Kp index only when "Aurora Kp" (content id 84) is shown in
-// some slot. Fails open: an error just means no aurora reading this cycle.
 function fetchAuroraIfEnabled(lat, lon, cb) {
   var inUse = AQI_SLOT_CONTENT_KEYS.some(function (key) { return getSetting(key, '0') === '84'; });
   if (!inUse) return cb({ kp: null }, 0);
@@ -326,37 +188,16 @@ function fetchAuroraIfEnabled(lat, lon, cb) {
     var cls = servicelog.recordAttempt('aurora', err || (typeof kp !== 'number' ? new Error('no data') : null));
     if (err || typeof kp !== 'number') {
       console.log('modern: aurora Kp fetch failed - ' + (err ? err.message : 'no data'));
-      // null (not 0): "fetch failed, keep the watch's last reading".
       return cb({ kp: null }, cls.code);
     }
     cb({ kp: kp }, 0);
   });
 }
 
-// ---- main refresh cycle --------------------------------------------------
-
-// resendOnSkip: only true from the REQUEST_UPDATE handler in index.js's
-// 'appmessage' listener -- see its own comment for why that specific
-// trigger needs the skip path to still push something to the watch. Every other caller
-// (a settings save, the periodic timer, PKJS's own startup) defaults
-// to false, so a skip there really does mean "send nothing" the way
-// it always did -- see resendLastFullData()'s own comment for why
-// resending unconditionally on every skip was itself a bug: a settings
-// save already pushes its own fresh cosmetic-only chunk immediately
-// (see sendFlatDict()), and if THIS call then skipped-with-resend, it
-// would fire moments later with whatever full data was cached from
-// BEFORE the save -- silently overwriting the save's own fresh
-// settings with stale ones, which is exactly what it looked like from
-// the watch's side: "I just changed something, and a few seconds
-// later it reverted."
 function refreshAndSend(force, resendOnSkip) {
   console.log('modern: refresh starting' + (force ? ' (forced)' : ''));
   s_refreshGeneration++;
   var myGeneration = s_refreshGeneration;
-  // True once a newer refreshAndSend() call has started since this one
-  // did -- checked before every point below that would send data to
-  // the watch, so a slow older request can never clobber a newer one's
-  // result (see the s_refreshGeneration comment above).
   function isStale() { return myGeneration !== s_refreshGeneration; }
 
   getLocation(function (err, lat, lon, altitudeMeters) {
@@ -404,8 +245,6 @@ function refreshAndSend(force, resendOnSkip) {
           jupiter: riseSetFor(dayStart, function (g) { return g.jupiterAlt; }),
           saturn: riseSetFor(dayStart, function (g) { return g.saturnAlt; })
         },
-        // Tomorrow's sunrise, so the "next sun event" feature still has a
-        // target once today's sunset has passed.
         sunRiseTomorrow: riseSetFor(nextDayStart, function (g) { return g.sunAlt; }).rise,
         saturnRingOpenPct: astro.saturnRingOpenPct(now, lat, lon),
         meteorShower: astro.activeMeteorShower(now)
@@ -419,8 +258,6 @@ function refreshAndSend(force, resendOnSkip) {
       (astroData.moonPhase.waxing ? 'waxing' : 'waning') +
       (astroData.meteorShower ? ('; ' + astroData.meteorShower.name + ' intensity ' + astroData.meteorShower.intensity) : ''));
 
-    // Cloud-cover outlook for the next few hours (optionally blended with
-    // OpenWeatherMap when the user supplied a key).
     var outlookTo = new Date(now.getTime() + 3 * 3600000);
     var owmKey = getSetting('CONFIG_OWM_KEY', '');
 
@@ -468,24 +305,11 @@ function scheduleRefresh() {
   var mins = parseInt(getSetting('CONFIG_UPDATE_MINS', '20'), 10);
   if (isNaN(mins) || mins < 5) mins = 20;
   refreshTimer = setInterval(function () {
-    // Battery saver: the watch has told us (BATTERY_SAVER_PHASE) it's
-    // gone 2h+ without a shake -- hold off on this normal cadence
-    // entirely and let startBatterySaverHourlyCheck() below handle
-    // refreshing, at most once per full hour, instead.
     if (lastBatterySaverPhase !== 0) return;
     refreshAndSend(false, false);
   }, mins * 60000);
 }
 
-// Battery saver's "till full hour" cadence while the watch reports
-// sleep/deep sleep -- runs alongside scheduleRefresh()'s own timer
-// (which self-skips above while resting) rather than replacing it, so
-// a normal cadence resumes immediately, with nothing further to
-// re-arm, the moment the watch reports being awake again. A plain
-// once-a-minute check for "is it :00 right now" rather than trying to
-// compute and re-schedule a timer landing exactly on the next hour
-// boundary -- simpler, and the watch's own once-a-minute tick while
-// resting already has this exact same shape (see tick_handler()'s
 function startBatterySaverHourlyCheck() {
   if (batterySaverHourlyTimer) clearInterval(batterySaverHourlyTimer);
   batterySaverHourlyTimer = setInterval(function () {
@@ -493,7 +317,7 @@ function startBatterySaverHourlyCheck() {
     var now = new Date();
     if (now.getMinutes() !== 0) return;
     var hourKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '-' + now.getHours();
-    if (hourKey === lastHourlyRefreshHourKey) return; // already refreshed this hour
+    if (hourKey === lastHourlyRefreshHourKey) return;
     lastHourlyRefreshHourKey = hourKey;
     refreshAndSend(false, false);
   }, 60000);

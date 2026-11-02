@@ -1,22 +1,4 @@
-/**
- * iss.js -- fetches the ISS's current orbital elements from
- * Celestrak's free GP (General Perturbations) data API and computes
- * its current position as seen from the user's location.
- *
- * Celestrak publishes elements for every tracked object, updated
- * regularly from the official USSF catalog -- catalog number 25544
- * is the ISS specifically. This is the standard, well-known free
- * source for this kind of data (the same one basically every
- * satellite-tracking tool, amateur or professional, ultimately pulls
- * from). Usage policy asks for well under 1 request/sec; this app
- * only calls it once per refresh cycle (same 5-60 minute interval as
- * everything else), so that's never a concern.
- *
- * The actual alt/az math lives in astro.js's issLookAngle() -- this
- * module is just the fetch + field-mapping layer between Celestrak's
- * OMM JSON and what that function expects.
- */
-
+// iss.js -- fetches the ISS's current orbital elements from
 var astro = require('./astro.js');
 
 var ISS_CATALOG_NUMBER = 25544;
@@ -52,16 +34,6 @@ function xhrGetJSON(url, timeoutMs, cb) {
   xhr.send();
 }
 
-/**
- * Fetches fresh ISS elements and computes both its current look angle
- * and, from the same element set (no extra network call), the start
- * time of the next visible pass -- see astro.js's findNextIssPass()
- * for exactly what "visible" means and the search window it uses.
- *
- * @param {number} lat
- * @param {number} lon
- * @param {function(Error|null, {alt: number, az: number, distanceKm: number, epoch: Date, nextPass: Date|null}|null)} cb
- */
 function getIssPosition(lat, lon, cb) {
   var url = 'https://celestrak.org/NORAD/elements/gp.php?CATNR=' + ISS_CATALOG_NUMBER + '&FORMAT=json';
   xhrGetJSON(url, 8000, function (err, json) {
@@ -72,7 +44,7 @@ function getIssPosition(lat, lon, cb) {
         return cb(new Error('unexpected Celestrak response shape'), null);
       }
       var omm = {
-        epoch: new Date(rec.EPOCH + 'Z'), // Celestrak's EPOCH has no zone suffix but is UTC
+        epoch: new Date(rec.EPOCH + 'Z'),
         meanMotionRevPerDay: rec.MEAN_MOTION,
         eccentricity: rec.ECCENTRICITY,
         inclinationDeg: rec.INCLINATION,

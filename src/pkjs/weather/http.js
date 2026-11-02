@@ -1,7 +1,4 @@
-// ---- Shared XHR JSON request helper -------------------------------------
-// PKJS uses XMLHttpRequest for network requests; this helper parses JSON
-// responses and reports transport or parsing errors through the callback.
-
+// Shared XHR JSON request helper
 function xhrGetJSON(url, timeoutMs, cb) {
   var xhr = new XMLHttpRequest();
   var done = false;

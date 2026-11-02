@@ -1,18 +1,6 @@
-// ---- Scheduled My styles: settings-page popup ---------------------------------
-//
-// The clock button on each My Style slot opens #scheduleModal. The schedule is
-// kept per slot in a hidden input (presetSlot<n>Schedule) as JSON,
-//   {"enabled":true,"days":127,"time":"08:00"}     (days: bit 0 = Sunday ... bit 6 = Saturday)
-// and travels to PKJS as CONFIG_PRESET_<n>_SCHEDULE with everything else when
-// the settings page is saved. What PKJS does with it: see scheduled-style.js.
-//
-// Exports the exact text spliced into the page, like config-presets.js. The
-// client script is generated from readable source; lines are joined without
-// newlines, so it must not contain // comments.
-
+// Scheduled My styles: settings-page popup
 var esc = require('./config-template').esc;
 
-// One slot's schedule as stored: is it switched on?
 function scheduleIsOn(raw) {
   if (!raw) return false;
   try { return JSON.parse(raw).enabled === true; } catch (e) { return false; }
@@ -29,8 +17,6 @@ var css =
 '  .sched-day-btn.active { background: #ff9200; color: #fff; box-shadow: inset 0 2px 4px rgba(0,0,0,0.35); }' +
 '  .sched-error { color: #e03131; font-size: 13px; text-align: center; margin-top: 8px; }';
 
-// Clock icon: an SVG so the stroke can follow the button's text color (an
-// emoji could not turn burgundy).
 var CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
 
 function scheduleButtonHtml(n, hasPreset, scheduleRaw) {
@@ -74,8 +60,6 @@ var modalHtml =
 '  </div>' +
 '</div>';
 
-// knownIds: every element id scheduled-style.js can apply (used only for the
-// developer note in the popup when a saved style contains something it cannot).
 function clientJs(knownIds) {
   return (
 'var SCHEDULE_KNOWN_IDS = ' + JSON.stringify(knownIds || []) + ';' +

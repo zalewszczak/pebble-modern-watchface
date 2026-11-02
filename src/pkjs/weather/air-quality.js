@@ -1,13 +1,6 @@
-// ---- air quality provider -------------------------------------------
-//
-// Fetches current air-quality measurements from Open-Meteo.
-
+// air quality provider
 var xhrGetJSON = require('./http').xhrGetJSON;
 
-// Separate Open-Meteo service (different subdomain, no signup needed,
-// same as the main forecast call) -- both AQI standards come back in
-// one request, so which one to actually display is purely a
-// settings-page/on-watch choice (CONFIG_AQI_UNIT), not a second fetch.
 function fetchAirQuality(lat, lon, cb) {
   var url = 'https://air-quality-api.open-meteo.com/v1/air-quality' +
             '?latitude=' + encodeURIComponent(lat) +

@@ -1,7 +1,4 @@
 // Converts saved CONFIG_* settings into validated numeric values and byte
-// arrays for AppMessage payloads. Message construction and transmission are
-// handled by the communication modules.
-
 var settings = require('./settings');
 var getSetting = settings.getSetting;
 var presetsLookups = require('../presets-lookups');
@@ -9,11 +6,6 @@ var MAX_FEATURES = presetsLookups.MAX_FEATURES;
 var FONT_MAX_CONTENT_ID = presetsLookups.FONT_MAX_CONTENT_ID;
 var MARKER_STYLE_PRESET_FIELDS = presetsLookups.MARKER_STYLE_PRESET_FIELDS;
 
-// Unified font ids (see font_lookup.h) -- CONFIG_CORNER_FONT/CONFIG_MARKER_TEXT_FONT are all just the numeric
-// id as a string now, straight from config-page.js's <select> value,
-// so there's no string-to-code mapping layer needed here anymore --
-// clamped to FONT_LOOKUP's own 0-37 range (see FONT_LOOKUP in
-// config-page.js) rather than trusting whatever the webview sent.
 function clampFontId(v) { return clampInt(v, 0, FONT_MAX_CONTENT_ID, 1); }
 
 function tempUnitCode() {
@@ -35,11 +27,6 @@ function showSecondsCode() {
   return (getSetting('CONFIG_SHOW_SECONDS', 'false') === 'true') ? 1 : 0;
 }
 
-// Custom colors are stored as raw packed GColor argb bytes (0-255) --
-// the settings page's 64-color picker computes these directly in the
-// browser (0xC0 | (r2<<4) | (g2<<2) | b2, matching Pebble's own 2-bit-
-// per-channel packing), so this side just passes them through with a
-// sane fallback if something's missing or out of range.
 function customColorByte(key, fallbackByte) {
   var v = parseInt(getSetting(key, String(fallbackByte)), 10);
   if (isNaN(v) || v < 0 || v > 255) return fallbackByte;
@@ -56,29 +43,22 @@ function nightCustomBgByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_BG', 
 function nightCustomTextByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_TEXT', 0xFF); }
 function nightCustomAccentByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_ACCENT', 0xFF); }
 
-// 0=simple, 1=hollow, 2=filled -- only hollow is actually implemented
-// on-watch right now (see draw_weather_icon_hollow() in
 function weatherIconStyleCode() {
   var id = parseInt(getSetting('CONFIG_WEATHER_ICON_STYLE', '1'), 10);
   if (isNaN(id) || id < 0 || id > 2) id = 1;
   return id;
 }
-// 0=US AQI (EPA scale, 0-500+), 1=European AQI (0-100+) -- which of the
-// two values already fetched (see fetchAirQualityIfEnabled) the "Air
-// quality" corner content displays.
 function aqiUnitCode() {
   var id = parseInt(getSetting('CONFIG_AQI_UNIT', '0'), 10);
   if (isNaN(id) || id < 0 || id > 1) id = 0;
   return id;
 }
-// 0=meters, 1=feet -- used by the "Altitude" corner content.
 function altitudeUnitCode() {
   var id = parseInt(getSetting('CONFIG_ALTITUDE_UNIT', '0'), 10);
   if (isNaN(id) || id < 0 || id > 1) id = 0;
   return id;
 }
 
-// How long (seconds) a shake keeps the smooth second hand running.
 function shakeSecondsCode() {
   var secs = parseInt(getSetting('CONFIG_SHAKE_LABEL_SECONDS', '3'), 10);
   if (isNaN(secs) || secs < 1) secs = 1;
@@ -86,30 +66,11 @@ function shakeSecondsCode() {
   return secs;
 }
 
-// A single global style choice -- solid black shadows, or dithered
-// translucent ones -- applied to every hand's shadow. Defaults to translucent.
 function shadowTranslucentCode() { return getSetting('CONFIG_SHADOW_TRANSLUCENT', 'true') === 'true' ? 1 : 0; }
-// Single shared light-source direction for every hand's shadow --
-// see hand_layer.h's own comment for why a separate angle per hand
-// made no sense.
 function shadowAngleCode() { return clampInt(getSetting('CONFIG_SHADOW_ANGLE', '120'), 0, 359, 120); }
 
-// The built-in marker presets (bigAnalogMarkerStyle 0 None, 1 Braun,
-// 2 Swiss, 9 Classy, 10 Minimal -- see MARKER_STYLE_PRESET_FIELDS in
-// presets-lookups.js) don't exist on the watch: it only knows the
-// bitmap styles (3-7, 11-19) and Custom (8). While one of those presets is
-// the selected style, this sends 8 and every customHour*/customSec*/
-// markerText* codec below reports the preset's own values (numerals
-// included) in place of whatever is stored, so the watch simply
-// receives an ordinary custom marker. The
-// stored choice itself is untouched, so the settings menu keeps showing
-// the preset. Normally the stored custom fields already equal the preset
-// (the settings page copies them in on selection -- see
-// applyMarkerStylePresetToCustom() in config-page.js); resolving here as
-// well covers settings saved before that existed and a refresh that
-// lands before the settings page has ever been reopened.
 var MARKER_STYLE_CUSTOM = 8;
-var MARKER_STYLE_DEFAULT = 3; // Modern (bitmap) -- also what a missing/garbled stored value falls back to
+var MARKER_STYLE_DEFAULT = 3;
 function storedMarkerStyleId() {
   var id = parseInt(getSetting('CONFIG_BIG_ANALOG_MARKER_STYLE', String(MARKER_STYLE_DEFAULT)), 10);
   if (isNaN(id) || id < 0 || id > 19) id = MARKER_STYLE_DEFAULT;
@@ -122,25 +83,11 @@ function bigAnalogMarkerStyleCode() {
   var id = storedMarkerStyleId();
   return MARKER_STYLE_PRESET_FIELDS[String(id)] ? MARKER_STYLE_CUSTOM : id;
 }
-// Bitmap marker styles' own transparency -- deliberately separate from
-// bigAnalogHandsTransparentCode() above (that one used to double as
-// this too, which meant toggling hand transparency also silently
-// dimmed the markers whether or not that's what was wanted).
 function bitmapMarkerInvertCode() { return getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true' ? 1 : 0; }
 function bitmapMarkerTransparentCode() { return getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true' ? 1 : 0; }
 
-// Whether the corners/edges feature overlay draws underneath the
-// analog hands instead of on top of them -- only meaningful (and only
-// shown on the settings page) when bottomStyle is 'analog'.
 function drawFeaturesBeneathHandsCode() { return getSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'false') === 'true' ? 1 : 0; }
 
-// Custom hour/second marker system (bigAnalogMarkerStyleCode() === 8,
-// which is also what a Minimal/Braun/Swiss/Classy preset is sent as) --
-// see MarkerRingConfig/MarkerTextConfig in marker_layer.h for what each
-// field means and its valid range. Border values are 0-100% "reach"
-// (marker_reach_px() in marker_layer.c does the actual px mapping,
-// on-watch, from real screen dimensions) -- a mark is drawn directly
-// between its inner and outer border points, no separate length field.
 var MARKER_BORDER_MIN = 0, MARKER_BORDER_MAX = 100;
 function clampInt(v, lo, hi, fallback) {
   var n = parseInt(v, 10);
@@ -149,10 +96,6 @@ function clampInt(v, lo, hi, fallback) {
   if (n > hi) return hi;
   return n;
 }
-// CONFIG_CUSTOM_HOUR_INNER_BORDER -> ['hour', 'InnerBorder'],
-// CONFIG_MARKER_TEXT_TARGET -> ['text', 'Target'] etc. -- each stored
-// custom-marker/numerals key paired with the same group/field name
-// presets-lookups.js's MARKER_STYLE_PRESET_FIELDS uses.
 var CUSTOM_MARKER_KEY_FIELDS = {
   CONFIG_MARKER_TEXT_TARGET: ['text', 'Target'],
   CONFIG_MARKER_TEXT_FONT: ['text', 'Font'],
@@ -167,22 +110,17 @@ var CUSTOM_MARKER_KEY_FIELDS = {
     CUSTOM_MARKER_KEY_FIELDS[key] = [kind, field];
   });
 });
-// getSetting() for one of those keys, except that while a marker preset
-// is the selected style the preset's own value wins (see the comment
-// above bigAnalogMarkerStyleCode()).
 function customMarkerSetting(key, fallback) {
   var preset = activeMarkerPresetFields();
   var where = CUSTOM_MARKER_KEY_FIELDS[key];
   if (preset && where) return preset[where[0]][where[1]];
   return getSetting(key, fallback);
 }
-function customMarkerStyleCode(key, fallback) { return clampInt(customMarkerSetting(key, fallback), 0, 4, fallback); } // 3 is reserved/unused -- see MarkerRingConfig's own style comment
+function customMarkerStyleCode(key, fallback) { return clampInt(customMarkerSetting(key, fallback), 0, 4, fallback); }
 function customMarkerBorderCode(key, fallback) { return clampInt(customMarkerSetting(key, fallback), MARKER_BORDER_MIN, MARKER_BORDER_MAX, fallback); }
 
 function customHourStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_HOUR_STYLE', 0); }
-function customHourThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'), 0, 20, 3); } // 0 is a real value here -- see draw_marker_ring()'s own "thickness 0 means this ring draws nothing at all" comment; the config page's "None" shape commits exactly that
-// Only meaningful for style 4 (tapered) -- sent as its own simple
-// field, not part of the MARKER_RINGS blob, see custom_hour_marker_
+function customHourThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'), 0, 20, 3); }
 function customHourInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_THICKNESS', '3'), 1, 20, 3); }
 function customHourInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', '0'), 0, 100, 0); }
 function customHourOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', '0'), 0, 100, 0); }
@@ -190,14 +128,13 @@ function customHourInnerBorderCode() { return customMarkerBorderCode('CONFIG_CUS
 function customHourOuterBorderCode() {
   var outer = customMarkerBorderCode('CONFIG_CUSTOM_HOUR_OUTER_BORDER', 100);
   var inner = customHourInnerBorderCode();
-  return outer < inner ? inner : outer; // outer never below inner -- see MarkerRingConfig
+  return outer < inner ? inner : outer;
 }
 function customHourTranslucentCode() { return customMarkerSetting('CONFIG_CUSTOM_HOUR_TRANSLUCENT', 'false') === 'true' ? 1 : 0; }
-// 0=main, 1=accent, 2=background -- see MarkerRingConfig's own color
 function customHourColorCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_COLOR', '0'), 0, 2, 0); }
 function customSecStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_SEC_STYLE', 0); }
-function customSecThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_THICKNESS', '1'), 0, 10, 1); } // see customHourThicknessCode()
-function customSecInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_THICKNESS', '1'), 1, 10, 1); } // see customHourInnerThicknessCode()
+function customSecThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_THICKNESS', '1'), 0, 10, 1); }
+function customSecInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_THICKNESS', '1'), 1, 10, 1); }
 function customSecInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_ECC', '0'), 0, 100, 0); }
 function customSecOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', '0'), 0, 100, 0); }
 function customSecInnerBorderCode() { return customMarkerBorderCode('CONFIG_CUSTOM_SEC_INNER_BORDER', 70); }
@@ -215,34 +152,15 @@ function markerTextHourMaskCode() { return clampInt(customMarkerSetting('CONFIG_
 function markerTextSecMaskCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_SEC_MASK', '4095'), 0, 4095, 4095); }
 function markerTextRomanCode() { return customMarkerSetting('CONFIG_MARKER_TEXT_ROMAN', 'false') === 'true' ? 1 : 0; }
 
-// Hour/minute/second hand system -- see HandConfig in hand_layer.h for
-// what each field means. Style 0-2 are the original dot/triangle/square;
-// 3-7 are dauphine/sword/spade/arrow/pomme, and 8-10 are leaf/syringe/
-// serpentine -- all of 3-10 additionally use middle_offset (leaf only
-// middle_offset, the rest also secondary_width). Every hand -- whether
-// picked via one of config-page.js's preset buttons or hand-edited --
-// is sent as one of these full field sets; the watch has no separate
-// "preset" concept of its own (see HAND_PRESETS in config-page.js).
 function handStyleFieldCode(key, fallback) { return clampInt(getSetting(key, fallback), 0, 10, fallback); }
 function handColorFieldCode(key, fallback) { return clampInt(getSetting(key, fallback), 0, 2, fallback); }
-// A hand's own color additionally allows 3 = "none" (skip the fill) --
-// outline color and the center circle color don't get that option.
 function handMainColorFieldCode(key, fallback) { return clampInt(getSetting(key, fallback), 0, 3, fallback); }
 function handOutlineEnabledCode(key) { return getSetting(key, 'false') === 'true' ? 1 : 0; }
 function handTranslucentCode(key) { return getSetting(key, 'false') === 'true' ? 1 : 0; }
 function handShadowEnabledCode(key) { return getSetting(key, 'false') === 'true' ? 1 : 0; }
-// 0-359 degrees, same "0 = 12 o'clock, clockwise" convention as every
-// other angle sent to the watch.
 function handShadowDistanceCode(key) { return clampInt(getSetting(key, '2'), 1, 5, 2); }
-// Same ranges as back_offset and width respectively -- only meaningful
-// for styles 3-7 (dauphine/sword/spade/arrow/pomme), ignored by 0-2,
-// but always sent/clamped the same way regardless of the hand's
-// current style so switching styles doesn't need its own save/reset.
 function handMiddleOffsetCode(key) { return clampInt(getSetting(key, '0'), -40, 80, 0); }
 function handSecondaryWidthCode(key) { return clampInt(getSetting(key, '6'), 1, 40, 6); }
-// hollow_thickness: same 1-40 range as width -- <= 1 draws the original
-// plain 1px perimeter trace, see HandConfig.hollow's own comment in
-// hand_layer.h.
 function handHollowCode(key) { return getSetting(key, 'false') === 'true' ? 1 : 0; }
 function handHollowThicknessCode(key) { return clampInt(getSetting(key, '1'), 1, 40, 1); }
 
@@ -294,21 +212,13 @@ function handSecHollowThicknessCode() { return handHollowThicknessCode('CONFIG_H
 function centerCircleRadiusCode() { return clampInt(getSetting('CONFIG_CENTER_CIRCLE_RADIUS', '3'), 0, 30, 3); }
 function centerCircleColorCode() { return handColorFieldCode('CONFIG_CENTER_CIRCLE_COLOR', 0); }
 
-// Edge/middle slot settings are persisted per layout under baseKey + '_ANALOG'
-// (older installs also carry a '_DIGITAL' twin, which is now ignored); falls
-// back to the plain baseKey when the suffixed one was never saved.
 function dualContextSetting(baseKey, fallback) {
   return getSetting(baseKey + '_ANALOG', getSetting(baseKey, fallback));
 }
-// Whether the marker style leaves a given edge/middle slot free. Mirrors
-// computeSlotAvailability() in config-page.js (kept in sync by hand) so the
-// value sent to the watch can be zeroed independently of the PERSISTED
-// setting. Availability depends on the marker style (and, for a couple of
-// bitmap styles, the corner-override toggle).
 function analogEdgeAvailability() {
   var markerStyle = storedMarkerStyleId();
   var override = getSetting('CONFIG_BITMAP_CORNER_OVERRIDE', 'false') === 'true';
-  if (markerStyle < 3 || markerStyle === 5 || markerStyle >= 8) { // ring-based styles (0-2, 8-10) and Tally leave every edge free
+  if (markerStyle < 3 || markerStyle === 5 || markerStyle >= 8) {
     return { upper: true, bottom: true, left: true, right: true };
   }
   if (markerStyle === 7) {
@@ -347,7 +257,6 @@ function upperMiddleLine2ColorModeCode() {
   if (!dualContextVisible('upper')) return 0;
   return id;
 }
-// Bottom-middle line 1 defaults to "Long date + sunrise/sunset" (content 105).
 function bottomMiddleLine1ContentCode() {
   var id = parseInt(dualContextSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT', '105'), 10);
   if (isNaN(id) || id < 0 || id > MAX_FEATURES) id = 0;
@@ -360,8 +269,6 @@ function bottomMiddleLine1ColorModeCode() {
   if (!dualContextVisible('bottom')) return 0;
   return id;
 }
-// bottomMiddleLine2 is a single plain setting (not a per-layout pair); its
-// availability (avail.bottom) still applies, same as any other edge.
 function bottomMiddleLine2ContentCode() {
   var id = parseInt(getSetting('CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT', '0'), 10);
   if (isNaN(id) || id < 0 || id > MAX_FEATURES) id = 0;
@@ -423,17 +330,11 @@ function middleRightLine2ColorModeCode() {
   return id;
 }
 
-
 function drawDebugCode() { return getSetting('CONFIG_DRAW_DEBUG', 'false') === 'true' ? 1 : 0; }
-// Hourly vibrations -- see hourly_vibe_mode's own comment in
 function hourlyVibeModeCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_MODE', '0'), 0, 2, 0); }
 function hourlyVibeIntervalMinCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', '30'), 1, 180, 30); }
 function btLostVibeCode() { return clampInt(getSetting('CONFIG_BT_LOST_VIBE', '0'), 0, 3, 0); }
 function hourlyVibePatternCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_PATTERN', '0'), 0, 2, 0); }
-// "HH:MM" (the config page's own <input type="time"> value) -> minutes
-// since midnight (0-1439), same units hourly_vibe_start_min/
-// hourly_vibe_end_min store on the watch. Falls back to '00:00' (all
-// day, per that field's own comment) on anything unparseable.
 function minutesSinceMidnight(hhmm) {
   var parts = String(hhmm || '00:00').split(':');
   var h = clampInt(parts[0], 0, 23, 0), m = clampInt(parts[1], 0, 59, 0);
@@ -443,15 +344,10 @@ function hourlyVibeStartMinCode() { return minutesSinceMidnight(getSetting('CONF
 function hourlyVibeEndMinCode() { return minutesSinceMidnight(getSetting('CONFIG_HOURLY_VIBE_END_TIME', '00:00')); }
 function hourlyVibeDaysMaskCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', '127'), 0, 127, 127); }
 function hourlyVibeOverrideQuietCode() { return getSetting('CONFIG_HOURLY_VIBE_OVERRIDE_QUIET', 'true') === 'true' ? 1 : 0; }
-// 0=off, 1=animate the hands in at startup. An old stored "planet sweep" (2)
-// reads as off.
 function startupClockAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_STARTUP_CLOCK_ANIM_MODE', '1'), 10);
   return v === 1 ? 1 : 0;
 }
-// 0=off, 1=animate the markers in. The old "planets" option (1) is gone, so
-// an old stored 2 ("markers") maps to 1 and an old stored 1 to off.
-// Weather border: 0=off, 1=conditions, 2=temperature; thickness 2-40 px.
 function borderWeatherModeCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
   return (v >= 1 && v <= 4) ? v : 0;
@@ -471,18 +367,12 @@ function borderWeatherPxCode() {
 }
 function bgAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_BG_ANIM_MODE', '0'), 10);
-  // The settings page stores 0 (Off) or 1 (Indices); older builds stored 2.
   return (v === 1 || v === 2) ? 1 : 0;
 }
-// 0=off, 1=shake runs the smooth second hand. The old "Planet seek" (2) is
-// gone; old stored 1 and 3 ("both") keep the smooth second hand.
 function shakeAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_SHAKE_ANIM_MODE', '0'), 10);
   return (v === 1 || v === 3) ? 1 : 0;
 }
-// comment. Backward-compatible with the setting's old plain boolean
-// ('true'/'false', from before the Thick option existed): those map
-// to thin/none respectively, same as they always looked.
 function outlineEnabledCode() {
   var raw = getSetting('CONFIG_OUTLINE_ENABLED', '1');
   if (raw === 'true') return 1;
@@ -491,29 +381,11 @@ function outlineEnabledCode() {
   return [0, 1, 2].indexOf(v) === -1 ? 1 : v;
 }
 function batterySaverEnabledCode() { return getSetting('CONFIG_BATTERY_SAVER_ENABLED', 'false') === 'true' ? 1 : 0; }
-// Feature font on a fresh install: Digital Dream (font id 27, see presets-lookups.js / font_lookup.c).
 var DEFAULT_CORNER_FONT = 27;
 function cornerFontCode() {
   return clampInt(getSetting('CONFIG_CORNER_FONT', String(DEFAULT_CORNER_FONT)), 0, FONT_MAX_CONTENT_ID, DEFAULT_CORNER_FONT);
 }
 
-// Corners: 4 slots (0=top-left, 1=top-right, 2=bottom-left,
-// 3=bottom-right), each an independent content-type + color-mode
-// pair. Sent as two packed byte arrays rather than 8 separate keys.
-// ---- Custom primitive sequences for edge and middle slots ---------------
-//
-// Mirrors the 4 corner CONFIG_CORNER_*_CUSTOM_PRIMS settings (see
-// message-encoder.js) for the 8 edge/middle slots, following each slot's own
-// content-code rules exactly: the 7 dual-context slots persist one value per
-// layout (CONFIG_<SLOT>_CUSTOM_PRIMS_ANALOG / _DIGITAL, read through
-// dualContextSetting() like their Content/Color siblings), and
-// bottomMiddleLine2 -- analog-only -- stays one plain setting. A slot the
-// CURRENT layout wouldn't show right now yields '' (nothing custom is sent),
-// the same transmission-time zeroing the content codes above do; the stored
-// value itself is never touched.
-//
-// Order is EDGE_LINE_COLOR_MODE's slot order (SLOT_UPPER_L1 ..
-// SLOT_RIGHT_L2).
 var EDGE_CUSTOM_PRIMS_SLOTS = [
   { key: 'CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS', dual: true, edge: 'upper' },
   { key: 'CONFIG_UPPER_MIDDLE_LINE2_CUSTOM_PRIMS', dual: true, edge: 'upper' },
@@ -557,9 +429,6 @@ function dailyStepGoalValue() {
   return v;
 }
 
-// Per-feature "show only when shaken" flags -> one 12-bit mask, bit order =
-// the watch's feature slot enum (feature_slot.h): upper l1/l2, bottom l1/l2,
-// middle-left l1/l2, middle-right l1/l2, corners TL/TR/BL/BR.
 var SHAKE_ONLY_SETTINGS = [
   'CONFIG_UPPER_MIDDLE_LINE1_SHAKE',
   'CONFIG_UPPER_MIDDLE_LINE2_SHAKE',

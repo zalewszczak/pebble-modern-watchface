@@ -492,7 +492,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     }
     case PRIM_WIND_DIRECTION_ICON:
     case PRIM_WIND_DIRECTION_TEXT: {
-      static const char *COMPASS8[8] = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+      static const char *const COMPASS8[8] = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
       int idx = ((data->wind_dir_deg + 22) / 45) % 8;
       if (idx < 0) idx += 8;
       // Legacy case 35 always uses main_color, not a graded value.
@@ -954,7 +954,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         out->force_color = true;
         return true;
       }
-      static const char *PLANET_ABBR[PLANET_COUNT] = { "MER", "VEN", "MAR", "JUP", "SAT" };
+      static const char *const PLANET_ABBR[PLANET_COUNT] = { "MER", "VEN", "MAR", "JUP", "SAT" };
       int best = -1;
       time_t best_t = 0;
       for (int p = 0; p < PLANET_COUNT; p++) {
@@ -1022,7 +1022,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
         out->two_tone_accent_main = true;
         return true;
       }
-      static const char *COMPASS_DIRS[16] = {
+      static const char *const COMPASS_DIRS[16] = {
         "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
         "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
       };

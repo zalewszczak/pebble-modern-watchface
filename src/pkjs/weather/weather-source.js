@@ -1,16 +1,4 @@
-// ---- weather data source: Pebble weather plugin (default) or Open-Meteo ---------------
-//
-// CONFIG_WEATHER_SOURCE: 'plugin' (default) | 'plugin:<uuid>' | 'openmeteo'.
-//
-// With 'plugin', the Pebble app's own weather plugin (weather/location, the
-// first saved location) supplies the headline values: temperature, high/low,
-// condition, UV and chance of rain. The plugin does not offer wind, humidity,
-// pressure, dew point, cloud cover or the hourly/daily forecast arrays, so
-// Open-Meteo is still queried for those and the plugin values are laid over
-// the result. If the plugin is unavailable (old Pebble app, plugins switched
-// off, no weather location, timeout) the Open-Meteo snapshot is used as-is, so
-// weather keeps working exactly like before.
-
+// weather data source: Pebble weather plugin (default) or Open-Meteo
 var weather = require('./weather');
 var pluginManager = require('../plugins/plugin-manager');
 var getSetting = require('../settings/settings').getSetting;
@@ -43,7 +31,6 @@ function textOf(payloads) {
   return (k && typeof k.text === 'string') ? k.text : '';
 }
 
-// Plugin condition_code -> { wx: detailed class (see weatherDetailClass), cond: condition enum }.
 var CODE_MAP = {
   sun: { wx: 0, cond: 0 },
   partly_cloudy: { wx: 1, cond: 0 },
@@ -55,7 +42,6 @@ var CODE_MAP = {
   rain_and_snow: { wx: 9, cond: 2 }
 };
 
-// Reads the plugin once. cb(err, { tempC, tempHighC, tempLowC, uv, rainPct, code })
 function fetchPluginWeather(providerUuid, cb) {
   if (!pluginManager.hasApi()) return cb(new Error('plugins not available'));
   var done = false, handle = null, timer = null;
@@ -63,7 +49,7 @@ function fetchPluginWeather(providerUuid, cb) {
     if (done) return;
     done = true;
     if (timer) clearTimeout(timer);
-    if (handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { /* ignore */ } }
+    if (handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { } }
     cb(err, value);
   }
   timer = setTimeout(function () { finish(new Error('weather plugin timed out')); }, PLUGIN_TIMEOUT_MS);
@@ -87,7 +73,7 @@ function fetchPluginWeather(providerUuid, cb) {
       },
       onError: function (err) { finish(new Error('weather plugin: ' + ((err && err.code) || 'error'))); }
     });
-    if (done && handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { /* ignore */ } }
+    if (done && handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { } }
   } catch (e) {
     finish(e);
   }
@@ -106,7 +92,6 @@ function overlay(snap, p) {
   return out;
 }
 
-// 'plugin' = whichever weather plugin the user chose in the Pebble app; 'plugin:<uuid>' = that one.
 function sourceSetting() { return String(getSetting('CONFIG_WEATHER_SOURCE', 'plugin')); }
 function useWeatherPlugin() {
   return sourceSetting().indexOf('plugin') === 0 && pluginManager.hasApi();
@@ -116,7 +101,6 @@ function providerUuid() {
   return s.indexOf('plugin:') === 0 ? s.slice(7) : '';
 }
 
-// Same signature as weather.getWeatherSnapshot(lat, lon, now, cb(err, snapshot)).
 function getSnapshot(lat, lon, now, cb) {
   if (!useWeatherPlugin()) return weather.getWeatherSnapshot(lat, lon, now, cb);
   fetchPluginWeather(providerUuid(), function (perr, p) {

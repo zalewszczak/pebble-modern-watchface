@@ -1,8 +1,6 @@
 var configPage = require('./config-page');
 var servicelog = require('./servicelog');
 
-// Settings keys are migrated to the current schema version before anything
-// reads them (self-executes on require).
 require('./settings/settings-migration');
 
 var settings = require('./settings/settings');
@@ -26,39 +24,23 @@ var firstRun = require('./settings/first-run');
 var configBridge = require('./plugins/config-bridge');
 var startBatterySaverHourlyCheck = refreshManager.startBatterySaverHourlyCheck;
 
-// ---- scheduled My styles ------------------------------------------------
-//
-// See scheduled-style.js for the whole design. Short version: the watch
-// asks (REQUEST_SCHEDULED_STYLE) once NEXT_STYLE_CHECK has passed; this
-// applies whatever is due and pushes the result.
 var scheduledStyle = require('./scheduled-style');
 
-// Applies any due scheduled style and, if one was applied, pushes the new
-// settings (plus the fresh NEXT_STYLE_CHECK they carry) to the watch.
 function serveScheduledStyle() {
   var r = scheduledStyle.applyDue(Date.now());
   if (r.applied) {
     console.log('modern: scheduled style applied from My style slot ' + r.slot);
-    // The style may carry its own plugin slot assignments: re-subscribe to them first.
     pluginManager.setSlots(pluginManager.getSlots());
     sendFlatDict({});
-    pluginBg.apply(); // ... and may select (or leave) the plugin background
-    bgImageSync.syncIfNeeded(); // the applied style may select an uploaded background
-    // Same follow-up a manual settings save does: only refetches if the
-    // regular refresh interval has actually elapsed.
+    pluginBg.apply();
+    bgImageSync.syncIfNeeded();
     refreshAndSend(false, false);
   }
   return r.applied;
 }
 
-// ---- first start ---------------------------------------------------------
-//
-// On a fresh install the phone settings are set to what the watch itself defaults to
-// (see settings/first-run.js), before anything reads them.
 firstRun.seedIfFresh();
 
-// Reads the Pebble app's user preferences (units, complications) and, only on the first
-// start, applies them over those defaults and sends the result to the watch.
 function applyFirstRunPreferences() {
   if (!firstRun.pending()) return;
   preferences.capture(5000, function (prefs) {
@@ -69,18 +51,11 @@ function applyFirstRunPreferences() {
   });
 }
 
-// ---- Pebble lifecycle --------------------------------------------------
-
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
-  // Plugin sources: subscribe to whatever the user assigned and push values as they change.
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
-  // Plugin background picture (style PLUGIN): follow its source again after every start.
   pluginBg.apply();
   applyFirstRunPreferences();
-  // Catch up on anything that came due while PKJS was not running (phone
-  // off, watch on another app). Done first so the refresh below already
-  // sends the applied style.
   serveScheduledStyle();
   refreshAndSend(false, false);
   scheduleRefresh();
@@ -88,47 +63,23 @@ Pebble.addEventListener('ready', function () {
 });
 
 Pebble.addEventListener('appmessage', function (e) {
-  // The watch's own clock says a scheduled style is due (or overdue -- it
-  // repeats once a minute until it receives a new NEXT_STYLE_CHECK). If
-  // nothing is actually due here (clock skew, already served), reply with
-  // just the fresh next time so the watch stops or re-aims its retries.
   if (e && e.payload && e.payload.REQUEST_SCHEDULED_STYLE) {
     if (!serveScheduledStyle()) {
       messageQueue.enqueueFlatDict({ 'NEXT_STYLE_CHECK': scheduledStyle.nextCheckSeconds(Date.now()) });
     }
   }
   if (e && e.payload && e.payload.BG_IMG_STAMP !== undefined) {
-    // The watch says which uploaded background image it currently holds.
     bgImageSync.noteWatchStamp(e.payload.BG_IMG_STAMP);
   }
   if (e && e.payload && e.payload.REQUEST_UPDATE) {
-    // The watch sends this both on every app launch/relaunch and on
-    // a deliberate select-button press -- we can't tell which, so
-    // this respects the smart-refresh skip too rather than treating
-    // every watchface start as a reason to hit the network. That skip
-    // still means "don't refetch," not "send nothing" though -- the
-    // one true resendOnSkip caller: see resendLastFullData()/
-    // refreshAndSend()'s own comments for why a plain do-nothing skip
-    // here used to leave the watch stuck on "No data yet, waiting for
-    // phone" (most visibly right after a watch app update wipes its
-    // persisted data) until the skip window itself expired -- and for
-    // why every OTHER caller of refreshAndSend() deliberately leaves
-    // resendOnSkip false instead of also passing true here.
     refreshAndSend(false, true);
     bgImageSync.syncIfNeeded();
   }
-  // Battery saver: the watch's own current awake/sleep/deep-sleep
-  // phase, resent whenever it changes (and retried by the watch on
-  // the next tick if a send ever fails) -- see setBatterySaverPhase()'s
-  // own comment in refresh-manager.js for what it gates. Checked with
-  // !== undefined rather than a truthy check like REQUEST_UPDATE above,
-  // since 0 (awake) is a legitimate, meaningful value here, not "absent".
   if (e && e.payload && e.payload.BATTERY_SAVER_PHASE !== undefined) {
     refreshManager.setBatterySaverPhase(e.payload.BATTERY_SAVER_PHASE);
   }
 });
 
-// Everything the settings page needs to show its current state.
 function buildCurrent() {
   return {
     autoLoc: getSetting('CONFIG_AUTO_LOC', 'true') !== 'false',
@@ -137,9 +88,6 @@ function buildCurrent() {
     locationName: getSetting('CONFIG_LOCATION_NAME', ''),
     owmKey: getSetting('CONFIG_OWM_KEY', ''),
     updateMins: getSetting('CONFIG_UPDATE_MINS', '20'),
-    // Settings-page-only remembered font choices. These are not sent to
-    // the watch; they let the browser-side picker restore each font family
-    // after the settings page itself is reloaded.
     tempUnit: getSetting('CONFIG_TEMP_UNIT', 'C'),
     windSpeedUnit: getSetting('CONFIG_WIND_SPEED_UNIT', 'kmh'),
     showSeconds: getSetting('CONFIG_SHOW_SECONDS', 'false') === 'true',
@@ -157,9 +105,6 @@ function buildCurrent() {
     shadowTranslucent: getSetting('CONFIG_SHADOW_TRANSLUCENT', 'true'),
     shadowAngle: getSetting('CONFIG_SHADOW_ANGLE', '120'),
     bigAnalogMarkerStyle: getSetting('CONFIG_BIG_ANALOG_MARKER_STYLE', '3'),
-    // Custom background: selection + the user's uploaded images (see
-    // bg-image/bg-image-sync.js).
-    // Per-feature "show only when shaken" flags ('0'/'1').
     upperMiddleLine1Shake: getSetting('CONFIG_UPPER_MIDDLE_LINE1_SHAKE', '0'),
     upperMiddleLine2Shake: getSetting('CONFIG_UPPER_MIDDLE_LINE2_SHAKE', '0'),
     bottomMiddleLine1Shake: getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_SHAKE', '0'),
@@ -191,9 +136,6 @@ function buildCurrent() {
     bgSlots: bgImageSync.getSlots(),
     bitmapMarkerTransparent: getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true',
     bitmapMarkerInvert: getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true',
-    // Browser-side only -- the watch never needs feature IDs. The settings
-    // page compiles the selected corner features to primitive sequences
-    // before sending them. Persisted here so the checkbox survives reopening.
     bitmapCornerOverride: getSetting('CONFIG_BITMAP_CORNER_OVERRIDE', 'false') === 'true',
     drawFeaturesBeneathHands: getSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'false') === 'true',
     customHourStyle: getSetting('CONFIG_CUSTOM_HOUR_STYLE', '0'),
@@ -264,19 +206,12 @@ function buildCurrent() {
     handSecHollowThickness: getSetting('CONFIG_HAND_SEC_HOLLOW_THICKNESS', '1'),
     centerCircleRadius: getSetting('CONFIG_CENTER_CIRCLE_RADIUS', '3'),
     centerCircleColor: getSetting('CONFIG_CENTER_CIRCLE_COLOR', '0'),
-    // Dual-context fields (see dualContextSetting()'s own comment):
-    // exposes BOTH persisted halves, not just whichever one matches
-    // the CURRENT layout -- config-page.js needs both up front so it
-    // can swap between them live if the user switches layouts while
-    // the page stays open, without a round trip back here.
     upperMiddleLine1ContentAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG', getSetting('CONFIG_UPPER_MIDDLE_LINE1_CONTENT', '0')),
     upperMiddleLine1ColorAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG', getSetting('CONFIG_UPPER_MIDDLE_LINE1_COLOR', '0')),
     upperMiddleLine2ContentAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE2_CONTENT_ANALOG', getSetting('CONFIG_UPPER_MIDDLE_LINE2_CONTENT', '0')),
     upperMiddleLine2ColorAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE2_COLOR_ANALOG', getSetting('CONFIG_UPPER_MIDDLE_LINE2_COLOR', '0')),
     bottomMiddleLine1ContentAnalog: getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT_ANALOG', getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT', '105')),
     bottomMiddleLine1ColorAnalog: getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_COLOR_ANALOG', getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_COLOR', '0')),
-    // Analog-only -- a single plain value, not a dual-context pair (see
-    // bottomMiddleLine2ContentCode()'s own comment).
     bottomMiddleLine2Content: getSetting('CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT', '0'),
     bottomMiddleLine2Color: getSetting('CONFIG_BOTTOM_MIDDLE_LINE2_COLOR', '0'),
     middleLeftLine1ContentAnalog: getSetting('CONFIG_MIDDLE_LEFT_LINE1_CONTENT_ANALOG', getSetting('CONFIG_MIDDLE_LEFT_LINE1_CONTENT', '0')),
@@ -287,7 +222,6 @@ function buildCurrent() {
     middleRightLine1ColorAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE1_COLOR_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE1_COLOR', '0')),
     middleRightLine2ContentAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE2_CONTENT_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE2_CONTENT', '0')),
     middleRightLine2ColorAnalog: getSetting('CONFIG_MIDDLE_RIGHT_LINE2_COLOR_ANALOG', getSetting('CONFIG_MIDDLE_RIGHT_LINE2_COLOR', '0')),
-    // Custom primitive sequences for the seven dual-context edge/middle slots.
     upperMiddleLine1CustomPrimsAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG', ''),
     upperMiddleLine2CustomPrimsAnalog: getSetting('CONFIG_UPPER_MIDDLE_LINE2_CUSTOM_PRIMS_ANALOG', ''),
     bottomMiddleLine1CustomPrimsAnalog: getSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CUSTOM_PRIMS_ANALOG', ''),
@@ -300,8 +234,6 @@ function buildCurrent() {
     cornerTR: getSetting('CONFIG_CORNER_TR', '0'),
     cornerBL: getSetting('CONFIG_CORNER_BL', '0'),
     cornerBR: getSetting('CONFIG_CORNER_BR', '0'),
-    // A custom sequence overrides the sequence compiled from the selected
-    // feature. An empty string uses the feature's default sequence.
     cornerTLCustomPrims: getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
     cornerTRCustomPrims: getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
     cornerBLCustomPrims: getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),
@@ -329,10 +261,6 @@ function buildCurrent() {
     hourlyVibeEndTime: getSetting('CONFIG_HOURLY_VIBE_END_TIME', '00:00'),
     hourlyVibeDaysMask: getSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', '127'),
     hourlyVibeOverrideQuiet: getSetting('CONFIG_HOURLY_VIBE_OVERRIDE_QUIET', 'true') === 'true',
-    // Last RAW_MESSAGE_LOG_MAX individual chunks actually sent -- see
-    // recordRawMessage() near the top of this file. Newest last (the
-    // order they were recorded in); the settings page itself is what
-    // shows them newest-first.
     rawMessageLog: (function () {
       try {
         var raw = localStorage.getItem('RAW_MESSAGE_LOG');
@@ -344,10 +272,6 @@ function buildCurrent() {
     })(),
     debugOverrideEnabled: getSetting('CONFIG_DEBUG_OVERRIDE_ENABLED', 'false') === 'true',
     debugOverrideData: getSetting('CONFIG_DEBUG_OVERRIDE_DATA', ''),
-    // Every key the watch could currently receive, pre-filled with
-    // real current values -- see buildFullKeysetDict()'s own comment.
-    // Computed fresh every time the settings page opens (cheap, no
-    // network fetch of its own), not cached/persisted anywhere.
     fullKeysetJson: JSON.stringify(buildFullKeysetDict(), null, 2),
     serviceLogs: servicelog.snapshotAll(),
     presetSlot1Name: getSetting('CONFIG_PRESET_1_NAME', ''),
@@ -375,38 +299,24 @@ function buildCurrent() {
     presetSlot5Schedule: getSetting('CONFIG_PRESET_5_SCHEDULE', ''),
     presetSlot6Schedule: getSetting('CONFIG_PRESET_6_SCHEDULE', ''),
     scheduleKnownIds: scheduledStyle.knownIds(),
-    // Pebble plugins: what the phone app offers (or why it does not), the
-    // sources assigned to the watch's plugin slots, and the weather source.
     pluginCatalogue: pluginManager.readCatalogue(),
-    // Pebble app user preferences (units, complications) as last read, for the page's
-    // "Load user preferences" / "Load units" buttons.
     preferences: preferences.snapshot(),
     pluginSlots: pluginManager.getSlots(),
     weatherSource: getSetting('CONFIG_WEATHER_SOURCE', 'plugin')
   };
 }
 
-// Legacy flow (older Pebble apps, or when no bundled page is configured).
 Pebble.addEventListener('showConfiguration', function () {
   var html = configPage.buildConfigHtml(buildCurrent());
-  // Classic no-server config page: the whole thing is a data: URI, no
-  // hosting required. The page reads a `return_to` query param that
-  // the runtime appends (falling back to pebblejs://close# per
-  // Pebble's manual-setup guide) and navigates there with the
-  // settings JSON, which 'webviewclosed' below picks up as
-  // e.response.
   Pebble.openURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
 });
 
 Pebble.addEventListener('webviewclosed', function (e) {
   if (!e || !e.response) return;
   var raw = e.response;
-  // Some platforms deliver e.response already decoded, others don't;
-  // decodeURIComponent is a no-op on already-plain JSON so this is safe.
   try {
     raw = decodeURIComponent(raw);
   } catch (err) {
-    // fall through and try to parse whatever we were given
   }
 
   var settings;
@@ -424,21 +334,8 @@ function unitSettingsSignature() {
     getSetting('CONFIG_ALTITUDE_UNIT', '0'), getSetting('CONFIG_AQI_UNIT', '0')].join('|');
 }
 
-// Applies a settings object from the page -- either handed over when the legacy
-// page closes (above) or sent live by the bundled page (see plugins/config-bridge.js).
 function applySettingsObject(settings) {
 
-  // Debug-only direct send (see config-page.js's "full keyset" window
-  // and its own Send button): takes exactly the -- possibly hand-
-  // edited -- full keyset already sitting in that textarea and sends
-  // it chunked to the watch as-is, overriding whatever the normal
-  // settings-save flow below would otherwise have computed and sent
-  // instead. A completely separate action from an ordinary Save (that
-  // button doesn't set this flag at all), so it deliberately returns
-  // here rather than falling through into any of the normal
-  // setSetting()/sendFlatDict()/refreshAndSend() calls below --
-  // nothing about this send is persisted, and no other setting
-  // changes.
   if (settings.CONFIG_SEND_FULL_KEYSET) {
     try {
       var keyset = JSON.parse(settings.CONFIG_FULL_KEYSET_DATA);
@@ -454,14 +351,6 @@ function applySettingsObject(settings) {
     return;
   }
 
-  // Debug-only fake weather send (see config-page.js's "Fake weather"
-  // panel and its own sendFakeWeatherToWatch()/buildFakeWeatherDict()):
-  // same shape as the CONFIG_SEND_FULL_KEYSET branch just above, just
-  // for the smaller WEATHER-chunk-only dict that panel builds instead
-  // of the full keyset -- enqueue it as-is and return before any of
-  // the normal setSetting()/save-flow code below runs, so nothing
-  // about a spoofed weather push is persisted and no other setting
-  // changes.
   if (settings.CONFIG_SEND_FAKE_WEATHER) {
     try {
       var fakeWeather = JSON.parse(settings.CONFIG_FAKE_WEATHER_DATA);
@@ -477,20 +366,12 @@ function applySettingsObject(settings) {
     return;
   }
 
-  // A real save: from here on the person's settings win over first-start defaults.
   firstRun.markDone();
   var unitsBefore = unitSettingsSignature();
 
   setSetting('CONFIG_AUTO_LOC', settings.CONFIG_AUTO_LOC ? 'true' : 'false');
   setSetting('CONFIG_LAT', settings.CONFIG_LAT || '');
   setSetting('CONFIG_LON', settings.CONFIG_LON || '');
-  // Cached reverse-geocoded (or searched-for) display name for the
-  // manual lat/lon above -- purely for the settings page's own
-  // "Location" section sub-header (see buildConfigHtml()'s own
-  // comment), so it can show "Use Innsbruck, Austria" instead of raw
-  // coordinates without re-resolving them over the network every
-  // single time the page opens. Cleared browser-side whenever the
-  // person edits lat/lon by hand until it's re-resolved.
   setSetting('CONFIG_LOCATION_NAME', settings.CONFIG_LOCATION_NAME || '');
   setSetting('CONFIG_OWM_KEY', settings.CONFIG_OWM_KEY || '');
   setSetting('CONFIG_UPDATE_MINS', settings.CONFIG_UPDATE_MINS || '20');
@@ -611,18 +492,12 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_HAND_SEC_HOLLOW_THICKNESS', settings.CONFIG_HAND_SEC_HOLLOW_THICKNESS || '1');
   setSetting('CONFIG_CENTER_CIRCLE_RADIUS', settings.CONFIG_CENTER_CIRCLE_RADIUS || '3');
   setSetting('CONFIG_CENTER_CIRCLE_COLOR', settings.CONFIG_CENTER_CIRCLE_COLOR || '0');
-  // Dual-context fields -- see dualContextSetting()'s own comment.
-  // config-page.js's save() now sends both halves explicitly (it has
-  // to: only one of the two is ever live in the shared DOM element at
-  // save time, the other comes from its own in-page shadow copy), so
-  // this just writes each straight through, one setting per half.
   setSetting('CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG', settings.CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG || '0');
   setSetting('CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG', settings.CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG || '0');
   setSetting('CONFIG_UPPER_MIDDLE_LINE2_CONTENT_ANALOG', settings.CONFIG_UPPER_MIDDLE_LINE2_CONTENT_ANALOG || '0');
   setSetting('CONFIG_UPPER_MIDDLE_LINE2_COLOR_ANALOG', settings.CONFIG_UPPER_MIDDLE_LINE2_COLOR_ANALOG || '0');
   setSetting('CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT_ANALOG', settings.CONFIG_BOTTOM_MIDDLE_LINE1_CONTENT_ANALOG || '105');
   setSetting('CONFIG_BOTTOM_MIDDLE_LINE1_COLOR_ANALOG', settings.CONFIG_BOTTOM_MIDDLE_LINE1_COLOR_ANALOG || '0');
-  // Analog-only -- a single plain setting, not a dual-context pair.
   setSetting('CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT', settings.CONFIG_BOTTOM_MIDDLE_LINE2_CONTENT || '0');
   setSetting('CONFIG_BOTTOM_MIDDLE_LINE2_COLOR', settings.CONFIG_BOTTOM_MIDDLE_LINE2_COLOR || '0');
   setSetting('CONFIG_MIDDLE_LEFT_LINE1_CONTENT_ANALOG', settings.CONFIG_MIDDLE_LEFT_LINE1_CONTENT_ANALOG || '0');
@@ -683,8 +558,6 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_PRESET_6_NAME', settings.CONFIG_PRESET_6_NAME || '');
   setSetting('CONFIG_PRESET_6_JSON', settings.CONFIG_PRESET_6_JSON || '');
   setSetting('CONFIG_PRESET_6_IMAGE', settings.CONFIG_PRESET_6_IMAGE || '');
-  // Scheduled My styles. A changed schedule re-arms itself from now; an
-  // unchanged one is left alone (see persistSlotSchedule()).
   (function () {
     var nowMs = Date.now();
     for (var n = 1; n <= scheduledStyle.SLOT_COUNT; n++) {
@@ -701,49 +574,17 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', settings.CONFIG_HOURLY_VIBE_DAYS_MASK || '127');
   setSetting('CONFIG_HOURLY_VIBE_OVERRIDE_QUIET', settings.CONFIG_HOURLY_VIBE_OVERRIDE_QUIET === false ? 'false' : 'true');
   if (settings.CONFIG_WEATHER_SOURCE) setSetting('CONFIG_WEATHER_SOURCE', settings.CONFIG_WEATHER_SOURCE === 'openmeteo' ? 'openmeteo' : (/^plugin:[^\s]+$/.test(settings.CONFIG_WEATHER_SOURCE) ? settings.CONFIG_WEATHER_SOURCE : 'plugin'));
-  // Plugin data slots: store the page's list and (re)subscribe to those sources.
   if (settings.CONFIG_PLUGIN_SLOTS !== undefined) pluginManager.setSlots(settings.CONFIG_PLUGIN_SLOTS);
 
-  // The clock font / weather-readout toggle / colors are purely
-  // cosmetic and phone-local -- send them immediately rather than
-  // waiting for a full refresh cycle to complete, so a settings
-  // change feels instant regardless of whether one happens at all.
   sendFlatDict({});
-  // The unit-dependent texts (temperatures, wind, altitude, AQI) are formatted here, not on
-  // the watch: re-send them now instead of waiting for the next weather update.
   if (unitSettingsSignature() !== unitsBefore) messageEncoder.resendUnitDisplays();
-  // An uploaded background image goes out after the settings (and only if the
-  // watch does not already hold exactly that image). The plugin picture follows
-  // its source/style first: apply() re-renders it for new options and drops it
-  // when the style was left, which syncIfNeeded() below then sends / empties.
   pluginBg.apply();
   bgImageSync.syncIfNeeded();
 
   scheduleRefresh();
-  // Only an explicit "Force refresh now" press bypasses the smart-
-  // refresh skip -- an ordinary settings save no longer forces its
-  // own network refetch. It used to, and that refetch could hit a
-  // transient failure right as the user was just tweaking a color,
-  // whose result (sendWeatherData, called
-  // regardless of success) would still get sent and applied --
-  // silently wiping the watch's last known-good weather. A plain
-  // save still gets a refresh if one is actually due (moved far
-  // enough, or the interval elapsed) via this same normal check.
-  //
-  // resendOnSkip is deliberately false here (not just omitted) -- a
-  // skip means nothing needs refetching, and the cosmetic-only
-  // sendFlatDict({}) two lines up already just pushed this save's own
-  // fresh settings/features chunks. Resending the cached FULL dict on
-  // top of that would mean resending whatever full data was cached
-  // from BEFORE this save (LAST_FULL_COMPUTED_DICT only updates on a
-  // genuine full refresh, not a cosmetic-only push) -- overwriting the
-  // save that just happened with stale settings a few seconds later.
-  // That was a real bug: resendOnSkip used to be unconditional on
-  // every skip, which is exactly what made it fire here too.
   refreshAndSend(!!settings.CONFIG_FORCE_REFRESH, false);
 }
 
-// Bundled settings page (newer Pebble apps): serves the page and takes live changes.
 configBridge.install(function () {
   var current = buildCurrent();
   current.liveMode = true;

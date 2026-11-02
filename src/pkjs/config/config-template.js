@@ -1,7 +1,4 @@
-// ---- Shared settings-page template helpers -------------------------------
-// Provides HTML escaping, section headings, legends, and reusable button
-// groups for the settings-page controls.
-
+// Shared settings-page template helpers
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
 
@@ -13,28 +10,6 @@ function esc(str) {
     .replace(/>/g, '&gt;');
 }
 
-
-// iOS-style "app icon" for each collapsible settings section: a
-// rounded-square colour swatch (SECTION_META's own `color`) with a
-// small white glyph centered in it (see .section-icon/.section-icon
-// svg below), shown to the left of that section's title + one-line
-// summary sub-header (see buildSectionLegendHtml() and the
-// compute*Subheader() family of functions in the runtime script
-// further down -- this constant only supplies the icon, not the sub-
-// header text). Keyed by the same short id toggleSection()/the
-// section-legend's own onclick already use (examples/style/colors/
-// corners/.../testing), not the longer human label, so a header's
-// three pieces (legend markup, category-icon-style glyph, sub-header
-// updater) never drift out of sync with each other. `weather` and
-// `astronomy` deliberately reuse the EXACT same glyph CORNER_CATEGORIES
-// (presets-lookups.js) already has for its own "weather"/"astro"
-// category buttons (the Features section's own per-category icons)
-// rather than new art, so a person already recognizes them by the
-// time they reach this section -- read directly off that array below
-// instead of a second hand-typed copy, so the two can\'t drift apart.
-// `animated: true` (Animation's own entry) spins its glyph forever via
-// the .section-icon-animation svg CSS rule -- the one icon here that's
-// actually in motion, fittingly.
 function sectionCategoryIcon(categoryId) {
   for (var i = 0; i < CORNER_CATEGORIES.length; i++) {
     if (CORNER_CATEGORIES[i].id === categoryId) return CORNER_CATEGORIES[i].icon;
@@ -67,15 +42,6 @@ var SECTION_META = {
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="14" rx="5" ry="6" fill="currentColor" stroke="none"/><line x1="12" y1="8" x2="12" y2="20"/><line x1="4.5" y1="11" x2="7.5" y2="10"/><line x1="4.5" y1="14" x2="7.5" y2="14"/><line x1="4.5" y1="18" x2="7.5" y2="17.3"/><line x1="19.5" y1="11" x2="16.5" y2="10"/><line x1="19.5" y1="14" x2="16.5" y2="14"/><line x1="19.5" y1="18" x2="16.5" y2="17.3"/><path d="M9 5.5L10.5 8M15 5.5L13.5 8"/><circle cx="12" cy="5.5" r="1.2" fill="currentColor" stroke="none"/></svg>' }
 };
 
-// Builds one section-legend header: the rounded-square icon (from
-// SECTION_META), a title + (initially empty, filled in live by
-// refreshAllSectionSubheaders() at the bottom of the runtime script)
-// one-line summary sub-header stacked underneath it, and the existing
-// expand/collapse chevron -- replaces what used to be a single plain-
-// text line for every fieldset's own <div class="section-legend">.
-// `sectionId` must match both a SECTION_META key and the id
-// toggleSection(id)/chev-<id>/section-<id> already use for that
-// fieldset, so all the pieces stay wired to the same section.
 function sectionLegendHtml(sectionId, title) {
   var meta = SECTION_META[sectionId] || {};
   return (
@@ -90,18 +56,6 @@ function sectionLegendHtml(sectionId, title) {
   );
 }
 
-// Nested, one-level-down variant of sectionLegendHtml() above -- see
-// .subsection-legend's own comment for why this exists separately
-// rather than just registering these in SECTION_META. `id` gets
-// wired to subsec-<id>/subsecchev-<id>/subsubhead-<id>/subsecpreview-<id>
-// (toggleSubsection() below), all independent of the outer Style
-// section's own toggleSection('style'); collapsing/expanding one
-// doesn't touch the other. previewHtml is whatever the caller wants
-// shown in the small thumbnail slot at render time (a static "?" is
-// fine here -- refreshHandsIndicesPreviews() below fills in the real
-// current-preset thumbnail live, the same "computed after render,
-// kept live by the same delegated listeners every other sub-header
-// already uses" pattern as refreshAllSectionSubheaders()).
 function subsectionLegendHtml(id, title, previewHtml) {
   return (
 '    <div class="subsection-legend" onclick="toggleSubsection(\'' + id + '\')">' +
@@ -115,24 +69,6 @@ function subsectionLegendHtml(id, title, previewHtml) {
   );
 }
 
-// A vertical stack of buttons that behaves like a radio group -- same
-// "one active at a time, tap to switch" idea as .mode-btn-group (the
-// side-by-side DIGITAL/ANALOG layout buttons), just stacked
-// instead of side-by-side, for option lists too long/wordy to fit
-// 3+ across (the two Animation section pickers). Backed by one hidden
-// input (same "hidden input is the real value, buttons just reflect
-// it" pattern selectBottomStyle()/selectSunTimeMode() already use)
-// rather than actual radio inputs, so save() and applyStyleCornersJson()
-// read it the same simple way as every other hidden-input field.
-// Falls back to the first option (Off, for every current caller) when
-// currentValue doesn't match any of them -- e.g. a preset saved by an
-// older version of this page whose value set has since changed, or
-// hand-edited/corrupted persisted settings. Without this, a stray
-// value used to leave every button unhighlighted (looking like
-// nothing at all was selected) rather than falling back to a sane,
-// visibly-selected default. selectVerticalOption() below applies the
-// same fallback client-side, for values that arrive after the initial
-// render (preset apply, popup pre-fill).
 function verticalButtonGroupHtml(groupId, hiddenId, options, currentValue, onclickFn) {
   var validValue = options.some(function (opt) { return String(opt.value) === String(currentValue); })
     ? currentValue : options[0].value;
@@ -147,15 +83,6 @@ function verticalButtonGroupHtml(groupId, hiddenId, options, currentValue, oncli
     '<input type="hidden" id="' + hiddenId + '" value="' + esc(validValue) + '">';
 }
 
-// Same idea as verticalButtonGroupHtml() above, but for a short (2-4
-// option) side-by-side row in the exact same style the Layout
-// section's own DIGITAL/ANALOG buttons use (.mode-btn/.mode-btn-group)
-// -- an optional icon (one of MODE_BTN_ICONS, or any other inline SVG
-// string) above the label, same as those two already have. `onclickFn`
-// lets one caller (the Sky style row) hook its own extra side effect
-// (showing/hiding the Weather-drawing-style row underneath) in on top
-// of the plain "set the hidden field, toggle .active" behavior every
-// other row just uses directly -- see selectSkyMode()'s own comment.
 function modeButtonGroupHtml(groupId, hiddenId, options, currentValue, onclickFn) {
   var buttons = options.map(function (opt) {
     var active = String(currentValue) === String(opt.value);
@@ -168,14 +95,6 @@ function modeButtonGroupHtml(groupId, hiddenId, options, currentValue, onclickFn
     '<input type="hidden" id="' + hiddenId + '" value="' + esc(currentValue) + '">';
 }
 
-// The plain 3-role (0=Main/1=Accent/2=Background, optionally 3=None)
-// color choice used all over these popups -- schemeColorOptionsHtml()'s
-// own <option> list turned into the same button-row shape as everything
-// else here instead, rather than the full swatch-preview color picker
-// the actual Colors section above uses (that one shows real colors
-// because it HAS 64 real ones to choose from; these 3-4 are just roles
-// that resolve to whatever the current color scheme says Main/Accent/
-// Background actually are, so naming them is all there is to show).
 function colorRoleButtonGroupHtml(groupId, hiddenId, currentValue, includeNone) {
   var options = [
     { value: '0', label: 'Main' },

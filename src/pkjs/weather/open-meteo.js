@@ -1,16 +1,8 @@
-// ---- Open-Meteo provider ---------------------------------------------
-//
-// Primary
-// weather source: free, no API key, global hourly forecast. Used
-// unconditionally, unlike OpenWeatherMap (opt-in, needs a user-supplied
-// key) -- see weather.js's getCloudOutlook() for how the two combine.
-
+// Open-Meteo provider
 var xhrGetJSON = require('./http').xhrGetJSON;
 var conditionFromWmoCode = require('./weather-normalize').conditionFromWmoCode;
 var weatherDetailClass = require('./weather-normalize').weatherDetailClass;
 
-// Average hourly cloud-cover (%) across the hours spanning
-// [fromDate, toDate], from Open-Meteo's hourly forecast.
 function fetchOpenMeteo(lat, lon, fromDate, toDate, cb) {
   var url = 'https://api.open-meteo.com/v1/forecast' +
             '?latitude=' + encodeURIComponent(lat) +
@@ -39,18 +31,6 @@ function fetchOpenMeteo(lat, lon, fromDate, toDate, cb) {
   });
 }
 
-/**
- * Current-conditions snapshot from Open-Meteo (one request, hourly +
- * daily + current_weather): condition, temperatures, UV, rain chance,
- * humidity, wind, dew point, pressure and trend, cloud cover and the
- * 1-6 hour / 1-3 day forecast arrays.
- *
- * @param {number} lat
- * @param {number} lon
- * @param {Date} nowDate  which hour counts as "current"
- * @param {function(Error|null, object)} cb  extras object (empty
- *   defaults on error); see emptyExtras below for the field list.
- */
 function getWeatherSnapshot(lat, lon, nowDate, cb) {
   var url = 'https://api.open-meteo.com/v1/forecast' +
             '?latitude=' + encodeURIComponent(lat) +
@@ -87,12 +67,6 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       }
 
       var nowIdx = nearestIdx(nowDate.getTime());
-      // Same source and same "now" index the CLOUD_SAMPLES grid itself
-      // interpolates from -- keeping this consistent with what's
-      // actually drawn matters more here than an OWM-blended headline
-      // figure would, since that one covers a different time window
-      // (the next 3 hours) and can legitimately
-      // disagree with the current-hour reading.
       var currentCloudPct = (typeof hourlyClouds[nowIdx] === 'number') ? Math.round(hourlyClouds[nowIdx]) : null;
 
       var wxNow = weatherDetailClass((hourlyCodes.length > nowIdx && typeof hourlyCodes[nowIdx] === 'number') ? hourlyCodes[nowIdx] : -1,
@@ -119,17 +93,11 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         dewPointC = json.hourly.dewpoint_2m[nowIdx];
       }
 
-      // This-hour UV index, as opposed to uv_index_max below (today's
-      // whole-day peak) -- same nowIdx the rest of the hourly block
-      // already uses for "right now".
       var uvIndexCurrent = null;
       if (json.hourly.uv_index && typeof json.hourly.uv_index[nowIdx] === 'number') {
         uvIndexCurrent = json.hourly.uv_index[nowIdx];
       }
 
-      // Pressure trend: compare now vs. 3 hours ago (a standard
-      // meteorological window) -- clamped to the start of the array so
-      // this doesn't go negative in the first few hours of the day.
       var pressureHpa = null, pressureTrend = 0;
       if (json.hourly.surface_pressure && typeof json.hourly.surface_pressure[nowIdx] === 'number') {
         pressureHpa = json.hourly.surface_pressure[nowIdx];
@@ -137,9 +105,9 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         var pastPressure = json.hourly.surface_pressure[pastIdx];
         if (typeof pastPressure === 'number') {
           var delta = pressureHpa - pastPressure;
-          if (delta > 1) pressureTrend = 1; // rising
-          else if (delta < -1) pressureTrend = 2; // falling
-          else pressureTrend = 0; // flat
+          if (delta > 1) pressureTrend = 1;
+          else if (delta < -1) pressureTrend = 2;
+          else pressureTrend = 0;
         }
       }
 
@@ -154,14 +122,6 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         }
       }
 
-      // "Weather in 1-6 hours" content (features_layer.c ids 87-92) --
-      // temperature_2m/weathercode at nowIdx+1..nowIdx+12 (indices 0-5 and 9-14).
-      // forecast_days=4 gives 96 hourly points starting at hour 0 of
-      // today, comfortably covering nowIdx+6 even late in the day --
-      // guarded per-index below anyway rather than assumed safe.
-      // Slots: 0-5 = 1-6 h ahead, 6-8 = 1-3 days ahead, 9-14 = 7-12 h ahead
-      // (the hour slots past six were added later, so they come after the
-      // day slots to keep the original indices stable).
       var forecastTempC = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
       var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var forecastWx = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -201,13 +161,6 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
           rainChancePct = json.daily.precipitation_probability_max[0];
         }
 
-        // "Weather in 1-3 days" content (features_layer.c ids 93-95) --
-        // same forecastTempC/forecastCondition arrays as the hours above,
-        // just continuing on at indices 6-8 (content id - 87 either way),
-        // rather than a second pair of arrays and a second wire message
-        // for what's structurally identical data. Daily max temp/weathercode
-        // at daily index 1..3 (index 0 is today, already used above for
-        // tempHighC/tempLowC).
         for (var fd = 0; fd < 3; fd++) {
           var dIdx = fd + 1;
           if (json.daily.temperature_2m_max && typeof json.daily.temperature_2m_max[dIdx] === 'number') {

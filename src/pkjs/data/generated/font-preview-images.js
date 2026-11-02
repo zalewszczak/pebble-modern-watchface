@@ -1,7 +1,4 @@
 // GENERATED FILE -- do not edit by hand.
-// Produced by scripts/generate-font-previews.js from
-// resources/font-previews/<fontId>_<role>.png. Re-run that script after
-// adding or changing any font-preview PNG, before `pebble build`.
 module.exports = {
   "0": {
     "clock": "data:image/webp;base64,UklGRlAAAABXRUJQVlA4TEQAAAAvx8ANEA8w//M///Mf8AYkte1kB7caI8mmsBCBJBwctShDBxI8hUJF9H8C5Bn3cCp7p0yxpI2ao1IhlzIJrGBnOfUdBA==",

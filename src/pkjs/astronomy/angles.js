@@ -1,8 +1,4 @@
-// ---- foundational math -----------------------------------------------
-//
-// Degree-based trigonometry, Julian dates, sidereal time, and coordinate
-// transforms shared by the astronomy modules.
-
+// foundational math
 var DEG = Math.PI / 180;
 
 function sind(x) { return Math.sin(x * DEG); }
@@ -31,20 +27,16 @@ function angularSeparation(ra1, dec1, ra2, dec2) {
   return acosd(cosSep);
 }
 
-// Sun's topocentric altitude (parallax on the Sun is ~8.8" and
-// ignored here -- irrelevant at this precision).
 function sunAltitude(sun, latDeg, lstDeg) {
   var H = norm360(lstDeg - sun.ra);
   return asind(sind(latDeg) * sind(sun.dec) + cosd(latDeg) * cosd(sun.dec) * cosd(H));
 }
 
-// Alt/az of a body, used only to derive the on-screen "which way does
-// the Moon approach from" angle.
 function altAz(raDeg, decDeg, latDeg, lstDeg) {
   var H = norm360(lstDeg - raDeg);
   var alt = asind(sind(latDeg) * sind(decDeg) + cosd(latDeg) * cosd(decDeg) * cosd(H));
   var az = atan2d(sind(H), cosd(H) * sind(latDeg) - tand(decDeg) * cosd(latDeg));
-  return { alt: alt, az: norm360(az + 180) }; // north-based azimuth
+  return { alt: alt, az: norm360(az + 180) };
 }
 
 module.exports = {

@@ -1,30 +1,4 @@
 // Plugin background images: everything that happens to a picture between the
-// plugin (Pebble.subscribeToSource, shape "image") and the packed bytes that go
-// to the watch. The watch never sees any of the style settings -- it receives a
-// finished 64-colour picture, exactly like an uploaded one.
-//
-// Pure ES5 with no PKJS/DOM dependencies, so it can be exercised from Node.
-//
-// Pipeline:  plugin payload { pixels, palette, width, height }
-//   -> decodeImagePayload()   RGBA pixels
-//   -> render(img, opts)      fit (scale/crop) -> colour processing -> dither
-//                             -> 6-bit pixels -> packed bytes
-//
-// Output format = the format of the uploaded images (see bg-image-codec.js):
-// 6 bits per pixel (0bRRGGBB), row-major, 4 pixels -> 3 bytes. Unlike uploaded
-// images the size is NOT always 200x228: modes that leave part of the screen
-// empty ("show full image", 75 %, 50 %, original size) send only the picture
-// itself, and the watch centres it -- the rest of the dial keeps its plain
-// background colour, and less data goes over Bluetooth.
-//
-// Options (all strings, the values the settings page stores):
-//   dither  none | fs | atkinson | bayer4 | bayer8
-//   color   neutral | vivid | bw | sepia
-//   fit     fill | full | 75 | 50 | center
-//
-// The colour and dither maths is the same as the editor for uploaded images
-// (config/config-background.js, CLIENT_BODY): keep the two in step.
-
 var SCREEN_W = 200;
 var SCREEN_H = 228;
 
@@ -32,8 +6,6 @@ var DITHERS = ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'];
 var COLORS = ['neutral', 'vivid', 'bw', 'sepia'];
 var FITS = ['fill', 'full', '75', '50', 'center'];
 var DEFAULT_OPTIONS = { dither: 'fs', color: 'neutral', fit: 'fill' };
-
-// ---- typed-array helpers (plain arrays if the engine has none) -------------------
 
 function newFloats(n) {
   if (typeof Float32Array !== 'undefined') return new Float32Array(n);
@@ -48,19 +20,15 @@ function newBytes(n) {
   return a;
 }
 
-// ---- base64 ------------------------------------------------------------------------
-
 var B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 var B64_REV = (function () {
   var t = {};
   for (var i = 0; i < B64.length; i++) t[B64.charAt(i)] = i;
-  t['-'] = 62; // base64url
+  t['-'] = 62;
   t['_'] = 63;
   return t;
 })();
 
-// Standard or URL-safe base64, padded or not, whitespace and a data: prefix
-// tolerated. Returns an array of byte values, or null when it is not base64.
 function base64Decode(str) {
   if (typeof str !== 'string') return null;
   var comma = str.indexOf('base64,');
@@ -83,11 +51,8 @@ function base64Decode(str) {
   return out;
 }
 
-// ---- plugin payload -> RGBA -----------------------------------------------------------
-
 function level(v) { return (v & 3) * 85; }
 
-// Pebble's own 8-bit colour: 0bAARRGGBB, two bits per channel.
 function fromGColor8(b) {
   return [level(b >> 4), level(b >> 2), level(b), level(b >> 6)];
 }
@@ -102,27 +67,22 @@ function parseHexColor(s) {
     h = e;
   }
   if (h.length === 6) return [parseInt(h.substr(0, 2), 16), parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16), 255];
-  if (h.length === 8) return [parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16), parseInt(h.substr(6, 2), 16), parseInt(h.substr(0, 2), 16)]; // AARRGGBB
+  if (h.length === 8) return [parseInt(h.substr(2, 2), 16), parseInt(h.substr(4, 2), 16), parseInt(h.substr(6, 2), 16), parseInt(h.substr(0, 2), 16)];
   return null;
 }
 
 function paletteFromBytes(bytes) {
   var n = bytes.length, out = [], i;
   if (n <= 16 || (n !== 48 && n !== 64 && n % 4 !== 0 && n % 3 !== 0)) {
-    for (i = 0; i < n; i++) out.push(fromGColor8(bytes[i])); // one GColor8 per entry
+    for (i = 0; i < n; i++) out.push(fromGColor8(bytes[i]));
   } else if (n === 48 || (n % 4 !== 0 && n % 3 === 0)) {
-    for (i = 0; i + 2 < n; i += 3) out.push([bytes[i], bytes[i + 1], bytes[i + 2], 255]); // RGB
+    for (i = 0; i + 2 < n; i += 3) out.push([bytes[i], bytes[i + 1], bytes[i + 2], 255]);
   } else {
-    for (i = 0; i + 3 < n; i += 4) out.push([bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]]); // RGBA
+    for (i = 0; i + 3 < n; i += 4) out.push([bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3]]);
   }
   return out;
 }
 
-// The palette is not specified in Pebble's documentation, so accept the forms it
-// could reasonably take: an array of "#rrggbb" / "#aarrggbb" strings, 0xRRGGBB /
-// 0xAARRGGBB numbers (or 0..255 numbers = GColor8), [r,g,b(,a)] arrays or
-// {r,g,b,a} objects; or a base64 string of GColor8 / RGB / RGBA bytes.
-// Returns [[r,g,b,a], ...] or null.
 function parsePalette(p) {
   if (typeof p === 'string') {
     var bytes = base64Decode(p);
@@ -151,13 +111,8 @@ function parsePalette(p) {
   return out.length ? out : null;
 }
 
-// Pixels: base64 of 4-bit palette indices, two per byte, FIRST pixel in the HIGH
-// nibble (Pebble's own bitmap layout). Rows are either tight (ceil(w/2) bytes),
-// padded (e.g. to a multiple of 4 bytes, as Pebble bitmaps are) or not padded
-// at all; the row stride is worked out from the data length.
 var HIGH_NIBBLE_FIRST = true;
 
-// { pixels, palette, width, height } -> { w, h, rgba, signature } or null.
 function decodeImagePayload(img) {
   if (!img || typeof img !== 'object') return null;
   var w = parseInt(img.width !== undefined ? img.width : img.w, 10);
@@ -169,12 +124,12 @@ function decodeImagePayload(img) {
 
   var tight = (w + 1) >> 1;
   var stride = Math.floor(bytes.length / h);
-  var continuous = stride < tight; // odd widths packed without any row padding
+  var continuous = stride < tight;
   if (continuous && bytes.length < Math.ceil(w * h / 2)) return null;
   var rgba = newBytes(w * h * 4);
   for (var y = 0; y < h; y++) {
     for (var x = 0; x < w; x++) {
-      var idx = continuous ? y * w + x : y * stride * 2 + x; // pixel number in nibbles
+      var idx = continuous ? y * w + x : y * stride * 2 + x;
       var b = bytes[idx >> 1];
       var nib = ((idx & 1) === 0) === HIGH_NIBBLE_FIRST ? (b >> 4) & 15 : b & 15;
       var c = palette[nib < palette.length ? nib : palette.length - 1];
@@ -182,7 +137,6 @@ function decodeImagePayload(img) {
       rgba[p] = c[0]; rgba[p + 1] = c[1]; rgba[p + 2] = c[2]; rgba[p + 3] = c[3];
     }
   }
-  // Cheap identity of this exact picture: lets the caller skip identical updates.
   return { w: w, h: h, rgba: rgba, signature: w + 'x' + h + ':' + String(img.pixels).length + ':' + hashString(String(img.pixels)) + ':' + hashString(JSON.stringify(img.palette)) };
 }
 
@@ -195,10 +149,6 @@ function hashString(s) {
   return (h >>> 0).toString(16);
 }
 
-// ---- fitting ---------------------------------------------------------------------------
-
-// Where the picture goes. src: the part of the source to use (can be a centred
-// crop), dw x dh: the size of the picture that is sent (the watch centres it).
 function planFit(sw, sh, fit) {
   var W = SCREEN_W, H = SCREEN_H;
   var contain = Math.min(W / sw, H / sh);
@@ -211,7 +161,7 @@ function planFit(sw, sh, fit) {
     var cw = Math.min(sw, W), ch = Math.min(sh, H);
     return { src: { x: (sw - cw) / 2, y: (sh - ch) / 2, w: cw, h: ch }, dw: cw, dh: ch };
   }
-  s = fit === '75' ? contain * 0.75 : (fit === '50' ? contain * 0.5 : contain); // 'full' and fallback
+  s = fit === '75' ? contain * 0.75 : (fit === '50' ? contain * 0.5 : contain);
   return {
     src: { x: 0, y: 0, w: sw, h: sh },
     dw: Math.max(1, Math.min(W, Math.round(sw * s))),
@@ -219,8 +169,6 @@ function planFit(sw, sh, fit) {
   };
 }
 
-// Weights for one axis: for every destination index, which source indices count and how much.
-// Shrinking = area average (box filter with fractional edges); enlarging = linear interpolation.
 function axisWeights(srcStart, srcLen, dstLen, srcSize) {
   var out = [];
   var ratio = srcLen / dstLen;
@@ -248,13 +196,11 @@ function axisWeights(srcStart, srcLen, dstLen, srcSize) {
   return out;
 }
 
-// RGBA source -> float RGB (alpha composited over black) of dw x dh.
 function resample(img, plan) {
   var sw = img.w, sh = img.h, rgba = img.rgba;
   var dw = plan.dw, dh = plan.dh;
   var wx = axisWeights(plan.src.x, plan.src.w, dw, sw);
   var wy = axisWeights(plan.src.y, plan.src.h, dh, sh);
-  // Horizontal pass: only the source rows that are needed.
   var rows = {};
   var out = newFloats(dw * dh * 3);
   var x, y, k, c;
@@ -279,15 +225,12 @@ function resample(img, plan) {
       var r = rowOf(ey.idx[k]), wg = ey.wt[k];
       for (x = 0; x < dw * 3; x++) out[y * dw * 3 + x] += r[x] * wg;
     }
-    // Rows are visited top to bottom; drop the ones no later row can need.
     var firstNeeded = y + 1 < dh ? wy[y + 1].idx[0] : 0;
     for (var key in rows) if (rows.hasOwnProperty(key) && parseInt(key, 10) < firstNeeded) delete rows[key];
   }
   for (c = 0; c < out.length; c++) out[c] = out[c] < 0 ? 0 : (out[c] > 255 ? 255 : out[c]);
   return out;
 }
-
-// ---- colour, dither (same maths as the uploaded-image editor) ---------------------------
 
 function clamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
 
@@ -331,7 +274,6 @@ function levelOf(v) {
   return l < 0 ? 0 : (l > 3 ? 3 : l);
 }
 
-// Float RGB (0-255) -> 6-bit pixel values, 4 levels per channel.
 function quantize(f, w, h, mode) {
   var n = w * h;
   var vals = newBytes(n);
@@ -385,7 +327,6 @@ function quantize(f, w, h, mode) {
   return vals;
 }
 
-// 6-bit values -> packed bytes, 4 pixels -> 3 bytes (bg-image-codec.js).
 function pack(vals) {
   var n = vals.length;
   var out = new Array(Math.ceil(n / 4) * 3);
@@ -401,7 +342,6 @@ function pack(vals) {
   return out;
 }
 
-// FNV-1a over the packed bytes and the size; never 0 (0 = "no image" on the watch).
 function stampFor(bytes, w, h) {
   var hash = 0x811C9DC5;
   function mix(b) {
@@ -416,7 +356,6 @@ function stampFor(bytes, w, h) {
 
 function pick(list, value, fallback) { return list.indexOf(value) >= 0 ? value : fallback; }
 
-// Decoded plugin image + options -> { w, h, bytes, stamp, vals } ready for the watch.
 function render(img, options) {
   var o = options || {};
   var dither = pick(DITHERS, String(o.dither), DEFAULT_OPTIONS.dither);
