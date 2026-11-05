@@ -68,7 +68,12 @@ void hand_geometry_compute_fp(FGPoint center, int32_t angle, const HandConfig *c
 
   int32_t sin_v = sin_lookup(angle), cos_v = cos_lookup(angle);
 
+#ifdef PBL_ROUND
+  // Hand lengths are configured in 200x228 pixels; stretch to the 260x260 dial (x 1.3).
+  int32_t len_fp    = ((int32_t)cfg->length << SUBPIXEL_BITS) * 13 / 10;
+#else
   int32_t len_fp    = (int32_t)cfg->length << SUBPIXEL_BITS;
+#endif
   int32_t back_fp    = -((int32_t)cfg->back_offset << SUBPIXEL_BITS); 
   int32_t mid_fp      = (int32_t)cfg->middle_offset << SUBPIXEL_BITS;  
   int32_t half_w_fp    = half_width_fp(cfg->width);

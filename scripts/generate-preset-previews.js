@@ -4,7 +4,7 @@ var fs = require('fs');
 var path = require('path');
 var sharp = require('sharp');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'infographics');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'common', 'infographics');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'marker-preset-images.js');
 var PREFIX = 'marker_preset_';
 var KNOWN_NAMES = ['braun', 'minimal', 'classy', 'swiss'];

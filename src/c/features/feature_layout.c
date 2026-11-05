@@ -53,8 +53,16 @@ void feature_layout_recompute(FeaturesState *state) {
       if (BITMAP_STYLE_MARGINS[i].style == marker_style) { m = &BITMAP_STYLE_MARGINS[i].m; break; }
     }
     dyn_upper_offset = m->top; dyn_bottom_shift = m->bottom; dyn_left_inset = m->left; dyn_right_inset = m->right;
+#ifdef PBL_ROUND
+    // The tables above were measured on the 200x228 art. Until the round art's own
+    // margins are measured, scale them to the 260x260 screen (x by 13/10, y by 8/7).
+    dyn_upper_offset = dyn_upper_offset * 8 / 7;
+    dyn_bottom_shift = dyn_bottom_shift * 8 / 7;
+    dyn_left_inset = dyn_left_inset * 13 / 10;
+    dyn_right_inset = dyn_right_inset * 13 / 10;
+#endif
   } else {
-    GRect screen = GRect(0, 0, 200, 228);
+    GRect screen = GRect(0, 0, PBL_DISPLAY_WIDTH, PBL_DISPLAY_HEIGHT);
     GPoint center = GPoint(screen.size.w / 2, screen.size.h / 2);
     uint8_t pct = d->custom_hour_marker.thickness != 0 ? d->custom_hour_marker.inner_border_pct : 100;
     uint8_t ecc = d->custom_hour_marker.thickness != 0 ? d->custom_hour_marker.inner_eccentricity : 100;
@@ -175,6 +183,7 @@ void feature_layout_recompute(FeaturesState *state) {
     }
   }
 
+#ifndef PBL_ROUND
   // Corner slots are enabled by their primitive sequence.
   state->slots[SLOT_CORNER_TL] = (FeatureSlot){
     .active = primitive_sequence_enabled(d->corner_primitive_ids[0]), .color_mode = d->corner_color_mode[0],
@@ -205,5 +214,5 @@ void feature_layout_recompute(FeaturesState *state) {
     .center_horizontal = false, .center_vertical = false, .allow_outline = true,
     .needs_second_refresh = primitive_sequence_needs_second_refresh(d->corner_primitive_ids[3]),
   };
+#endif // no corner slots on a round screen
 }
-

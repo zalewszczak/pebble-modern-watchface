@@ -27,11 +27,14 @@
 var fs = require('fs');
 var path = require('path');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'example-styles');
+var R = require('./lib/resources');
+var SOURCE_DIR = R.dir('square', 'example-styles');
+var ROUND_DIR = R.dir('round', 'example-styles');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'example-style-images.js');
 var SUFFIX = '.png';
 
 var entries = {};
+var entriesRound = {};
 var found = [];
 var unrecognized = [];
 var totalBytes = 0;
@@ -52,15 +55,17 @@ files.forEach(function (file) {
   var buf = fs.readFileSync(path.join(SOURCE_DIR, file));
   totalBytes += buf.length;
   entries[stem] = 'data:image/png;base64,' + buf.toString('base64');
+  if (fs.existsSync(path.join(ROUND_DIR, file))) entriesRound[stem] = R.dataUri(path.join(ROUND_DIR, file));
   found.push(stem);
 });
 
 var lines = [];
 lines.push('// GENERATED FILE -- do not edit by hand.');
 lines.push('// Produced by scripts/generate-example-style-previews.js from');
-lines.push('// resources/example-styles/<n>.png. Re-run that script after adding or');
+lines.push('// resources/{square,round}/example-styles/<n>.png. Re-run that script after adding or');
 lines.push('// changing any example-style screenshot, before `pebble build`.');
 lines.push('module.exports = ' + JSON.stringify(entries, null, 2) + ';');
+lines.push('module.exports.round = ' + JSON.stringify(entriesRound, null, 2) + ';');
 lines.push('');
 
 if (!fs.existsSync(path.dirname(OUTPUT_FILE))) fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });

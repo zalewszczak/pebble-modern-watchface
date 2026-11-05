@@ -1,6 +1,7 @@
 // Plugin background images: everything that happens to a picture between the
-var SCREEN_W = 200;
-var SCREEN_H = 228;
+var platform = require('../platform');
+var SCREEN_W = platform.w;
+var SCREEN_H = platform.h;
 
 var DITHERS = ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'];
 var COLORS = ['neutral', 'vivid', 'bw', 'sepia'];

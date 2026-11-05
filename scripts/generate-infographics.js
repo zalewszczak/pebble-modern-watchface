@@ -35,7 +35,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'infographics');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'common', 'infographics');
 
 function readPng(file) {
   return fs.readFileSync(path.join(SOURCE_DIR, file));

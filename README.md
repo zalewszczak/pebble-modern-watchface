@@ -226,3 +226,10 @@ The phone-side JavaScript application owns configuration UI, external data retri
 The C feature renderer consumes primitive sequences rather than phone-side feature names. The phone settings catalogue maps user-facing content choices to primitive IDs and any associated values; the generated ID lookup keeps those values aligned with the C enum. When adding a new feature, update the phone-side catalogue/preview metadata and the corresponding C renderer, then regenerate primitive IDs if the enum changed. Check that each supported slot has suitable layout, color, and shake-state behavior.
 
 Weather and astronomy are calculated or normalized on the phone before being sent to the watch. The watch renders the compact values it receives; it does not make network requests. Weather provider availability, location permissions, health permissions, phone connectivity, and background execution limits therefore affect which live values can be displayed. Missing or stale provider data is represented as unavailable rather than being calculated by the watch.
+
+## Platforms and resources (emery + gabbro)
+
+One repo builds both the Pebble Time 2 (emery, 200x228) and the Pebble Round 2 (gabbro, 260x260, no corner features).
+`resources/` is split into `square/` (200x228 art), `round/` (260x260 art, same file names) and `common/` (fonts, small icons,
+preview-only sources). `scripts/migrate-resources.js` moves an old layout over; `scripts/generate-all.js` runs it first.
+See `round_support.md` for the full plan and status.

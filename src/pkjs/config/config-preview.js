@@ -168,7 +168,7 @@ module.exports =
 
 'function isBitmapMarkerStyleId(n) { return (n >= 3 && n <= 7) || (n >= 11 && n <= 19); }' +
 'function computeMiddleFeatureMargins(w, h) {' +
-'  var scale = w / 200;' +
+'  var scale = w / BG_W;' +
 '  var margins = { top: 44 * scale, bottom: 40 * scale, left: 30 * scale, right: 30 * scale };' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
 '  var isBitmapStyle = isBitmapMarkerStyleId(markerStyle);' +
@@ -196,7 +196,7 @@ module.exports =
 '  var cornerFontSel = document.getElementById("cornerFont");' +
 '  var cornerOpt = cornerFontSel.options[cornerFontSel.selectedIndex];' +
 '  var cornerEntry = fontLookupEntry(cornerFontSel.value);' +
-'  var cornerScale = w / 200;' +
+'  var cornerScale = w / BG_W;' +
 '  var cornerPx = Math.max(7, Math.min(22, Math.round(cornerEntry.height * cornerScale)));' +
 '  var cornerFontCss = canvasFontFor(cornerOpt.getAttribute("data-preview") || "", cornerPx, cornerFontSel.value);' +
 '  var lineH = Math.round(cornerPx * 1.4);' +
@@ -624,7 +624,7 @@ module.exports =
 '  var opt = fontSel.options[fontSel.selectedIndex];' +
 '  var roman = document.getElementById("markerTextRoman").checked;' +
 '  var offsetPx = parseFloat(document.getElementById("markerTextOffset").value) || 0;' +
-'  var scale = w / 200;' +
+'  var scale = w / BG_W;' +
 '  ctx.font = canvasFontFor(opt.getAttribute("data-preview") || "", 14 * scale, fontSel.value);' +
 '  ctx.fillStyle = colors.text;' +
 '  ctx.textAlign = "center"; ctx.textBaseline = "middle";' +
@@ -641,7 +641,7 @@ module.exports =
 
 'function drawBigAnalogPreview(ctx, colors, now, showSeconds, w, h, markerImageDrawn) {' +
 '  var cx = w / 2, cy = h / 2;' +
-'  var scale = w / 200;' +
+'  var scale = w / BG_W;' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
 '  if (!isBitmapMarkerStyleId(markerStyle)) {' +
 '    var secCfg = readCustomMarkerConfig("sec"), hourCfg = readCustomMarkerConfig("hour");' +

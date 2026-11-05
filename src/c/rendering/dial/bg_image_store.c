@@ -2,7 +2,7 @@
 #include <string.h>
 
 // Persist key layout. Slot headers: 201..209. Chunks: every slot owns a block
-// of BG_CHUNK_KEY_SPAN keys (a full 200x228 image needs 135, the largest
+// of BG_CHUNK_KEY_SPAN keys (a full 200x228 image needs 135, a 260x260 one 199, the largest
 // accepted image 302), so slot s chunk c lives at 1000 + s * 400 + c.
 #define PERSIST_KEY_BG_HEADER_BASE 200
 #define PERSIST_KEY_BG_CHUNK_BASE 1000

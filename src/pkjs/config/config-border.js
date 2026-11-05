@@ -1,5 +1,6 @@
 // weather border: settings-page half
 var esc = require('./config-template').esc;
+var platform = require('../platform');
 var SEVEN_STOPS = require('../weather/weather-normalize').SEVEN_STOP_GRADIENT_STOPS;
 
 function borderSectionHtml(current) {
@@ -50,7 +51,7 @@ function borderSectionHtml(current) {
 '      </div>' +
 '      <div class="help">Shown for the same time as the other show-on-shake features (the shake duration slider in Animation).</div>' +
 '      <div class="border-diagram-row">' +
-'        <canvas id="borderDiagram" width="200" height="228"></canvas>' +
+'        <canvas id="borderDiagram" width="' + platform.w + '" height="' + platform.h + '"></canvas>' +
 '        <div class="border-legend" id="borderLegend"></div>' +
 '      </div>' +
 '      <div class="help" id="borderHelpText"></div>' +
@@ -160,10 +161,15 @@ function borderScript() {
 '  return dx >= 0 ? 6 - band : (6 + band) % 12;\n' +
 '}\n' +
 'function drawBorderBand(ctx, w, h, px, look, semi) {\n' +
-'  var scale = w / 200, t = Math.max(1, Math.round(px * scale)), nl = look.layers.length;\n' +
+'  var scale = w / BG_W, t = Math.max(1, Math.round(px * scale)), nl = look.layers.length;\n' +
 '  var id = ctx.createImageData(w, h), d = id.data;\n' +
 '  for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {\n' +
-'    var depth = Math.min(x, y, w - 1 - x, h - 1 - y);\n' +
+'    var depth;\n' +
+'    if (SCREEN_ROUND) {\n' +
+'      var rx = 2 * x + 1 - w, ry = 2 * y + 1 - h, rd = Math.floor(Math.sqrt(rx * rx + ry * ry));\n' +
+'      if (rd >= w) continue;\n' +
+'      depth = Math.floor((w - rd) / 2);\n' +
+'    } else depth = Math.min(x, y, w - 1 - x, h - 1 - y);\n' +
 '    if (depth >= t) continue;\n' +
 '    if (semi && ((x + y) & 1)) continue;\n' +
 '    var layer = Math.trunc((depth * nl) / t);\n' +

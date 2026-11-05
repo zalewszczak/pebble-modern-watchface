@@ -128,9 +128,11 @@ _Static_assert(sizeof(time_t) == 4, "PLANET_RISE/SET wire format assumes a 4-byt
 
 // Applied to every message, including invalid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP[] = {
+#ifndef PBL_ROUND // corner fields do not exist on a round screen; the phone still sends them, they are ignored
   { MK_CORNER_COLOR_MODE, 1, offsetof(WatchData, corner_color_mode), 4 },
   { MK_CORNER_PRIMITIVE_IDS, 1, offsetof(WatchData, corner_primitive_ids), 40 }, // 4 * 10, see watch_data.h
   { MK_CORNER_PRIMITIVE_AUX, 1, offsetof(WatchData, corner_primitive_aux), 40 },
+#endif
   { MK_EDGE_LINE_PRIMITIVE_IDS, 1, offsetof(WatchData, edge_line_primitive_ids), 80 }, // 8 * 10, see watch_data.h
   { MK_EDGE_LINE_PRIMITIVE_AUX, 1, offsetof(WatchData, edge_line_primitive_aux), 80 },
   { MK_PLUGIN_TEXTS, 1, offsetof(WatchData, plugin_text), PLUGIN_SLOT_COUNT * PLUGIN_TEXT_LEN },

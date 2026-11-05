@@ -35,11 +35,14 @@ static void feature_controller_recompute_slot_value(FeatureSlot *slot, int slot_
 
   const uint8_t *ids = NULL;
   const uint8_t *aux = NULL;
+#ifndef PBL_ROUND
   if (slot_index >= SLOT_CORNER_TL && slot_index <= SLOT_CORNER_BR) {
     int idx = slot_index - SLOT_CORNER_TL;
     ids = data->corner_primitive_ids[idx];
     aux = data->corner_primitive_aux[idx];
-  } else if (slot_index >= SLOT_UPPER_L1 && slot_index <= SLOT_RIGHT_L2) {
+  } else
+#endif
+  if (slot_index >= SLOT_UPPER_L1 && slot_index <= SLOT_RIGHT_L2) {
     ids = data->edge_line_primitive_ids[slot_index];
     aux = data->edge_line_primitive_aux[slot_index];
   }
@@ -48,9 +51,12 @@ static void feature_controller_recompute_slot_value(FeatureSlot *slot, int slot_
                                         slot->color_mode, main_color, accent_color);
   }
   uint16_t tight_mask = (uint16_t)(data->primitive_tight_mask_lo | ((uint16_t)data->primitive_tight_mask_hi << 8));
+#ifndef PBL_ROUND
   if (slot_index >= SLOT_CORNER_TL && slot_index <= SLOT_CORNER_BR)
     slot->primitives.tight = (tight_mask >> (slot_index - SLOT_CORNER_TL)) & 1u;
-  else if (slot_index >= SLOT_UPPER_L1 && slot_index <= SLOT_RIGHT_L2)
+  else
+#endif
+  if (slot_index >= SLOT_UPPER_L1 && slot_index <= SLOT_RIGHT_L2)
     slot->primitives.tight = (tight_mask >> (4 + slot_index)) & 1u;
   slot->needs_second_refresh = sequence_has_second_refresh(&slot->primitives);
   if (slot->primitives.count > 0) primitive_layout_compute(&slot->primitives, slot, font, font_h);
@@ -103,9 +109,11 @@ void feature_controller_refresh_values(FeaturesState *state) {
 
 bool feature_controller_primitive_in_use(const WatchData *data, PrimitiveId primitive) {
   if (!data || primitive == PRIM_ID_NONE) return false;
+#ifndef PBL_ROUND
   for (int slot = 0; slot < 4; slot++)
     for (int i = 0; i < 10 && data->corner_primitive_ids[slot][i] != PRIM_ID_NONE; i++)
       if (data->corner_primitive_ids[slot][i] == primitive) return true;
+#endif
   for (int slot = 0; slot < 8; slot++)
     for (int i = 0; i < 10 && data->edge_line_primitive_ids[slot][i] != PRIM_ID_NONE; i++)
       if (data->edge_line_primitive_ids[slot][i] == primitive) return true;

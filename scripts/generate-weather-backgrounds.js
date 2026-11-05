@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // "Weather background" styles.
 //
-// Every sub-folder of resources/weatherbg/ is one style (e.g. "manhattan").
+// Every sub-folder of resources/square/weatherbg/ is one style (e.g. "manhattan").
 // A style holds one PNG per weather condition and time of day, named
 //
 //     <condition>_<day|night>.png      (ideally 200x228, palette PNG)
@@ -10,7 +10,7 @@
 // brackets): clear_sky [0], partly_cloudy [1], overcast [2], fog [3],
 // drizzle [4], rain [5], heavy_rain [6], snow [7], thunderstorm [8], sleet [9].
 //
-// To add a style: create resources/weatherbg/<name>/ with those PNGs and run
+// To add a style: create resources/square/weatherbg/<name>/ (and the same in resources/round/weatherbg/) with those PNGs and run
 // this script (scripts/generate-all.js does). Missing images are allowed --
 // the watch falls back to the other time of day, then to clear_sky.
 //
@@ -29,7 +29,8 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.join(__dirname, '..');
-var SOURCE_DIR = path.join(ROOT, 'resources', 'weatherbg');
+var R = require('./lib/resources');
+var SOURCE_DIR = R.dir('square', 'weatherbg');
 var JS_OUT = path.join(ROOT, 'src', 'pkjs', 'data', 'generated', 'weather-backgrounds.js');
 var H_OUT = path.join(ROOT, 'src', 'c', 'generated', 'weather_backgrounds.h');
 var PKG = path.join(ROOT, 'package.json');
@@ -49,7 +50,7 @@ if (fs.existsSync(SOURCE_DIR)) {
     CONDITIONS.forEach(function (c, idx) {
       ['day', 'night'].forEach(function (tod) {
         var f = path.join(full, c + '_' + tod + '.png');
-        if (fs.existsSync(f)) files[idx + '_' + tod] = path.relative(path.join(ROOT, 'resources'), f).replace(/\\/g, '/');
+        if (fs.existsSync(f)) files[idx + '_' + tod] = path.relative(R.dir('square'), f).replace(/\\/g, '/');
       });
     });
     if (!Object.keys(files).length) { console.log('  skipped (no images): ' + dir); return; }
@@ -60,39 +61,47 @@ if (styles.length > 250) throw new Error('too many weather background styles');
 
 // 1. settings-page data
 var js = ['// GENERATED FILE -- do not edit by hand.',
-  '// Produced by scripts/generate-weather-backgrounds.js from resources/weatherbg/<style>/.',
+  '// Produced by scripts/generate-weather-backgrounds.js from resources/square/weatherbg/<style>/.',
   'module.exports = {', '  styles: ['];
 styles.forEach(function (st, i) {
   var thumbKey = st.files['0_day'] ? '0_day' : Object.keys(st.files)[0];
-  var buf = fs.readFileSync(path.join(ROOT, 'resources', st.files[thumbKey]));
+  var buf = fs.readFileSync(path.join(R.dir('square'), st.files[thumbKey]));
+  var rf = path.join(R.dir('round'), st.files[thumbKey]);
+  var rbuf = fs.existsSync(rf) ? fs.readFileSync(rf) : null;
   js.push('    { id: ' + JSON.stringify(st.id) + ', label: ' + JSON.stringify(st.label) + ', index: ' + (i + 1) +
-    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ' }' + (i < styles.length - 1 ? ',' : ''));
+    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ', thumbRound: ' + JSON.stringify(rbuf ? 'data:image/png;base64,' + rbuf.toString('base64') : '') + ' }' + (i < styles.length - 1 ? ',' : ''));
 });
 js.push('  ]', '};');
 fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
 
 // 2. C header
 var h = ['// GENERATED FILE -- do not hand-edit.',
-  '// Produced by scripts/generate-weather-backgrounds.js from resources/weatherbg/<style>/.',
+  '// Produced by scripts/generate-weather-backgrounds.js from resources/square/weatherbg/<style>/.',
   '#pragma once', '', '#include <pebble.h>', '',
   '#define WEATHERBG_STYLE_COUNT ' + styles.length, '',
   '// Resource id of the weather background for style (1-based), detailed weather',
   '// class wx (0-9) and time of day, or 0 when that exact image does not exist.',
-  'static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {',
-  '  switch (style) {'];
-styles.forEach(function (st, i) {
-  h.push('    case ' + (i + 1) + ':');
-  h.push('      switch (wx * 2 + (night ? 1 : 0)) {');
-  CONDITIONS.forEach(function (c, idx) {
-    ['day', 'night'].forEach(function (tod, t) {
-      if (st.files[idx + '_' + tod]) {
-        h.push('        case ' + (idx * 2 + t) + ': return RESOURCE_ID_' + MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase() + ';');
-      }
+  '// On a round watch only images that exist in resources/round/weatherbg/ are available.',
+  'static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {'];
+['#ifdef PBL_ROUND', '#else'].forEach(function (cond, pass) {
+  h.push(cond, '  switch (style) {');
+  styles.forEach(function (st, i) {
+    var lines = [];
+    CONDITIONS.forEach(function (c, idx) {
+      ['day', 'night'].forEach(function (tod, t) {
+        if (!st.files[idx + '_' + tod]) return;
+        if (pass === 0 && !R.exists('round/' + st.files[idx + '_' + tod])) return;
+        lines.push('        case ' + (idx * 2 + t) + ': return RESOURCE_ID_' + MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase() + ';');
+      });
     });
+    if (!lines.length) return;
+    h.push('    case ' + (i + 1) + ':', '      switch (wx * 2 + (night ? 1 : 0)) {');
+    Array.prototype.push.apply(h, lines);
+    h.push('        default: return 0;', '      }');
   });
-  h.push('        default: return 0;', '      }');
+  h.push('    default: return 0;', '  }');
 });
-h.push('    default: return 0;', '  }', '}', '',
+h.push('#endif', '}', '',
   '// Same, falling back to the other time of day and then to clear sky.',
   'static inline uint32_t weatherbg_resource_id(uint8_t style, uint8_t wx, bool night) {',
   '  if (wx > 9) wx = 0;',
@@ -112,7 +121,7 @@ styles.forEach(function (st) {
     ['day', 'night'].forEach(function (tod) {
       var f = st.files[idx + '_' + tod];
       if (!f) return;
-      kept.push({ type: 'bitmap', name: MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase(), file: f });
+      R.shapedMedia(MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase(), f, false).forEach(function (e) { kept.push(e); });
       count++;
     });
   });

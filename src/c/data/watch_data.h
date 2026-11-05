@@ -57,9 +57,11 @@ typedef struct {
 
   // Primitive-only feature configuration. Content/feature IDs are resolved
   // on the phone and never stored or interpreted by the watch.
+#ifndef PBL_ROUND // a round screen has no corners: 84 bytes less per WatchData
   uint8_t corner_color_mode[4];
   uint8_t corner_primitive_ids[4][10];
   uint8_t corner_primitive_aux[4][10];
+#endif
   uint16_t daily_step_goal;
   uint8_t edge_line_color_mode[8];
   uint8_t edge_line_primitive_ids[8][10];

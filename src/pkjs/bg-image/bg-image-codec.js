@@ -1,6 +1,7 @@
 // Pure helpers for the custom-background image format shared with the
-var BG_W = 200;
-var BG_H = 228;
+var platform = require('../platform');
+var BG_W = platform.w;
+var BG_H = platform.h;
 var PACKED_BYTES = ((BG_W * BG_H + 3) >> 2) * 3;
 var SLOT_CHARS = Math.ceil(PACKED_BYTES * 4 / 3);
 var SLOT_RE = /^[A-Za-z0-9_-]+$/;

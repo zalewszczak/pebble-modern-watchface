@@ -23,7 +23,7 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.join(__dirname, '..');
-var SRC = path.join(ROOT, 'resources', 'images');
+var SRC = path.join(ROOT, 'resources', 'common', 'images');
 var OUT = path.join(ROOT, 'src', 'pkjs', 'data', 'generated', 'preview-icon-images.js');
 var tokens = require(path.join(ROOT, 'src', 'pkjs', 'config', 'preview-icons.js')).PREVIEW_ICON_TOKENS;
 

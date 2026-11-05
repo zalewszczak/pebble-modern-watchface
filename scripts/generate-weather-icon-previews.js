@@ -53,7 +53,7 @@ try {
   process.exit(1);
 }
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'images');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'common', 'images');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'weather-icon-style-previews.js');
 
 // Target pixel HEIGHT of the scaled-up preview -- chosen to roughly

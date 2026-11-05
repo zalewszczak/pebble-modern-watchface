@@ -3,10 +3,10 @@
 #include <pebble.h>
 #include "../data/watch_data.h"
 #include "./primitives/primitive_ids.h"
+#include "./feature_slot.h"
 
 // Pebble Layer wrapper for the always-on-top feature-slot overlay.
 
-#define FEATURES_MAX_SLOTS 12
 
 Layer *features_layer_create(GRect frame);
 void features_layer_destroy(Layer *layer);

@@ -26,7 +26,8 @@ var verticalButtonGroupHtml = configTemplate.verticalButtonGroupHtml;
 var modeButtonGroupHtml = configTemplate.modeButtonGroupHtml;
 var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
-var MARKER_PREVIEW_IMAGES = require('./data/generated/marker-preview-images');
+var platform = require('./platform');
+var MARKER_PREVIEW_IMAGES = platform.shapeImages(require('./data/generated/marker-preview-images'));
 var MARKER_VARIANT_STYLES = [
   { value: '11', title: 'Modern Bold' },
   { value: '12', title: 'Modern F' },
@@ -49,7 +50,7 @@ var PREVIEW_ICON_IMAGES = require('./data/generated/preview-icon-images');
 var PREVIEW_ICON_TOKENS = require('./config/preview-icons').PREVIEW_ICON_TOKENS;
 
 var EXAMPLE_STYLE_COUNT = 5;
-var EXAMPLE_STYLE_IMAGES = require('./data/generated/example-style-images');
+var EXAMPLE_STYLE_IMAGES = platform.shapeImages(require('./data/generated/example-style-images'));
 var EXAMPLE_STYLE_PRESETS = require('./example-style-presets');
 
 var HOURLY_VIBE_DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -216,12 +217,12 @@ directWebfontStyle() +
 '  .preset-name-input { flex: 1; box-sizing: border-box; }' +
 configPresetSchedule.css +
 '  .example-style-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }' +
-'  .example-style-btn { position: relative; aspect-ratio: 200 / 228; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
+'  .example-style-btn { position: relative; aspect-ratio: ' + platform.w + ' / ' + platform.h + '; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
 '  .example-style-btn:disabled { opacity: 0.4; }' +
 '  .example-style-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }' +
 '  .example-style-btn-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 13px; font-weight: 600; color: var(--text); }' +
 '  .style-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }' +
-'  .style-picker-btn { position: relative; aspect-ratio: 200 / 228; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
+'  .style-picker-btn { position: relative; aspect-ratio: ' + platform.w + ' / ' + platform.h + '; box-sizing: border-box; border-radius: 8px; border: 1px solid var(--border); background: var(--btn-bg); overflow: hidden; padding: 0; }' +
 '  .style-picker-btn img { width: 100%; height: 100%; object-fit: contain; display: block; }' +
 '  .bitmap-marker-img { filter: invert(1); }' +
 '  .style-picker-btn-empty { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 11px; font-weight: 600; color: var(--text); text-align: center; padding: 4px; box-sizing: border-box; }' +
@@ -284,7 +285,8 @@ configPresetSchedule.css +
 '  .top-bar-title { font-size: 15px; font-weight: 700; margin-top: 6px; color: var(--text); white-space: nowrap; }' +
 '  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
 '  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
-'  #previewCanvas { height: 50%; max-height: 50%; width: auto; max-width: 98%; border-radius: 4px; }' +
+'  #previewCanvas { height: 50%; max-height: 50%; width: auto; max-width: 98%; border-radius: ' + (platform.round ? '50%' : '4px') + '; }' +
+(platform.round ? '  .slot-corner-tl, .slot-corner-tr, .slot-corner-bl, .slot-corner-br { display: none !important; }' : '') +
 '  .subsection { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }' +
 '  .scheme-active-badge { font-size: 11px; font-weight: 700; color: #2e8b3d; background: rgba(46,139,61,0.15); border-radius: 4px; padding: 2px 6px; margin-left: 8px; vertical-align: middle; }' +
 '  .scheme-active-badge.inactive { color: #c0392b; background: rgba(192,57,43,0.15); }' +
@@ -584,7 +586,7 @@ configPresetSchedule.css +
 '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>' +
 '  </div>' +
 '  <div class="top-bar-preview">' +
-'    <canvas id="previewCanvas" width="176" height="201"></canvas>' +
+'    <canvas id="previewCanvas" width="176" height="' + Math.round(176 * platform.h / platform.w) + '"></canvas>' +
 '  </div>' +
 '</div>' +
 
@@ -2082,6 +2084,7 @@ configPlugins.pluginScript(current) +
 '    } else {' +
 '      avail.upper = true; avail.bottom = avail.left = avail.right = override; avail.cornersGrayed = !override;' +
 '    }' +
+'  if (SCREEN_ROUND) { avail.upper = avail.bottom = avail.left = avail.right = true; avail.cornersGrayed = true; }' +
 '  return avail;' +
 '}' +
 'function slotIconLabels(text) {' +

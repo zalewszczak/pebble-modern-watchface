@@ -1,10 +1,12 @@
 // custom background: settings-page half
 var esc = require('./config-template').esc;
+var platform = require('../platform');
 var bgImages = require('../data/generated/background-images');
+var bgImagesRound = bgImages.imagesRound || {};
 var weatherBgs = require('../data/generated/weather-backgrounds');
 
-var BG_W = 200;
-var BG_H = 228;
+var BG_W = platform.w;
+var BG_H = platform.h;
 var BG_SLOT_COUNT = 9;
 var BG_PACKED_B64_LENGTH = 45600;
 
@@ -80,7 +82,7 @@ function pluginSourceOptions(current) {
 
 function weatherThumbImgs() {
   return '<div style="display:none;">' + (weatherBgs.styles || []).map(function (st) {
-    return '<img id="weatherBgThumb-' + esc(st.id) + '" src="' + st.thumb + '" alt="">';
+    return '<img id="weatherBgThumb-' + esc(st.id) + '" src="' + ((platform.round && st.thumbRound) || st.thumb) + '" alt="">';
   }).join('') + '</div>';
 }
 
@@ -99,7 +101,7 @@ function backgroundSectionHtml(current) {
     presetHtml = '<div class="example-style-grid">';
     numbers.forEach(function (n) {
       presetHtml += '<button type="button" class="example-style-btn" id="bgPresetBtn-' + n + '" onclick="bgSelectPreset(' + n + ')">' +
-        '<img id="bgPresetImg-' + n + '" src="' + bgImages.images[String(n)] + '" alt="Background ' + n + '"></button>';
+        '<img id="bgPresetImg-' + n + '" src="' + ((platform.round && bgImagesRound[String(n)]) || bgImages.images[String(n)]) + '" alt="Background ' + n + '"></button>';
     });
     presetHtml += '</div>';
   } else {
@@ -884,7 +886,7 @@ var CSS_TEXT =
 '  .bg-slot-actions button { flex: 1; padding: 4px 2px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); }\n' +
 '  .bg-tile-empty { font-size: 28px; font-weight: 300; color: var(--text-faint); display: flex; align-items: center; justify-content: center; }\n' +
 '  .bg-subtitle { margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--text-strong); }\n' +
-'  #bgEdStage { position: relative; width: 100%; max-width: 240px; margin: 0 auto; aspect-ratio: 200 / 228; background: #222; border-radius: 6px; overflow: hidden; }\n' +
+'  #bgEdStage { position: relative; width: 100%; max-width: 240px; margin: 0 auto; aspect-ratio: ' + BG_W + ' / ' + BG_H + '; background: #222; border-radius: 6px; overflow: hidden; }\n' +
 '  #bgEdCanvas { display: block; width: 100%; height: 100%; touch-action: none; image-rendering: pixelated; cursor: grab; }\n' +
 '  #bgEdPlaceholder { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; color: #bbb; font-size: 13px; pointer-events: none; }\n' +
 '  .bg-ed-row { display: flex; gap: 8px; margin-top: 10px; }\n' +
@@ -903,6 +905,7 @@ function backgroundScript(current) {
   return '' +
 'var BG_W = ' + BG_W + ';\n' +
 'var BG_H = ' + BG_H + ';\n' +
+'var SCREEN_ROUND = ' + (platform.round ? 'true' : 'false') + ';\n' +
 'var BG_SLOT_COUNT = ' + BG_SLOT_COUNT + ';\n' +
 'var BG_PRESET_NUMBERS = ' + JSON.stringify(numbers) + ';\n' +
 'var BG_USER_SLOTS = ' + JSON.stringify(validSlots(current)) + ';\n' +

@@ -21,7 +21,8 @@
     "sdkVersion": "3",
     "enableMultiJS": true,
     "targetPlatforms": [
-      "emery"
+      "emery",
+      "gabbro"
     ],
     "watchapp": {
       "watchface": true
@@ -167,1003 +168,1651 @@
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_0",
-          "file": "images/forecast_0.png"
+          "file": "common/images/forecast_0.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_1",
-          "file": "images/forecast_1.png"
+          "file": "common/images/forecast_1.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_2",
-          "file": "images/forecast_2.png"
+          "file": "common/images/forecast_2.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_3",
-          "file": "images/forecast_3.png"
+          "file": "common/images/forecast_3.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_4",
-          "file": "images/forecast_4.png"
+          "file": "common/images/forecast_4.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_5",
-          "file": "images/forecast_5.png"
+          "file": "common/images/forecast_5.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_6",
-          "file": "images/forecast_6.png"
+          "file": "common/images/forecast_6.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_7",
-          "file": "images/forecast_7.png"
+          "file": "common/images/forecast_7.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_8",
-          "file": "images/forecast_8.png"
+          "file": "common/images/forecast_8.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_9",
-          "file": "images/forecast_9.png"
+          "file": "common/images/forecast_9.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_10",
-          "file": "images/forecast_10.png"
+          "file": "common/images/forecast_10.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_11",
-          "file": "images/forecast_11.png"
+          "file": "common/images/forecast_11.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_12",
-          "file": "images/forecast_12.png"
+          "file": "common/images/forecast_12.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_13",
-          "file": "images/forecast_13.png"
+          "file": "common/images/forecast_13.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_14",
-          "file": "images/forecast_14.png"
+          "file": "common/images/forecast_14.png"
         },
         {
           "type": "font",
           "name": "BITCOUNTGRID_FONT_18",
-          "file": "fonts/BitcountGridDouble-Light.ttf"
+          "file": "common/fonts/BitcountGridDouble-Light.ttf"
         },
         {
           "type": "font",
           "name": "DIGITALDREAM_FONT_13",
-          "file": "fonts/DIGITALDREAM.ttf"
+          "file": "common/fonts/DIGITALDREAM.ttf"
         },
         {
           "type": "font",
           "name": "DIGITALDREAMNARROW_FONT_14",
-          "file": "fonts/DIGITALDREAMNARROW.ttf"
+          "file": "common/fonts/DIGITALDREAMNARROW.ttf"
         },
         {
           "type": "font",
           "name": "DIGITALDREAMFAT_FONT_15",
-          "file": "fonts/DIGITALDREAMFAT.ttf"
+          "file": "common/fonts/DIGITALDREAMFAT.ttf"
         },
         {
           "type": "font",
           "name": "MINECRAFTER_FONT_12",
-          "file": "fonts/Minecrafter.ttf"
+          "file": "common/fonts/Minecrafter.ttf"
         },
         {
           "type": "font",
           "name": "ALAGARD_FONT_19",
-          "file": "fonts/alagard.ttf"
+          "file": "common/fonts/alagard.ttf"
         },
         {
           "type": "font",
           "name": "BEBAS_FONT_20",
-          "file": "fonts/BebasNeueBold.otf"
+          "file": "common/fonts/BebasNeueBold.otf"
         },
         {
           "type": "font",
           "name": "BYTESIZED_FONT_16",
-          "file": "fonts/Bytesized-Regular.ttf"
+          "file": "common/fonts/Bytesized-Regular.ttf"
         },
         {
           "type": "font",
           "name": "MPLUSBLACK_FONT_16",
-          "file": "fonts/MPLUSRounded1c-Black.ttf"
+          "file": "common/fonts/MPLUSRounded1c-Black.ttf"
         },
         {
           "type": "font",
           "name": "NOTOITALIC_FONT_18",
-          "file": "fonts/NotoSerif-MediumItalic.ttf"
+          "file": "common/fonts/NotoSerif-MediumItalic.ttf"
         },
         {
           "type": "font",
           "name": "ARCADE_FONT_18",
-          "file": "fonts/ArcadeClassic.ttf"
+          "file": "common/fonts/ArcadeClassic.ttf"
         },
         {
           "type": "font",
           "name": "DSDIGIB_FONT_20",
-          "file": "fonts/DS-DIGIB.TTF"
+          "file": "common/fonts/DS-DIGIB.TTF"
         },
         {
           "type": "font",
           "name": "DSDIGIT_FONT_20",
-          "file": "fonts/DS-DIGIT.TTF"
+          "file": "common/fonts/DS-DIGIT.TTF"
         },
         {
           "type": "font",
           "name": "LCDSOLID_FONT_18",
-          "file": "fonts/LCD_Solid.ttf"
+          "file": "common/fonts/LCD_Solid.ttf"
         },
         {
           "type": "font",
           "name": "RADIOLAND_FONT_16",
-          "file": "fonts/RADIOLAND.ttf"
+          "file": "common/fonts/RADIOLAND.ttf"
         },
         {
           "type": "font",
           "name": "NUNITO_FONT_21",
-          "file": "fonts/Nunito-Bold.ttf"
+          "file": "common/fonts/Nunito-Bold.ttf"
         },
         {
           "type": "png",
-          "menuIcon": true,
           "name": "IMAGE_MENU_ICON",
-          "file": "images/icon.png"
+          "file": "common/images/icon.png",
+          "menuIcon": true
         },
         {
           "type": "bitmap",
           "name": "MODERN_BACKGROUND",
-          "file": "indices/modern_background.png"
+          "file": "square/indices/modern_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_BACKGROUND",
+          "file": "round/indices/modern_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "SHADOW_BACKGROUND",
-          "file": "indices/shadow_background.png"
+          "file": "square/indices/shadow_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "SHADOW_BACKGROUND",
+          "file": "round/indices/shadow_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "TALLY_BACKGROUND",
-          "file": "indices/tally_background.png"
+          "file": "square/indices/tally_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "TALLY_BACKGROUND",
+          "file": "round/indices/tally_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "BELL_BACKGROUND",
-          "file": "indices/bell_background.png"
+          "file": "square/indices/bell_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BELL_BACKGROUND",
+          "file": "round/indices/bell_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "FANCY_BACKGROUND",
-          "file": "indices/fancy_background.png"
+          "file": "square/indices/fancy_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "FANCY_BACKGROUND",
+          "file": "round/indices/fancy_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_BOLD_BACKGROUND",
-          "file": "indices/modern_bold_background.png"
+          "file": "square/indices/modern_bold_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_BOLD_BACKGROUND",
+          "file": "round/indices/modern_bold_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_F_BACKGROUND",
-          "file": "indices/modern_f_background.png"
+          "file": "square/indices/modern_f_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_F_BACKGROUND",
+          "file": "round/indices/modern_f_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_H_BACKGROUND",
-          "file": "indices/modern_h_background.png"
+          "file": "square/indices/modern_h_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_H_BACKGROUND",
+          "file": "round/indices/modern_h_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_P_BACKGROUND",
-          "file": "indices/modern_p_background.png"
+          "file": "square/indices/modern_p_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_P_BACKGROUND",
+          "file": "round/indices/modern_p_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_PR_BACKGROUND",
-          "file": "indices/modern_pr_background.png"
+          "file": "square/indices/modern_pr_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_PR_BACKGROUND",
+          "file": "round/indices/modern_pr_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_S_BACKGROUND",
-          "file": "indices/modern_s_background.png"
+          "file": "square/indices/modern_s_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_S_BACKGROUND",
+          "file": "round/indices/modern_s_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_W_BACKGROUND",
-          "file": "indices/modern_w_background.png"
+          "file": "square/indices/modern_w_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_W_BACKGROUND",
+          "file": "round/indices/modern_w_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "MODERN_WR_BACKGROUND",
-          "file": "indices/modern_wr_background.png"
+          "file": "square/indices/modern_wr_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_WR_BACKGROUND",
+          "file": "round/indices/modern_wr_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ROMAN_BACKGROUND",
-          "file": "indices/roman_background.png"
+          "file": "square/indices/roman_background.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ROMAN_BACKGROUND",
+          "file": "round/indices/roman_background.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_HEART",
-          "file": "images/simple/heart.png"
+          "file": "common/images/simple/heart.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_FOOT",
-          "file": "images/simple/foot.png"
+          "file": "common/images/simple/foot.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_UMBRELLA",
-          "file": "images/simple/umbrella.png"
+          "file": "common/images/simple/umbrella.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_DROPLET",
-          "file": "images/simple/droplet.png"
+          "file": "common/images/simple/droplet.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_WIND",
-          "file": "images/simple/wind.png"
+          "file": "common/images/simple/wind.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_GPS_PIN",
-          "file": "images/simple/gps_pin.png"
+          "file": "common/images/simple/gps_pin.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_EYE",
-          "file": "images/simple/eye.png"
+          "file": "common/images/simple/eye.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_CLOUD",
-          "file": "images/simple/cloud.png"
+          "file": "common/images/simple/cloud.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BLUETOOTH",
-          "file": "images/simple/bluetooth.png"
+          "file": "common/images/simple/bluetooth.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_QUIET_TIME",
-          "file": "images/simple/quiet_time.png"
+          "file": "common/images/simple/quiet_time.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_QUIET_TIME_MUTED",
-          "file": "images/simple/quiet_time_muted.png"
+          "file": "common/images/simple/quiet_time_muted.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_ISS",
-          "file": "images/simple/iss.png"
+          "file": "common/images/simple/iss.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SATURN_RING",
-          "file": "images/simple/saturn_ring.png"
+          "file": "common/images/simple/saturn_ring.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_PLANETS",
-          "file": "images/simple/planets.png"
+          "file": "common/images/simple/planets.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_AURORA",
-          "file": "images/simple/aurora.png"
+          "file": "common/images/simple/aurora.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_REFRESH",
-          "file": "images/simple/refresh.png"
+          "file": "common/images/simple/refresh.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_ARROW_IN",
-          "file": "images/simple/bed_arrow_in.png"
+          "file": "common/images/simple/bed_arrow_in.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_ARROW_OUT",
-          "file": "images/simple/bed_arrow_out.png"
+          "file": "common/images/simple/bed_arrow_out.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CHECK",
-          "file": "images/simple/bed_check.png"
+          "file": "common/images/simple/bed_check.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CLOCK",
-          "file": "images/simple/bed_clock.png"
+          "file": "common/images/simple/bed_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CHECK_CLOCK",
-          "file": "images/simple/bed_check_clock.png"
+          "file": "common/images/simple/bed_check_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SUN_TIME_RISE",
-          "file": "images/simple/sun_time_rise.png"
+          "file": "common/images/simple/sun_time_rise.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SUN_TIME_SET",
-          "file": "images/simple/sun_time_set.png"
+          "file": "common/images/simple/sun_time_set.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_SUN",
-          "file": "images/simple/weather_sun.png"
+          "file": "common/images/simple/weather_sun.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_MOON",
-          "file": "images/simple/weather_moon.png"
+          "file": "common/images/simple/weather_moon.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY",
-          "file": "images/simple/weather_partly_cloudy.png"
+          "file": "common/images/simple/weather_partly_cloudy.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY_NIGHT",
-          "file": "images/simple/weather_partly_cloudy_night.png"
+          "file": "common/images/simple/weather_partly_cloudy_night.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_CLOUDY_OVERCAST",
-          "file": "images/simple/weather_cloudy_overcast.png"
+          "file": "common/images/simple/weather_cloudy_overcast.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_FOG",
-          "file": "images/simple/weather_fog.png"
+          "file": "common/images/simple/weather_fog.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_RAIN",
-          "file": "images/simple/weather_rain.png"
+          "file": "common/images/simple/weather_rain.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_SNOW",
-          "file": "images/simple/weather_snow.png"
+          "file": "common/images/simple/weather_snow.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_STORM",
-          "file": "images/simple/weather_storm.png"
+          "file": "common/images/simple/weather_storm.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_HEART",
-          "file": "images/hollow/heart.png"
+          "file": "common/images/hollow/heart.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_FOOT",
-          "file": "images/hollow/foot.png"
+          "file": "common/images/hollow/foot.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_UMBRELLA",
-          "file": "images/hollow/umbrella.png"
+          "file": "common/images/hollow/umbrella.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_DROPLET",
-          "file": "images/hollow/droplet.png"
+          "file": "common/images/hollow/droplet.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_WIND",
-          "file": "images/hollow/wind.png"
+          "file": "common/images/hollow/wind.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_GPS_PIN",
-          "file": "images/hollow/gps_pin.png"
+          "file": "common/images/hollow/gps_pin.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_EYE",
-          "file": "images/hollow/eye.png"
+          "file": "common/images/hollow/eye.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_CLOUD",
-          "file": "images/hollow/cloud.png"
+          "file": "common/images/hollow/cloud.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BLUETOOTH",
-          "file": "images/hollow/bluetooth.png"
+          "file": "common/images/hollow/bluetooth.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_QUIET_TIME",
-          "file": "images/hollow/quiet_time.png"
+          "file": "common/images/hollow/quiet_time.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_QUIET_TIME_MUTED",
-          "file": "images/hollow/quiet_time_muted.png"
+          "file": "common/images/hollow/quiet_time_muted.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_ISS",
-          "file": "images/hollow/iss.png"
+          "file": "common/images/hollow/iss.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SATURN_RING",
-          "file": "images/hollow/saturn_ring.png"
+          "file": "common/images/hollow/saturn_ring.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_PLANETS",
-          "file": "images/hollow/planets.png"
+          "file": "common/images/hollow/planets.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_AURORA",
-          "file": "images/hollow/aurora.png"
+          "file": "common/images/hollow/aurora.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_REFRESH",
-          "file": "images/hollow/refresh.png"
+          "file": "common/images/hollow/refresh.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_ARROW_IN",
-          "file": "images/hollow/bed_arrow_in.png"
+          "file": "common/images/hollow/bed_arrow_in.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_ARROW_OUT",
-          "file": "images/hollow/bed_arrow_out.png"
+          "file": "common/images/hollow/bed_arrow_out.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CHECK",
-          "file": "images/hollow/bed_check.png"
+          "file": "common/images/hollow/bed_check.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CLOCK",
-          "file": "images/hollow/bed_clock.png"
+          "file": "common/images/hollow/bed_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CHECK_CLOCK",
-          "file": "images/hollow/bed_check_clock.png"
+          "file": "common/images/hollow/bed_check_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SUN_TIME_RISE",
-          "file": "images/hollow/sun_time_rise.png"
+          "file": "common/images/hollow/sun_time_rise.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SUN_TIME_SET",
-          "file": "images/hollow/sun_time_set.png"
+          "file": "common/images/hollow/sun_time_set.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_SUN",
-          "file": "images/hollow/weather_sun.png"
+          "file": "common/images/hollow/weather_sun.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_MOON",
-          "file": "images/hollow/weather_moon.png"
+          "file": "common/images/hollow/weather_moon.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY",
-          "file": "images/hollow/weather_partly_cloudy.png"
+          "file": "common/images/hollow/weather_partly_cloudy.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY_NIGHT",
-          "file": "images/hollow/weather_partly_cloudy_night.png"
+          "file": "common/images/hollow/weather_partly_cloudy_night.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_CLOUDY_OVERCAST",
-          "file": "images/hollow/weather_cloudy_overcast.png"
+          "file": "common/images/hollow/weather_cloudy_overcast.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_FOG",
-          "file": "images/hollow/weather_fog.png"
+          "file": "common/images/hollow/weather_fog.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_RAIN",
-          "file": "images/hollow/weather_rain.png"
+          "file": "common/images/hollow/weather_rain.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_SNOW",
-          "file": "images/hollow/weather_snow.png"
+          "file": "common/images/hollow/weather_snow.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_STORM",
-          "file": "images/hollow/weather_storm.png"
+          "file": "common/images/hollow/weather_storm.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_HEART",
-          "file": "images/fullcolor/heart.png"
+          "file": "common/images/fullcolor/heart.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_FOOT",
-          "file": "images/fullcolor/foot.png"
+          "file": "common/images/fullcolor/foot.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_UMBRELLA",
-          "file": "images/fullcolor/umbrella.png"
+          "file": "common/images/fullcolor/umbrella.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_DROPLET",
-          "file": "images/fullcolor/droplet.png"
+          "file": "common/images/fullcolor/droplet.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_WIND",
-          "file": "images/fullcolor/wind.png"
+          "file": "common/images/fullcolor/wind.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_GPS_PIN",
-          "file": "images/fullcolor/gps_pin.png"
+          "file": "common/images/fullcolor/gps_pin.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_EYE",
-          "file": "images/fullcolor/eye.png"
+          "file": "common/images/fullcolor/eye.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_CLOUD",
-          "file": "images/fullcolor/cloud.png"
+          "file": "common/images/fullcolor/cloud.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BLUETOOTH",
-          "file": "images/fullcolor/bluetooth.png"
+          "file": "common/images/fullcolor/bluetooth.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_QUIET_TIME",
-          "file": "images/fullcolor/quiet_time.png"
+          "file": "common/images/fullcolor/quiet_time.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_QUIET_TIME_MUTED",
-          "file": "images/fullcolor/quiet_time_muted.png"
+          "file": "common/images/fullcolor/quiet_time_muted.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_ISS",
-          "file": "images/fullcolor/iss.png"
+          "file": "common/images/fullcolor/iss.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SATURN_RING",
-          "file": "images/fullcolor/saturn_ring.png"
+          "file": "common/images/fullcolor/saturn_ring.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_PLANETS",
-          "file": "images/fullcolor/planets.png"
+          "file": "common/images/fullcolor/planets.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_AURORA",
-          "file": "images/fullcolor/aurora.png"
+          "file": "common/images/fullcolor/aurora.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_REFRESH",
-          "file": "images/fullcolor/refresh.png"
+          "file": "common/images/fullcolor/refresh.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_ARROW_IN",
-          "file": "images/fullcolor/bed_arrow_in.png"
+          "file": "common/images/fullcolor/bed_arrow_in.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_ARROW_OUT",
-          "file": "images/fullcolor/bed_arrow_out.png"
+          "file": "common/images/fullcolor/bed_arrow_out.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CHECK",
-          "file": "images/fullcolor/bed_check.png"
+          "file": "common/images/fullcolor/bed_check.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CLOCK",
-          "file": "images/fullcolor/bed_clock.png"
+          "file": "common/images/fullcolor/bed_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CHECK_CLOCK",
-          "file": "images/fullcolor/bed_check_clock.png"
+          "file": "common/images/fullcolor/bed_check_clock.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SUN_TIME_RISE",
-          "file": "images/fullcolor/sun_time_rise.png"
+          "file": "common/images/fullcolor/sun_time_rise.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SUN_TIME_SET",
-          "file": "images/fullcolor/sun_time_set.png"
+          "file": "common/images/fullcolor/sun_time_set.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_SUN",
-          "file": "images/fullcolor/weather_sun.png"
+          "file": "common/images/fullcolor/weather_sun.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_MOON",
-          "file": "images/fullcolor/weather_moon.png"
+          "file": "common/images/fullcolor/weather_moon.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY",
-          "file": "images/fullcolor/weather_partly_cloudy.png"
+          "file": "common/images/fullcolor/weather_partly_cloudy.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY_NIGHT",
-          "file": "images/fullcolor/weather_partly_cloudy_night.png"
+          "file": "common/images/fullcolor/weather_partly_cloudy_night.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_CLOUDY_OVERCAST",
-          "file": "images/fullcolor/weather_cloudy_overcast.png"
+          "file": "common/images/fullcolor/weather_cloudy_overcast.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_FOG",
-          "file": "images/fullcolor/weather_fog.png"
+          "file": "common/images/fullcolor/weather_fog.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_RAIN",
-          "file": "images/fullcolor/weather_rain.png"
+          "file": "common/images/fullcolor/weather_rain.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_SNOW",
-          "file": "images/fullcolor/weather_snow.png"
+          "file": "common/images/fullcolor/weather_snow.png"
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_STORM",
-          "file": "images/fullcolor/weather_storm.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_1",
-          "file": "backgrounds/1.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_2",
-          "file": "backgrounds/2.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_3",
-          "file": "backgrounds/3.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_4",
-          "file": "backgrounds/4.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_5",
-          "file": "backgrounds/5.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_6",
-          "file": "backgrounds/6.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_7",
-          "file": "backgrounds/7.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_8",
-          "file": "backgrounds/8.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_9",
-          "file": "backgrounds/9.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_10",
-          "file": "backgrounds/10.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_11",
-          "file": "backgrounds/11.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_12",
-          "file": "backgrounds/12.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_13",
-          "file": "backgrounds/13.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_14",
-          "file": "backgrounds/14.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_15",
-          "file": "backgrounds/15.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_16",
-          "file": "backgrounds/16.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_17",
-          "file": "backgrounds/17.png"
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_18",
-          "file": "backgrounds/18.png"
+          "file": "common/images/fullcolor/weather_storm.png"
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
-          "file": "weatherbg/baroque_beach/clear_sky_day.png"
+          "file": "square/weatherbg/baroque_beach/clear_sky_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
-          "file": "weatherbg/baroque_beach/clear_sky_night.png"
+          "file": "square/weatherbg/baroque_beach/clear_sky_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
-          "file": "weatherbg/baroque_beach/partly_cloudy_day.png"
+          "file": "square/weatherbg/baroque_beach/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
-          "file": "weatherbg/baroque_beach/partly_cloudy_night.png"
+          "file": "square/weatherbg/baroque_beach/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
-          "file": "weatherbg/baroque_beach/overcast_day.png"
+          "file": "square/weatherbg/baroque_beach/overcast_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
-          "file": "weatherbg/baroque_beach/overcast_night.png"
+          "file": "square/weatherbg/baroque_beach/overcast_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
-          "file": "weatherbg/baroque_beach/fog_day.png"
+          "file": "square/weatherbg/baroque_beach/fog_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
-          "file": "weatherbg/baroque_beach/fog_night.png"
+          "file": "square/weatherbg/baroque_beach/fog_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
-          "file": "weatherbg/baroque_beach/drizzle_day.png"
+          "file": "square/weatherbg/baroque_beach/drizzle_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
-          "file": "weatherbg/baroque_beach/drizzle_night.png"
+          "file": "square/weatherbg/baroque_beach/drizzle_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
-          "file": "weatherbg/baroque_beach/rain_day.png"
+          "file": "square/weatherbg/baroque_beach/rain_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
-          "file": "weatherbg/baroque_beach/rain_night.png"
+          "file": "square/weatherbg/baroque_beach/rain_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
-          "file": "weatherbg/baroque_beach/heavy_rain_day.png"
+          "file": "square/weatherbg/baroque_beach/heavy_rain_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
-          "file": "weatherbg/baroque_beach/heavy_rain_night.png"
+          "file": "square/weatherbg/baroque_beach/heavy_rain_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
-          "file": "weatherbg/baroque_beach/snow_day.png"
+          "file": "square/weatherbg/baroque_beach/snow_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
-          "file": "weatherbg/baroque_beach/snow_night.png"
+          "file": "square/weatherbg/baroque_beach/snow_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
-          "file": "weatherbg/baroque_beach/thunderstorm_day.png"
+          "file": "square/weatherbg/baroque_beach/thunderstorm_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
-          "file": "weatherbg/baroque_beach/thunderstorm_night.png"
+          "file": "square/weatherbg/baroque_beach/thunderstorm_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
-          "file": "weatherbg/baroque_beach/sleet_day.png"
+          "file": "square/weatherbg/baroque_beach/sleet_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
-          "file": "weatherbg/baroque_beach/sleet_night.png"
+          "file": "square/weatherbg/baroque_beach/sleet_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
-          "file": "weatherbg/manhattan/clear_sky_day.png"
+          "file": "square/weatherbg/manhattan/clear_sky_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
-          "file": "weatherbg/manhattan/clear_sky_night.png"
+          "file": "square/weatherbg/manhattan/clear_sky_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
-          "file": "weatherbg/manhattan/partly_cloudy_day.png"
+          "file": "square/weatherbg/manhattan/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
-          "file": "weatherbg/manhattan/partly_cloudy_night.png"
+          "file": "square/weatherbg/manhattan/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
-          "file": "weatherbg/manhattan/overcast_day.png"
+          "file": "square/weatherbg/manhattan/overcast_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
-          "file": "weatherbg/manhattan/overcast_night.png"
+          "file": "square/weatherbg/manhattan/overcast_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_FOG_DAY",
-          "file": "weatherbg/manhattan/fog_day.png"
+          "file": "square/weatherbg/manhattan/fog_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
-          "file": "weatherbg/manhattan/fog_night.png"
+          "file": "square/weatherbg/manhattan/fog_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
-          "file": "weatherbg/manhattan/drizzle_day.png"
+          "file": "square/weatherbg/manhattan/drizzle_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
-          "file": "weatherbg/manhattan/drizzle_night.png"
+          "file": "square/weatherbg/manhattan/drizzle_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
-          "file": "weatherbg/manhattan/rain_day.png"
+          "file": "square/weatherbg/manhattan/rain_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
-          "file": "weatherbg/manhattan/rain_night.png"
+          "file": "square/weatherbg/manhattan/rain_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
-          "file": "weatherbg/manhattan/heavy_rain_day.png"
+          "file": "square/weatherbg/manhattan/heavy_rain_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
-          "file": "weatherbg/manhattan/heavy_rain_night.png"
+          "file": "square/weatherbg/manhattan/heavy_rain_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
-          "file": "weatherbg/manhattan/snow_day.png"
+          "file": "square/weatherbg/manhattan/snow_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
-          "file": "weatherbg/manhattan/snow_night.png"
+          "file": "square/weatherbg/manhattan/snow_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
-          "file": "weatherbg/manhattan/thunderstorm_day.png"
+          "file": "square/weatherbg/manhattan/thunderstorm_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
-          "file": "weatherbg/manhattan/thunderstorm_night.png"
+          "file": "square/weatherbg/manhattan/thunderstorm_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
-          "file": "weatherbg/manhattan/sleet_day.png"
+          "file": "square/weatherbg/manhattan/sleet_day.png",
+          "targetPlatforms": [
+            "emery"
+          ]
         },
         {
           "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
-          "file": "weatherbg/manhattan/sleet_night.png"
+          "file": "square/weatherbg/manhattan/sleet_night.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_1",
+          "file": "square/backgrounds/1.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_2",
+          "file": "square/backgrounds/2.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_3",
+          "file": "square/backgrounds/3.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_4",
+          "file": "square/backgrounds/4.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_5",
+          "file": "square/backgrounds/5.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_6",
+          "file": "square/backgrounds/6.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_7",
+          "file": "square/backgrounds/7.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_8",
+          "file": "square/backgrounds/8.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_9",
+          "file": "square/backgrounds/9.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_10",
+          "file": "square/backgrounds/10.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_11",
+          "file": "square/backgrounds/11.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_12",
+          "file": "square/backgrounds/12.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_13",
+          "file": "square/backgrounds/13.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_14",
+          "file": "square/backgrounds/14.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_15",
+          "file": "square/backgrounds/15.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_16",
+          "file": "square/backgrounds/16.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_17",
+          "file": "square/backgrounds/17.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_18",
+          "file": "square/backgrounds/18.png",
+          "targetPlatforms": [
+            "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
+          "file": "round/weatherbg/baroque_beach/clear_sky_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
+          "file": "round/weatherbg/baroque_beach/clear_sky_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
+          "file": "round/weatherbg/baroque_beach/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
+          "file": "round/weatherbg/baroque_beach/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
+          "file": "round/weatherbg/baroque_beach/overcast_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
+          "file": "round/weatherbg/baroque_beach/overcast_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
+          "file": "round/weatherbg/baroque_beach/fog_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
+          "file": "round/weatherbg/baroque_beach/fog_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
+          "file": "round/weatherbg/baroque_beach/drizzle_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
+          "file": "round/weatherbg/baroque_beach/drizzle_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
+          "file": "round/weatherbg/baroque_beach/rain_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
+          "file": "round/weatherbg/baroque_beach/rain_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
+          "file": "round/weatherbg/baroque_beach/heavy_rain_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
+          "file": "round/weatherbg/baroque_beach/heavy_rain_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
+          "file": "round/weatherbg/baroque_beach/snow_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
+          "file": "round/weatherbg/baroque_beach/snow_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
+          "file": "round/weatherbg/baroque_beach/thunderstorm_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
+          "file": "round/weatherbg/baroque_beach/thunderstorm_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
+          "file": "round/weatherbg/baroque_beach/sleet_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
+          "file": "round/weatherbg/baroque_beach/sleet_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
+          "file": "round/weatherbg/manhattan/clear_sky_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
+          "file": "round/weatherbg/manhattan/clear_sky_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
+          "file": "round/weatherbg/manhattan/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
+          "file": "round/weatherbg/manhattan/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
+          "file": "round/weatherbg/manhattan/overcast_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
+          "file": "round/weatherbg/manhattan/overcast_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_DAY",
+          "file": "round/weatherbg/manhattan/fog_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
+          "file": "round/weatherbg/manhattan/fog_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
+          "file": "round/weatherbg/manhattan/drizzle_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
+          "file": "round/weatherbg/manhattan/drizzle_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
+          "file": "round/weatherbg/manhattan/rain_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
+          "file": "round/weatherbg/manhattan/rain_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
+          "file": "round/weatherbg/manhattan/heavy_rain_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
+          "file": "round/weatherbg/manhattan/heavy_rain_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
+          "file": "round/weatherbg/manhattan/snow_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
+          "file": "round/weatherbg/manhattan/snow_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
+          "file": "round/weatherbg/manhattan/thunderstorm_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
+          "file": "round/weatherbg/manhattan/thunderstorm_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
+          "file": "round/weatherbg/manhattan/sleet_day.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
+          "file": "round/weatherbg/manhattan/sleet_night.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
         }
       ]
     },

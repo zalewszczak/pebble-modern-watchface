@@ -8,7 +8,13 @@
 
 // Resource id of the weather background for style (1-based), detailed weather
 // class wx (0-9) and time of day, or 0 when that exact image does not exist.
+// On a round watch only images that exist in resources/round/weatherbg/ are available.
 static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {
+#ifdef PBL_ROUND
+  switch (style) {
+    default: return 0;
+  }
+#else
   switch (style) {
     case 1:
       switch (wx * 2 + (night ? 1 : 0)) {
@@ -60,6 +66,7 @@ static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bo
       }
     default: return 0;
   }
+#endif
 }
 
 // Same, falling back to the other time of day and then to clear sky.

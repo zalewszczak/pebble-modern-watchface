@@ -9,7 +9,13 @@
 
 // Resource id of predefined background <n> (1-based, the number in the PNG
 // file name), or 0 when there is no such image.
+// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist.
 static inline uint32_t bg_preset_resource_id(uint8_t n) {
+#ifdef PBL_ROUND
+  switch (n) {
+    default: return 0;
+  }
+#else
   switch (n) {
     case 1: return RESOURCE_ID_BG_PRESET_1;
     case 2: return RESOURCE_ID_BG_PRESET_2;
@@ -31,4 +37,5 @@ static inline uint32_t bg_preset_resource_id(uint8_t n) {
     case 18: return RESOURCE_ID_BG_PRESET_18;
     default: return 0;
   }
+#endif
 }

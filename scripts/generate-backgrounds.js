@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Predefined custom-background images.
 //
-// Reads resources/backgrounds/<n>.png (numbered, 1.png, 2.png, ...; ideally
+// Reads resources/square/backgrounds/<n>.png (and the round/ twin of each, 260x260) (numbered, 1.png, 2.png, ...; ideally
 // 200x228 -- the Pebble Time 2 screen -- and as small as possible: palette
 // PNGs are best) and wires each one into BOTH halves of the project:
 //
@@ -32,7 +32,9 @@ var fs = require('fs');
 var path = require('path');
 
 var ROOT = path.join(__dirname, '..');
-var SOURCE_DIR = path.join(ROOT, 'resources', 'backgrounds');
+var R = require('./lib/resources');
+var SOURCE_DIR = R.dir('square', 'backgrounds');
+var ROUND_DIR = R.dir('round', 'backgrounds');
 var JS_OUT = path.join(ROOT, 'src', 'pkjs', 'data', 'generated', 'background-images.js');
 var H_OUT = path.join(ROOT, 'src', 'c', 'generated', 'background_presets.h');
 var PKG = path.join(ROOT, 'package.json');
@@ -40,6 +42,7 @@ var MEDIA_PREFIX = 'BG_PRESET_';
 
 var numbers = [];
 var images = {};
+var imagesRound = {};
 var totalBytes = 0;
 var ignored = [];
 
@@ -53,6 +56,7 @@ if (fs.existsSync(SOURCE_DIR)) {
     totalBytes += buf.length;
     images[String(n)] = 'data:image/png;base64,' + buf.toString('base64');
     numbers.push(n);
+    if (fs.existsSync(path.join(ROUND_DIR, file))) imagesRound[String(n)] = 'data:image/png;base64,' + fs.readFileSync(path.join(ROUND_DIR, file)).toString('base64');
   });
 }
 numbers.sort(function (a, b) { return a - b; });
@@ -60,18 +64,19 @@ numbers.sort(function (a, b) { return a - b; });
 // ---- 1. settings page data ------------------------------------------------
 var js = [];
 js.push('// GENERATED FILE -- do not edit by hand.');
-js.push('// Produced by scripts/generate-backgrounds.js from resources/backgrounds/<n>.png.');
+js.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.');
 js.push('module.exports = {');
 js.push('  count: ' + numbers.length + ',');
 js.push('  numbers: ' + JSON.stringify(numbers) + ',');
-js.push('  images: ' + JSON.stringify(images, null, 2).replace(/\n/g, '\n  '));
+js.push('  images: ' + JSON.stringify(images, null, 2).replace(/\n/g, '\n  ') + ',');
+js.push('  imagesRound: ' + JSON.stringify(imagesRound, null, 2).replace(/\n/g, '\n  '));
 js.push('};');
 fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
 
 // ---- 2. C resource table ----------------------------------------------------
 var h = [];
 h.push('// GENERATED FILE -- do not hand-edit.');
-h.push('// Produced by scripts/generate-backgrounds.js from resources/backgrounds/<n>.png.');
+h.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.');
 h.push('#pragma once');
 h.push('');
 h.push('#include <pebble.h>');
@@ -81,13 +86,19 @@ h.push('#define BG_PRESET_COUNT ' + numbers.length);
 h.push('');
 h.push('// Resource id of predefined background <n> (1-based, the number in the PNG');
 h.push('// file name), or 0 when there is no such image.');
+h.push('// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist.');
 h.push('static inline uint32_t bg_preset_resource_id(uint8_t n) {');
-h.push('  switch (n) {');
-numbers.forEach(function (n) {
-  h.push('    case ' + n + ': return RESOURCE_ID_' + MEDIA_PREFIX + n + ';');
+['#ifdef PBL_ROUND', '#else'].forEach(function (cond, pass) {
+  h.push(cond);
+  h.push('  switch (n) {');
+  numbers.forEach(function (n) {
+    if (pass === 0 && !imagesRound[String(n)]) return;
+    h.push('    case ' + n + ': return RESOURCE_ID_' + MEDIA_PREFIX + n + ';');
+  });
+  h.push('    default: return 0;');
+  h.push('  }');
 });
-h.push('    default: return 0;');
-h.push('  }');
+h.push('#endif');
 h.push('}');
 fs.writeFileSync(H_OUT, h.join('\n') + '\n');
 
@@ -96,7 +107,7 @@ var pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
 var media = pkg.pebble.resources.media;
 var kept = media.filter(function (e) { return String(e.name).indexOf(MEDIA_PREFIX) !== 0; });
 numbers.forEach(function (n) {
-  kept.push({ type: 'bitmap', name: MEDIA_PREFIX + n, file: 'backgrounds/' + n + '.png' });
+  R.shapedMedia(MEDIA_PREFIX + n, 'backgrounds/' + n + '.png', false).forEach(function (e) { kept.push(e); });
 });
 pkg.pebble.resources.media = kept;
 fs.writeFileSync(PKG, JSON.stringify(pkg, null, 2) + '\n');

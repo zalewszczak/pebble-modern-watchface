@@ -165,6 +165,20 @@ static int sector_of(int dx, int dy) {
   return dx >= 0 ? (6 - band) : (6 + band) % 12;               // lower half
 }
 
+#ifdef PBL_ROUND
+// Integer square root (floor) for the circular border depth.
+static int32_t border_isqrt(int32_t v) {
+  if (v <= 0) return 0;
+  int32_t r = 0, bit = 1 << 30;
+  while (bit > v) bit >>= 2;
+  while (bit) {
+    if (v >= r + bit) { v -= r + bit; r = (r >> 1) + bit; } else { r >>= 1; }
+    bit >>= 2;
+  }
+  return r;
+}
+#endif
+
 void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bounds, GPoint origin) {
   const int w = bounds.size.w, h = bounds.size.h;
   const int t = look->px;
@@ -184,6 +198,20 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
 
   for (int y = 0; y < h; y++) {
     const int dy2 = 2 * y + 1 - h; // doubled offsets keep the centre exact
+#ifdef PBL_ROUND
+    // Circular ring: depth is the distance inward from the circle edge. Doubled
+    // coordinates again, so the circle radius is w (= 2 * w / 2).
+    const int inner2 = w - 2 * t;
+    const int ax_in = (inner2 > 0 && dy2 > -inner2 && dy2 < inner2)
+      ? (int)border_isqrt((int32_t)inner2 * inner2 - (int32_t)dy2 * dy2) : 0; // interior half-width
+    for (int x = 0; x < w; x++) {
+      const int dx2 = 2 * x + 1 - w;
+      if (ax_in > 0 && dx2 > -ax_in && dx2 < ax_in) { x = (w + ax_in) / 2 - 1; continue; } // skip the interior
+      const int d2 = (int)border_isqrt((int32_t)dx2 * dx2 + (int32_t)dy2 * dy2);
+      if (d2 >= w) continue; // outside the circle
+      const int depth = (w - d2) / 2;
+      if (depth >= t) continue;
+#else
     const int dist_y = y < h - 1 - y ? y : h - 1 - y;
     const bool full_row = dist_y < t;
     for (int x = 0; x < w; x++) {
@@ -191,6 +219,7 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
       const int dist_x = x < w - 1 - x ? x : w - 1 - x;
       const int depth = dist_x < dist_y ? dist_x : dist_y; // pixels from the nearest screen edge
       if (depth >= t) continue;
+#endif
       if (semi && ((x + y) & 1)) continue; // checkerboard: draw every other pixel
       int layer = (depth * layers) / t;    // 0 = outermost stripe
       int s = sector_of(2 * x + 1 - w, dy2);

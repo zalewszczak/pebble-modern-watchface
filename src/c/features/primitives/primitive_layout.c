@@ -34,7 +34,7 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
     } else {
       const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
       GSize sz = graphics_text_layout_get_content_size(
-          text, font, GRect(0, 0, 200, font_h + 10),
+          text, font, GRect(0, 0, PBL_DISPLAY_WIDTH, font_h + 10),
           GTextOverflowModeTrailingEllipsis, GTextAlignmentLeft);
       p->width = sz.w + 2;
       // Text runs sit directly against their neighbours: spacing comes only

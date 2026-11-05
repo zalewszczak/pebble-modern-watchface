@@ -9,7 +9,14 @@
 
 // Internal primitive-only feature-layer data model shared by layout and drawing
 
+// Round watches have no corners, so they carry only the eight edge-line slots
+// (the four corner slots are the last four enum values below, which is why the
+// edge-line slot indices and the wire bit positions stay the same on both shapes).
+#ifdef PBL_ROUND
+#define FEATURES_MAX_SLOTS 8
+#else
 #define FEATURES_MAX_SLOTS 12
+#endif
 #define CORNER_BOX_W 68
 
 typedef struct FeatureSlot {

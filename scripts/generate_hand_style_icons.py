@@ -265,7 +265,7 @@ STYLES = [
 
 import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-OUT_DIR = os.path.join(SCRIPT_DIR, '..', 'resources', 'hand-style-icons')
+OUT_DIR = os.path.join(SCRIPT_DIR, '..', 'resources', 'common', 'hand-style-icons')
 os.makedirs(OUT_DIR, exist_ok=True)
 
 for name, fn, dot_spec in STYLES:

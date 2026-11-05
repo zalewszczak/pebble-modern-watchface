@@ -37,8 +37,14 @@ void watch_defaults_apply(WatchData *d) {
   d->edge_line_primitive_ids[0][0] = PRIM_BATTERY_LOGO_ICON;
   d->edge_line_primitive_ids[2][0] = PRIM_WEATHER_CONDITION_ICON;
   d->edge_line_primitive_ids[2][1] = PRIM_CURRENT_TEMP_TEXT;
+#ifdef PBL_ROUND
+  // No corners on a round screen: the date goes on the left/right edge slots instead.
+  d->edge_line_primitive_ids[4][0] = PRIM_WEEKDAY_SHORT_UPPER;
+  d->edge_line_primitive_ids[6][0] = PRIM_DAY_OF_MONTH;
+#else
   d->corner_primitive_ids[1][0] = PRIM_WEEKDAY_SHORT_UPPER;
   d->corner_primitive_ids[3][0] = PRIM_DAY_OF_MONTH;
+#endif
   for (int i = 0; i < 8; i++) d->edge_line_color_mode[i] = 0;
 
   // White main and accent colors on a black background.

@@ -10,7 +10,8 @@ var PLUGIN_SLOT = SLOT_COUNT + 1;
 var WATCH_SLOTS = PLUGIN_SLOT;
 var PERSIST_CHUNK_BYTES = 255;
 var MESSAGE_PAYLOAD_BYTES = PERSIST_CHUNK_BYTES * 4;
-var WATCH_STAMPS_KEY = 'BG_WATCH_STAMPS';
+var platform = require('../platform');
+var WATCH_STAMPS_KEY = 'BG_WATCH_STAMPS' + platform.suffix;
 
 var presetNumbers = [];
 try { presetNumbers = require('../data/generated/background-images').numbers || []; } catch (e) { presetNumbers = []; }
@@ -19,7 +20,7 @@ var s_sending = false;
 var s_resync = false;
 var s_batchSlots = {};
 
-function slotKey(k) { return 'CONFIG_BG_SLOT_' + k; }
+function slotKey(k) { return 'CONFIG_BG_SLOT_' + k + platform.suffix; }
 
 function getSlots() {
   var out = {};

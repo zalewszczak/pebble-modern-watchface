@@ -6,7 +6,7 @@ var fs = require('fs');
 var path = require('path');
 var sharp = require('sharp');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'font-previews');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'common', 'font-previews');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'font-preview-images.js');
 var VALID_ROLES = ['clock', 'clockFontSmall', 'cornerFont', 'markerTextFont'];
 var FILE_RE = /^([0-9]+)_(clock|clockFontSmall|cornerFont|markerTextFont)\.png$/;

@@ -2,7 +2,8 @@
 var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
 var EXAMPLE_STYLE_COUNT = 9;
-var EXAMPLE_STYLE_IMAGES = require('../data/generated/example-style-images');
+var platform = require('../platform');
+var EXAMPLE_STYLE_IMAGES = platform.shapeImages(require('../data/generated/example-style-images'));
 var EXAMPLE_STYLE_PRESETS = require('../example-style-presets');
 
 function deriveConfigState(current) {
@@ -49,6 +50,7 @@ function deriveConfigState(current) {
   } else {
     edgeAvail = { upper: true, bottom: bitmapCornerOverride, left: bitmapCornerOverride, right: bitmapCornerOverride, cornersGrayed: !bitmapCornerOverride };
   }
+  if (platform.round) edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: true };
   function hexFromPackedByte(byte) {
     var b = parseInt(byte, 10);
     if (isNaN(b)) return '#000000';

@@ -29,7 +29,7 @@
 var fs = require('fs');
 var path = require('path');
 
-var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'hand-style-icons');
+var SOURCE_DIR = path.join(__dirname, '..', 'resources', 'common', 'hand-style-icons');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'hand-style-icon-images.js');
 
 // Matches HandConfig.style (see hand_layer.h) and the Shape picker's
