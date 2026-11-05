@@ -704,7 +704,7 @@ STYLES = {"alps_chalet": alps_scene, "comic_isometric_town": comic_scene, "baroq
 
 def main():
     wanted = sys.argv[1:] or list(STYLES)
-    root = os.path.join(HERE, "..", "resources", "weatherbg")
+    root = os.path.join(HERE, "..", "resources", M.SHAPE, "weatherbg")
     for style in wanted:
         fn = STYLES[style]
         out_dir = os.path.join(root, style); os.makedirs(out_dir, exist_ok=True)

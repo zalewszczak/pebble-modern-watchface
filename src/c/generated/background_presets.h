@@ -1,5 +1,5 @@
 // GENERATED FILE -- do not hand-edit.
-// Produced by scripts/generate-backgrounds.js from resources/backgrounds/<n>.png.
+// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.
 #pragma once
 
 #include <pebble.h>

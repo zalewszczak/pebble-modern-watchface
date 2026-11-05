@@ -22,7 +22,10 @@ import sys, os, math
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
-W, H = 200, 228
+# Canvas: 200x228 (square, Time 2) by default; WEATHERBG_SIZE=260x260 renders the round (Round 2)
+# set into resources/round/weatherbg/ instead of resources/square/weatherbg/.
+W, H = [int(v) for v in os.environ.get("WEATHERBG_SIZE", "200x228").split("x")]
+SHAPE = "round" if (W, H) == (260, 260) else "square"
 SS = 3                      # supersampling factor
 SW, SH = W * SS, H * SS
 
@@ -437,7 +440,7 @@ def pebble_quantize(im):
     return q
 
 def main():
-    out_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", "resources", "weatherbg", "manhattan")
+    out_dir = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "resources", SHAPE, "weatherbg", "manhattan")
     os.makedirs(out_dir, exist_ok=True)
     seed = 100
     for cond in CONDITIONS:
