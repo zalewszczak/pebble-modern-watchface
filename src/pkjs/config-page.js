@@ -807,8 +807,15 @@ handEditorModalHtml('sec', 'Edit second hand') +
 '        <div class="donate-method-note">The easiest option. FYI: payments below ~1USD are swallowed by transaction fees and I recieve nothing. ¯\_(ツ)_/¯</div>' +
 '        <div class="donate-paypal">' +
 '          <p style="margin-top:24px;font-size:13px;opacity:.7">' +
-'            <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=D3C427GK2PGE8" target="_blank" rel="noopener">' +
-'              Donate with PayPal' +
+'            <a href="https://www.paypal.com/donate/?hosted_button_id=D3C427GK2PGE8" ' +
+'              target="_blank" rel="noopener" ' +
+'              style="display:inline-block;background:#FFC439;color:#003087;' +
+'              padding:11px 25px;border-radius:5px;text-decoration:none;' +
+'              font-family:Arial,sans-serif;font-size:16px;font-weight:bold;' +
+'              box-shadow:0 2px 4px rgba(0,0,0,.2);">' +
+'              <span style="font-style:italic;">Pay</span>' +
+'              <span style="color:#009cde;">Pal</span>' +
+'              Donate' +
 '            </a>' +
 '          </p>' +
 '        </div>' +
