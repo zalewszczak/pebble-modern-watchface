@@ -1,7 +1,7 @@
 {
   "name": "pebble-modern-watchface",
   "author": "zalew",
-  "version": "4.0.4",
+  "version": "4.0.5",
   "keywords": [
     "pebble-app",
     "watchface",
@@ -2567,28 +2567,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_1",
-          "file": "legacy/backgrounds/1.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_2",
           "file": "square/backgrounds/2.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_2",
-          "file": "legacy/backgrounds/2.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2601,28 +2583,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_3",
-          "file": "legacy/backgrounds/3.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_4",
           "file": "square/backgrounds/4.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_4",
-          "file": "legacy/backgrounds/4.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2635,28 +2599,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_5",
-          "file": "legacy/backgrounds/5.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_6",
           "file": "square/backgrounds/6.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_6",
-          "file": "legacy/backgrounds/6.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2669,28 +2615,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_7",
-          "file": "legacy/backgrounds/7.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_8",
           "file": "square/backgrounds/8.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_8",
-          "file": "legacy/backgrounds/8.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2703,28 +2631,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_9",
-          "file": "legacy/backgrounds/9.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_10",
           "file": "square/backgrounds/10.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_10",
-          "file": "legacy/backgrounds/10.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2737,28 +2647,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_11",
-          "file": "legacy/backgrounds/11.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_12",
           "file": "square/backgrounds/12.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_12",
-          "file": "legacy/backgrounds/12.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2771,28 +2663,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_13",
-          "file": "legacy/backgrounds/13.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_14",
           "file": "square/backgrounds/14.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_14",
-          "file": "legacy/backgrounds/14.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2805,28 +2679,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_15",
-          "file": "legacy/backgrounds/15.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_16",
           "file": "square/backgrounds/16.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_16",
-          "file": "legacy/backgrounds/16.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2839,28 +2695,10 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_17",
-          "file": "legacy/backgrounds/17.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_18",
           "file": "square/backgrounds/18.png",
           "targetPlatforms": [
             "emery"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_18",
-          "file": "legacy/backgrounds/18.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {

@@ -10,9 +10,11 @@ var BG_H = platform.h;
 var BG_SLOT_COUNT = 9;
 var BG_PACKED_B64_LENGTH = 45600;
 
+function presetNumbers() { return platform.bw ? [] : (bgImages.numbers || []); }
 function parseSource(current) {
   var m = /^([pu]):([0-9]+)$/.exec(String((current && current.bgSource) || ''));
-  var numbers = bgImages.numbers || [];
+  var numbers = presetNumbers();
+  if (platform.bw && (!m || m[1] === 'p')) return 'u:1';
   if (!m) return 'p:' + (numbers.length ? numbers[0] : 1);
   return m[1] + ':' + parseInt(m[2], 10);
 }
@@ -94,7 +96,7 @@ function weatherStyleOptions(current) {
 }
 
 function backgroundSectionHtml(current) {
-  var numbers = bgImages.numbers || [];
+  var numbers = presetNumbers();
   var pluginSrc = pluginSourceOptions(current);
   var presetHtml = '';
   if (numbers.length) {
@@ -114,7 +116,7 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
 '      <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
 '    </div>' +
-'    <div class="help"><b>IMAGE</b> = a predefined image or your own photo, <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
+'    <div class="help"><b>IMAGE</b> = ' + (platform.bw ? 'your own photo' : 'a predefined image or your own photo') + ', <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
@@ -149,9 +151,7 @@ function backgroundSectionHtml(current) {
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
-'      <div class="bg-subtitle">Predefined</div>' +
-'      ' + presetHtml +
-'      <div class="bg-subtitle">My images</div>' +
+(platform.bw ? '' : '      <div class="bg-subtitle">Predefined</div>' + presetHtml + '      <div class="bg-subtitle">My images</div>') +
 '      <div class="example-style-grid" id="bgSlotGrid"></div>' +
 '      <div class="help" style="margin-top:8px;">Tap a slot to add a photo. Images are converted to 64 colors and sent to the watch on Save.</div>' +
 '    </div>';
@@ -391,11 +391,11 @@ var CLIENT_BODY =
 'function bgEl(id) { return document.getElementById(id); }\n' +
 'function bgSlotHas(k) { return !!BG_USER_SLOTS[String(k)]; }\n' +
 'function bgSlotsDirtyCount() { return Object.keys(bgSlotUpdates).length; }\n' +
-'function bgDefaultSource() { return "p:" + (BG_PRESET_NUMBERS.length ? BG_PRESET_NUMBERS[0] : 1); }\n' +
+'function bgDefaultSource() { return BG_PRESET_NUMBERS.length ? "p:" + BG_PRESET_NUMBERS[0] : "u:1"; }\n' +
 'function bgParseSource() {\n' +
 '  var el = bgEl("bgSource");\n' +
 '  var m = /^([pu]):([0-9]+)$/.exec(el ? el.value : "");\n' +
-'  if (!m) return { kind: "p", n: BG_PRESET_NUMBERS.length ? BG_PRESET_NUMBERS[0] : 1 };\n' +
+'  if (!m) return BG_PRESET_NUMBERS.length ? { kind: "p", n: BG_PRESET_NUMBERS[0] } : { kind: "u", n: 1 };\n' +
 '  return { kind: m[1], n: parseInt(m[2], 10) };\n' +
 '}\n' +
 'function bgDecodePacked(str) {\n' +
@@ -903,7 +903,7 @@ var CSS_TEXT =
 function backgroundCss() { return CSS_TEXT; }
 
 function backgroundScript(current) {
-  var numbers = bgImages.numbers || [];
+  var numbers = presetNumbers();
   return '' +
 'var BG_W = ' + BG_W + ';\n' +
 'var BG_H = ' + BG_H + ';\n' +

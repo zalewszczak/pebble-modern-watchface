@@ -42,7 +42,7 @@ function bwScheme(prefix, defBg, defText, defAccent) {
   var accent = platform.bwByte(customColorByte(prefix + '_ACCENT', defAccent));
   var opposite = bg === 0xFF ? 0xC0 : 0xFF;
   if (text === bg) text = opposite;
-  if (accent === bg) accent = opposite;
+  accent = text; // no accent colour on a 1-bit screen
   return [bg, text, accent];
 }
 function customBgByte() { return platform.bw ? bwScheme('CONFIG_CUSTOM', 0xFF, 0xC0, 0xC0)[0] : customColorByte('CONFIG_CUSTOM_BG', 0xFF); }
@@ -364,7 +364,9 @@ function startupClockAnimModeCode() {
 }
 function borderWeatherModeCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
-  if (platform.bw) return (v === 1 || v === 3) ? v : 0; // pattern ring: conditions / rain chance only
+  // Pattern ring: conditions / rain chance only. Temperature and "all three" (colour-only, possibly saved by
+  // an older profile) fall back to conditions instead of silently turning the border off.
+  if (platform.bw) return v === 3 ? 3 : ((v === 1 || v === 2 || v === 4) ? 1 : 0);
   return (v >= 1 && v <= 4) ? v : 0;
 }
 function borderWeatherSchemeCode() {

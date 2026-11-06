@@ -1,5 +1,5 @@
 // config-page.js -- builds the settings webview HTML for the classic
-var APP_VERSION = "4.0.4-beta";
+var APP_VERSION = "4.0.5-beta";
 
 var PRESETS_LOOKUPS = require('./presets-lookups');
 var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
@@ -124,6 +124,18 @@ function faqItemsHtml() {
       '<div class="faq-answer"><p>' + esc(item[1]) + '</p></div>' +
     '</div>';
   }).join('');
+}
+
+// B&W watches have two looks only: white on black or black on white (no accent colour).
+function bwSchemeSelectHtml(night, current) {
+  var bgVal = parseInt(night ? current.nightCustomBg : current.customBg, 10);
+  if (isNaN(bgVal)) bgVal = night ? 192 : 255;
+  var white = platform.bwByte(bgVal) === 0xFF;
+  var id = night ? 'bwNightScheme' : 'bwDayScheme';
+  return '<select id="' + id + '" onchange="onBwSchemeChange(' + (night ? 'true' : 'false') + ')">' +
+    '<option value="0"' + (white ? '' : ' selected') + '>White text on black</option>' +
+    '<option value="1"' + (white ? ' selected' : '') + '>Black text on white</option>' +
+    '</select>';
 }
 
 function buildConfigHtml(current) {
@@ -286,6 +298,7 @@ configPresetSchedule.css +
 '  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
 '  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
 '  #previewCanvas { height: 50%; max-height: 50%; width: auto; max-width: 98%; border-radius: ' + (platform.round ? '50%' : '4px') + '; }' +
+(platform.bw ? '  .top-bar-preview { display: none !important; } .top-bar-left { flex: 1 1 100%; }' : '') +
 (platform.round ? '  .slot-corner-tl, .slot-corner-tr, .slot-corner-bl, .slot-corner-br { display: none !important; }' : '') +
 '  .subsection { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }' +
 '  .scheme-active-badge { font-size: 11px; font-weight: 700; color: #2e8b3d; background: rgba(46,139,61,0.15); border-radius: 4px; padding: 2px 6px; margin-left: 8px; vertical-align: middle; }' +
@@ -582,8 +595,8 @@ configPresetSchedule.css +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
 '    </div>' +
-'    <div class="top-bar-title">Modern Watchface Preview</div>' +
-'    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>' +
+'    <div class="top-bar-title">Modern Watchface' + (platform.bw ? '' : ' Preview') + '</div>' +
+(platform.bw ? '' : '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>') +
 '  </div>' +
 '  <div class="top-bar-preview">' +
 '    <canvas id="previewCanvas" width="176" height="' + Math.round(176 * platform.h / platform.w) + '"></canvas>' +
@@ -667,11 +680,12 @@ configPresetSchedule.css +
 '    </div>' +
 '    <div class="mode-btn-group" id="slotEditColorGroup" style="margin-top:14px;">' +
 '      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(0)">MONO</button>' +
-'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(1)">ACC</button>' +
+'      <button type="button" class="mode-btn" style="' + (platform.bw ? 'display:none;' : '') + '" onclick="slotEditorSelectColor(1)">ACC</button>' +
 '      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(2)">PILL</button>' +
-'      <button type="button" class="mode-btn" onclick="slotEditorSelectColor(3)">COLOR</button>' +
+'      <button type="button" class="mode-btn" style="' + (platform.bw ? 'display:none;' : '') + '" onclick="slotEditorSelectColor(3)">COLOR</button>' +
 '    </div>' +
-'    <div class="help"><b>MONO</b> = your main color, <b>ACC</b> = accent color, <b>PILL</b> = solid background-color capsule behind main-color content, <b>COLOR</b> = dynamic (changes with the value shown).</div>' +
+(platform.bw ? '    <div class="help"><b>MONO</b> = plain text, <b>PILL</b> = solid capsule behind the text in the inverted color.</div>' :
+'    <div class="help"><b>MONO</b> = your main color, <b>ACC</b> = accent color, <b>PILL</b> = solid background-color capsule behind main-color content, <b>COLOR</b> = dynamic (changes with the value shown).</div>') +
 '    <div class="checkbox-row" style="margin-top:12px;">' +
 '      <input type="checkbox" id="slotEditShake">' +
 '      <label for="slotEditShake" style="margin:0;">Show only when the watch is shaken</label>' +
@@ -1096,6 +1110,7 @@ configPresetSchedule.modalHtml +
 
 '    <div class="subsection" id="daySchemeSubsection">' +
 '      <label>Colors<span class="scheme-active-badge" id="daySchemeActiveBadge" style="display:none;">Active now</span></label>' +
+(platform.bw ? bwSchemeSelectHtml(false, current) + '<div style="display:none;">' : '<div>') +
 '      <div class="color-role-buttons">' +
 '        <button type="button" class="color-role-btn" onclick="openColorPicker(\'text\')">' +
 '          <span class="color-role-swatch" id="swatchMain" style="background:' + esc(initialColors.text) + ';"></span>' +
@@ -1119,6 +1134,7 @@ configPresetSchedule.modalHtml +
 '        <span class="color-preset-chevron">&rsaquo;</span>' +
 '      </button>' +
 '      <div class="help" id="help-colorSchemePreset" style="display:none;">Applies a ready-made set of main, accent, and background colors.</div>' +
+'      </div>' +  // end BW-hidden wrapper
 '      <input type="hidden" id="customBgValue" value="' + esc(current.customBg || '255') + '">' +
 '      <input type="hidden" id="customTextValue" value="' + esc(current.customText || '192') + '">' +
 '      <input type="hidden" id="customAccentValue" value="' + esc(current.customAccent || '192') + '">' +
@@ -1149,6 +1165,7 @@ configPresetSchedule.modalHtml +
 '    </div>' +
 '    <div id="nightSchemeSettings" style="' + (current.nightEnabled ? '' : 'display:none;') + '">' +
 '      <label>Night colors<span class="scheme-active-badge" id="nightSchemeActiveBadge" style="display:none;">Active now</span></label>' +
+(platform.bw ? bwSchemeSelectHtml(true, current) + '<div style="display:none;">' : '<div>') +
 '      <div class="color-role-buttons">' +
 '        <button type="button" class="color-role-btn" onclick="openColorPicker(\'text\', \'night\')">' +
 '          <span class="color-role-swatch" id="swatchNightMain" style="background:' + esc(initialNightColors.text) + ';"></span>' +
@@ -1172,6 +1189,7 @@ configPresetSchedule.modalHtml +
 '        <span class="color-preset-chevron">&rsaquo;</span>' +
 '      </button>' +
 '      <div class="help" id="help-nightSchemePreset" style="display:none;">Applies a ready-made set of night colors.</div>' +
+'      </div>' +  // end BW-hidden wrapper
 '      <input type="hidden" id="nightCustomBgValue" value="' + esc(current.nightCustomBg || '192') + '">' +
 '      <input type="hidden" id="nightCustomTextValue" value="' + esc(current.nightCustomText || '255') + '">' +
 '      <input type="hidden" id="nightCustomAccentValue" value="' + esc(current.nightCustomAccent || '255') + '">' +
@@ -1731,6 +1749,7 @@ configPresetSchedule.modalHtml +
 '}' +
 
 'var FONT_LOOKUP = ' + JSON.stringify(FONT_LOOKUP) + ';' +
+'var BW_FONT_IDS = ' + JSON.stringify(platform.BW_FONT_IDS) + ';' +
 fontManagerSource +
 'FontManager.init(FONT_LOOKUP);' +
 'var FONT_CATEGORIES = ' + JSON.stringify(FONT_CATEGORIES) + ';' +
@@ -1947,6 +1966,7 @@ fontManagerSource +
 '  });' +
 '  pickerFonts.forEach(function (f) {' +
 '    if (cfg.onlyMainClock && !fontFlag(f.mainClock)) return;' +
+'    if (SCREEN_BW && BW_FONT_IDS.indexOf(f.id) < 0 && f.id !== currentId) return;' +
 '    if (!showIncompatible && !fontFlag(f.small) && f.id !== currentId) return;' +
 '    if (!fontMatchesCategoryFilters(f)) return;' +
 '    var previewStyle = f.preview + " font-size:" + fontPickerPreviewPx(f.sizePx) + "px;";' +
@@ -3611,6 +3631,16 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 '  closeColorPicker();' +
 '  updateColorRoleButtons(scheme);' +
 '  if (scheme !== "night") updatePreview();' +
+'}' +
+'function onBwSchemeChange(night) {' +
+'  var sel = document.getElementById(night ? "bwNightScheme" : "bwDayScheme");' +
+'  var pre = night ? "nightCustom" : "custom";' +
+'  var blackOnWhite = sel && sel.value === "1";' +
+'  var bg = blackOnWhite ? 255 : 192, fg = blackOnWhite ? 192 : 255;' +
+'  document.getElementById(pre + "BgValue").value = bg;' +
+'  document.getElementById(pre + "TextValue").value = fg;' +
+'  document.getElementById(pre + "AccentValue").value = fg;' +
+'  updatePreview();' +
 '}' +
 'function onNightToggle() {' +
 '  document.getElementById("nightSchemeSettings").style.display = document.getElementById("nightEnabled").checked ? "block" : "none";' +

@@ -6,6 +6,7 @@ var SEVEN_STOPS = require('../weather/weather-normalize').SEVEN_STOP_GRADIENT_ST
 function borderSectionHtml(current) {
   var mode = String(current.borderWeatherMode || '0');
   if (['1', '2', '3', '4'].indexOf(mode) < 0) mode = '0';
+  if (platform.bw && mode !== '0' && mode !== '3') mode = '1';
   var scheme = String(current.borderWeatherScheme || '0');
   if (scheme !== '1' && scheme !== '2') scheme = '0';
   var px = parseInt(current.borderWeatherPx, 10);
@@ -29,8 +30,8 @@ function borderSectionHtml(current) {
 (platform.bw ? '' : '        <option value="4"' + sel('4', shown) + '>All three (3 stripes)</option>') +
 '      </select>' +
 '      <div class="help" id="borderCombinedWarn" style="display:none;"></div>' +
-'      <div class="field-label-row" style="margin-top:12px;"><label for="borderWeatherScheme">Colors</label></div>' +
-'      <select id="borderWeatherScheme" onchange="onBorderWeatherChange()">' +
+'      <div class="field-label-row" style="margin-top:12px;' + (platform.bw ? 'display:none;' : '') + '"><label for="borderWeatherScheme">Colors</label></div>' +
+'      <select id="borderWeatherScheme" style="' + (platform.bw ? 'display:none;' : '') + '" onchange="onBorderWeatherChange()">' +
 '        <option value="0"' + sel('0', scheme) + '></option>' +
 '        <option value="1"' + sel('1', scheme) + '></option>' +
 '        <option value="2"' + sel('2', scheme) + '></option>' +
@@ -50,7 +51,8 @@ function borderSectionHtml(current) {
 '        <label for="borderWeatherShake" style="margin:0;">Only show when the watch is shaken</label>' +
 '      </div>' +
 '      <div class="help">Shown for the same time as the other show-on-shake features (the shake duration slider in Animation).</div>' +
-'      <div class="border-diagram-row">' +
+(platform.bw ? '      <div class="help">The ring is drawn in your text color with a pattern: the denser the pattern, the cloudier or wetter that hour (empty = clear sky or no rain). Conditions: clear = empty, partly cloudy / fog = sparse dots, overcast / snow = checkerboard, drizzle / rain / sleet = dense, heavy rain / thunder = solid. Rain chance: under 5% empty, then 30%, 60%, 85%.</div>' : '') +
+'      <div class="border-diagram-row" style="' + (platform.bw ? 'display:none;' : '') + '">' +
 '        <canvas id="borderDiagram" width="' + platform.w + '" height="' + platform.h + '"></canvas>' +
 '        <div class="border-legend" id="borderLegend"></div>' +
 '      </div>' +

@@ -24,7 +24,7 @@ function dir(shape, sub) { return path.join(RES, shape, sub || ''); }
 function exists(rel) { return fs.existsSync(path.join(RES, rel)); }
 
 // Media entries for one picture that exists in both shapes. rel is relative to the shape folder.
-function shapedMedia(name, rel, fallback) {
+function shapedMedia(name, rel, fallback, noLegacy) {
   var roundRel = 'round/' + rel;
   var haveRound = exists(roundRel);
   var out = [{ type: 'bitmap', name: name, file: 'square/' + rel, targetPlatforms: [PLATFORM.square] }];
@@ -35,6 +35,7 @@ function shapedMedia(name, rel, fallback) {
     out.push({ type: 'bitmap', name: name, file: 'square/' + rel, targetPlatforms: [PLATFORM.round] });
   } else if (!warned[rel]) { warned[rel] = 1; console.log('  note: no round/' + rel + ' yet - not available on gabbro'); }
   var legacyRel = 'legacy/' + rel;
+  if (noLegacy) return out;
   if (exists(legacyRel)) out.push({ type: 'bitmap', name: name, file: legacyRel, targetPlatforms: LEGACY_PLATFORMS.slice() });
   else if (!warned['L' + rel]) { warned['L' + rel] = 1; console.log('  note: no legacy/' + rel + ' yet - not available on flint/diorite'); }
   return out;

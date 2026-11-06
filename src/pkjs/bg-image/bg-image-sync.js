@@ -14,7 +14,7 @@ var platform = require('../platform');
 var WATCH_STAMPS_KEY = 'BG_WATCH_STAMPS' + platform.suffix;
 
 var presetNumbers = [];
-try { presetNumbers = require('../data/generated/background-images').numbers || []; } catch (e) { presetNumbers = []; }
+try { presetNumbers = require('../platform').bw ? [] : (require('../data/generated/background-images').numbers || []); } catch (e) { presetNumbers = []; }
 
 var s_sending = false;
 var s_resync = false;

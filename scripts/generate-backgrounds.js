@@ -59,7 +59,7 @@ if (fs.existsSync(SOURCE_DIR)) {
     images[String(n)] = 'data:image/png;base64,' + buf.toString('base64');
     numbers.push(n);
     if (fs.existsSync(path.join(ROUND_DIR, file))) imagesRound[String(n)] = 'data:image/png;base64,' + fs.readFileSync(path.join(ROUND_DIR, file)).toString('base64');
-    if (fs.existsSync(path.join(LEGACY_DIR, file))) imagesBw[String(n)] = 'data:image/png;base64,' + fs.readFileSync(path.join(LEGACY_DIR, file)).toString('base64');
+    // Predefined backgrounds are not offered on the B&W watches (flint, diorite).
   });
 }
 numbers.sort(function (a, b) { return a - b; });
@@ -91,7 +91,7 @@ h.push('');
 h.push('// Resource id of predefined background <n> (1-based, the number in the PNG');
 h.push('// file name), or 0 when there is no such image.');
 h.push('// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist, on a');
-h.push('// black and white one (flint, diorite) only those with a resources/legacy/backgrounds/<n>.png.');
+h.push('// black and white one (flint, diorite) none (predefined backgrounds are not offered there).');
 h.push('static inline uint32_t bg_preset_resource_id(uint8_t n) {');
 ['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
   h.push(cond);
@@ -113,7 +113,7 @@ var pkg = JSON.parse(fs.readFileSync(PKG, 'utf8'));
 var media = pkg.pebble.resources.media;
 var kept = media.filter(function (e) { return String(e.name).indexOf(MEDIA_PREFIX) !== 0; });
 numbers.forEach(function (n) {
-  R.shapedMedia(MEDIA_PREFIX + n, 'backgrounds/' + n + '.png', false).forEach(function (e) { kept.push(e); });
+  R.shapedMedia(MEDIA_PREFIX + n, 'backgrounds/' + n + '.png', false, true).forEach(function (e) { kept.push(e); });
 });
 pkg.pebble.resources.media = kept;
 fs.writeFileSync(PKG, JSON.stringify(pkg, null, 2) + '\n');
