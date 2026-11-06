@@ -1,12 +1,13 @@
 // Converts saved CONFIG_* settings into validated numeric values and byte
 var settings = require('./settings');
+var platform = require('../platform');
 var getSetting = settings.getSetting;
 var presetsLookups = require('../presets-lookups');
 var MAX_FEATURES = presetsLookups.MAX_FEATURES;
 var FONT_MAX_CONTENT_ID = presetsLookups.FONT_MAX_CONTENT_ID;
 var MARKER_STYLE_PRESET_FIELDS = presetsLookups.MARKER_STYLE_PRESET_FIELDS;
 
-function clampFontId(v) { return clampInt(v, 0, FONT_MAX_CONTENT_ID, 1); }
+function clampFontId(v) { return platform.bwFont(clampInt(v, 0, FONT_MAX_CONTENT_ID, 1), 27); }
 
 function tempUnitCode() {
   var v = getSetting('CONFIG_TEMP_UNIT', 'C');
@@ -32,20 +33,33 @@ function customColorByte(key, fallbackByte) {
   if (isNaN(v) || v < 0 || v > 255) return fallbackByte;
   return v;
 }
-function customBgByte() { return customColorByte('CONFIG_CUSTOM_BG', 0xFF); }
-function customTextByte() { return customColorByte('CONFIG_CUSTOM_TEXT', 0xC0); }
-function customAccentByte() { return customColorByte('CONFIG_CUSTOM_ACCENT', 0xC0); }
+// B&W watches: any colour (old settings, presets, the colour pickers of a shared profile) is reduced to
+// black or white, and text/accent are forced to contrast with the background so a scheme can never end
+// up invisible. Returns [bg, text, accent] bytes for the day ('CONFIG_' prefix) or night scheme.
+function bwScheme(prefix, defBg, defText, defAccent) {
+  var bg = platform.bwByte(customColorByte(prefix + '_BG', defBg));
+  var text = platform.bwByte(customColorByte(prefix + '_TEXT', defText));
+  var accent = platform.bwByte(customColorByte(prefix + '_ACCENT', defAccent));
+  var opposite = bg === 0xFF ? 0xC0 : 0xFF;
+  if (text === bg) text = opposite;
+  if (accent === bg) accent = opposite;
+  return [bg, text, accent];
+}
+function customBgByte() { return platform.bw ? bwScheme('CONFIG_CUSTOM', 0xFF, 0xC0, 0xC0)[0] : customColorByte('CONFIG_CUSTOM_BG', 0xFF); }
+function customTextByte() { return platform.bw ? bwScheme('CONFIG_CUSTOM', 0xFF, 0xC0, 0xC0)[1] : customColorByte('CONFIG_CUSTOM_TEXT', 0xC0); }
+function customAccentByte() { return platform.bw ? bwScheme('CONFIG_CUSTOM', 0xFF, 0xC0, 0xC0)[2] : customColorByte('CONFIG_CUSTOM_ACCENT', 0xC0); }
 
 function nightSchemeEnabledCode() {
   return getSetting('CONFIG_NIGHT_ENABLED', 'false') === 'true' ? 1 : 0;
 }
-function nightCustomBgByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_BG', 0xC0); }
-function nightCustomTextByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_TEXT', 0xFF); }
-function nightCustomAccentByte() { return customColorByte('CONFIG_NIGHT_CUSTOM_ACCENT', 0xFF); }
+function nightCustomBgByte() { return platform.bw ? bwScheme('CONFIG_NIGHT_CUSTOM', 0xC0, 0xFF, 0xFF)[0] : customColorByte('CONFIG_NIGHT_CUSTOM_BG', 0xC0); }
+function nightCustomTextByte() { return platform.bw ? bwScheme('CONFIG_NIGHT_CUSTOM', 0xC0, 0xFF, 0xFF)[1] : customColorByte('CONFIG_NIGHT_CUSTOM_TEXT', 0xFF); }
+function nightCustomAccentByte() { return platform.bw ? bwScheme('CONFIG_NIGHT_CUSTOM', 0xC0, 0xFF, 0xFF)[2] : customColorByte('CONFIG_NIGHT_CUSTOM_ACCENT', 0xFF); }
 
 function weatherIconStyleCode() {
   var id = parseInt(getSetting('CONFIG_WEATHER_ICON_STYLE', '1'), 10);
   if (isNaN(id) || id < 0 || id > 2) id = 1;
+  if (platform.bw && id === 2) id = 0; // no full-colour icons on a B&W watch: simple
   return id;
 }
 function aqiUnitCode() {
@@ -146,7 +160,7 @@ function customSecOuterBorderCode() {
 function customSecTranslucentCode() { return customMarkerSetting('CONFIG_CUSTOM_SEC_TRANSLUCENT', 'false') === 'true' ? 1 : 0; }
 function customSecColorCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_COLOR', '0'), 0, 2, 0); }
 function markerTextTargetCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_TARGET', '0'), 0, 2, 0); }
-function markerTextFontCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_FONT', '0'), 0, FONT_MAX_CONTENT_ID, 0); }
+function markerTextFontCode() { return platform.bwFont(clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_FONT', '0'), 0, FONT_MAX_CONTENT_ID, 0), 1); }
 function markerTextOffsetCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_OFFSET', '0'), -50, 50, 0); }
 function markerTextHourMaskCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_HOUR_MASK', '4095'), 0, 4095, 4095); }
 function markerTextSecMaskCode() { return clampInt(customMarkerSetting('CONFIG_MARKER_TEXT_SEC_MASK', '4095'), 0, 4095, 4095); }
@@ -350,6 +364,7 @@ function startupClockAnimModeCode() {
 }
 function borderWeatherModeCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
+  if (platform.bw) return (v === 1 || v === 3) ? v : 0; // pattern ring: conditions / rain chance only
   return (v >= 1 && v <= 4) ? v : 0;
 }
 function borderWeatherSchemeCode() {
@@ -383,7 +398,7 @@ function outlineEnabledCode() {
 function batterySaverEnabledCode() { return getSetting('CONFIG_BATTERY_SAVER_ENABLED', 'false') === 'true' ? 1 : 0; }
 var DEFAULT_CORNER_FONT = 27;
 function cornerFontCode() {
-  return clampInt(getSetting('CONFIG_CORNER_FONT', String(DEFAULT_CORNER_FONT)), 0, FONT_MAX_CONTENT_ID, DEFAULT_CORNER_FONT);
+  return platform.bwFont(clampInt(getSetting('CONFIG_CORNER_FONT', String(DEFAULT_CORNER_FONT)), 0, FONT_MAX_CONTENT_ID, DEFAULT_CORNER_FONT), DEFAULT_CORNER_FONT);
 }
 
 var EDGE_CUSTOM_PRIMS_SLOTS = [
@@ -419,6 +434,7 @@ function cornerColorModeBytes() {
   return keys.map(function (k) {
     var id = parseInt(getSetting(k, '0'), 10);
     if (isNaN(id) || id < 0 || id > 3) id = 0;
+    if (platform.bw) id = (id === 2 ? 2 : 0);
     return id;
   });
 }

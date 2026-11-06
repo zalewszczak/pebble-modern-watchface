@@ -1,5 +1,6 @@
 #include "./marker_bitmap.h"
 #include "../status/status_label.h"
+#include "../../platform/platform_bw.h"
 
 void marker_bitmap_release(GBitmap **bitmap, uint8_t *bitmap_style, bool *bitmap_tinted) {
   if (*bitmap) {
@@ -70,6 +71,12 @@ void marker_bitmap_tint(GBitmap *bitmap, bool *bitmap_tinted, GColor *tint_color
   if (*bitmap_tinted && tint_color->argb == tint.argb &&
       *tint_transparent == transparent) return;
 
+#ifdef PBL_BW
+  // No alpha on a 1-bit screen: the ink is always opaque and always black or white. The
+  // semi-transparent option is a no-op here (the "inverted" blend below has a checkerboard version).
+  tint = bw_color(tint);
+  transparent = false;
+#endif
   uint8_t forced_alpha_bits = transparent ? 0x80 : 0xC0;
   GBitmapFormat format = gbitmap_get_format(bitmap);
 
@@ -138,6 +145,44 @@ static uint8_t bitmap_pixel_index(const uint8_t *data, uint16_t stride, int bpp,
 // `origin` is the layer's position in the frame buffer.
 void marker_bitmap_draw_inverted(GContext *ctx, GBitmap *bitmap, GRect bounds, GPoint origin, bool semi) {
   if (!bitmap) return;
+#ifdef PBL_BW
+  // 1-bit version: wherever the art covers at least half (palette alpha >= 2 of 3) the screen pixel
+  // is inverted, which is exactly "light background -> black, dark background -> white" in two
+  // colours. `semi` inverts only every other pixel (checkerboard).
+  GBitmapFormat bw_format = gbitmap_get_format(bitmap);
+  int bw_bpp = (bw_format == GBitmapFormat1BitPalette) ? 1 : (bw_format == GBitmapFormat2BitPalette) ? 2 :
+               (bw_format == GBitmapFormat4BitPalette) ? 4 : (bw_format == GBitmapFormat8Bit) ? 8 : 0;
+  if (bw_bpp == 0) return;
+  const GColor *bw_palette = (bw_bpp < 8) ? gbitmap_get_palette(bitmap) : NULL;
+  if (bw_bpp < 8 && !bw_palette) return;
+  GRect bw_bounds = gbitmap_get_bounds(bitmap);
+  const uint8_t *bw_src = gbitmap_get_data(bitmap);
+  const uint16_t bw_src_stride = gbitmap_get_bytes_per_row(bitmap);
+  int16_t bw_dx = origin.x + bounds.origin.x + (bounds.size.w - bw_bounds.size.w) / 2;
+  int16_t bw_dy = origin.y + bounds.origin.y + (bounds.size.h - bw_bounds.size.h) / 2;
+  GBitmap *bw_fb = graphics_capture_frame_buffer(ctx);
+  if (!bw_fb) return;
+  if (gbitmap_get_format(bw_fb) == GBitmapFormat1Bit) {
+    uint8_t *dst = gbitmap_get_data(bw_fb);
+    const uint16_t dst_stride = gbitmap_get_bytes_per_row(bw_fb);
+    const GRect fbb = gbitmap_get_bounds(bw_fb);
+    for (int16_t y = 0; y < bw_bounds.size.h; y++) {
+      int16_t fy = bw_dy + y;
+      if (fy < fbb.origin.y || fy >= fbb.origin.y + fbb.size.h) continue;
+      for (int16_t x = 0; x < bw_bounds.size.w; x++) {
+        int16_t fx = bw_dx + x;
+        if (fx < fbb.origin.x || fx >= fbb.origin.x + fbb.size.w) continue;
+        if (semi && ((fx + fy) & 1)) continue;
+        uint8_t argb = (bw_bpp == 8) ? bw_src[(int32_t)y * bw_src_stride + x]
+                                     : bw_palette[bitmap_pixel_index(bw_src, bw_src_stride, bw_bpp, x, y)].argb;
+        if (((argb >> 6) & 3) < 2) continue;
+        bw_fb_toggle(dst, dst_stride, fx, fy);
+      }
+    }
+  }
+  graphics_release_frame_buffer(ctx, bw_fb);
+  return;
+#else
   GBitmapFormat format = gbitmap_get_format(bitmap);
   int bpp = (format == GBitmapFormat1BitPalette) ? 1 : (format == GBitmapFormat2BitPalette) ? 2 :
             (format == GBitmapFormat4BitPalette) ? 4 : (format == GBitmapFormat8Bit) ? 8 : 0;
@@ -183,4 +228,5 @@ void marker_bitmap_draw_inverted(GContext *ctx, GBitmap *bitmap, GRect bounds, G
     }
   }
   graphics_release_frame_buffer(ctx, fb);
+#endif // PBL_BW
 }

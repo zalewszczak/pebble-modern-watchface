@@ -2,8 +2,10 @@
 
 #include <pebble.h>
 
-#define FEATURE_ICON_WIDTH 16
-#define FEATURE_ICON_ROWS 12
+#include "../platform/platform_bw.h"
+
+#define FEATURE_ICON_WIDTH PL_ICON_W
+#define FEATURE_ICON_ROWS PL_ICON_ROWS
 
 // Hides/shows the Bluetooth icon while it flashes (phone disconnected).
 void feature_icons_set_bt_flash_hidden(bool hidden);

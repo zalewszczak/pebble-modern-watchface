@@ -17,6 +17,12 @@
 
 #define WEATHER_BORDER_MAX_LAYERS 3
 
+// B&W watches (flint, diorite) have no colour to code the weather with, so the border becomes a
+// pattern ring: only the "conditions" (1) and "rain chance" (3) styles exist, and each sector's
+// density says how much weather there is (0 nothing, 1 sparse dots, 2 checkerboard, 3 dense,
+// 4 solid), drawn in the text colour (`ink`). The levels live in c0[0][sector]; c1 is unused.
+// `ink` is filled in by the dial layer (the compute step does not know the colour scheme).
+//
 // Per-sector colours for each stripe. Two ARGB bytes per sector so overcast
 // can be a 50 % checker of two grays (the 64-colour palette has only two mid
 // grays); 0 = transparent (nothing drawn). Layer 0 is the outermost stripe.
@@ -26,6 +32,7 @@ typedef struct {
   uint8_t layers;  // 1 or 3
   uint8_t px;      // total thickness
   uint8_t semi;    // draw only every other pixel
+  uint8_t ink;     // B&W only: packed GColor of the pattern pixels
 } WeatherBorderLook;
 
 // Returns false when the border is off.

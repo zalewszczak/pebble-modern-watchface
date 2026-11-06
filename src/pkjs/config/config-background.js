@@ -280,6 +280,7 @@ var CLIENT_BODY =
 '}\n' +
 'function bgClamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }\n' +
 'function bgStyleRgb(rgba, n, style) {\n' +
+'  if (SCREEN_BW) style = "bw";\n' +
 '  var f = new Float32Array(n * 3);\n' +
 '  for (var i = 0; i < n; i++) {\n' +
 '    var p = i * 4;\n' +
@@ -318,6 +319,7 @@ var CLIENT_BODY =
 '  return m;\n' +
 '}\n' +
 'function bgLevel(v) {\n' +
+'  if (SCREEN_BW) return v >= 128 ? 3 : 0;\n' +
 '  var l = Math.floor(v / 85 + 0.5);\n' +
 '  return l < 0 ? 0 : (l > 3 ? 3 : l);\n' +
 '}\n' +
@@ -336,7 +338,7 @@ var CLIENT_BODY =
 '          var old = wk[i * 3 + c];\n' +
 '          var l = bgLevel(old);\n' +
 '          lv[c] = l;\n' +
-'          var err = old - l * 85;\n' +
+'          var err = old - (SCREEN_BW ? (l ? 255 : 0) : l * 85);\n' +
 '          if (fs) {\n' +
 '            if (x + 1 < w) wk[(i + 1) * 3 + c] += err * 7 / 16;\n' +
 '            if (y + 1 < h) {\n' +
@@ -366,7 +368,7 @@ var CLIENT_BODY =
 '  for (y = 0; y < h; y++) {\n' +
 '    for (x = 0; x < w; x++) {\n' +
 '      i = y * w + x;\n' +
-'      var t = bm ? ((bm[(y % bn) * bn + (x % bn)] + 0.5) / (bn * bn) - 0.5) * 85 : 0;\n' +
+'      var t = bm ? ((bm[(y % bn) * bn + (x % bn)] + 0.5) / (bn * bn) - 0.5) * (SCREEN_BW ? 255 : 85) : 0;\n' +
 '      vals[i] = (bgLevel(f[i * 3] + t) << 4) | (bgLevel(f[i * 3 + 1] + t) << 2) | bgLevel(f[i * 3 + 2] + t);\n' +
 '    }\n' +
 '  }\n' +
@@ -906,6 +908,7 @@ function backgroundScript(current) {
 'var BG_W = ' + BG_W + ';\n' +
 'var BG_H = ' + BG_H + ';\n' +
 'var SCREEN_ROUND = ' + (platform.round ? 'true' : 'false') + ';\n' +
+'var SCREEN_BW = ' + (platform.bw ? 'true' : 'false') + ';\n' +
 'var BG_SLOT_COUNT = ' + BG_SLOT_COUNT + ';\n' +
 'var BG_PRESET_NUMBERS = ' + JSON.stringify(numbers) + ';\n' +
 'var BG_USER_SLOTS = ' + JSON.stringify(validSlots(current)) + ';\n' +

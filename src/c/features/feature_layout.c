@@ -46,13 +46,22 @@ void feature_layout_recompute(FeaturesState *state) {
     { 18, { 40, 40, 39, 38 } }, // Modern W Round
     { 19, { 39, 39, 40, 40 } }, // Roman
   };
-  int16_t dyn_upper_offset = 24, dyn_bottom_shift = 20, dyn_left_inset = 0, dyn_right_inset = 0;
+  int16_t dyn_upper_offset = PL_DEFAULT_UPPER_OFFSET, dyn_bottom_shift = PL_DEFAULT_BOTTOM_SHIFT;
+  int16_t dyn_left_inset = 0, dyn_right_inset = 0;
   if (marker_is_bitmap) {
     const EdgeMargins *m = &BITMAP_STYLE_MARGINS[4].m; // fall back to Fancy
     for (size_t i = 0; i < sizeof(BITMAP_STYLE_MARGINS) / sizeof(BITMAP_STYLE_MARGINS[0]); i++) {
       if (BITMAP_STYLE_MARGINS[i].style == marker_style) { m = &BITMAP_STYLE_MARGINS[i].m; break; }
     }
     dyn_upper_offset = m->top; dyn_bottom_shift = m->bottom; dyn_left_inset = m->left; dyn_right_inset = m->right;
+#ifdef PBL_BW
+    // Same first guess for the 144x168 B&W art (x by 144/200, y by 168/228) until the legacy
+    // indices' own margins are measured.
+    dyn_upper_offset = PL_BITMAP_MARGIN_Y(dyn_upper_offset);
+    dyn_bottom_shift = PL_BITMAP_MARGIN_Y(dyn_bottom_shift);
+    dyn_left_inset = PL_BITMAP_MARGIN_X(dyn_left_inset);
+    dyn_right_inset = PL_BITMAP_MARGIN_X(dyn_right_inset);
+#endif
 #ifdef PBL_ROUND
     // The tables above were measured on the 200x228 art. Until the round art's own
     // margins are measured, scale them to the 260x260 screen (x by 13/10, y by 8/7).
@@ -144,6 +153,7 @@ void feature_layout_recompute(FeaturesState *state) {
       };
     }
 
+#ifndef PBL_BW // no left/right edge slots on a 144 px screen (they stay inactive)
     has_line2 = primitive_sequence_enabled(d->edge_line_primitive_ids[5]);
     line1_offset = has_line2 ? -(CORNER_ROW_H / 2) : 0;
     state->slots[SLOT_LEFT_L1] = (FeatureSlot){
@@ -181,6 +191,9 @@ void feature_layout_recompute(FeaturesState *state) {
         .needs_second_refresh = primitive_sequence_needs_second_refresh(d->edge_line_primitive_ids[7]),
       };
     }
+#else
+    (void)dyn_left_inset; (void)dyn_right_inset;
+#endif // PBL_BW
   }
 
 #ifndef PBL_ROUND

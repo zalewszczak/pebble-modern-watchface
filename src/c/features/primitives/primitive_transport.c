@@ -2,6 +2,7 @@
 #include "./primitive_catalogue.h"
 #include "./primitive_resolver.h"
 #include "../feature_color_helpers.h"
+#include "../../platform/platform_bw.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -12,6 +13,7 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
   if (primitive_ids[0] == PRIM_ID_NONE) return false; // not sent for this slot
 
   int n = 0;
+  // Sequences longer than PRIMITIVE_FEATURE_MAX (6 on the B&W watches) are cut off.
   for (int i = 0; i < PRIMITIVE_FEATURE_MAX; i++) {
     PrimitiveId id = (PrimitiveId)primitive_ids[i];
     if (id == PRIM_ID_NONE) break;
@@ -54,6 +56,13 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
       p->color = accent_color;  // north arrow
       p->color2 = main_color;   // the other three arrows
     }
+#ifdef PBL_BW
+    // Black and white only: every value is drawn in the text colour whatever its colour mode or
+    // dynamic colour was (gradients, fixed N/A grey, green charging, red disconnected ...).
+    // The phone already sends only "normal" and "pill" for these slots.
+    p->color = main_color;
+    p->color2 = main_color;
+#endif
     n++;
   }
   out->count = (uint8_t)n;

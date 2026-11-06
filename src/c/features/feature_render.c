@@ -3,6 +3,7 @@
 #include "./feature_icon_assets.h"
 #include "./feature_icons.h"
 #include "./primitives/primitive_renderer.h"
+#include "../platform/platform_bw.h"
 
 #define CORNER_INSET_PX 2
 
@@ -75,7 +76,7 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
     // Hug the content: pill spans the laid-out feature width plus padding.
     // Horizontal padding per side: rounded ends (~7px) plus an 8px buffer so
     // icons on the left and text overhang on the right are never clipped.
-    const int16_t pad = 15;
+    const int16_t pad = PL_PILL_PAD;
     // Measure the visible extent (first visible item start to last visible
     // item end) so trailing icon gaps / spacers don't shift the pill off centre.
     int16_t first_x = -1, last_x = 0;

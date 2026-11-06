@@ -6,6 +6,15 @@
 // A resource id of 0 means "no art for this style yet" and is skipped rather
 // than crashing -- lets new icon identities be wired up before every style's
 // artwork exists (see feature_icons.c / feature_weather_icons.c tables).
+// Full-colour art exists only on the colour watches. On the B&W ones the resource ids do not exist
+// at all, so the tables must not name them: ICON_FULLCOLOR_ID(x) is the id there and 0 on B&W
+// (the argument is never expanded, so an undefined RESOURCE_ID_* is fine).
+#ifdef PBL_COLOR
+#define ICON_FULLCOLOR_ID(x) x
+#else
+#define ICON_FULLCOLOR_ID(x) 0
+#endif
+
 typedef struct {
   uint32_t simple;
   uint32_t hollow;

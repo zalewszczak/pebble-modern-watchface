@@ -8,7 +8,8 @@
 
 // Resource id of the weather background for style (1-based), detailed weather
 // class wx (0-9) and time of day, or 0 when that exact image does not exist.
-// On a round watch only images that exist in resources/round/weatherbg/ are available.
+// On a round watch only images that exist in resources/round/weatherbg/ are available, on a black
+// and white one (flint, diorite) only those in resources/legacy/weatherbg/.
 static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {
 #ifdef PBL_ROUND
   switch (style) {
@@ -60,6 +61,10 @@ static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bo
         case 19: return RESOURCE_ID_WEATHERBG_MANHATTAN_SLEET_NIGHT;
         default: return 0;
       }
+    default: return 0;
+  }
+#elif defined(PBL_BW)
+  switch (style) {
     default: return 0;
   }
 #else

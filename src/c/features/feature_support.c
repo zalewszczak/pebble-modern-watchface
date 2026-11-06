@@ -1,6 +1,7 @@
 #include "./feature_support.h"
 #include "../data/watch_ui.h"
 #include "../rendering/render_math.h"
+#include "../platform/platform_bw.h"
 
 // Planets count as visible from just before rising until just after setting.
 #define PLANET_RISE_SET_MARGIN_S 180
@@ -23,11 +24,16 @@ void feature_draw_moon_phase(GContext *ctx, GRect bounds, GPoint center, int16_t
           y < bounds.origin.y || y >= bounds.origin.y + bounds.size.h) continue;
       int16_t dx = x - center.x;
       bool lit = gibbous ? (side * dx > -ellipse_w) : (side * dx >= ellipse_w);
+#ifdef PBL_BW
+      // Unlit side: the opposite colour (a filled disc with a lit_color outline, below).
+      graphics_context_set_fill_color(ctx, lit ? lit_color : (bw_color_is_white(lit_color) ? GColorBlack : GColorWhite));
+#else
       graphics_context_set_fill_color(ctx, lit ? lit_color : GColorDarkGray);
+#endif
       graphics_fill_rect(ctx, GRect(x, y, 1, 1), 0, GCornerNone);
     }
   }
-  graphics_context_set_stroke_color(ctx, GColorBlack);
+  graphics_context_set_stroke_color(ctx, PBL_IF_COLOR_ELSE(GColorBlack, lit_color));
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_circle(ctx, center, radius);
 }

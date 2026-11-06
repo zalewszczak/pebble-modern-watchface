@@ -24,9 +24,9 @@ function borderSectionHtml(current) {
 '      <div class="field-label-row"><label for="borderWeatherModeSel">Show</label></div>' +
 '      <select id="borderWeatherModeSel" onchange="onBorderWeatherChange()">' +
 '        <option value="1"' + sel('1', shown) + '>Weather conditions</option>' +
-'        <option value="2"' + sel('2', shown) + '>Temperature</option>' +
+(platform.bw ? '' : '        <option value="2"' + sel('2', shown) + '>Temperature</option>') +
 '        <option value="3"' + sel('3', shown) + '>Rain chance</option>' +
-'        <option value="4"' + sel('4', shown) + '>All three (3 stripes)</option>' +
+(platform.bw ? '' : '        <option value="4"' + sel('4', shown) + '>All three (3 stripes)</option>') +
 '      </select>' +
 '      <div class="help" id="borderCombinedWarn" style="display:none;"></div>' +
 '      <div class="field-label-row" style="margin-top:12px;"><label for="borderWeatherScheme">Colors</label></div>' +

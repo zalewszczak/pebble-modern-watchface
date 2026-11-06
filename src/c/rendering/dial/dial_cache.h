@@ -7,7 +7,7 @@
 // Everything on the dial that does not change from one screen update to the
 // next -- the background colour, the custom background image, the hour/second
 // indices (drawn rings, numerals or a bitmap style) -- is drawn ONCE into the
-// frame buffer, copied into a single full-layer 8-bit bitmap, and from then
+// frame buffer, copied into a single full-layer bitmap (8-bit on the colour watches, 1-bit on the B&W ones), and from then
 // on put back with one blit per update. The cache is rebuilt only when its
 // signature (a hash of every input those elements depend on, see
 // dial_layer.c) changes. Resources only needed while drawing (marker bitmap,

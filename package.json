@@ -22,7 +22,9 @@
     "enableMultiJS": true,
     "targetPlatforms": [
       "emery",
-      "gabbro"
+      "gabbro",
+      "flint",
+      "diorite"
     ],
     "watchapp": {
       "watchface": true
@@ -168,157 +170,281 @@
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_0",
-          "file": "common/images/forecast_0.png"
+          "file": "common/images/forecast_0.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_1",
-          "file": "common/images/forecast_1.png"
+          "file": "common/images/forecast_1.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_2",
-          "file": "common/images/forecast_2.png"
+          "file": "common/images/forecast_2.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_3",
-          "file": "common/images/forecast_3.png"
+          "file": "common/images/forecast_3.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_4",
-          "file": "common/images/forecast_4.png"
+          "file": "common/images/forecast_4.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_5",
-          "file": "common/images/forecast_5.png"
+          "file": "common/images/forecast_5.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_6",
-          "file": "common/images/forecast_6.png"
+          "file": "common/images/forecast_6.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_7",
-          "file": "common/images/forecast_7.png"
+          "file": "common/images/forecast_7.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_8",
-          "file": "common/images/forecast_8.png"
+          "file": "common/images/forecast_8.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_9",
-          "file": "common/images/forecast_9.png"
+          "file": "common/images/forecast_9.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_10",
-          "file": "common/images/forecast_10.png"
+          "file": "common/images/forecast_10.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_11",
-          "file": "common/images/forecast_11.png"
+          "file": "common/images/forecast_11.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_12",
-          "file": "common/images/forecast_12.png"
+          "file": "common/images/forecast_12.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_13",
-          "file": "common/images/forecast_13.png"
+          "file": "common/images/forecast_13.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FORECAST_14",
-          "file": "common/images/forecast_14.png"
+          "file": "common/images/forecast_14.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "BITCOUNTGRID_FONT_18",
-          "file": "common/fonts/BitcountGridDouble-Light.ttf"
+          "file": "common/fonts/BitcountGridDouble-Light.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "DIGITALDREAM_FONT_13",
-          "file": "common/fonts/DIGITALDREAM.ttf"
+          "file": "common/fonts/DIGITALDREAM.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "DIGITALDREAMNARROW_FONT_14",
-          "file": "common/fonts/DIGITALDREAMNARROW.ttf"
+          "file": "common/fonts/DIGITALDREAMNARROW.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "DIGITALDREAMFAT_FONT_15",
-          "file": "common/fonts/DIGITALDREAMFAT.ttf"
+          "file": "common/fonts/DIGITALDREAMFAT.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "MINECRAFTER_FONT_12",
-          "file": "common/fonts/Minecrafter.ttf"
+          "file": "common/fonts/Minecrafter.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "ALAGARD_FONT_19",
-          "file": "common/fonts/alagard.ttf"
+          "file": "common/fonts/alagard.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "BEBAS_FONT_20",
-          "file": "common/fonts/BebasNeueBold.otf"
+          "file": "common/fonts/BebasNeueBold.otf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "BYTESIZED_FONT_16",
-          "file": "common/fonts/Bytesized-Regular.ttf"
+          "file": "common/fonts/Bytesized-Regular.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "MPLUSBLACK_FONT_16",
-          "file": "common/fonts/MPLUSRounded1c-Black.ttf"
+          "file": "common/fonts/MPLUSRounded1c-Black.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "NOTOITALIC_FONT_18",
-          "file": "common/fonts/NotoSerif-MediumItalic.ttf"
+          "file": "common/fonts/NotoSerif-MediumItalic.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "ARCADE_FONT_18",
-          "file": "common/fonts/ArcadeClassic.ttf"
+          "file": "common/fonts/ArcadeClassic.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "DSDIGIB_FONT_20",
-          "file": "common/fonts/DS-DIGIB.TTF"
+          "file": "common/fonts/DS-DIGIB.TTF",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "DSDIGIT_FONT_20",
-          "file": "common/fonts/DS-DIGIT.TTF"
+          "file": "common/fonts/DS-DIGIT.TTF",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "LCDSOLID_FONT_18",
-          "file": "common/fonts/LCD_Solid.ttf"
+          "file": "common/fonts/LCD_Solid.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "RADIOLAND_FONT_16",
-          "file": "common/fonts/RADIOLAND.ttf"
+          "file": "common/fonts/RADIOLAND.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "font",
           "name": "NUNITO_FONT_21",
-          "file": "common/fonts/Nunito-Bold.ttf"
+          "file": "common/fonts/Nunito-Bold.ttf",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "png",
@@ -553,482 +679,1877 @@
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_HEART",
-          "file": "common/images/simple/heart.png"
+          "file": "common/images/simple/heart.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_FOOT",
-          "file": "common/images/simple/foot.png"
+          "file": "common/images/simple/foot.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_UMBRELLA",
-          "file": "common/images/simple/umbrella.png"
+          "file": "common/images/simple/umbrella.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_DROPLET",
-          "file": "common/images/simple/droplet.png"
+          "file": "common/images/simple/droplet.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_WIND",
-          "file": "common/images/simple/wind.png"
+          "file": "common/images/simple/wind.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_GPS_PIN",
-          "file": "common/images/simple/gps_pin.png"
+          "file": "common/images/simple/gps_pin.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_EYE",
-          "file": "common/images/simple/eye.png"
+          "file": "common/images/simple/eye.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_CLOUD",
-          "file": "common/images/simple/cloud.png"
+          "file": "common/images/simple/cloud.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BLUETOOTH",
-          "file": "common/images/simple/bluetooth.png"
+          "file": "common/images/simple/bluetooth.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_QUIET_TIME",
-          "file": "common/images/simple/quiet_time.png"
+          "file": "common/images/simple/quiet_time.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_QUIET_TIME_MUTED",
-          "file": "common/images/simple/quiet_time_muted.png"
+          "file": "common/images/simple/quiet_time_muted.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_ISS",
-          "file": "common/images/simple/iss.png"
+          "file": "common/images/simple/iss.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SATURN_RING",
-          "file": "common/images/simple/saturn_ring.png"
+          "file": "common/images/simple/saturn_ring.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_PLANETS",
-          "file": "common/images/simple/planets.png"
+          "file": "common/images/simple/planets.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_AURORA",
-          "file": "common/images/simple/aurora.png"
+          "file": "common/images/simple/aurora.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_REFRESH",
-          "file": "common/images/simple/refresh.png"
+          "file": "common/images/simple/refresh.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_ARROW_IN",
-          "file": "common/images/simple/bed_arrow_in.png"
+          "file": "common/images/simple/bed_arrow_in.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_ARROW_OUT",
-          "file": "common/images/simple/bed_arrow_out.png"
+          "file": "common/images/simple/bed_arrow_out.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CHECK",
-          "file": "common/images/simple/bed_check.png"
+          "file": "common/images/simple/bed_check.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CLOCK",
-          "file": "common/images/simple/bed_clock.png"
+          "file": "common/images/simple/bed_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_BED_CHECK_CLOCK",
-          "file": "common/images/simple/bed_check_clock.png"
+          "file": "common/images/simple/bed_check_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SUN_TIME_RISE",
-          "file": "common/images/simple/sun_time_rise.png"
+          "file": "common/images/simple/sun_time_rise.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_SIMPLE_SUN_TIME_SET",
-          "file": "common/images/simple/sun_time_set.png"
+          "file": "common/images/simple/sun_time_set.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_SUN",
-          "file": "common/images/simple/weather_sun.png"
+          "file": "common/images/simple/weather_sun.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_MOON",
-          "file": "common/images/simple/weather_moon.png"
+          "file": "common/images/simple/weather_moon.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY",
-          "file": "common/images/simple/weather_partly_cloudy.png"
+          "file": "common/images/simple/weather_partly_cloudy.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY_NIGHT",
-          "file": "common/images/simple/weather_partly_cloudy_night.png"
+          "file": "common/images/simple/weather_partly_cloudy_night.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_CLOUDY_OVERCAST",
-          "file": "common/images/simple/weather_cloudy_overcast.png"
+          "file": "common/images/simple/weather_cloudy_overcast.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_FOG",
-          "file": "common/images/simple/weather_fog.png"
+          "file": "common/images/simple/weather_fog.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_RAIN",
-          "file": "common/images/simple/weather_rain.png"
+          "file": "common/images/simple/weather_rain.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_SNOW",
-          "file": "common/images/simple/weather_snow.png"
+          "file": "common/images/simple/weather_snow.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_SIMPLE_STORM",
-          "file": "common/images/simple/weather_storm.png"
+          "file": "common/images/simple/weather_storm.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_HEART",
-          "file": "common/images/hollow/heart.png"
+          "file": "common/images/hollow/heart.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_FOOT",
-          "file": "common/images/hollow/foot.png"
+          "file": "common/images/hollow/foot.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_UMBRELLA",
-          "file": "common/images/hollow/umbrella.png"
+          "file": "common/images/hollow/umbrella.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_DROPLET",
-          "file": "common/images/hollow/droplet.png"
+          "file": "common/images/hollow/droplet.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_WIND",
-          "file": "common/images/hollow/wind.png"
+          "file": "common/images/hollow/wind.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_GPS_PIN",
-          "file": "common/images/hollow/gps_pin.png"
+          "file": "common/images/hollow/gps_pin.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_EYE",
-          "file": "common/images/hollow/eye.png"
+          "file": "common/images/hollow/eye.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_CLOUD",
-          "file": "common/images/hollow/cloud.png"
+          "file": "common/images/hollow/cloud.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BLUETOOTH",
-          "file": "common/images/hollow/bluetooth.png"
+          "file": "common/images/hollow/bluetooth.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_QUIET_TIME",
-          "file": "common/images/hollow/quiet_time.png"
+          "file": "common/images/hollow/quiet_time.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_QUIET_TIME_MUTED",
-          "file": "common/images/hollow/quiet_time_muted.png"
+          "file": "common/images/hollow/quiet_time_muted.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_ISS",
-          "file": "common/images/hollow/iss.png"
+          "file": "common/images/hollow/iss.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SATURN_RING",
-          "file": "common/images/hollow/saturn_ring.png"
+          "file": "common/images/hollow/saturn_ring.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_PLANETS",
-          "file": "common/images/hollow/planets.png"
+          "file": "common/images/hollow/planets.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_AURORA",
-          "file": "common/images/hollow/aurora.png"
+          "file": "common/images/hollow/aurora.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_REFRESH",
-          "file": "common/images/hollow/refresh.png"
+          "file": "common/images/hollow/refresh.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_ARROW_IN",
-          "file": "common/images/hollow/bed_arrow_in.png"
+          "file": "common/images/hollow/bed_arrow_in.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_ARROW_OUT",
-          "file": "common/images/hollow/bed_arrow_out.png"
+          "file": "common/images/hollow/bed_arrow_out.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CHECK",
-          "file": "common/images/hollow/bed_check.png"
+          "file": "common/images/hollow/bed_check.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CLOCK",
-          "file": "common/images/hollow/bed_clock.png"
+          "file": "common/images/hollow/bed_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_BED_CHECK_CLOCK",
-          "file": "common/images/hollow/bed_check_clock.png"
+          "file": "common/images/hollow/bed_check_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SUN_TIME_RISE",
-          "file": "common/images/hollow/sun_time_rise.png"
+          "file": "common/images/hollow/sun_time_rise.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_HOLLOW_SUN_TIME_SET",
-          "file": "common/images/hollow/sun_time_set.png"
+          "file": "common/images/hollow/sun_time_set.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_SUN",
-          "file": "common/images/hollow/weather_sun.png"
+          "file": "common/images/hollow/weather_sun.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_MOON",
-          "file": "common/images/hollow/weather_moon.png"
+          "file": "common/images/hollow/weather_moon.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY",
-          "file": "common/images/hollow/weather_partly_cloudy.png"
+          "file": "common/images/hollow/weather_partly_cloudy.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY_NIGHT",
-          "file": "common/images/hollow/weather_partly_cloudy_night.png"
+          "file": "common/images/hollow/weather_partly_cloudy_night.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_CLOUDY_OVERCAST",
-          "file": "common/images/hollow/weather_cloudy_overcast.png"
+          "file": "common/images/hollow/weather_cloudy_overcast.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_FOG",
-          "file": "common/images/hollow/weather_fog.png"
+          "file": "common/images/hollow/weather_fog.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_RAIN",
-          "file": "common/images/hollow/weather_rain.png"
+          "file": "common/images/hollow/weather_rain.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_SNOW",
-          "file": "common/images/hollow/weather_snow.png"
+          "file": "common/images/hollow/weather_snow.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_HOLLOW_STORM",
-          "file": "common/images/hollow/weather_storm.png"
+          "file": "common/images/hollow/weather_storm.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_HEART",
-          "file": "common/images/fullcolor/heart.png"
+          "file": "common/images/fullcolor/heart.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_FOOT",
-          "file": "common/images/fullcolor/foot.png"
+          "file": "common/images/fullcolor/foot.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_UMBRELLA",
-          "file": "common/images/fullcolor/umbrella.png"
+          "file": "common/images/fullcolor/umbrella.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_DROPLET",
-          "file": "common/images/fullcolor/droplet.png"
+          "file": "common/images/fullcolor/droplet.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_WIND",
-          "file": "common/images/fullcolor/wind.png"
+          "file": "common/images/fullcolor/wind.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_GPS_PIN",
-          "file": "common/images/fullcolor/gps_pin.png"
+          "file": "common/images/fullcolor/gps_pin.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_EYE",
-          "file": "common/images/fullcolor/eye.png"
+          "file": "common/images/fullcolor/eye.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_CLOUD",
-          "file": "common/images/fullcolor/cloud.png"
+          "file": "common/images/fullcolor/cloud.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BLUETOOTH",
-          "file": "common/images/fullcolor/bluetooth.png"
+          "file": "common/images/fullcolor/bluetooth.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_QUIET_TIME",
-          "file": "common/images/fullcolor/quiet_time.png"
+          "file": "common/images/fullcolor/quiet_time.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_QUIET_TIME_MUTED",
-          "file": "common/images/fullcolor/quiet_time_muted.png"
+          "file": "common/images/fullcolor/quiet_time_muted.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_ISS",
-          "file": "common/images/fullcolor/iss.png"
+          "file": "common/images/fullcolor/iss.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SATURN_RING",
-          "file": "common/images/fullcolor/saturn_ring.png"
+          "file": "common/images/fullcolor/saturn_ring.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_PLANETS",
-          "file": "common/images/fullcolor/planets.png"
+          "file": "common/images/fullcolor/planets.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_AURORA",
-          "file": "common/images/fullcolor/aurora.png"
+          "file": "common/images/fullcolor/aurora.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_REFRESH",
-          "file": "common/images/fullcolor/refresh.png"
+          "file": "common/images/fullcolor/refresh.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_ARROW_IN",
-          "file": "common/images/fullcolor/bed_arrow_in.png"
+          "file": "common/images/fullcolor/bed_arrow_in.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_ARROW_OUT",
-          "file": "common/images/fullcolor/bed_arrow_out.png"
+          "file": "common/images/fullcolor/bed_arrow_out.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CHECK",
-          "file": "common/images/fullcolor/bed_check.png"
+          "file": "common/images/fullcolor/bed_check.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CLOCK",
-          "file": "common/images/fullcolor/bed_clock.png"
+          "file": "common/images/fullcolor/bed_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_BED_CHECK_CLOCK",
-          "file": "common/images/fullcolor/bed_check_clock.png"
+          "file": "common/images/fullcolor/bed_check_clock.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SUN_TIME_RISE",
-          "file": "common/images/fullcolor/sun_time_rise.png"
+          "file": "common/images/fullcolor/sun_time_rise.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_SUN_TIME_SET",
-          "file": "common/images/fullcolor/sun_time_set.png"
+          "file": "common/images/fullcolor/sun_time_set.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_SUN",
-          "file": "common/images/fullcolor/weather_sun.png"
+          "file": "common/images/fullcolor/weather_sun.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_MOON",
-          "file": "common/images/fullcolor/weather_moon.png"
+          "file": "common/images/fullcolor/weather_moon.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY",
-          "file": "common/images/fullcolor/weather_partly_cloudy.png"
+          "file": "common/images/fullcolor/weather_partly_cloudy.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY_NIGHT",
-          "file": "common/images/fullcolor/weather_partly_cloudy_night.png"
+          "file": "common/images/fullcolor/weather_partly_cloudy_night.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_CLOUDY_OVERCAST",
-          "file": "common/images/fullcolor/weather_cloudy_overcast.png"
+          "file": "common/images/fullcolor/weather_cloudy_overcast.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_FOG",
-          "file": "common/images/fullcolor/weather_fog.png"
+          "file": "common/images/fullcolor/weather_fog.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_RAIN",
-          "file": "common/images/fullcolor/weather_rain.png"
+          "file": "common/images/fullcolor/weather_rain.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_SNOW",
-          "file": "common/images/fullcolor/weather_snow.png"
+          "file": "common/images/fullcolor/weather_snow.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
         },
         {
           "type": "bitmap",
           "name": "ICON_WEATHER_FULLCOLOR_STORM",
-          "file": "common/images/fullcolor/weather_storm.png"
+          "file": "common/images/fullcolor/weather_storm.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_0",
+          "file": "legacy/images/forecast_0.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_1",
+          "file": "legacy/images/forecast_1.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_2",
+          "file": "legacy/images/forecast_2.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_3",
+          "file": "legacy/images/forecast_3.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_4",
+          "file": "legacy/images/forecast_4.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_5",
+          "file": "legacy/images/forecast_5.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_6",
+          "file": "legacy/images/forecast_6.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_7",
+          "file": "legacy/images/forecast_7.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_8",
+          "file": "legacy/images/forecast_8.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_9",
+          "file": "legacy/images/forecast_9.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_10",
+          "file": "legacy/images/forecast_10.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_11",
+          "file": "legacy/images/forecast_11.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_12",
+          "file": "legacy/images/forecast_12.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_13",
+          "file": "legacy/images/forecast_13.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FORECAST_14",
+          "file": "legacy/images/forecast_14.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAM_FONT_10",
+          "file": "common/fonts/DIGITALDREAM.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAMNARROW_FONT_10",
+          "file": "common/fonts/DIGITALDREAMNARROW.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "DIGITALDREAMFAT_FONT_11",
+          "file": "common/fonts/DIGITALDREAMFAT.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "BEBAS_FONT_14",
+          "file": "common/fonts/BebasNeueBold.otf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "MPLUSBLACK_FONT_12",
+          "file": "common/fonts/MPLUSRounded1c-Black.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "NOTOITALIC_FONT_13",
+          "file": "common/fonts/NotoSerif-MediumItalic.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "DSDIGIB_FONT_14",
+          "file": "common/fonts/DS-DIGIB.TTF",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "DSDIGIT_FONT_14",
+          "file": "common/fonts/DS-DIGIT.TTF",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "font",
+          "name": "NUNITO_FONT_15",
+          "file": "common/fonts/Nunito-Bold.ttf",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_BACKGROUND",
+          "file": "legacy/indices/modern_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "SHADOW_BACKGROUND",
+          "file": "legacy/indices/shadow_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "TALLY_BACKGROUND",
+          "file": "legacy/indices/tally_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BELL_BACKGROUND",
+          "file": "legacy/indices/bell_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "FANCY_BACKGROUND",
+          "file": "legacy/indices/fancy_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_BOLD_BACKGROUND",
+          "file": "legacy/indices/modern_bold_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_F_BACKGROUND",
+          "file": "legacy/indices/modern_f_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_H_BACKGROUND",
+          "file": "legacy/indices/modern_h_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_P_BACKGROUND",
+          "file": "legacy/indices/modern_p_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_PR_BACKGROUND",
+          "file": "legacy/indices/modern_pr_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_S_BACKGROUND",
+          "file": "legacy/indices/modern_s_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_W_BACKGROUND",
+          "file": "legacy/indices/modern_w_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "MODERN_WR_BACKGROUND",
+          "file": "legacy/indices/modern_wr_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ROMAN_BACKGROUND",
+          "file": "legacy/indices/roman_background.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_HEART",
+          "file": "legacy/images/simple/heart.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_FOOT",
+          "file": "legacy/images/simple/foot.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_UMBRELLA",
+          "file": "legacy/images/simple/umbrella.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_DROPLET",
+          "file": "legacy/images/simple/droplet.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_WIND",
+          "file": "legacy/images/simple/wind.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_GPS_PIN",
+          "file": "legacy/images/simple/gps_pin.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_EYE",
+          "file": "legacy/images/simple/eye.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_CLOUD",
+          "file": "legacy/images/simple/cloud.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BLUETOOTH",
+          "file": "legacy/images/simple/bluetooth.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_QUIET_TIME",
+          "file": "legacy/images/simple/quiet_time.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_QUIET_TIME_MUTED",
+          "file": "legacy/images/simple/quiet_time_muted.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_ISS",
+          "file": "legacy/images/simple/iss.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_SATURN_RING",
+          "file": "legacy/images/simple/saturn_ring.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_PLANETS",
+          "file": "legacy/images/simple/planets.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_AURORA",
+          "file": "legacy/images/simple/aurora.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_REFRESH",
+          "file": "legacy/images/simple/refresh.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BED_ARROW_IN",
+          "file": "legacy/images/simple/bed_arrow_in.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BED_ARROW_OUT",
+          "file": "legacy/images/simple/bed_arrow_out.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BED_CHECK",
+          "file": "legacy/images/simple/bed_check.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BED_CLOCK",
+          "file": "legacy/images/simple/bed_clock.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BED_CHECK_CLOCK",
+          "file": "legacy/images/simple/bed_check_clock.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_SUN_TIME_RISE",
+          "file": "legacy/images/simple/sun_time_rise.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_SUN_TIME_SET",
+          "file": "legacy/images/simple/sun_time_set.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_SUN",
+          "file": "legacy/images/simple/weather_sun.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_MOON",
+          "file": "legacy/images/simple/weather_moon.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY",
+          "file": "legacy/images/simple/weather_partly_cloudy.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_PARTLY_CLOUDY_NIGHT",
+          "file": "legacy/images/simple/weather_partly_cloudy_night.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_CLOUDY_OVERCAST",
+          "file": "legacy/images/simple/weather_cloudy_overcast.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_FOG",
+          "file": "legacy/images/simple/weather_fog.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_RAIN",
+          "file": "legacy/images/simple/weather_rain.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_SNOW",
+          "file": "legacy/images/simple/weather_snow.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_SIMPLE_STORM",
+          "file": "legacy/images/simple/weather_storm.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_HEART",
+          "file": "legacy/images/hollow/heart.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_FOOT",
+          "file": "legacy/images/hollow/foot.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_UMBRELLA",
+          "file": "legacy/images/hollow/umbrella.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_DROPLET",
+          "file": "legacy/images/hollow/droplet.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_WIND",
+          "file": "legacy/images/hollow/wind.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_GPS_PIN",
+          "file": "legacy/images/hollow/gps_pin.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_EYE",
+          "file": "legacy/images/hollow/eye.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_CLOUD",
+          "file": "legacy/images/hollow/cloud.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BLUETOOTH",
+          "file": "legacy/images/hollow/bluetooth.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_QUIET_TIME",
+          "file": "legacy/images/hollow/quiet_time.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_QUIET_TIME_MUTED",
+          "file": "legacy/images/hollow/quiet_time_muted.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_ISS",
+          "file": "legacy/images/hollow/iss.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_SATURN_RING",
+          "file": "legacy/images/hollow/saturn_ring.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_PLANETS",
+          "file": "legacy/images/hollow/planets.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_AURORA",
+          "file": "legacy/images/hollow/aurora.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_REFRESH",
+          "file": "legacy/images/hollow/refresh.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BED_ARROW_IN",
+          "file": "legacy/images/hollow/bed_arrow_in.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BED_ARROW_OUT",
+          "file": "legacy/images/hollow/bed_arrow_out.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BED_CHECK",
+          "file": "legacy/images/hollow/bed_check.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BED_CLOCK",
+          "file": "legacy/images/hollow/bed_clock.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BED_CHECK_CLOCK",
+          "file": "legacy/images/hollow/bed_check_clock.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_SUN_TIME_RISE",
+          "file": "legacy/images/hollow/sun_time_rise.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_SUN_TIME_SET",
+          "file": "legacy/images/hollow/sun_time_set.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_SUN",
+          "file": "legacy/images/hollow/weather_sun.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_MOON",
+          "file": "legacy/images/hollow/weather_moon.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY",
+          "file": "legacy/images/hollow/weather_partly_cloudy.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_PARTLY_CLOUDY_NIGHT",
+          "file": "legacy/images/hollow/weather_partly_cloudy_night.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_CLOUDY_OVERCAST",
+          "file": "legacy/images/hollow/weather_cloudy_overcast.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_FOG",
+          "file": "legacy/images/hollow/weather_fog.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_RAIN",
+          "file": "legacy/images/hollow/weather_rain.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_SNOW",
+          "file": "legacy/images/hollow/weather_snow.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_WEATHER_HOLLOW_STORM",
+          "file": "legacy/images/hollow/weather_storm.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
         },
         {
           "type": "bitmap",
@@ -1036,6 +2557,15 @@
           "file": "square/backgrounds/1.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_1",
+          "file": "legacy/backgrounds/1.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1048,10 +2578,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_2",
+          "file": "legacy/backgrounds/2.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_3",
           "file": "square/backgrounds/3.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_3",
+          "file": "legacy/backgrounds/3.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1064,10 +2612,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_4",
+          "file": "legacy/backgrounds/4.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_5",
           "file": "square/backgrounds/5.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_5",
+          "file": "legacy/backgrounds/5.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1080,10 +2646,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_6",
+          "file": "legacy/backgrounds/6.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_7",
           "file": "square/backgrounds/7.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_7",
+          "file": "legacy/backgrounds/7.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1096,10 +2680,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_8",
+          "file": "legacy/backgrounds/8.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_9",
           "file": "square/backgrounds/9.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_9",
+          "file": "legacy/backgrounds/9.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1112,10 +2714,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_10",
+          "file": "legacy/backgrounds/10.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_11",
           "file": "square/backgrounds/11.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_11",
+          "file": "legacy/backgrounds/11.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1128,10 +2748,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_12",
+          "file": "legacy/backgrounds/12.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_13",
           "file": "square/backgrounds/13.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_13",
+          "file": "legacy/backgrounds/13.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1144,10 +2782,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_14",
+          "file": "legacy/backgrounds/14.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_15",
           "file": "square/backgrounds/15.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_15",
+          "file": "legacy/backgrounds/15.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1160,6 +2816,15 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_16",
+          "file": "legacy/backgrounds/16.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_17",
           "file": "square/backgrounds/17.png",
           "targetPlatforms": [
@@ -1168,10 +2833,28 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_17",
+          "file": "legacy/backgrounds/17.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_18",
           "file": "square/backgrounds/18.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_18",
+          "file": "legacy/backgrounds/18.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1192,6 +2875,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
+          "file": "legacy/weatherbg/baroque_beach/clear_sky_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
           "file": "square/weatherbg/baroque_beach/clear_sky_night.png",
           "targetPlatforms": [
@@ -1204,6 +2896,15 @@
           "file": "round/weatherbg/baroque_beach/clear_sky_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/clear_sky_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1224,6 +2925,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
+          "file": "legacy/weatherbg/baroque_beach/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
           "file": "square/weatherbg/baroque_beach/partly_cloudy_night.png",
           "targetPlatforms": [
@@ -1236,6 +2946,15 @@
           "file": "round/weatherbg/baroque_beach/partly_cloudy_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1256,6 +2975,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
+          "file": "legacy/weatherbg/baroque_beach/overcast_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
           "file": "square/weatherbg/baroque_beach/overcast_night.png",
           "targetPlatforms": [
@@ -1268,6 +2996,15 @@
           "file": "round/weatherbg/baroque_beach/overcast_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/overcast_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1288,6 +3025,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
+          "file": "legacy/weatherbg/baroque_beach/fog_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
           "file": "square/weatherbg/baroque_beach/fog_night.png",
           "targetPlatforms": [
@@ -1300,6 +3046,15 @@
           "file": "round/weatherbg/baroque_beach/fog_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/fog_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1320,6 +3075,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
+          "file": "legacy/weatherbg/baroque_beach/drizzle_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
           "file": "square/weatherbg/baroque_beach/drizzle_night.png",
           "targetPlatforms": [
@@ -1332,6 +3096,15 @@
           "file": "round/weatherbg/baroque_beach/drizzle_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/drizzle_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1352,6 +3125,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
+          "file": "legacy/weatherbg/baroque_beach/rain_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
           "file": "square/weatherbg/baroque_beach/rain_night.png",
           "targetPlatforms": [
@@ -1364,6 +3146,15 @@
           "file": "round/weatherbg/baroque_beach/rain_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/rain_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1384,6 +3175,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
+          "file": "legacy/weatherbg/baroque_beach/heavy_rain_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
           "file": "square/weatherbg/baroque_beach/heavy_rain_night.png",
           "targetPlatforms": [
@@ -1396,6 +3196,15 @@
           "file": "round/weatherbg/baroque_beach/heavy_rain_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/heavy_rain_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1416,6 +3225,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
+          "file": "legacy/weatherbg/baroque_beach/snow_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
           "file": "square/weatherbg/baroque_beach/snow_night.png",
           "targetPlatforms": [
@@ -1428,6 +3246,15 @@
           "file": "round/weatherbg/baroque_beach/snow_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/snow_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1448,6 +3275,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
+          "file": "legacy/weatherbg/baroque_beach/thunderstorm_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
           "file": "square/weatherbg/baroque_beach/thunderstorm_night.png",
           "targetPlatforms": [
@@ -1460,6 +3296,15 @@
           "file": "round/weatherbg/baroque_beach/thunderstorm_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/thunderstorm_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1480,6 +3325,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
+          "file": "legacy/weatherbg/baroque_beach/sleet_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
           "file": "square/weatherbg/baroque_beach/sleet_night.png",
           "targetPlatforms": [
@@ -1492,6 +3346,15 @@
           "file": "round/weatherbg/baroque_beach/sleet_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
+          "file": "legacy/weatherbg/baroque_beach/sleet_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1512,6 +3375,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
+          "file": "legacy/weatherbg/manhattan/clear_sky_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
           "file": "square/weatherbg/manhattan/clear_sky_night.png",
           "targetPlatforms": [
@@ -1524,6 +3396,15 @@
           "file": "round/weatherbg/manhattan/clear_sky_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
+          "file": "legacy/weatherbg/manhattan/clear_sky_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1544,6 +3425,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
+          "file": "legacy/weatherbg/manhattan/partly_cloudy_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
           "file": "square/weatherbg/manhattan/partly_cloudy_night.png",
           "targetPlatforms": [
@@ -1556,6 +3446,15 @@
           "file": "round/weatherbg/manhattan/partly_cloudy_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
+          "file": "legacy/weatherbg/manhattan/partly_cloudy_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1576,6 +3475,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
+          "file": "legacy/weatherbg/manhattan/overcast_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
           "file": "square/weatherbg/manhattan/overcast_night.png",
           "targetPlatforms": [
@@ -1588,6 +3496,15 @@
           "file": "round/weatherbg/manhattan/overcast_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
+          "file": "legacy/weatherbg/manhattan/overcast_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1608,6 +3525,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_DAY",
+          "file": "legacy/weatherbg/manhattan/fog_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
           "file": "square/weatherbg/manhattan/fog_night.png",
           "targetPlatforms": [
@@ -1620,6 +3546,15 @@
           "file": "round/weatherbg/manhattan/fog_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
+          "file": "legacy/weatherbg/manhattan/fog_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1640,6 +3575,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
+          "file": "legacy/weatherbg/manhattan/drizzle_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
           "file": "square/weatherbg/manhattan/drizzle_night.png",
           "targetPlatforms": [
@@ -1652,6 +3596,15 @@
           "file": "round/weatherbg/manhattan/drizzle_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
+          "file": "legacy/weatherbg/manhattan/drizzle_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1672,6 +3625,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
+          "file": "legacy/weatherbg/manhattan/rain_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
           "file": "square/weatherbg/manhattan/rain_night.png",
           "targetPlatforms": [
@@ -1684,6 +3646,15 @@
           "file": "round/weatherbg/manhattan/rain_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
+          "file": "legacy/weatherbg/manhattan/rain_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1704,6 +3675,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
+          "file": "legacy/weatherbg/manhattan/heavy_rain_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
           "file": "square/weatherbg/manhattan/heavy_rain_night.png",
           "targetPlatforms": [
@@ -1716,6 +3696,15 @@
           "file": "round/weatherbg/manhattan/heavy_rain_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
+          "file": "legacy/weatherbg/manhattan/heavy_rain_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1736,6 +3725,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
+          "file": "legacy/weatherbg/manhattan/snow_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
           "file": "square/weatherbg/manhattan/snow_night.png",
           "targetPlatforms": [
@@ -1748,6 +3746,15 @@
           "file": "round/weatherbg/manhattan/snow_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
+          "file": "legacy/weatherbg/manhattan/snow_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1768,6 +3775,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
+          "file": "legacy/weatherbg/manhattan/thunderstorm_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
           "file": "square/weatherbg/manhattan/thunderstorm_night.png",
           "targetPlatforms": [
@@ -1780,6 +3796,15 @@
           "file": "round/weatherbg/manhattan/thunderstorm_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
+          "file": "legacy/weatherbg/manhattan/thunderstorm_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         },
         {
@@ -1800,6 +3825,15 @@
         },
         {
           "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
+          "file": "legacy/weatherbg/manhattan/sleet_day.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
           "file": "square/weatherbg/manhattan/sleet_night.png",
           "targetPlatforms": [
@@ -1812,6 +3846,15 @@
           "file": "round/weatherbg/manhattan/sleet_night.png",
           "targetPlatforms": [
             "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
+          "file": "legacy/weatherbg/manhattan/sleet_night.png",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
           ]
         }
       ]

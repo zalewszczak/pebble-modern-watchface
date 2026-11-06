@@ -233,3 +233,13 @@ One repo builds both the Pebble Time 2 (emery, 200x228) and the Pebble Round 2 (
 `resources/` is split into `square/` (200x228 art), `round/` (260x260 art, same file names) and `common/` (fonts, small icons,
 preview-only sources). `scripts/migrate-resources.js` moves an old layout over; `scripts/generate-all.js` runs it first.
 See `round_support.md` for the full plan and status.
+
+## Legacy black & white platforms (flint + diorite)
+
+`flint` (Pebble 2 Duo) and `diorite` (Pebble 2) are 144x168, 1-bit and share one code path (`PBL_BW`). Plan and rationale: `legacy_support.md`.
+
+- **Resources:** `resources/legacy/` holds the 1-bit art (`backgrounds`, `weatherbg`, `example-styles`, `indices`, `images/{simple,hollow,forecast_n}`, `images/icon.png`). Files are palettised 1-bit PNGs (`1BitPalette`). `common/*` entries in `package.json` are restricted to `emery, gabbro`; legacy entries target `flint, diorite`.
+- **Stand-ins:** `python3 scripts/make-legacy-standins.py` derives missing legacy art from the square/common art (never overwrites; `--force`, `--only <group>`). Run it (or `scripts/generate-all.js`, which does) before the first flint/diorite build. Replace the stand-ins with hand-drawn art when available; legacy backgrounds/weather backgrounds are optional (the watch falls back to a plain background when none exist).
+- **Look:** colours reduce to black/white (text is forced to contrast with the background), backgrounds are 2-level, the weather border is a pattern ring (conditions / rain chance), no full-colour icon style, no left/right edge slots, max 6 items per slot, smaller icons and pills, B&W fonts.
+- **Phone side:** `platform.js` (`bw`, `bwByte`, `bwFont`), encoder/codecs reduce colours, the settings page hides unsupported options and previews in 1 bit.
+- **Unverified (check on emulator/hardware):** 1-bit framebuffer bit order (`BW_FB_LSB_FIRST` in `platform_bw.h`), 12 px vector icons, font vertical offsets, `PRIMITIVE_FEATURE_MAX` of 6.

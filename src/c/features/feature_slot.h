@@ -3,12 +3,16 @@
 #include <pebble.h>
 #include "../data/watch_data.h"
 #include "./primitives/primitive_storage.h"
+#include "../platform/platform_bw.h"
 
 // Shared feature-row geometry used by both layout and rendering.
-#define CORNER_ROW_H 24
+#define CORNER_ROW_H PL_CORNER_ROW_H
 
 // Internal primitive-only feature-layer data model shared by layout and drawing
 
+// B&W watches (flint, diorite) keep the left/right edge slots in the enum (wire bit positions
+// must not move) but never activate them: a 144 px screen has no room for them next to the dial.
+//
 // Round watches have no corners, so they carry only the eight edge-line slots
 // (the four corner slots are the last four enum values below, which is why the
 // edge-line slot indices and the wire bit positions stay the same on both shapes).
@@ -17,7 +21,7 @@
 #else
 #define FEATURES_MAX_SLOTS 12
 #endif
-#define CORNER_BOX_W 68
+#define CORNER_BOX_W PL_CORNER_BOX_W
 
 typedef struct FeatureSlot {
   bool active;

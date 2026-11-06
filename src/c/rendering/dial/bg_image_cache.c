@@ -3,6 +3,7 @@
 #include "../../generated/background_presets.h"
 #include "../../generated/weather_backgrounds.h"
 #include "../../data/watch_ui.h"
+#include "../../platform/platform_bw.h"
 
 // Weather background (mode 3): style = custom_bg_preset (1-based). The picture
 // follows the current weather class and day/night (sunrise/sunset).
@@ -35,11 +36,27 @@ uint32_t bg_image_signature(const WatchData *d) {
 
 // Translucent mode: replace every other pixel (checkerboard, same parity the
 // weather border leaves free) of the freshly drawn image with the background
-// colour. Works directly on the 8-bit frame buffer; skipped if it cannot be
+// colour. Works directly on the frame buffer (8-bit, or 1-bit on the B&W watches); skipped if it cannot be
 // captured (then the image just stays opaque).
 static void bg_make_translucent(GContext *ctx, GRect bounds, GPoint origin, GColor bg) {
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   if (!fb) return;
+#ifdef PBL_BW
+  if (gbitmap_get_format(fb) == GBitmapFormat1Bit) {
+    // Same checkerboard in bits.
+    const GRect fbb = gbitmap_get_bounds(fb);
+    const int w = bounds.size.w, h = bounds.size.h;
+    if (origin.x >= fbb.origin.x && origin.y >= fbb.origin.y &&
+        origin.x + w <= fbb.origin.x + fbb.size.w && origin.y + h <= fbb.origin.y + fbb.size.h) {
+      uint8_t *data = gbitmap_get_data(fb);
+      const uint16_t stride = gbitmap_get_bytes_per_row(fb);
+      const bool white = bw_color_is_white(bg);
+      for (int y = 0; y < h; y++) {
+        for (int x = (y & 1) ? 0 : 1; x < w; x += 2) bw_fb_put(data, stride, origin.x + x, origin.y + y, white);
+      }
+    }
+  }
+#else
   if (gbitmap_get_format(fb) == GBitmapFormat8Bit) {
     const GRect fbb = gbitmap_get_bounds(fb);
     const int w = bounds.size.w, h = bounds.size.h;
@@ -53,6 +70,7 @@ static void bg_make_translucent(GContext *ctx, GRect bounds, GPoint origin, GCol
       }
     }
   }
+#endif
   graphics_release_frame_buffer(ctx, fb);
 }
 

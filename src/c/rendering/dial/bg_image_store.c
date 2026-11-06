@@ -1,5 +1,6 @@
 #include "./bg_image_store.h"
 #include <string.h>
+#include "../../platform/platform_bw.h"
 
 // Persist key layout. Slot headers: 201..209. Chunks: every slot owns a block
 // of BG_CHUNK_KEY_SPAN keys (a full 200x228 image needs 135, a 260x260 one 199, the largest
@@ -233,7 +234,12 @@ bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origi
 
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   if (!fb) return false;
-  if (gbitmap_get_format(fb) != GBitmapFormat8Bit) {
+#ifdef PBL_BW
+  const GBitmapFormat want_format = GBitmapFormat1Bit;
+#else
+  const GBitmapFormat want_format = GBitmapFormat8Bit;
+#endif
+  if (gbitmap_get_format(fb) != want_format) {
     graphics_release_frame_buffer(ctx, fb);
     return false;
   }
@@ -272,7 +278,13 @@ bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origi
       for (int k = 0; k < 4 && pixel < total; k++) {
         int16_t sx = ox + x, sy = oy + y;
         if (sx >= clip_l && sx < clip_r && sy >= clip_t && sy < clip_b) {
+#ifdef PBL_BW
+          // The phone sends only the values 0 and 63 to a B&W watch (wire format A in
+          // legacy_support.md, section 8.1); anything above the middle is white.
+          bw_fb_put(screen, stride, sx, sy, v[k] > 31);
+#else
           screen[(int32_t)sy * stride + sx] = (uint8_t)(0xC0 | v[k]); // opaque GColor8
+#endif
         }
         pixel++;
         if (++x == w) { x = 0; y++; }

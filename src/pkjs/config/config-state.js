@@ -51,6 +51,7 @@ function deriveConfigState(current) {
     edgeAvail = { upper: true, bottom: bitmapCornerOverride, left: bitmapCornerOverride, right: bitmapCornerOverride, cornersGrayed: !bitmapCornerOverride };
   }
   if (platform.round) edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: true };
+  if (platform.bw) { edgeAvail.left = false; edgeAvail.right = false; } // B&W: no side slots
   function hexFromPackedByte(byte) {
     var b = parseInt(byte, 10);
     if (isNaN(b)) return '#000000';

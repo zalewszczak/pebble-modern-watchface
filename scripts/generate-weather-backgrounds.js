@@ -10,7 +10,8 @@
 // brackets): clear_sky [0], partly_cloudy [1], overcast [2], fog [3],
 // drizzle [4], rain [5], heavy_rain [6], snow [7], thunderstorm [8], sleet [9].
 //
-// To add a style: create resources/square/weatherbg/<name>/ (and the same in resources/round/weatherbg/) with those PNGs and run
+// To add a style: create resources/square/weatherbg/<name>/ (and the same in resources/round/weatherbg/
+// and resources/legacy/weatherbg/, 144x168 1-bit) with those PNGs and run
 // this script (scripts/generate-all.js does). Missing images are allowed --
 // the watch falls back to the other time of day, then to clear_sky.
 //
@@ -68,8 +69,10 @@ styles.forEach(function (st, i) {
   var buf = fs.readFileSync(path.join(R.dir('square'), st.files[thumbKey]));
   var rf = path.join(R.dir('round'), st.files[thumbKey]);
   var rbuf = fs.existsSync(rf) ? fs.readFileSync(rf) : null;
+  var lf = path.join(R.dir('legacy'), st.files[thumbKey]);
+  var lbuf = fs.existsSync(lf) ? fs.readFileSync(lf) : null;
   js.push('    { id: ' + JSON.stringify(st.id) + ', label: ' + JSON.stringify(st.label) + ', index: ' + (i + 1) +
-    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ', thumbRound: ' + JSON.stringify(rbuf ? 'data:image/png;base64,' + rbuf.toString('base64') : '') + ' }' + (i < styles.length - 1 ? ',' : ''));
+    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ', thumbRound: ' + JSON.stringify(rbuf ? 'data:image/png;base64,' + rbuf.toString('base64') : '') + ', thumbBw: ' + JSON.stringify(lbuf ? 'data:image/png;base64,' + lbuf.toString('base64') : '') + ' }' + (i < styles.length - 1 ? ',' : ''));
 });
 js.push('  ]', '};');
 fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
@@ -81,9 +84,10 @@ var h = ['// GENERATED FILE -- do not hand-edit.',
   '#define WEATHERBG_STYLE_COUNT ' + styles.length, '',
   '// Resource id of the weather background for style (1-based), detailed weather',
   '// class wx (0-9) and time of day, or 0 when that exact image does not exist.',
-  '// On a round watch only images that exist in resources/round/weatherbg/ are available.',
+  '// On a round watch only images that exist in resources/round/weatherbg/ are available, on a black',
+  '// and white one (flint, diorite) only those in resources/legacy/weatherbg/.',
   'static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {'];
-['#ifdef PBL_ROUND', '#else'].forEach(function (cond, pass) {
+['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
   h.push(cond, '  switch (style) {');
   styles.forEach(function (st, i) {
     var lines = [];
@@ -91,6 +95,7 @@ var h = ['// GENERATED FILE -- do not hand-edit.',
       ['day', 'night'].forEach(function (tod, t) {
         if (!st.files[idx + '_' + tod]) return;
         if (pass === 0 && !R.exists('round/' + st.files[idx + '_' + tod])) return;
+        if (pass === 1 && !R.exists('legacy/' + st.files[idx + '_' + tod])) return;
         lines.push('        case ' + (idx * 2 + t) + ': return RESOURCE_ID_' + MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase() + ';');
       });
     });

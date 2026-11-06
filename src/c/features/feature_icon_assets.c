@@ -82,7 +82,11 @@ static void feature_icon_assets_draw_resource_native_sized(GContext *ctx, GPoint
 uint32_t feature_icon_assets_resolve_styled(const IconResourceSet *set, uint8_t style) {
   switch (style) {
     case 0: return set->simple;
+#ifdef PBL_COLOR
     case 2: return set->fullcolor;
+#else
+    case 2: return set->simple; // no full-colour art on a B&W watch (the phone never sends 2)
+#endif
     case 1:
     default: return set->hollow;
   }

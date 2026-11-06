@@ -1,5 +1,6 @@
 #include "./feature_forecast_offset_icons.h"
 #include "./feature_icon_assets.h"
+#include "../platform/platform_bw.h"
 
 // Each icon here is a full 16x16 canvas like every other icon in this app
 // (so this reuses feature_icon_assets_draw_styled_with_outline() completely
@@ -35,8 +36,8 @@ static const IconResourceSet FORECAST_OFFSET_ICON_SETS[15] = {
 };
 #undef FORECAST_ICON
 
-#define ICON_W 16
-#define ICON_H 16
+#define ICON_W PL_ICON_DRAW
+#define ICON_H PL_ICON_DRAW
 
 void feature_forecast_offset_icons_draw_with_outline(GContext *ctx, GPoint top_left, uint8_t idx,
                                                       uint8_t style, uint8_t outline_style,

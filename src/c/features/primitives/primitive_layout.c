@@ -1,6 +1,7 @@
 #include "./primitive_layout.h"
 #include "../feature_slot.h"
 #include "../feature_icons.h"
+#include "../../platform/platform_bw.h"
 
 // Applies the feature-slot alignment rules to resolved primitive instances.
 
@@ -55,7 +56,7 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
       if (feature->items[i].kind == PRIMITIVE_KIND_ICON || advance[i] == 0) continue;
       for (int j = i + 1; j < feature->count; j++) {
         if (advance[j] == 0) continue;
-        if (feature->items[j].kind == PRIMITIVE_KIND_ICON) advance[i] += 7;
+        if (feature->items[j].kind == PRIMITIVE_KIND_ICON) advance[i] += PL_ICON_TEXT_GAP;
         break;
       }
     }

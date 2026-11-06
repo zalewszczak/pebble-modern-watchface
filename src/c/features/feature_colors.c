@@ -1,5 +1,8 @@
 #include "./feature_colors.h"
 
+// Colour watches only: on the B&W ones feature_colors.h turns every gradient into a constant.
+#ifdef PBL_COLOR
+
 GColor feature_colors_seven_stop_gradient(int32_t value, int32_t min_v, int32_t max_v) {
   static const uint8_t STOPS[7][3] = {
     {  64, 224, 208 },  // turquoise
@@ -181,3 +184,4 @@ GColor feature_colors_weather_condition_color(uint8_t condition, uint8_t cloud_p
 }
 
 // temp_unit: 0=Celsius (input is already Celsius, passed through),
+#endif // PBL_COLOR

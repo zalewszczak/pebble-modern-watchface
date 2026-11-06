@@ -2,6 +2,7 @@
 var presetsLookups = require('../presets-lookups');
 var FONT_LOOKUP = presetsLookups.FONT_LOOKUP;
 var esc = require('./config-template').esc;
+var platform = require('../platform');
 
 function fontFlag(v) {
   if (v === 'false') return false;
@@ -53,7 +54,9 @@ function fontLookupEntry(id) {
 }
 
 function fontOptionsHtml(selectedId) {
-  return FONT_LOOKUP.slice().sort(function (a, b) {
+  return FONT_LOOKUP.filter(function (f) {
+    return !platform.bw || platform.BW_FONT_IDS.indexOf(f.id) >= 0 || f.id === selectedId;
+  }).sort(function (a, b) {
     var byLabel = String(a.label || '').localeCompare(String(b.label || ''), undefined, { sensitivity: 'base' });
     return byLabel || (a.id - b.id);
   }).map(function (f) {

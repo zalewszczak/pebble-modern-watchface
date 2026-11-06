@@ -1,11 +1,44 @@
 #include "./weather_border.h"
 #include "../../features/feature_colors.h"
+#include "../../platform/platform_bw.h"
 #include <string.h>
 
 // Forecast slot of "h hours from now" (h = 1..12): 1-6 h are slots 0-5,
 // 7-12 h are slots 9-14 (see watch_data.h).
 static int slot_for_hour(int h) { return h <= 6 ? h - 1 : 9 + (h - 7); }
 
+#ifdef PBL_BW
+// ---- pattern levels (B&W) ------------------------------------------------------------------
+// Weather classes: 0 clear, 1 partly, 2 overcast, 3 fog, 4 drizzle, 5 rain, 6 heavy rain, 7 snow,
+// 8 thunder, 9 sleet -> pattern density 0..4.
+static const uint8_t WX_LEVEL[10] = { 0, 1, 2, 1, 3, 3, 4, 2, 4, 3 };
+
+static void fill_conditions(const WatchData *d, int slot, uint8_t *c0) {
+  int wx = d->forecast_wx[slot];
+  if (wx > 9) wx = 0;
+  *c0 = WX_LEVEL[wx];
+}
+
+static void fill_rain(const WatchData *d, int slot, uint8_t *c0) {
+  int p = d->forecast_rain_pct[slot];
+  if (p > 100) p = 100;
+  *c0 = p < 5 ? 0 : (p < 30 ? 1 : (p < 60 ? 2 : (p < 85 ? 3 : 4)));
+}
+
+// Is pixel (x, y) drawn at pattern density `level`?
+static bool pattern_on(uint8_t level, int x, int y) {
+  switch (level) {
+    case 1: return ((x & 1) == 0) && ((y & 1) == 0);   // one in four
+    case 2: return ((x + y) & 1) == 0;                 // checkerboard
+    case 3: return !(((x & 1) == 1) && ((y & 1) == 1)); // three in four
+    case 4: return true;
+    default: return false;
+  }
+}
+
+#endif // PBL_BW
+
+#ifdef PBL_COLOR
 // ---- colour schemes (mirrored by config/config-border.js) --------------------
 
 typedef struct { uint8_t r, g, b; } Rgb;
@@ -100,18 +133,25 @@ static void fill_rain(const WatchData *d, int scheme, int slot, uint8_t *c0, uin
     set_color(c0, c1, rgb_color(c));
   }
 }
+#endif // PBL_COLOR
 
 bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *out) {
   memset(out, 0, sizeof(*out));
   int mode = d->border_weather_mode;
+#ifdef PBL_BW
+  if (mode != 1 && mode != 3) return false; // temperature and "all three" need colour
+#else
   if (mode < 1 || mode > 4) return false;
+#endif
   int px = d->border_weather_px;
   if (px < 2) px = 2;
   if (px > 40) px = 40;
   out->px = (uint8_t)px;
   out->semi = d->border_weather_semi ? 1 : 0;
   out->layers = (mode == 4) ? 3 : 1;
+#ifndef PBL_BW
   int scheme = d->border_weather_scheme > 2 ? 0 : d->border_weather_scheme;
+#endif
 
   struct tm *t = localtime(&now);
   int hour12 = t ? (t->tm_hour % 12) : 0;
@@ -120,6 +160,10 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
     int slot = slot_for_hour(h);
     int sector = (hour12 + h) % 12;
     if (d->forecast_temp_c[slot] <= -128) continue; // no data: stay transparent
+#ifdef PBL_BW
+    if (mode == 1) fill_conditions(d, slot, &out->c0[0][sector]);
+    else fill_rain(d, slot, &out->c0[0][sector]);
+#else
     if (mode == 4) {
       fill_temperature(d, scheme, slot, &out->c0[0][sector], &out->c1[0][sector]); // outer
       fill_conditions(d, scheme, slot, &out->c0[1][sector], &out->c1[1][sector]);  // middle
@@ -131,6 +175,7 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
     } else {
       fill_rain(d, scheme, slot, &out->c0[0][sector], &out->c1[0][sector]);
     }
+#endif
   }
   return true;
 }
@@ -140,6 +185,7 @@ uint32_t weather_border_signature(const WeatherBorderLook *look) {
   h = (h ^ look->px) * 16777619u;
   h = (h ^ look->semi) * 16777619u;
   h = (h ^ look->layers) * 16777619u;
+  h = (h ^ look->ink) * 16777619u;
   for (int l = 0; l < WEATHER_BORDER_MAX_LAYERS; l++) {
     for (int i = 0; i < 12; i++) {
       h = (h ^ look->c0[l][i]) * 16777619u;
@@ -187,7 +233,13 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
   uint8_t *data = NULL;
   uint16_t stride = 0;
+#ifdef PBL_BW
+  GColor ink_color; ink_color.argb = look->ink;
+  const bool ink_white = bw_color_is_white(ink_color);
+  if (fb && gbitmap_get_format(fb) == GBitmapFormat1Bit) {
+#else
   if (fb && gbitmap_get_format(fb) == GBitmapFormat8Bit) {
+#endif
     GRect fbb = gbitmap_get_bounds(fb);
     if (origin.x >= fbb.origin.x && origin.y >= fbb.origin.y &&
         origin.x + w <= fbb.origin.x + fbb.size.w && origin.y + h <= fbb.origin.y + fbb.size.h) {
@@ -223,6 +275,17 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
       if (semi && ((x + y) & 1)) continue; // checkerboard: draw every other pixel
       int layer = (depth * layers) / t;    // 0 = outermost stripe
       int s = sector_of(2 * x + 1 - w, dy2);
+#ifdef PBL_BW
+      (void)layer;
+      if (!pattern_on(look->c0[0][s], x, y)) continue;
+      if (data) {
+        bw_fb_put(data, stride, origin.x + x, origin.y + y, ink_white);
+      } else {
+        graphics_context_set_stroke_color(ctx, ink_white ? GColorWhite : GColorBlack);
+        graphics_draw_pixel(ctx, GPoint(x, y));
+      }
+      continue;
+#else
       // Overcast's two grays alternate per pixel; in semi mode the drawn
       // pixels are all one parity, so alternate per row instead.
       uint8_t c = (semi ? (y & 1) : ((x + y) & 1)) ? look->c1[layer][s] : look->c0[layer][s];
@@ -234,6 +297,7 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
         graphics_context_set_stroke_color(ctx, gc);
         graphics_draw_pixel(ctx, GPoint(x, y));
       }
+#endif
     }
   }
   if (fb) graphics_release_frame_buffer(ctx, fb);

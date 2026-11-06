@@ -1,5 +1,5 @@
 // config-page.js -- builds the settings webview HTML for the classic
-var APP_VERSION = "4.0.1-beta";
+var APP_VERSION = "4.0-rc";
 
 var PRESETS_LOOKUPS = require('./presets-lookups');
 var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
@@ -2085,6 +2085,7 @@ configPlugins.pluginScript(current) +
 '      avail.upper = true; avail.bottom = avail.left = avail.right = override; avail.cornersGrayed = !override;' +
 '    }' +
 '  if (SCREEN_ROUND) { avail.upper = avail.bottom = avail.left = avail.right = true; avail.cornersGrayed = true; }' +
+'  if (SCREEN_BW) { avail.left = avail.right = false; }' +
 '  return avail;' +
 '}' +
 'function slotIconLabels(text) {' +
@@ -3166,7 +3167,7 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 '  var sel = document.getElementById("weatherIconStyle");' +
 '  var currentVal = sel ? sel.value : "1";' +
 '  var html = "";' +
-'  for (var i = 0; i < WEATHER_ICON_STYLE_NAMES.length; i++) {' +
+'  for (var i = 0; i < (SCREEN_BW ? 2 : WEATHER_ICON_STYLE_NAMES.length); i++) {' +
 '    var src = WEATHER_ICON_STYLE_PREVIEWS[String(i)];' +
 '    var selected = String(i) === String(currentVal);' +
 '    html += \'<button type="button" class="font-picker-btn\' + (selected ? " selected" : "") + \'" onclick="chooseWeatherIconStyle(\' + i + \')">\' +' +

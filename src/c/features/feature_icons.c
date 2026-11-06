@@ -6,24 +6,25 @@
 #include "./feature_render.h"
 #include "../data/watch_ui.h"
 #include "./feature_support.h"
+#include "../platform/platform_bw.h"
 
 // Anchor/centering math below is intentionally left at the OLD icon size
 // (16x12, and 20x10 for the sunrise/sunset glyph) even though every icon now
 // actually draws taller (and, for sunrise/sunset, at its real width -- see
 // SUN_TIME_ICON_DRAW_W below) -- the icons got taller without moving the
 // top-left point they're drawn from, per how this was asked for.
-#define ICON_WIDTH 16
-#define ICON_ROWS 12
-#define SUN_TIME_ICON_ROWS 10
+#define ICON_WIDTH PL_ICON_W
+#define ICON_ROWS PL_ICON_ROWS
+#define SUN_TIME_ICON_ROWS PL_SUN_ICON_ROWS
 
 // Actual size every styled icon resource is now drawn at: a uniform 16x16
 // for everything except sunrise/sunset, whose source art is naturally wider
 // (20px) -- rather than squish it down to 16 and distort it, its own
 // resource stays 20 wide and only grew to 16 tall, like every other icon.
-#define ICON_DRAW_W 16
-#define ICON_DRAW_H 16
-#define SUN_TIME_ICON_DRAW_W 20
-#define SUN_TIME_ICON_DRAW_H 16
+#define ICON_DRAW_W PL_ICON_DRAW
+#define ICON_DRAW_H PL_ICON_DRAW
+#define SUN_TIME_ICON_DRAW_W PL_SUN_ICON_DRAW_W
+#define SUN_TIME_ICON_DRAW_H PL_ICON_DRAW
 
 // Optional debug crosshair for icon anchor points and geometry.
 static void draw_debug_marker_point(GContext *ctx, bool draw_debug, GPoint pos, GColor color) {
@@ -46,26 +47,26 @@ static const uint8_t PEBBLE_ICON[62]     = { 0x00, 0x02, 0x04, 0x08, 0x00, 0x00,
 // This table plus feature_icon_assets_draw_styled_with_outline() is the
 // entire "generic icon loading" this style overhaul was about: adding an
 // icon or a style is a data row, never new drawing code.
-#define ICON_SET(NAME) { RESOURCE_ID_ICON_SIMPLE_##NAME, RESOURCE_ID_ICON_HOLLOW_##NAME, RESOURCE_ID_ICON_FULLCOLOR_##NAME }
+#define ICON_SET(NAME) { RESOURCE_ID_ICON_SIMPLE_##NAME, RESOURCE_ID_ICON_HOLLOW_##NAME, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_FULLCOLOR_##NAME) }
 static const struct { uint8_t kind; IconResourceSet set; int16_t x_nudge; } STYLED_ICONS[] = {
-  { 1,  ICON_SET(HEART),           12 },
-  { 2,  ICON_SET(FOOT),             6 },
-  { 5,  ICON_SET(UMBRELLA),        10 },
-  { 6,  ICON_SET(DROPLET),         10 },
-  { 7,  ICON_SET(WIND),            10 },
-  { 8,  ICON_SET(GPS_PIN),          6 },
-  { 9,  ICON_SET(EYE),              6 },
-  { 10, ICON_SET(CLOUD),            6 },
-  { 18, ICON_SET(BED_ARROW_IN),     6 },
-  { 19, ICON_SET(BED_ARROW_OUT),    6 },
-  { 20, ICON_SET(BED_CHECK),        6 },
-  { 21, ICON_SET(BED_CLOCK),        6 },
-  { 22, ICON_SET(BED_CHECK_CLOCK),  6 },
-  { 23, ICON_SET(PLANETS),          6 },
-  { 24, ICON_SET(SATURN_RING),      6 },
-  { 25, ICON_SET(ISS),              6 },
-  { 26, ICON_SET(AURORA),           6 },
-  { 28, ICON_SET(REFRESH),          6 },
+  { 1,  ICON_SET(HEART),           PL_ICON_PX(12) },
+  { 2,  ICON_SET(FOOT),             PL_ICON_PX(6) },
+  { 5,  ICON_SET(UMBRELLA),        PL_ICON_PX(10) },
+  { 6,  ICON_SET(DROPLET),         PL_ICON_PX(10) },
+  { 7,  ICON_SET(WIND),            PL_ICON_PX(10) },
+  { 8,  ICON_SET(GPS_PIN),          PL_ICON_PX(6) },
+  { 9,  ICON_SET(EYE),              PL_ICON_PX(6) },
+  { 10, ICON_SET(CLOUD),            PL_ICON_PX(6) },
+  { 18, ICON_SET(BED_ARROW_IN),     PL_ICON_PX(6) },
+  { 19, ICON_SET(BED_ARROW_OUT),    PL_ICON_PX(6) },
+  { 20, ICON_SET(BED_CHECK),        PL_ICON_PX(6) },
+  { 21, ICON_SET(BED_CLOCK),        PL_ICON_PX(6) },
+  { 22, ICON_SET(BED_CHECK_CLOCK),  PL_ICON_PX(6) },
+  { 23, ICON_SET(PLANETS),          PL_ICON_PX(6) },
+  { 24, ICON_SET(SATURN_RING),      PL_ICON_PX(6) },
+  { 25, ICON_SET(ISS),              PL_ICON_PX(6) },
+  { 26, ICON_SET(AURORA),           PL_ICON_PX(6) },
+  { 28, ICON_SET(REFRESH),          PL_ICON_PX(6) },
 };
 
 // Left-anchored (not right-anchored like STYLED_ICONS above) single-state
@@ -109,8 +110,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
   switch (icon_kind) {
     case 3: { // battery
       GPoint pos = GPoint(icon_x, box_y + (row_height - 14) / 2);
-      GColor c = icon_flag ? GColorGreen : color; // charging state uses green
-      GColor oc = icon_flag ? GColorBlack : outline_color;
+      GColor c = icon_flag ? PBL_IF_COLOR_ELSE(GColorGreen, color) : color; // charging state uses green (B&W: text colour)
+      GColor oc = icon_flag ? PBL_IF_COLOR_ELSE(GColorBlack, outline_color) : outline_color;
       if (do_outline) {
         for (int i = 0; i < offs_n; i++) {
           feature_vector_icons_battery(ctx, GPoint(pos.x + offs[i].x, pos.y + offs[i].y), oc, 0);
@@ -145,8 +146,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
     }
     case 12: { // Pebble battery logo
       GPoint pos = GPoint(icon_x - 15, box_y + (row_height - 10) / 2);
-      GColor c = icon_flag ? GColorGreen : color;
-      GColor oc = icon_flag ? GColorBlack : outline_color;
+      GColor c = icon_flag ? PBL_IF_COLOR_ELSE(GColorGreen, color) : color;
+      GColor oc = icon_flag ? PBL_IF_COLOR_ELSE(GColorBlack, outline_color) : outline_color;
       GPoint p1 = GPoint(pos.x + 3, pos.y + 9);
       GPoint p2 = GPoint(pos.x + 3 + (35 * icon_extra / 100), pos.y + 9);
       if (do_outline) {
@@ -293,18 +294,24 @@ uint8_t feature_icons_weather_category(uint8_t weather_condition, uint8_t cloud_
 
 
 // Widths include the fixed 5px gap after the icon. Keeping this as a compact
+// On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
+// vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their
+// pixel size and so keep their width.
 static const uint8_t s_icon_plus_gap_width[31] = {
-  [1] = 15, [2] = 15, [3] = 13, [4] = 21,
-  [5] = 15, [6] = 15, [7] = 15, [8] = 15, [9] = 15, [10] = 15,
-  [11] = 22, [13] = 15, [14] = 20, [15] = 12, [16] = 14, [17] = 20,
-  [18] = 15, [19] = 15, [20] = 15, [21] = 15, [22] = 15, [23] = 15,
-  [24] = 15, [25] = 15, [26] = 15, [27] = 21, [28] = 15, [29] = 20,
+  [1] = PL_ICON_PX(15), [2] = PL_ICON_PX(15), [3] = 13, [4] = 21,
+  [5] = PL_ICON_PX(15), [6] = PL_ICON_PX(15), [7] = PL_ICON_PX(15), [8] = PL_ICON_PX(15),
+  [9] = PL_ICON_PX(15), [10] = PL_ICON_PX(15),
+  [11] = PL_ICON_PX(22), [13] = PL_ICON_PX(15), [14] = PL_ICON_PX(20), [15] = 12, [16] = 14, [17] = 20,
+  [18] = PL_ICON_PX(15), [19] = PL_ICON_PX(15), [20] = PL_ICON_PX(15), [21] = PL_ICON_PX(15),
+  [22] = PL_ICON_PX(15), [23] = PL_ICON_PX(15),
+  [24] = PL_ICON_PX(15), [25] = PL_ICON_PX(15), [26] = PL_ICON_PX(15), [27] = 21,
+  [28] = PL_ICON_PX(15), [29] = PL_ICON_PX(20),
   // Half-icon (see case 30 above): only its left 8px has content, so it
   // gets roughly half of kind 14's (the weather icon it always precedes)
   // own 20 here, not a full icon's worth -- that's the actual point of
   // drawing it "oversized" at 16x16: the layout only pays for the half
   // that's populated.
-  [30] = 10,
+  [30] = PL_ICON_PX(10),
 };
 
 int16_t feature_icons_plus_gap_width(int icon_kind) {

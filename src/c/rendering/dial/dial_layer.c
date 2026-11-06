@@ -98,6 +98,7 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
 
   WeatherBorderLook border;
   bool border_on = weather_border_compute(d, time(NULL), &border);
+  border.ink = main_color.argb; // used by the B&W pattern border only
   // "Only on shake": visible just while the show-on-shake window is open.
   if (border_on && d->border_weather_shake && !input_shake_features_active()) border_on = false;
 

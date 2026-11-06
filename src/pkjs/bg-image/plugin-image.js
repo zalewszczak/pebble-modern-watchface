@@ -236,6 +236,7 @@ function resample(img, plan) {
 function clamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
 
 function applyColor(f, n, style) {
+  if (platform.bw) style = 'bw'; // 1-bit screen: colour styles are meaningless
   if (style !== 'bw' && style !== 'sepia' && style !== 'vivid') return;
   for (var i = 0; i < n; i++) {
     var q = i * 3;
@@ -270,7 +271,11 @@ function bayerMatrix(n) {
   return m;
 }
 
+// B&W watches get two levels, stored as 0 / 3 per channel (63 = white on the wire).
+var LEVEL_STEP = platform.bw ? 255 : 85;
+function levelValue(l) { return platform.bw ? (l ? 255 : 0) : l * 85; }
 function levelOf(v) {
+  if (platform.bw) return v >= 128 ? 3 : 0;
   var l = Math.floor(v / 85 + 0.5);
   return l < 0 ? 0 : (l > 3 ? 3 : l);
 }
@@ -291,7 +296,7 @@ function quantize(f, w, h, mode) {
           var old = wk[i * 3 + c];
           var l = levelOf(old);
           lv[c] = l;
-          var err = old - l * 85;
+          var err = old - levelValue(l);
           if (fs) {
             if (x + 1 < w) wk[(i + 1) * 3 + c] += err * 7 / 16;
             if (y + 1 < h) {
@@ -321,7 +326,7 @@ function quantize(f, w, h, mode) {
   for (y = 0; y < h; y++) {
     for (x = 0; x < w; x++) {
       i = y * w + x;
-      var t = bm ? ((bm[(y % bn) * bn + (x % bn)] + 0.5) / (bn * bn) - 0.5) * 85 : 0;
+      var t = bm ? ((bm[(y % bn) * bn + (x % bn)] + 0.5) / (bn * bn) - 0.5) * LEVEL_STEP : 0;
       vals[i] = (levelOf(f[i * 3] + t) << 4) | (levelOf(f[i * 3 + 1] + t) << 2) | levelOf(f[i * 3 + 2] + t);
     }
   }

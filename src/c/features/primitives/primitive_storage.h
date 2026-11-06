@@ -8,7 +8,10 @@
 #include "./primitive_types.h"
 #include "./primitive_ids.h"
 
-#define PRIMITIVE_FEATURE_MAX 10 // Maximum primitives in one feature.
+#include "../../platform/platform_bw.h"
+// Maximum primitives in one feature: 10 on the colour watches, 6 on the B&W ones (the wire format
+// still carries 10; the watch keeps the first 6 to save about 1.9 KB of RAM across the 12 slots).
+#define PRIMITIVE_FEATURE_MAX PL_PRIMITIVE_FEATURE_MAX
 
 typedef struct {
   PrimitiveId id;

@@ -1,5 +1,5 @@
 // GENERATED FILE -- do not hand-edit.
-// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.
+// Produced by scripts/generate-backgrounds.js from resources/{square,round,legacy}/backgrounds/<n>.png.
 #pragma once
 
 #include <pebble.h>
@@ -9,9 +9,14 @@
 
 // Resource id of predefined background <n> (1-based, the number in the PNG
 // file name), or 0 when there is no such image.
-// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist.
+// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist, on a
+// black and white one (flint, diorite) only those with a resources/legacy/backgrounds/<n>.png.
 static inline uint32_t bg_preset_resource_id(uint8_t n) {
 #ifdef PBL_ROUND
+  switch (n) {
+    default: return 0;
+  }
+#elif defined(PBL_BW)
   switch (n) {
     default: return 0;
   }

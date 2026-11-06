@@ -3,6 +3,7 @@ var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var settingsCodecs = require('../settings/settings-codecs');
 var scheduledStyle = require('../scheduled-style');
+var platform = require('../platform');
 var clampFontId = settingsCodecs.clampFontId;
 var tempUnitCode = settingsCodecs.tempUnitCode;
 var windSpeedUnitCode = settingsCodecs.windSpeedUnitCode;
@@ -275,16 +276,20 @@ function markerRingsBytes() {
   );
 }
 
+// B&W: only normal (0) / pill (2) colour modes exist; gradients and accents flatten.
+function bwMode(m) { return platform.bw ? (m === 2 ? 2 : 0) : m; }
 function edgeLinesBytes() {
   return [
     settingsCodecs.upperMiddleLine1ColorModeCode(), settingsCodecs.upperMiddleLine2ColorModeCode(),
     settingsCodecs.bottomMiddleLine1ColorModeCode(), settingsCodecs.bottomMiddleLine2ColorModeCode(),
     settingsCodecs.middleLeftLine1ColorModeCode(), settingsCodecs.middleLeftLine2ColorModeCode(),
     settingsCodecs.middleRightLine1ColorModeCode(), settingsCodecs.middleRightLine2ColorModeCode()
-  ];
+  ].map(function (m, i) { return platform.bw && i >= 4 ? 0 : bwMode(m); });
 }
 function edgeCustomPrims() {
-  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting);
+  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting).map(function (c, i) {
+    return platform.bw && i >= 4 ? { ids: [], aux: [] } : c;
+  });
 }
 function edgeFeatureCodesRaw() {
   return [
@@ -292,7 +297,7 @@ function edgeFeatureCodesRaw() {
     settingsCodecs.bottomMiddleLine1ContentCode(), settingsCodecs.bottomMiddleLine2ContentCode(),
     settingsCodecs.middleLeftLine1ContentCode(), settingsCodecs.middleLeftLine2ContentCode(),
     settingsCodecs.middleRightLine1ContentCode(), settingsCodecs.middleRightLine2ContentCode()
-  ];
+  ].map(function (c, i) { return platform.bw && i >= 4 ? 0 : c; });
 }
 function primitiveTightMask() {
   var mask = 0;

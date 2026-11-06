@@ -35,6 +35,7 @@ var ROOT = path.join(__dirname, '..');
 var R = require('./lib/resources');
 var SOURCE_DIR = R.dir('square', 'backgrounds');
 var ROUND_DIR = R.dir('round', 'backgrounds');
+var LEGACY_DIR = R.dir('legacy', 'backgrounds');
 var JS_OUT = path.join(ROOT, 'src', 'pkjs', 'data', 'generated', 'background-images.js');
 var H_OUT = path.join(ROOT, 'src', 'c', 'generated', 'background_presets.h');
 var PKG = path.join(ROOT, 'package.json');
@@ -43,6 +44,7 @@ var MEDIA_PREFIX = 'BG_PRESET_';
 var numbers = [];
 var images = {};
 var imagesRound = {};
+var imagesBw = {};
 var totalBytes = 0;
 var ignored = [];
 
@@ -57,6 +59,7 @@ if (fs.existsSync(SOURCE_DIR)) {
     images[String(n)] = 'data:image/png;base64,' + buf.toString('base64');
     numbers.push(n);
     if (fs.existsSync(path.join(ROUND_DIR, file))) imagesRound[String(n)] = 'data:image/png;base64,' + fs.readFileSync(path.join(ROUND_DIR, file)).toString('base64');
+    if (fs.existsSync(path.join(LEGACY_DIR, file))) imagesBw[String(n)] = 'data:image/png;base64,' + fs.readFileSync(path.join(LEGACY_DIR, file)).toString('base64');
   });
 }
 numbers.sort(function (a, b) { return a - b; });
@@ -64,19 +67,20 @@ numbers.sort(function (a, b) { return a - b; });
 // ---- 1. settings page data ------------------------------------------------
 var js = [];
 js.push('// GENERATED FILE -- do not edit by hand.');
-js.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.');
+js.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round,legacy}/backgrounds/<n>.png.');
 js.push('module.exports = {');
 js.push('  count: ' + numbers.length + ',');
 js.push('  numbers: ' + JSON.stringify(numbers) + ',');
 js.push('  images: ' + JSON.stringify(images, null, 2).replace(/\n/g, '\n  ') + ',');
-js.push('  imagesRound: ' + JSON.stringify(imagesRound, null, 2).replace(/\n/g, '\n  '));
+js.push('  imagesRound: ' + JSON.stringify(imagesRound, null, 2).replace(/\n/g, '\n  ') + ',');
+js.push('  imagesBw: ' + JSON.stringify(imagesBw, null, 2).replace(/\n/g, '\n  '));
 js.push('};');
 fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
 
 // ---- 2. C resource table ----------------------------------------------------
 var h = [];
 h.push('// GENERATED FILE -- do not hand-edit.');
-h.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round}/backgrounds/<n>.png.');
+h.push('// Produced by scripts/generate-backgrounds.js from resources/{square,round,legacy}/backgrounds/<n>.png.');
 h.push('#pragma once');
 h.push('');
 h.push('#include <pebble.h>');
@@ -86,13 +90,15 @@ h.push('#define BG_PRESET_COUNT ' + numbers.length);
 h.push('');
 h.push('// Resource id of predefined background <n> (1-based, the number in the PNG');
 h.push('// file name), or 0 when there is no such image.');
-h.push('// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist.');
+h.push('// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist, on a');
+h.push('// black and white one (flint, diorite) only those with a resources/legacy/backgrounds/<n>.png.');
 h.push('static inline uint32_t bg_preset_resource_id(uint8_t n) {');
-['#ifdef PBL_ROUND', '#else'].forEach(function (cond, pass) {
+['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
   h.push(cond);
   h.push('  switch (n) {');
   numbers.forEach(function (n) {
     if (pass === 0 && !imagesRound[String(n)]) return;
+    if (pass === 1 && !imagesBw[String(n)]) return;
     h.push('    case ' + n + ': return RESOURCE_ID_' + MEDIA_PREFIX + n + ';');
   });
   h.push('    default: return 0;');

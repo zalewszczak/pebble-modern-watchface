@@ -29,6 +29,7 @@ var path = require('path');
 var R = require('./lib/resources');
 var SOURCE_DIR = R.dir('square', 'indices');
 var ROUND_DIR = R.dir('round', 'indices');
+var LEGACY_DIR = R.dir('legacy', 'indices');
 var OUTPUT_FILE = path.join(__dirname, '..', 'src', 'pkjs', 'data', 'generated', 'marker-preview-images.js');
 var SUFFIX = '_background.png';
 
@@ -61,6 +62,7 @@ var STYLE_IDS_BY_NAME = {
 
 var entries = {};
 var entriesRound = {};
+var entriesBw = {};
 var found = [];
 var unrecognized = [];
 var totalBytes = 0;
@@ -83,6 +85,7 @@ files.forEach(function (file) {
   totalBytes += buf.length;
   entries[styleId] = 'data:image/png;base64,' + buf.toString('base64');
   if (fs.existsSync(path.join(ROUND_DIR, file))) entriesRound[styleId] = R.dataUri(path.join(ROUND_DIR, file));
+  if (fs.existsSync(path.join(LEGACY_DIR, file))) entriesBw[styleId] = R.dataUri(path.join(LEGACY_DIR, file));
   found.push(name);
 });
 
@@ -93,10 +96,11 @@ var missingNames = Object.keys(STYLE_IDS_BY_NAME).filter(function (name) {
 var lines = [];
 lines.push('// GENERATED FILE -- do not edit by hand.');
 lines.push('// Produced by scripts/generate-marker-previews.js from');
-lines.push('// resources/{square,round}/indices/*_background.png. Re-run that script after adding or');
+lines.push('// resources/{square,round,legacy}/indices/*_background.png. Re-run that script after adding or');
 lines.push('// changing any marker style\'s PNG, before `pebble build`.');
 lines.push('module.exports = ' + JSON.stringify(entries, null, 2) + ';');
 lines.push('module.exports.round = ' + JSON.stringify(entriesRound, null, 2) + ';');
+lines.push('module.exports.bw = ' + JSON.stringify(entriesBw, null, 2) + ';');
 lines.push('');
 
 if (!fs.existsSync(path.dirname(OUTPUT_FILE))) fs.mkdirSync(path.dirname(OUTPUT_FILE), { recursive: true });

@@ -716,5 +716,15 @@ module.exports =
 '  var markerImageDrawn = isBitmapMarkerStyleId(markerStyleInt) && drawTintedMarkerBitmap(ctx, markerStyleVal, w, h, markerTint);' +
 '  drawBigAnalogPreview(ctx, colors, now, showSeconds, w, h, markerImageDrawn);' +
 '  drawCornersAndEdges(ctx, w, h, colors, h);' +
+'  if (typeof SCREEN_BW !== "undefined" && SCREEN_BW) {' +
+'    try {' +
+'      var id = ctx.getImageData(0, 0, w, h), d = id.data;' +
+'      for (var q = 0; q < d.length; q += 4) {' +
+'        var l = 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2];' +
+'        d[q] = d[q + 1] = d[q + 2] = l >= 128 ? 255 : 0; d[q + 3] = 255;' +
+'      }' +
+'      ctx.putImageData(id, 0, 0);' +
+'    } catch (e) {}' +
+'  }' +
 '}' +
 '';
