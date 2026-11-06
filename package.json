@@ -1,7 +1,7 @@
 {
   "name": "pebble-modern-watchface",
   "author": "zalew",
-  "version": "4.0.3",
+  "version": "4.0.4",
   "keywords": [
     "pebble-app",
     "watchface",
@@ -46,7 +46,13 @@
             "services.swpc.noaa.gov",
             "celestrak.org",
             "nominatim.openstreetmap.org",
-            "api.openweathermap.org"
+            "api.openweathermap.org",
+            "fonts.googleapis.com",
+            "fonts.gstatic.com",
+            "fonts.cdnfonts.com",
+            "static.wfonts.com",
+            "www.paypal.com",
+            "www.paypalobjects.com"
           ]
         }
       }

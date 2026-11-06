@@ -1,5 +1,5 @@
 // config-page.js -- builds the settings webview HTML for the classic
-var APP_VERSION = "4.0.3-beta";
+var APP_VERSION = "4.0.4-beta";
 
 var PRESETS_LOOKUPS = require('./presets-lookups');
 var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
@@ -601,7 +601,7 @@ configPresetSchedule.css +
 '      <div class="about-info-row"><div class="about-info-label">Platform</div><div class="about-info-value">Pebble Time 2 / Emery</div></div>' +
 '    </div>' +
 '    <div class="about-description">Find out more about the project on github, feel free to contribute as well.</div>' +
-'    <a class="about-source" href="https://github.com/zalewszczak/pebble-modern-watchface" target="_blank" rel="noopener noreferrer">Source code on GitHub</a>' +
+'    <a class="about-source" href="#" onclick="event.preventDefault(); Pebble.openUrl(\'https://github.com/zalewszczak/pebble-modern-watchface\'); return false;">Source code on GitHub</a>' +
 '    <button type="button" class="about-ok-btn" onclick="closeAboutModal()">OK</button>' +
 '  </div>' +
 '</div>' +
@@ -807,15 +807,13 @@ handEditorModalHtml('sec', 'Edit second hand') +
 '        <div class="donate-method-note">The easiest option. FYI: payments below ~1USD are swallowed by transaction fees and I recieve nothing. ¯\_(ツ)_/¯</div>' +
 '        <div class="donate-paypal">' +
 '          <p style="margin-top:24px;font-size:13px;opacity:.7">' +
-'            <a href="https://www.paypal.com/donate/?hosted_button_id=D3C427GK2PGE8" ' +
-'              target="_blank" rel="noopener" ' +
-'              style="display:inline-block;background:#FFC439;color:#003087;' +
-'              padding:11px 25px;border-radius:5px;text-decoration:none;' +
-'              font-family:Arial,sans-serif;font-size:16px;font-weight:bold;' +
-'              box-shadow:0 2px 4px rgba(0,0,0,.2);">' +
-'              <span style="font-style:italic;">Pay</span>' +
-'              <span style="color:#009cde;">Pal</span>' +
-'              Donate' +
+'            <a href="#" onclick="event.preventDefault(); Pebble.openUrl(\'https://www.paypal.com/donate/?hosted_button_id=D3C427GK2PGE8\'); return false;" ' +
+'            style="display:inline-block;background:#FFC439;color:#003087;' +
+'            padding:11px 25px;border-radius:5px;text-decoration:none;' +
+'            font-family:Arial,sans-serif;font-size:16px;font-weight:bold;' +
+'            box-shadow:0 2px 4px rgba(0,0,0,.2);">' +
+'            <b>Pay</b><span style="color:#009cde;font-weight:bold;">Pal</span>' +
+'             Donate' +
 '            </a>' +
 '          </p>' +
 '        </div>' +
