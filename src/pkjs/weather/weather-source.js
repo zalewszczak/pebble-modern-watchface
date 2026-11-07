@@ -2,6 +2,7 @@
 var weather = require('./weather');
 var pluginManager = require('../plugins/plugin-manager');
 var getSetting = require('../settings/settings').getSetting;
+var permissions = require('../settings/permissions');
 
 var PLUGIN_TIMEOUT_MS = 6000;
 var PROPS = ['temperature', 'high', 'low', 'condition_code', 'uv_index', 'precipitation'];
@@ -60,6 +61,7 @@ function fetchPluginWeather(providerUuid, cb) {
       plugin: providerUuid || undefined,
       properties: PROPS,
       onData: function (env) {
+        permissions.mark('weather', false);
         var inst = env && env.instances && env.instances[0];
         if (!inst || !inst.properties) return finish(new Error('no weather location in the Pebble app'));
         var p = inst.properties;
@@ -71,7 +73,7 @@ function fetchPluginWeather(providerUuid, cb) {
           code: textOf(p.condition_code).trim().toLowerCase()
         });
       },
-      onError: function (err) { finish(new Error('weather plugin: ' + ((err && err.code) || 'error'))); }
+      onError: function (err) { permissions.mark('weather', !!err && err.code === 'PERMISSION_DENIED'); finish(new Error('weather plugin: ' + ((err && err.code) || 'error'))); }
     });
     if (done && handle && typeof handle.unsubscribe === 'function') { try { handle.unsubscribe(); } catch (e) { } }
   } catch (e) {

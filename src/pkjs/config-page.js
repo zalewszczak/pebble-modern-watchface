@@ -484,6 +484,7 @@ configPresetSchedule.css +
 '  #slotEditModal .modal-box { overflow: hidden; height: 90vh; max-height: 90vh; }' +
 '  #slotEditPrimitives { display: none !important; }' +
 '  .slot-edit-scroll { flex: 1 1 auto !important; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 8px; }' +
+'  .perm-warning { color:#b3261e; background:rgba(224,60,49,0.10); border:1px solid rgba(224,60,49,0.45); border-radius:8px; padding:8px 10px; margin:8px 0; font-size:12.5px; line-height:1.4; }' +
 '  .slot-edit-footer { flex: 0 0 auto; padding-top: 10px; border-top: 1px solid var(--border-light); background: var(--card-bg); }' +
 '  #slotEditModal .modal-box > * { flex-shrink: 0; }' +
 '  .slot-preview { flex: 0 0 auto; background: var(--card-bg); margin: 0 -16px 8px; padding: 0 16px 8px; border-bottom: 1px solid var(--border-light); }' +
@@ -646,6 +647,7 @@ configPresetSchedule.css +
 '    <label for="slotEditContent" style="margin-top:10px;">Content</label>' +
 '    <select id="slotEditContent" onchange="onSlotEditContentChange()">' + cornerContentOptionsHtml(0) + '</select>' +
 '    <div class="primitive-strip" id="slotEditPrimitives" style="display:none !important;"></div>' +
+'    <div class="perm-warning" id="slotEditPermWarn" style="display:none;"></div>' +
 '    <div class="help" id="slotEditCategoryHelp" style="display:none;">Shows the time-zone option used for the selected location. Daylight saving rules may vary by location.</div>' +
 '    </div>' +
 '    <div id="slotEditCustomPrimsSection" style="display:none;">' +
@@ -2191,6 +2193,7 @@ configPlugins.pluginScript(current) +
 '  var contentVal = document.getElementById("slotEditContent").value;' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
 '  slotEditOddUpdate();' +
+'  permissionWarningUpdate();' +
 '  renderSlotEditPrimitiveStrip(contentVal);' +
 '  renderSlotEditPreview();' +
 '}' +
@@ -2250,6 +2253,7 @@ configPlugins.pluginScript(current) +
 '  composerOpen(def);' +
 '  document.getElementById("slotEditShake").checked = document.getElementById(slotKey + "Shake").value === "1";' +
 '  slotEditOddUpdate();' +
+'  permissionWarningUpdate();' +
 '  document.getElementById("slotEditOdd").checked = oddOn && !!BASE_TO_ODD[contentVal];' +
 '  document.getElementById("slotEditModal").className = "modal-overlay open";' +
 '  renderSlotEditPreview();' +

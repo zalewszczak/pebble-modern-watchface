@@ -141,6 +141,7 @@ function buildCurrent() {
     borderCalAllDay: getSetting('CONFIG_BORDER_CAL_ALLDAY', 'false') === 'true',
     borderCalStatus: borderData.calendarStatus(),
     mediaStatus: phoneMedia.status(),
+    permissionsDenied: require('./settings/permissions').get(),
     borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
     borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     borderWeatherScheme: getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'),

@@ -6,6 +6,7 @@
 // and status() reports what was found so a mismatch is visible on the settings page.
 var platform = require('../platform');
 var pluginImage = require('../bg-image/plugin-image');
+var permissions = require('../settings/permissions');
 
 var ART = platform.bw ? 12 : 16;           // album art edge in pixels, same as the watch's PL_ICON_DRAW
 var TEXT_LEN = 20;                          // bytes per text field on the watch, NUL included
@@ -233,8 +234,9 @@ function subscribePhone() {
   try {
     phoneSub = Pebble.subscribeToSource({
       category: 'phone', item: 'phone_state',
-      onData: function (env) { try { onPhone(env); } catch (e) { console.log('modern: phone battery parse failed - ' + e.message); } },
+      onData: function (env) { permissions.mark('phone', false); try { onPhone(env); } catch (e) { console.log('modern: phone battery parse failed - ' + e.message); } },
       onError: function (err) {
+        permissions.mark('phone', !!err && err.code === 'PERMISSION_DENIED');
         phoneStatus = { state: 'error', message: 'Phone plugin error' + (err && err.code ? ' (' + err.code + ')' : '') + '.' };
         if (phone.pct !== 255) { phone.pct = 255; schedulePush(); }
       }
@@ -249,9 +251,10 @@ function subscribeMusic() {
     musicSub = Pebble.subscribeToSource({
       category: 'music', item: 'track',
       iconPixelSize: { w: ART, h: ART },
-      onData: function (env) { try { onMusic(env); } catch (e) { console.log('modern: music parse failed - ' + e.message); } },
+      onData: function (env) { permissions.mark('music', false); try { onMusic(env); } catch (e) { console.log('modern: music parse failed - ' + e.message); } },
       onError: function (err) {
         var code = err && err.code;
+        permissions.mark('music', code === 'PERMISSION_DENIED');
         musicStatus = { state: 'error', props: [], message: code === 'PERMISSION_DENIED'
           ? 'Music access was denied. Allow it for the plugin in the Pebble app (music works on Android only).'
           : 'Music plugin error' + (code ? ' (' + code + ')' : '') + '. Music works on Android only.' };

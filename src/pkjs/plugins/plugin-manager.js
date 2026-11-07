@@ -1,3 +1,4 @@
+var permissions = require('../settings/permissions');
 // Pebble plugins (new in recent Pebble apps)
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
@@ -167,12 +168,14 @@ function subscribe(slot) {
       plugin: parsed.plugin || undefined,
       properties: [parsed.property],
       onData: function (envelope) {
+        permissions.mark('plugin:' + slotKeys[slot], false);
         var inst = envelope && envelope.instances && envelope.instances[parsed.index];
         var text = inst && inst.properties ? textFromPayloads(inst.properties[parsed.property]) : '';
         setText(slot, text || '--');
       },
       onError: function (err) {
         console.log('modern: plugin ' + slotKeys[slot] + ' error ' + (err && err.code));
+        permissions.mark('plugin:' + slotKeys[slot], !!err && err.code === 'PERMISSION_DENIED');
         setText(slot, (err && err.code === 'PERMISSION_DENIED') ? 'No access' : 'N/A');
       }
     });

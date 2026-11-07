@@ -2,6 +2,7 @@
 var astro = require('./astro');
 var weather = require('./weather/weather');
 var weatherSource = require('./weather/weather-source');
+var permissions = require('./settings/permissions');
 var geocode = require('./geocode');
 var iss = require('./iss');
 var servicelog = require('./servicelog');
@@ -92,10 +93,12 @@ function getLocation(cb) {
 
   navigator.geolocation.getCurrentPosition(
     function (pos) {
+      permissions.mark('location', false);
       cb(null, pos.coords.latitude, pos.coords.longitude, pos.coords.altitude);
     },
     function (err) {
       var reason = 'unknown (' + err.code + ')';
+      permissions.mark('location', err.code === 1);
       if (err.code === 1) reason = 'permission denied -- check the location permission for this app on your phone';
       else if (err.code === 2) reason = 'position unavailable -- no GPS/network fix';
       else if (err.code === 3) reason = 'timed out waiting for a GPS fix';

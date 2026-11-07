@@ -4,6 +4,7 @@
 // hard-wired to one spelling: every instance is one event and each field is looked up by a loose name match
 // (start / end / title / all day / colour / calendar name) on whatever properties the plugin declares. What was
 // actually found is reported by status() and shown on the settings page, so a mismatch is visible there.
+var permissions = require('../settings/permissions');
 var HOUR_MS = 3600000;
 
 var sub = null;
@@ -102,6 +103,7 @@ function start() {
     sub = Pebble.subscribeToSource({
       category: 'calendar', item: 'event',
       onData: function (env) {
+        permissions.mark('calendar', false);
         var r = parse(env && env.instances);
         list = r.events;
         state = { state: 'ok', events: list.length, props: r.props,
@@ -110,6 +112,7 @@ function start() {
       },
       onError: function (err) {
         var code = err && err.code;
+        permissions.mark('calendar', code === 'PERMISSION_DENIED');
         list = [];
         state = { state: 'error', events: 0, props: [], message: code === 'PERMISSION_DENIED'
           ? 'Calendar access was denied. Allow the Calendar permission for the plugin in the Pebble app.'
