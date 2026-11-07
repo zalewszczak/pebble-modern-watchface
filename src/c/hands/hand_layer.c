@@ -237,3 +237,15 @@ void hand_layer_draw_center_circle(GContext *ctx, GPoint center, uint8_t radius,
   FGPoint center_fp = subpixel_fgpoint_from_gpoint(center);
   subpixel_fill_circle_fp(ctx, center_fp, (int32_t)radius << SUBPIXEL_BITS, color, false);
 }
+
+void hand_layer_draw_center_circle_outlined(GContext *ctx, GPoint center, uint8_t radius, uint8_t color_choice,
+                                            uint8_t outline, uint8_t outline_px,
+                                            GColor main_color, GColor accent_color, GColor bg_color) {
+  if (radius == 0) return;
+  if (outline > 0) {
+    GColor oc = resolve_scheme_color((uint8_t)(outline - 1), main_color, accent_color, bg_color);
+    FGPoint center_fp = subpixel_fgpoint_from_gpoint(center);
+    subpixel_fill_circle_fp(ctx, center_fp, (int32_t)(radius + outline_px) << SUBPIXEL_BITS, oc, false);
+  }
+  hand_layer_draw_center_circle(ctx, center, radius, color_choice, main_color, accent_color, bg_color);
+}

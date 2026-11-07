@@ -185,6 +185,7 @@ module.exports =
 '    CONFIG_HAND_SEC_HOLLOW_THICKNESS: document.getElementById("handSecHollowThickness").value,' +
 '    CONFIG_CENTER_CIRCLE_RADIUS: document.getElementById("centerCircleRadius").value,' +
 '    CONFIG_CENTER_CIRCLE_COLOR: document.getElementById("centerCircleColor").value,' +
+'    CONFIG_CENTER_CIRCLE_OUTLINE: document.getElementById("centerCircleOutline").value,' +
 '    CONFIG_DEBUG_OVERRIDE_DATA: document.getElementById("debugData").value,' +
 '    CONFIG_PRESET_1_NAME: document.getElementById("presetSlot1Name").value,' +
 '    CONFIG_PRESET_1_JSON: document.getElementById("presetSlot1Json").value,' +

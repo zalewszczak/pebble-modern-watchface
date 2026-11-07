@@ -46,7 +46,7 @@ function pluginScript(current) {
 'function pluginsAvailable() { return PLUGIN_INFO.status === "ok" && PLUGIN_INFO.sources.length > 0; }\n' +
 'function pluginUnavailableText() {\n' +
 '  if (PLUGIN_INFO.status !== "ok") return PLUGIN_INFO.message || "Plugins are not enabled.";\n' +
-'  return PLUGIN_INFO.sources.length ? "No free plugin slot (12 at most): remove a plugin feature first." : "No plugin provides data right now.";\n' +
+'  return PLUGIN_INFO.sources.length ? "No free plugin slot (12 at most): remove a plugin complication first." : "No plugin provides data right now.";\n' +
 '}\n' +
 'function pluginKeyParts(key) {\n' +
 '  var p = String(key || "").split("|");\n' +
@@ -324,8 +324,8 @@ function pluginScript(current) {
 '    }\n' +
 '    renderSlotPicker();\n' +
 '    updatePreview();\n' +
-'    var msg = "Loaded " + filled + " preferred " + (filled === 1 ? "feature" : "features") + " from the Pebble app.";\n' +
-'    if (hidden) msg += " " + hidden + " of them " + (hidden === 1 ? "is" : "are") + " in slots your current dial style does not use (see “Incompatible features”).";\n' +
+'    var msg = "Loaded " + filled + " preferred " + (filled === 1 ? "complication" : "complications") + " from the Pebble app.";\n' +
+'    if (hidden) msg += " " + hidden + " of them " + (hidden === 1 ? "is" : "are") + " in slots your current dial style does not use (see “Incompatible complications”).";\n' +
 '    prefStatus("prefFeaturesStatus", msg, false);\n' +
 '  });\n' +
 '}\n' +

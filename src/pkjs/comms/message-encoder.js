@@ -377,7 +377,8 @@ function populateSettingsFields(dict) {
     borderWeatherSchemeCode(), borderWeatherShakeCode(), borderWeatherSemiCode(),
     primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255,
     bitmapMarkerInvertCode(),
-    bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode()
+    bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode(),
+    settingsCodecs.centerCircleOutlineCode()
   ];
   var cornerCustomPrimsSettings = [
     getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),

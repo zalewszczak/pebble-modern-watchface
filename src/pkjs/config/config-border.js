@@ -98,7 +98,7 @@ function borderSectionHtml(current) {
 '        <input type="checkbox" id="borderWeatherShake" ' + (current.borderWeatherShake ? 'checked' : '') + ' onchange="onBorderWeatherChange()">' +
 '        <label for="borderWeatherShake" style="margin:0;">Only show when the watch is shaken</label>' +
 '      </div>' +
-'      <div class="help">Shown for the same time as the other show-on-shake features (the shake duration slider in Animation).</div>' +
+'      <div class="help">Shown for the same time as the other show-on-shake complications (the shake duration slider in Animation).</div>' +
 '      <div class="border-diagram-row" style="' + (platform.bw ? 'display:none;' : '') + '">' +
 '        <canvas id="borderDiagram" width="' + platform.w + '" height="' + platform.h + '"></canvas>' +
 '        <div class="border-legend" id="borderLegend"></div>' +
@@ -137,7 +137,7 @@ function borderScript() {
 'var BORDER_RAIN_BLUE = [[170,255,255], [0,170,255], [0,0,170]];\n' +
 'var BORDER_SCHEME_NAMES = {\n' +
 '  1: ["Classic (6 looks)", "Detailed (thunder, heavy rain, ...)", "Hazard (green to red)"],\n' +
-'  2: ["Rainbow (like features)", "Cold to hot (blue, white, red)", "Heat map (blue to white)"],\n' +
+'  2: ["Rainbow (like complications)", "Cold to hot (blue, white, red)", "Heat map (blue to white)"],\n' +
 '  3: ["White to turquoise", "Blue ramp", "Traffic light (steps)"],\n' +
 '  4: ["Default colors of each", "Alternative 1 of each", "Alternative 2 of each"]\n' +
 '};\n' +

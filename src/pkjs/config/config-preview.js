@@ -670,6 +670,11 @@ module.exports =
 '  var ccRadius = (parseFloat(document.getElementById("centerCircleRadius").value) || 0) * scale;' +
 '  if (ccRadius > 0) {' +
 '    var ccColor = resolveHandPreviewColor(document.getElementById("centerCircleColor").value, colors) || colors.text;' +
+'    var ccOut = document.getElementById("centerCircleOutline").value;' +
+'    if (ccOut !== "off") {' +
+'      ctx.fillStyle = resolveHandPreviewColor(ccOut, colors) || colors.text;' +
+'      ctx.beginPath(); ctx.arc(cx, cy, ccRadius + scale * 1.5, 0, 2 * Math.PI); ctx.fill();' +
+'    }' +
 '    ctx.fillStyle = ccColor;' +
 '    ctx.beginPath(); ctx.arc(cx, cy, ccRadius, 0, 2 * Math.PI); ctx.fill();' +
 '  }' +

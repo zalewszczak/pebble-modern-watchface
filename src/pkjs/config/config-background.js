@@ -129,15 +129,15 @@ function backgroundSectionHtml(current) {
 '      <label for="bgTranslucent" style="margin:0;">Translucent background image</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
 '    </div>' +
-'    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and features stay easy to read.</div>' +
+'    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and complications stay easy to read.</div>' +
 '    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
-'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <label for="weatherBgStyle">Style</label>' +
 '      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
 '      ' + weatherThumbImgs() +
 '    </div>' +
 '    <div id="pluginBgPanel" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
-'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <label for="pluginBgSource">Image source</label>' +
 '      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
 (pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
@@ -151,7 +151,7 @@ function backgroundSectionHtml(current) {
 '      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. It is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts, and removed when the plugin reports no image. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
-'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other features are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
+'      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
 (platform.bw ? '' : '      <div class="bg-subtitle">Predefined</div>' + presetHtml + '      <div class="bg-subtitle">My images</div>') +
 '      <div class="example-style-grid" id="bgSlotGrid"></div>' +
@@ -196,6 +196,17 @@ function backgroundModalHtml() {
 '        <option value="sepia">Sepia</option>' +
 '        <option value="vivid">Vivid colors</option>' +
 '      </select>' +
+(platform.round ? (
+'      <div class="checkbox-row" style="margin-top:12px;"><input type="checkbox" id="bgEdFisheye" onchange="bgEdOptionsChanged()"><label for="bgEdFisheye" style="margin:0;">Fisheye lens (180&deg; look, black round edge)</label></div>' +
+'      <div id="bgEdFisheyeOpts" style="display:none;">' +
+'        <label for="bgEdFisheyeStrength">Lens strength</label>' +
+'        <select id="bgEdFisheyeStrength" onchange="bgEdOptionsChanged()">' +
+'          <option value="50">Mild</option><option value="68" selected>Standard</option><option value="82">Strong</option>' +
+'        </select>' +
+'        <div class="checkbox-row" style="margin-top:8px;"><input type="checkbox" id="bgEdFisheyeCa" onchange="bgEdOptionsChanged()"><label for="bgEdFisheyeCa" style="margin:0;">Chromatic aberration (color fringes toward the edge)</label></div>' +
+'      </div>' +
+'      <div class="help">The picture is bent like a wide-angle fisheye lens into the round screen. Pan and zoom first, then switch it on.</div>'
+) : '') +
 '      <label>Save to slot</label>' +
 '      <div class="bg-ed-slots" id="bgEdSlotRow"></div>' +
 '      <div class="help" id="bgEdSlotNote"></div>' +
@@ -638,12 +649,43 @@ var CLIENT_BODY =
 '  try { rctx.imageSmoothingQuality = "high"; } catch (e) {}\n' +
 '  rctx.drawImage(mip, bgEd.offX, bgEd.offY, bgEd.sw * bgEd.scale, bgEd.sh * bgEd.scale);\n' +
 '  var id = rctx.getImageData(0, 0, BG_W, BG_H);\n' +
+'  var fe = bgEl("bgEdFisheye");\n' +
+'  if (fe) {\n' +
+'    bgEl("bgEdFisheyeOpts").style.display = fe.checked ? "" : "none";\n' +
+'    if (fe.checked) id = bgFisheye(id, parseInt(bgEl("bgEdFisheyeStrength").value, 10), bgEl("bgEdFisheyeCa").checked);\n' +
+'  }\n' +
 '  var rgb = bgStyleRgb(id.data, BG_W * BG_H, bgEl("bgEdStyle").value);\n' +
 '  bgEd.vals = bgQuantize(rgb, BG_W, BG_H, bgEl("bgEdDither").value);\n' +
 '  if (!bgEd.out) bgEd.out = lctx.createImageData(BG_W, BG_H);\n' +
 '  bgValsToRgba(bgEd.vals, bgEd.out.data);\n' +
 '  lctx.putImageData(bgEd.out, 0, 0);\n' +
 '  updatePreview();\n' +
+'}\n' +
+'function bgFisheye(src, halfFovDeg, ca) {\n' +
+'  var w = src.width, h = src.height, sd = src.data;\n' +
+'  var out = new ImageData(w, h), od = out.data;\n' +
+'  var cx = (w - 1) / 2, cy = (h - 1) / 2, R = Math.min(w, h) / 2;\n' +
+'  var thMax = halfFovDeg * Math.PI / 180, tanMax = Math.tan(thMax);\n' +
+'  function sample(fx, fy, ch) {\n' +
+'    var x0 = Math.floor(fx), y0 = Math.floor(fy), ax = fx - x0, ay = fy - y0;\n' +
+'    if (x0 < 0 || y0 < 0 || x0 + 1 >= w || y0 + 1 >= h) return 0;\n' +
+'    var i = (y0 * w + x0) * 4 + ch;\n' +
+'    return (sd[i] * (1 - ax) + sd[i + 4] * ax) * (1 - ay) + (sd[i + w * 4] * (1 - ax) + sd[i + w * 4 + 4] * ax) * ay;\n' +
+'  }\n' +
+'  for (var y = 0; y < h; y++) {\n' +
+'    for (var x = 0; x < w; x++) {\n' +
+'      var dx = (x - cx) / R, dy = (y - cy) / R, r = Math.sqrt(dx * dx + dy * dy), o = (y * w + x) * 4;\n' +
+'      od[o + 3] = 255;\n' +
+'      if (r >= 1) { od[o] = od[o + 1] = od[o + 2] = 0; continue; }\n' +
+'      var s = r === 0 ? 0 : Math.tan(r * thMax) / tanMax / r;\n' +
+'      var edge = Math.min(1, (1 - r) * R);\n' +
+'      for (var ch = 0; ch < 3; ch++) {\n' +
+'        var k = s * (ca ? (ch === 0 ? 1 + 0.035 * r * r : (ch === 2 ? 1 - 0.035 * r * r : 1)) : 1);\n' +
+'        od[o + ch] = sample(cx + dx * k * R, cy + dy * k * R, ch) * edge;\n' +
+'      }\n' +
+'    }\n' +
+'  }\n' +
+'  return out;\n' +
 '}\n' +
 'function bgEdSetZoomUi() {\n' +
 '  bgEl("bgEdZoom").value = String(Math.round(bgEd.zoom * 100));\n' +

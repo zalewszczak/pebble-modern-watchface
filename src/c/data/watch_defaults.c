@@ -74,6 +74,7 @@ void watch_defaults_apply(WatchData *d) {
   d->hand_second = default_hand(2, 2, 85, 10, 1);
   d->center_circle_radius = 4;
   d->center_circle_color = 1; // accent
+  d->center_circle_outline = 0;
 
   // The Modern bitmap dial.
   d->big_analog_marker_style = 3;

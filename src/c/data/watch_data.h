@@ -109,6 +109,7 @@ typedef struct {
   HandConfig hand_second;
   uint8_t center_circle_radius; // 0 disables the center circle.
   uint8_t center_circle_color; // 0=main, 1=accent, 2=background.
+  uint8_t center_circle_outline; // 0 = no outline, else outline color + 1 (1=main, 2=accent, 3=background).
 
   // 3-7 = bitmap marker styles (3 = Modern, the default); anything else
   // draws custom_hour_marker/custom_second_marker + marker_text below. (The

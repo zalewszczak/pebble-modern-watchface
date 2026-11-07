@@ -224,6 +224,11 @@ function handSecHollowCode() { return handHollowCode('CONFIG_HAND_SEC_HOLLOW'); 
 function handSecHollowThicknessCode() { return handHollowThicknessCode('CONFIG_HAND_SEC_HOLLOW_THICKNESS'); }
 
 function centerCircleRadiusCode() { return clampInt(getSetting('CONFIG_CENTER_CIRCLE_RADIUS', '3'), 0, 30, 3); }
+// 0 = no outline, else the outline colour (0 main, 1 accent, 2 background) + 1.
+function centerCircleOutlineCode() {
+  var v = getSetting('CONFIG_CENTER_CIRCLE_OUTLINE', 'off');
+  return v === 'off' ? 0 : clampInt(v, 0, 2, 0) + 1;
+}
 function centerCircleColorCode() { return handColorFieldCode('CONFIG_CENTER_CIRCLE_COLOR', 0); }
 
 function dualContextSetting(baseKey, fallback) {
@@ -580,6 +585,7 @@ module.exports = {
   handSecHollowThicknessCode: handSecHollowThicknessCode,
   centerCircleRadiusCode: centerCircleRadiusCode,
   centerCircleColorCode: centerCircleColorCode,
+  centerCircleOutlineCode: centerCircleOutlineCode,
   dualContextSetting: dualContextSetting,
   analogEdgeAvailability: analogEdgeAvailability,
   dualContextVisible: dualContextVisible,

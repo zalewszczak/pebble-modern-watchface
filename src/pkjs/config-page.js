@@ -28,16 +28,23 @@ var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
 var platform = require('./platform');
 var MARKER_PREVIEW_IMAGES = platform.shapeImages(require('./data/generated/marker-preview-images'));
+// Per-platform display names for the bitmap indices (the art differs per platform, so do the names).
+var MARKER_TITLE_OVERRIDES = platform.round
+  ? { '4': 'Simple', '12': 'Roman Tall', '13': 'Bebas' }
+  : (platform.bw
+    ? { '11': 'Rays', '12': 'Heavy', '13': 'Classy', '15': 'Squared', '16': 'Maurice', '17': 'Quickie', '18': 'Speed' }
+    : {});
+function markerTitle(value, fallback) { return MARKER_TITLE_OVERRIDES.hasOwnProperty(value) ? MARKER_TITLE_OVERRIDES[value] : fallback; }
 var MARKER_VARIANT_STYLES = [
-  { value: '11', title: 'Modern Bold' },
-  { value: '12', title: 'Modern F' },
-  { value: '13', title: 'Modern H' },
-  { value: '14', title: 'Modern P' },
-  { value: '15', title: 'Modern P Round' },
-  { value: '16', title: 'Modern S' },
-  { value: '17', title: 'Modern W' },
-  { value: '18', title: 'Modern W Round' },
-  { value: '19', title: 'Roman' }
+  { value: '11', title: markerTitle('11', 'Modern Bold') },
+  { value: '12', title: markerTitle('12', 'Modern F') },
+  { value: '13', title: markerTitle('13', 'Modern H') },
+  { value: '14', title: markerTitle('14', 'Modern P') },
+  { value: '15', title: markerTitle('15', 'Modern P Round') },
+  { value: '16', title: markerTitle('16', 'Modern S') },
+  { value: '17', title: markerTitle('17', 'Modern W') },
+  { value: '18', title: markerTitle('18', 'Modern W Round') },
+  { value: '19', title: markerTitle('19', 'Roman') }
 ];
 
 var HAND_STYLE_IMAGES = require('./data/generated/hand-style-images');
@@ -745,6 +752,10 @@ handEditorModalHtml('sec', 'Edit second hand') +
 '    <div class="help">Set the radius to 0 to hide the center circle.</div>' +
 '    <label for="centerCircleColor">Color</label>' +
 '    <select id="centerCircleColor">' + schemeColorOptionsHtml(current.centerCircleColor) + '</select>' +
+'    <label for="centerCircleOutline" style="margin-top:10px;">Outline</label>' +
+'    <select id="centerCircleOutline" onchange="updatePreview()"><option value="off"' + ((current.centerCircleOutline || 'off') === 'off' ? ' selected' : '') + '>No outline</option>' +
+       schemeColorOptionsHtml(current.centerCircleOutline).replace(/>(Main|Accent|Background) color</g, '>$1 color outline<') + '</select>' +
+'    <div class="help">An outline around the center circle, drawn the same way as hand outlines (thicker with the thick outline setting).</div>' +
 
 '    <button type="button" class="modal-cancel-btn" onclick="closeCenterCircleEditor()" style="margin-top:14px;">Close</button>' +
 '  </div>' +
@@ -886,7 +897,7 @@ configPresetSchedule.modalHtml +
     sectionLegendHtml('examples', 'Example styles') +
 '    <div class="section-body" id="section-examples" style="display:none;">' +
 '    <div class="subsection"></div>' +
-'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Tap a design below to preview it -- each one sets every Style, Colors, and Features setting to match once you confirm, the same as pasting its JSON into "Style Presets" further down.</div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Tap a design below to preview it -- each one sets every Style, Colors, and Complications setting to match once you confirm, the same as pasting its JSON into "Style Presets" further down.</div>' +
 '    <div class="example-style-grid">' + exampleStylesButtonsHtml + '</div>' +
 '    </div>' +
 '  </fieldset>' +
@@ -933,7 +944,7 @@ configPresetSchedule.modalHtml +
 '        <option value="1"' + (current.bigAnalogMarkerStyle === '1' ? ' selected' : '') + '>Braun</option>' +
 '        <option value="2"' + (current.bigAnalogMarkerStyle === '2' ? ' selected' : '') + '>Swiss</option>' +
 '        <option value="3"' + (current.bigAnalogMarkerStyle === '3' || !current.bigAnalogMarkerStyle ? ' selected' : '') + '>Modern</option>' +
-'        <option value="4"' + (current.bigAnalogMarkerStyle === '4' ? ' selected' : '') + '>Shadow</option>' +
+'        <option value="4"' + (current.bigAnalogMarkerStyle === '4' ? ' selected' : '') + '>' + markerTitle('4', 'Shadow') + '</option>' +
 '        <option value="5"' + (current.bigAnalogMarkerStyle === '5' ? ' selected' : '') + '>Tally</option>' +
 '        <option value="6"' + (current.bigAnalogMarkerStyle === '6' ? ' selected' : '') + '>Bell</option>' +
 '        <option value="7"' + (current.bigAnalogMarkerStyle === '7' ? ' selected' : '') + '>Fancy</option>' +
@@ -975,10 +986,10 @@ configPresetSchedule.modalHtml +
 '  </fieldset>' +
 
 '  <fieldset id="cornersFieldset">' +
-    sectionLegendHtml('corners', 'Features') +
+    sectionLegendHtml('corners', 'Complications') +
 '    <div class="section-body" id="section-corners" style="display:none;">' +
 '    <div class="subsection"></div>' +
-'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Features are small info readouts (weather, health, date/time, and more) placed around your watch face. Tap a slot on the diagram below to pick what it shows and how it\'s colored -- grayed-out slots aren\'t available for your current style.</div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Complications are small info readouts (weather, health, date/time, and more) placed around your watch face. Tap a slot on the diagram below to pick what it shows and how it\'s colored -- grayed-out slots aren\'t available for your current style.</div>' +
 
 '    <div id="slotPickerDiagram">' +
 '      <button type="button" class="slot-btn slot-corner-tl" id="slotBtn-cornerTL" onclick="openSlotEditor(\'cornerTL\')"></button>' +
@@ -994,14 +1005,14 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="slot-btn slot-middle-right-l1" id="slotBtn-middleRightLine1" onclick="openSlotEditor(\'middleRightLine1\')"></button>' +
 '      <button type="button" class="slot-btn slot-middle-right-l2" id="slotBtn-middleRightLine2" onclick="openSlotEditor(\'middleRightLine2\')"></button>' +
 '    </div>' +
-'    <div class="slot-legend" id="slotShakeLegend" style="display:none;"><span class="slot-legend-sample">&nbsp;&nbsp;&nbsp;</span> Features with an orange dashed border are hidden until you shake the watch.</div>' +
+'    <div class="slot-legend" id="slotShakeLegend" style="display:none;"><span class="slot-legend-sample">&nbsp;&nbsp;&nbsp;</span> Complications with an orange dashed border are hidden until you shake the watch.</div>' +
 
 '    <div class="checkbox-row" id="bitmapCornerOverrideRow" style="margin-top:12px;' + ((isBitmapMarkerStyle && markerStyleNum !== 5) ? '' : ' display:none;') + '">' +
 '      <input type="checkbox" id="bitmapCornerOverride" ' + (current.bitmapCornerOverride ? 'checked' : '') + ' onchange="onBitmapCornerOverrideChange()">' +
-'      <label for="bitmapCornerOverride" style="margin:0;">Incompatible features (may overlap the design)</label>' +
+'      <label for="bitmapCornerOverride" style="margin:0;">Incompatible complications (may overlap the design)</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bitmapCornerOverride\')">?</button>' +
 '    </div>' +
-'    <div class="help" id="help-bitmapCornerOverride" style="display:none;">Allows features to use areas that may overlap some bitmap marker designs.</div>' +
+'    <div class="help" id="help-bitmapCornerOverride" style="display:none;">Allows complications to use areas that may overlap some bitmap marker designs.</div>' +
 
 '    <div class="field-label-row"><label for="cornerFont">Font</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-cornerFont\')">?</button></div>' +
 
@@ -1010,7 +1021,7 @@ configPresetSchedule.modalHtml +
 '      <span class="font-picker-preview" id="cornerFontTriggerPreview"></span>' +
 '      <span class="font-picker-name" id="cornerFontTriggerName"></span>' +
 '    </button>' +
-'    <div class="help" id="help-cornerFont" style="display:none;">Sets the font used for feature text and the analog date.</div>' +
+'    <div class="help" id="help-cornerFont" style="display:none;">Sets the font used for complication text and the analog date.</div>' +
 
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label>Outline text and icons for contrast</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-outlineStyle\')">?</button></div>' +
@@ -1033,7 +1044,7 @@ configPresetSchedule.modalHtml +
 '        <span class="font-picker-preview weather-icon-style-preview"></span>' +
 '        <span class="font-picker-name"></span>' +
 '      </button>' +
-'      <div class="help" id="help-weatherIconStyle" style="display:none;">Choose how weather and feature icons are drawn in feature slots.</div>' +
+'      <div class="help" id="help-weatherIconStyle" style="display:none;">Choose how weather and complication icons are drawn in complication slots.</div>' +
 '    </div>' +
 
 '    <div style="display:none;" id="slotDataStore">' +
@@ -1090,15 +1101,15 @@ configPresetSchedule.modalHtml +
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label for="stepGoal">Daily step goal (used by "Step goal %")</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-stepGoal\')">?</button></div>' +
 '      <input type="number" id="stepGoal" min="1000" max="60000" step="500" value="' + esc(current.stepGoal || '10000') + '">' +
-'      <div class="help" id="help-stepGoal" style="display:none;">Sets the step target used by the Steps feature.</div>' +
+'      <div class="help" id="help-stepGoal" style="display:none;">Sets the step target used by the Steps complication.</div>' +
 '    </div>' +
 
 '    <div class="checkbox-row subsection" id="drawFeaturesBeneathHandsRow">' +
 '      <input type="checkbox" id="drawFeaturesBeneathHands" ' + (current.drawFeaturesBeneathHands ? 'checked' : '') + ' onchange="updatePreview()">' +
-'      <label for="drawFeaturesBeneathHands" style="margin:0;">Draw features beneath hands</label>' +
+'      <label for="drawFeaturesBeneathHands" style="margin:0;">Draw complications beneath hands</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-drawFeaturesBeneathHands\')">?</button>' +
 '    </div>' +
-'    <div class="help" id="help-drawFeaturesBeneathHands" style="display:none;">In Analog mode, draws feature text underneath the hands instead of on top.</div>' +
+'    <div class="help" id="help-drawFeaturesBeneathHands" style="display:none;">In Analog mode, draws complication text underneath the hands instead of on top.</div>' +
 '    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefFeaturesBtn" onclick="loadPreferredFeatures()">Load user preferences</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefFeatures\')">?</button></div>' +
 '    <div class="help" id="help-loadPrefFeatures" style="display:none;">Fills Upper-middle line 2, Bottom-middle line 1 and the first line on the left and on the right with the readings you chose in the Pebble app (Settings &rarr; Plugins &rarr; Complications), in that order. They replace what those four slots show now; the change is only kept when you save.</div>' +
 '    <div class="help" id="prefFeaturesStatus" style="display:none;"></div>' +
@@ -1194,7 +1205,7 @@ configPresetSchedule.modalHtml +
 '      <input type="hidden" id="nightCustomTextValue" value="' + esc(current.nightCustomText || '255') + '">' +
 '      <input type="hidden" id="nightCustomAccentValue" value="' + esc(current.nightCustomAccent || '255') + '">' +
 '    </div>' +
-'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Battery and Moon phase are now pickable as Features content below, with their own color style.</div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Battery and Moon phase are now pickable as Complications content below, with their own color style.</div>' +
 '    </div>' +
 '  </fieldset>' +
 
@@ -1235,7 +1246,7 @@ configPresetSchedule.modalHtml +
 '        <button type="button" class="help-btn" onclick="toggleHelp(\'help-shakeHandsTranslucent\')">?</button>' +
 '      </div>' +
 '    </div>' +
-'    <div class="help" id="help-shakeHandsTranslucent" style="display:none;">The hands turn semi-transparent for the duration of the shake animation (see the duration slider below), so you can see the dial and features underneath them. Works with or without the smooth second hand.</div>' +
+'    <div class="help" id="help-shakeHandsTranslucent" style="display:none;">The hands turn semi-transparent for the duration of the shake animation (see the duration slider below), so you can see the dial and complications underneath them. Works with or without the smooth second hand.</div>' +
 
 '    <div class="subsection">' +
 '      <div class="slider-row">' +
@@ -1257,7 +1268,7 @@ configPresetSchedule.modalHtml +
     sectionLegendHtml('presets', 'My Style Presets') +
 '    <div class="section-body" id="section-presets" style="display:none;">' +
 '    <div class="subsection"></div>' +
-'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Save up to 6 quick-recall snapshots of your whole Style + Colors + Features design below, or export/import it as JSON to back it up or share it.</div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Save up to 6 quick-recall snapshots of your whole Style + Colors + Complications design below, or export/import it as JSON to back it up or share it.</div>' +
 
 '    ' + [1, 2, 3, 4, 5, 6].map(function (n) { return presetSlotHtml(current, n); }).join('') +
 
@@ -1265,7 +1276,7 @@ configPresetSchedule.modalHtml +
 '    <button type="button" class="secondary-btn" onclick="exportDesignJson()">Generate JSON</button>' +
 '    <button type="button" class="secondary-btn" onclick="copyExportBoxToClipboard()">Copy to clipboard</button>' +
 '    <textarea id="presetExportBox" readonly rows="6" style="margin-top:8px; font-family:monospace; font-size:11px;" onclick="this.select();"></textarea>' +
-'    <div class="help" id="presetExportStatus">Tap the box above then copy the text -- covers everything in the Style, Colors, and Features sections.</div>' +
+'    <div class="help" id="presetExportStatus">Tap the box above then copy the text -- covers everything in the Style, Colors, and Complications sections.</div>' +
 
 '    <label for="presetImportBox" style="margin-top:12px;">Import a design</label>' +
 '    <button type="button" class="secondary-btn" onclick="pasteImportBoxFromClipboard()">Paste from clipboard</button>' +
@@ -1299,21 +1310,21 @@ configPresetSchedule.modalHtml +
         { value: 'ms', label: 'M/S' },
         { value: 'kn', label: 'KNOTS' }
       ], current.windSpeedUnit || 'kmh') +
-'    <div class="help" id="help-windSpeedUnit" style="display:none;">Sets the unit used by the Wind feature.</div>' +
+'    <div class="help" id="help-windSpeedUnit" style="display:none;">Sets the unit used by the Wind complication.</div>' +
 
 '    <div class="field-label-row"><label style="margin-top:10px;">Air quality index scale</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-aqiUnit\')">?</button></div>' +
       modeButtonGroupHtml('aqiUnitGroup', 'aqiUnit', [
         { value: '0', label: 'US AQI' },
         { value: '1', label: 'EUROPEAN' }
       ], current.aqiUnit || '0') +
-'    <div class="help" id="help-aqiUnit" style="display:none;">Sets the scale used by the Air Quality feature.</div>' +
+'    <div class="help" id="help-aqiUnit" style="display:none;">Sets the scale used by the Air Quality complication.</div>' +
 
 '    <div class="field-label-row"><label style="margin-top:10px;">Altitude unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-altitudeUnit\')">?</button></div>' +
       modeButtonGroupHtml('altitudeUnitGroup', 'altitudeUnit', [
         { value: '0', label: 'METERS' },
         { value: '1', label: 'FEET' }
       ], current.altitudeUnit || '0') +
-'    <div class="help" id="help-altitudeUnit" style="display:none;">Sets the unit used by the Altitude feature.</div>' +
+'    <div class="help" id="help-altitudeUnit" style="display:none;">Sets the unit used by the Altitude complication.</div>' +
 
 '    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefUnitsBtn" onclick="loadPreferredUnits()">Load units from Pebble app</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefUnits\')">?</button></div>' +
 '    <div class="help" id="help-loadPrefUnits" style="display:none;">Sets the temperature, wind speed and altitude units to the ones chosen in the Pebble app (altitude follows its distance unit: km = meters, mi = feet). The air quality scale has no Pebble app equivalent and is left alone. The change is only kept when you save.</div>' +
@@ -2639,6 +2650,7 @@ configPlugins.pluginScript(current) +
 '      if (radiusVal) radiusVal.textContent = entry.centerCircle.Radius + "px";' +
 '    }' +
 '    if (entry.centerCircle.Color !== undefined) document.getElementById("centerCircleColor").value = entry.centerCircle.Color;' +
+'    if (entry.centerCircle.Outline !== undefined) document.getElementById("centerCircleOutline").value = entry.centerCircle.Outline;' +
 '  }' +
 '  if (entry.shadow) {' +
 '    if (entry.shadow.Translucent !== undefined) {' +
@@ -2747,7 +2759,7 @@ configPlugins.pluginScript(current) +
 
 'var MARKER_BITMAP_STYLES = [' +
 '  { value: "3", title: "Modern" },' +
-'  { value: "4", title: "Shadow" },' +
+'  { value: "4", title: ' + JSON.stringify(markerTitle('4', 'Shadow')) + ' },' +
 '  { value: "5", title: "Tally" },' +
 '  { value: "6", title: "Bell" },' +
 '  { value: "7", title: "Fancy" }' +
@@ -2996,7 +3008,7 @@ configPlugins.pluginScript(current) +
 '  var name = document.getElementById("presetSlot" + n + "Name").value || ("Preset " + n);' +
 '  var currentImg = capturePreviewImage();' +
 '  var savedImg = document.getElementById("presetSlot" + n + "Image").value;' +
-'  showConfirm("Apply preset", \'Apply "\' + name + \'"? This replaces your current Style, Colors, and Features settings.\', function () {' +
+'  showConfirm("Apply preset", \'Apply "\' + name + \'"? This replaces your current Style, Colors, and Complications settings.\', function () {' +
 '    applyStyleCornersJson(obj);' +
 '  }, (currentImg && savedImg) ? { images: { left: currentImg, right: savedImg } } : null);' +
 '}' +
@@ -3767,10 +3779,10 @@ require('./config/config-runtime') +
 '}' +
 'function computeFeaturesSubheader() {' +
 '  var count = countActiveFeatures();' +
-'  if (count === 0) return "No features active";' +
+'  if (count === 0) return "No complications active";' +
 '  var fontId = parseInt(document.getElementById("cornerFont").value, 10);' +
 '  var fontName = fontLookupEntry(fontId).label;' +
-'  return count + " feature" + (count === 1 ? "" : "s") + " active in " + fontName;' +
+'  return count + " complication" + (count === 1 ? "" : "s") + " active in " + fontName;' +
 '}' +
 'function computeAnimationSubheader() {' +
 '  var parts = [];' +

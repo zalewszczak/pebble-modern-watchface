@@ -30,6 +30,43 @@ void feature_layout_recompute(FeaturesState *state) {
   // One record per bitmap style id. The 11-19 records are placeholders: copies of the
   // last record (Fancy) until their real values are measured.
   typedef struct { uint8_t style; EdgeMargins m; } BitmapMarginRecord;
+  // One table per platform, because each platform has its own indices art (and some own names).
+  // Round and B&W were seeded from the emery values scaled to their screens; edit them to the measured margins.
+#if defined(PBL_BW)
+  static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
+    {  3, { 28, 27, 30, 28 } }, // Modern
+    {  4, { 27, 24, 27, 23 } }, // Shadow
+    {  5, { 32, 31, 19, 14 } }, // Tally
+    {  6, { 34, 32, 32, 32 } }, // Bell
+    {  7, { 32, 29, 21, 18 } }, // Fancy
+    { 11, { 28, 28, 30, 28 } }, // Rays
+    { 12, { 27, 27, 26, 25 } }, // Heavy
+    { 13, { 28, 28, 25, 25 } }, // Classy
+    { 14, { 28, 28, 28, 27 } }, // Modern P
+    { 15, { 30, 30, 28, 28 } }, // Squared
+    { 16, { 27, 27, 27, 25 } }, // Maurice
+    { 17, { 29, 29, 28, 27 } }, // Quickie
+    { 18, { 29, 29, 28, 27 } }, // Speed
+    { 19, { 28, 28, 28, 28 } }, // Roman
+  };
+#elif defined(PBL_ROUND)
+  static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
+    {  3, { 43, 42, 54, 50 } }, // Modern
+    {  4, { 42, 37, 49, 42 } }, // Simple
+    {  5, { 50, 48, 35, 26 } }, // Tally
+    {  6, { 52, 50, 58, 58 } }, // Bell
+    {  7, { 50, 45, 39, 33 } }, // Fancy
+    { 11, { 43, 43, 54, 50 } }, // Modern Bold
+    { 12, { 42, 42, 48, 45 } }, // Roman Tall
+    { 13, { 44, 44, 46, 45 } }, // Bebas
+    { 14, { 44, 44, 50, 49 } }, // Modern P
+    { 15, { 46, 46, 52, 50 } }, // Modern P Round
+    { 16, { 42, 42, 49, 46 } }, // Modern S
+    { 17, { 45, 45, 52, 49 } }, // Modern W
+    { 18, { 45, 45, 50, 49 } }, // Modern W Round
+    { 19, { 44, 44, 52, 52 } }, // Roman
+  };
+#else
   static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
     {  3, { 38, 37, 42, 39 } }, // Modern
     {  4, { 37, 33, 38, 33 } }, // Shadow
@@ -46,6 +83,7 @@ void feature_layout_recompute(FeaturesState *state) {
     { 18, { 40, 40, 39, 38 } }, // Modern W Round
     { 19, { 39, 39, 40, 40 } }, // Roman
   };
+#endif
   int16_t dyn_upper_offset = PL_DEFAULT_UPPER_OFFSET, dyn_bottom_shift = PL_DEFAULT_BOTTOM_SHIFT;
   int16_t dyn_left_inset = 0, dyn_right_inset = 0;
   if (marker_is_bitmap) {
@@ -54,22 +92,6 @@ void feature_layout_recompute(FeaturesState *state) {
       if (BITMAP_STYLE_MARGINS[i].style == marker_style) { m = &BITMAP_STYLE_MARGINS[i].m; break; }
     }
     dyn_upper_offset = m->top; dyn_bottom_shift = m->bottom; dyn_left_inset = m->left; dyn_right_inset = m->right;
-#ifdef PBL_BW
-    // Same first guess for the 144x168 B&W art (x by 144/200, y by 168/228) until the legacy
-    // indices' own margins are measured.
-    dyn_upper_offset = PL_BITMAP_MARGIN_Y(dyn_upper_offset);
-    dyn_bottom_shift = PL_BITMAP_MARGIN_Y(dyn_bottom_shift);
-    dyn_left_inset = PL_BITMAP_MARGIN_X(dyn_left_inset);
-    dyn_right_inset = PL_BITMAP_MARGIN_X(dyn_right_inset);
-#endif
-#ifdef PBL_ROUND
-    // The tables above were measured on the 200x228 art. Until the round art's own
-    // margins are measured, scale them to the 260x260 screen (x by 13/10, y by 8/7).
-    dyn_upper_offset = dyn_upper_offset * 8 / 7;
-    dyn_bottom_shift = dyn_bottom_shift * 8 / 7;
-    dyn_left_inset = dyn_left_inset * 13 / 10;
-    dyn_right_inset = dyn_right_inset * 13 / 10;
-#endif
   } else {
     GRect screen = GRect(0, 0, PBL_DISPLAY_WIDTH, PBL_DISPLAY_HEIGHT);
     GPoint center = GPoint(screen.size.w / 2, screen.size.h / 2);

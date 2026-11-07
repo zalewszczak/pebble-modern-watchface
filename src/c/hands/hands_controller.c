@@ -139,8 +139,9 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
     hand_layer_draw(ctx, center, sec_angle, &sec_cfg, main_color, accent_color, bg, s_data->shadow_translucent, s_data->shadow_angle_deg, sec_length_scale_1000, thick_outline);
   }
 
-  hand_layer_draw_center_circle(ctx, center, s_data->center_circle_radius, s_data->center_circle_color,
-                                 main_color, accent_color, bg);
+  hand_layer_draw_center_circle_outlined(ctx, center, s_data->center_circle_radius, s_data->center_circle_color,
+                                         s_data->center_circle_outline, thick_outline ? 2 : 1,
+                                         main_color, accent_color, bg);
 }
 
 static void startup_anim_timer_callback(void *data) {

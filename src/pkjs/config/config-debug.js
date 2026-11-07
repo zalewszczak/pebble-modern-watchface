@@ -86,7 +86,7 @@ function fakeWeatherPanelHtml(current) {
   return (
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label>Fake weather</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-fakeWeather\')">?</button></div>' +
-'      <div class="help" id="help-fakeWeather" style="display:none;">Spoofs the current weather reading to preview how conditions draw (background effects, weather icons, feature slots), independent of the FAQ/keyset checks a real fetch goes through. \"Send fake weather now\" closes this page and sends only these fields to the watch immediately -- nothing here is saved, and no other data is affected.</div>' +
+'      <div class="help" id="help-fakeWeather" style="display:none;">Spoofs the current weather reading to preview how conditions draw (background effects, weather icons, complication slots), independent of the FAQ/keyset checks a real fetch goes through. \"Send fake weather now\" closes this page and sends only these fields to the watch immediately -- nothing here is saved, and no other data is affected.</div>' +
 
 '      <label for="fakeWxCondition">Condition</label>' +
 '      <select id="fakeWxCondition" style="width:100%;">' +

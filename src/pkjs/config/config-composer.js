@@ -465,7 +465,7 @@ function composerClientBody() {
   function composerCommitValue() {
     if (!document.getElementById("slotEditCustomPrimsToggle").checked) return "";
     var n = COMPOSER.items.length;
-    if (n > COMPOSER_MAX) { composerSetError("Feature can have only " + COMPOSER_MAX + " elements"); return null; }
+    if (n > COMPOSER_MAX) { composerSetError("Complication can have only " + COMPOSER_MAX + " elements"); return null; }
     if (n < 1) { composerSetError("Add at least one element, or turn off the custom sequence."); return null; }
     return composerSerialize(COMPOSER.items);
   }
