@@ -56,6 +56,11 @@ module.exports =
 '    CONFIG_PLUGIN_BG_DITHER: document.getElementById("pluginBgDither").value,' +
 '    CONFIG_PLUGIN_BG_COLOR: document.getElementById("pluginBgColor").value,' +
 '    CONFIG_PLUGIN_BG_FIT: document.getElementById("pluginBgFit").value,' +
+'    CONFIG_BORDER_SOURCE: document.getElementById("borderSource").value,' +
+'    CONFIG_BORDER_CAL_MODE: document.getElementById("borderCalMode").value,' +
+'    CONFIG_BORDER_CAL_SCHEME: document.getElementById("borderCalScheme").value,' +
+'    CONFIG_BORDER_CAL_COLOR: document.getElementById("borderCalColor").value,' +
+'    CONFIG_BORDER_CAL_ALLDAY: document.getElementById("borderCalAllDay").checked,' +
 '    CONFIG_BORDER_WEATHER_MODE: document.getElementById("borderWeatherMode").value,' +
 '    CONFIG_BORDER_WEATHER_PX: document.getElementById("borderWeatherPx").value,' +
 '    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +

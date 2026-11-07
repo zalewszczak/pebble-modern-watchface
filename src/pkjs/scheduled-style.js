@@ -76,6 +76,11 @@ var FIELD_MAP = {
   pluginBgDither: ['CONFIG_PLUGIN_BG_DITHER', 's'],
   pluginBgColor: ['CONFIG_PLUGIN_BG_COLOR', 's'],
   pluginBgFit: ['CONFIG_PLUGIN_BG_FIT', 's'],
+  borderSource: ['CONFIG_BORDER_SOURCE', 's'],
+  borderCalMode: ['CONFIG_BORDER_CAL_MODE', 's'],
+  borderCalScheme: ['CONFIG_BORDER_CAL_SCHEME', 's'],
+  borderCalColor: ['CONFIG_BORDER_CAL_COLOR', 's'],
+  borderCalAllDay: ['CONFIG_BORDER_CAL_ALLDAY', 'b'],
   borderWeatherMode: ['CONFIG_BORDER_WEATHER_MODE', 's'],
   borderWeatherPx: ['CONFIG_BORDER_WEATHER_PX', 's'],
   borderWeatherScheme: ['CONFIG_BORDER_WEATHER_SCHEME', 's'],
@@ -178,6 +183,10 @@ function toStored(kind, v) {
 function applyPreset(preset) {
   var written = 0;
   var id;
+  // Styles saved before the ring had a source (off / weather / calendar): weather style 1-4 meant weather, 0 off.
+  if (preset && preset.borderSource === undefined && preset.borderWeatherMode !== undefined) {
+    setSetting('CONFIG_BORDER_SOURCE', String(preset.borderWeatherMode) !== '0' ? '1' : '0');
+  }
   for (id in preset) {
     if (!preset.hasOwnProperty(id)) continue;
     var v = preset[id];

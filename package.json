@@ -168,8 +168,11 @@
       "FORECAST_TEMP_DISPLAY_12",
       "FORECAST_TEMP_DISPLAY_13",
       "FORECAST_TEMP_DISPLAY_14",
-      "FORECAST_WX",
-      "FORECAST_RAIN"
+      "BORDER_DATA",
+      "PHONE_BATTERY",
+      "MEDIA_INFO",
+      "MEDIA_TEXT",
+      "MEDIA_ART"
     ],
     "resources": {
       "media": [
@@ -2799,15 +2802,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
-          "file": "legacy/weatherbg/baroque_beach/clear_sky_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
           "file": "square/weatherbg/baroque_beach/clear_sky_night.png",
           "targetPlatforms": [
@@ -2820,15 +2814,6 @@
           "file": "round/weatherbg/baroque_beach/clear_sky_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/clear_sky_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2849,15 +2834,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
-          "file": "legacy/weatherbg/baroque_beach/partly_cloudy_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
           "file": "square/weatherbg/baroque_beach/partly_cloudy_night.png",
           "targetPlatforms": [
@@ -2870,15 +2846,6 @@
           "file": "round/weatherbg/baroque_beach/partly_cloudy_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/partly_cloudy_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2899,15 +2866,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
-          "file": "legacy/weatherbg/baroque_beach/overcast_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
           "file": "square/weatherbg/baroque_beach/overcast_night.png",
           "targetPlatforms": [
@@ -2920,15 +2878,6 @@
           "file": "round/weatherbg/baroque_beach/overcast_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/overcast_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2949,15 +2898,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
-          "file": "legacy/weatherbg/baroque_beach/fog_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
           "file": "square/weatherbg/baroque_beach/fog_night.png",
           "targetPlatforms": [
@@ -2970,15 +2910,6 @@
           "file": "round/weatherbg/baroque_beach/fog_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/fog_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -2999,15 +2930,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
-          "file": "legacy/weatherbg/baroque_beach/drizzle_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
           "file": "square/weatherbg/baroque_beach/drizzle_night.png",
           "targetPlatforms": [
@@ -3020,15 +2942,6 @@
           "file": "round/weatherbg/baroque_beach/drizzle_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/drizzle_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3049,15 +2962,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
-          "file": "legacy/weatherbg/baroque_beach/rain_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
           "file": "square/weatherbg/baroque_beach/rain_night.png",
           "targetPlatforms": [
@@ -3070,15 +2974,6 @@
           "file": "round/weatherbg/baroque_beach/rain_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/rain_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3099,15 +2994,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
-          "file": "legacy/weatherbg/baroque_beach/heavy_rain_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
           "file": "square/weatherbg/baroque_beach/heavy_rain_night.png",
           "targetPlatforms": [
@@ -3120,15 +3006,6 @@
           "file": "round/weatherbg/baroque_beach/heavy_rain_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/heavy_rain_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3149,15 +3026,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
-          "file": "legacy/weatherbg/baroque_beach/snow_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
           "file": "square/weatherbg/baroque_beach/snow_night.png",
           "targetPlatforms": [
@@ -3170,15 +3038,6 @@
           "file": "round/weatherbg/baroque_beach/snow_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/snow_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3199,15 +3058,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
-          "file": "legacy/weatherbg/baroque_beach/thunderstorm_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
           "file": "square/weatherbg/baroque_beach/thunderstorm_night.png",
           "targetPlatforms": [
@@ -3220,15 +3070,6 @@
           "file": "round/weatherbg/baroque_beach/thunderstorm_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/thunderstorm_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3249,15 +3090,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
-          "file": "legacy/weatherbg/baroque_beach/sleet_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
           "file": "square/weatherbg/baroque_beach/sleet_night.png",
           "targetPlatforms": [
@@ -3270,15 +3102,6 @@
           "file": "round/weatherbg/baroque_beach/sleet_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
-          "file": "legacy/weatherbg/baroque_beach/sleet_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3299,15 +3122,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
-          "file": "legacy/weatherbg/manhattan/clear_sky_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
           "file": "square/weatherbg/manhattan/clear_sky_night.png",
           "targetPlatforms": [
@@ -3320,15 +3134,6 @@
           "file": "round/weatherbg/manhattan/clear_sky_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
-          "file": "legacy/weatherbg/manhattan/clear_sky_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3349,15 +3154,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
-          "file": "legacy/weatherbg/manhattan/partly_cloudy_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
           "file": "square/weatherbg/manhattan/partly_cloudy_night.png",
           "targetPlatforms": [
@@ -3370,15 +3166,6 @@
           "file": "round/weatherbg/manhattan/partly_cloudy_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
-          "file": "legacy/weatherbg/manhattan/partly_cloudy_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3399,15 +3186,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
-          "file": "legacy/weatherbg/manhattan/overcast_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
           "file": "square/weatherbg/manhattan/overcast_night.png",
           "targetPlatforms": [
@@ -3420,15 +3198,6 @@
           "file": "round/weatherbg/manhattan/overcast_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
-          "file": "legacy/weatherbg/manhattan/overcast_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3449,15 +3218,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_FOG_DAY",
-          "file": "legacy/weatherbg/manhattan/fog_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
           "file": "square/weatherbg/manhattan/fog_night.png",
           "targetPlatforms": [
@@ -3470,15 +3230,6 @@
           "file": "round/weatherbg/manhattan/fog_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
-          "file": "legacy/weatherbg/manhattan/fog_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3499,15 +3250,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
-          "file": "legacy/weatherbg/manhattan/drizzle_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
           "file": "square/weatherbg/manhattan/drizzle_night.png",
           "targetPlatforms": [
@@ -3520,15 +3262,6 @@
           "file": "round/weatherbg/manhattan/drizzle_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
-          "file": "legacy/weatherbg/manhattan/drizzle_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3549,15 +3282,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
-          "file": "legacy/weatherbg/manhattan/rain_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
           "file": "square/weatherbg/manhattan/rain_night.png",
           "targetPlatforms": [
@@ -3570,15 +3294,6 @@
           "file": "round/weatherbg/manhattan/rain_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
-          "file": "legacy/weatherbg/manhattan/rain_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3599,15 +3314,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
-          "file": "legacy/weatherbg/manhattan/heavy_rain_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
           "file": "square/weatherbg/manhattan/heavy_rain_night.png",
           "targetPlatforms": [
@@ -3620,15 +3326,6 @@
           "file": "round/weatherbg/manhattan/heavy_rain_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
-          "file": "legacy/weatherbg/manhattan/heavy_rain_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3649,15 +3346,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
-          "file": "legacy/weatherbg/manhattan/snow_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
           "file": "square/weatherbg/manhattan/snow_night.png",
           "targetPlatforms": [
@@ -3670,15 +3358,6 @@
           "file": "round/weatherbg/manhattan/snow_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
-          "file": "legacy/weatherbg/manhattan/snow_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3699,15 +3378,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
-          "file": "legacy/weatherbg/manhattan/thunderstorm_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
           "file": "square/weatherbg/manhattan/thunderstorm_night.png",
           "targetPlatforms": [
@@ -3720,15 +3390,6 @@
           "file": "round/weatherbg/manhattan/thunderstorm_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
-          "file": "legacy/weatherbg/manhattan/thunderstorm_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         },
         {
@@ -3749,15 +3410,6 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
-          "file": "legacy/weatherbg/manhattan/sleet_day.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
           "file": "square/weatherbg/manhattan/sleet_night.png",
           "targetPlatforms": [
@@ -3770,15 +3422,6 @@
           "file": "round/weatherbg/manhattan/sleet_night.png",
           "targetPlatforms": [
             "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
-          "file": "legacy/weatherbg/manhattan/sleet_night.png",
-          "targetPlatforms": [
-            "flint",
-            "diorite"
           ]
         }
       ]

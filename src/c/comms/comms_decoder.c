@@ -136,13 +136,16 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
   { MK_EDGE_LINE_PRIMITIVE_IDS, 1, offsetof(WatchData, edge_line_primitive_ids), 80 }, // 8 * 10, see watch_data.h
   { MK_EDGE_LINE_PRIMITIVE_AUX, 1, offsetof(WatchData, edge_line_primitive_aux), 80 },
   { MK_PLUGIN_TEXTS, 1, offsetof(WatchData, plugin_text), PLUGIN_SLOT_COUNT * PLUGIN_TEXT_LEN },
+  { MK_BORDER_DATA, 1, offsetof(WatchData, border_data), BORDER_DATA_MAX },
+  { MK_PHONE_BATTERY, 1, offsetof(WatchData, phone_battery), sizeof(((WatchData *)0)->phone_battery) },
+  { MK_MEDIA_INFO, 1, offsetof(WatchData, media_info), sizeof(((WatchData *)0)->media_info) },
+  { MK_MEDIA_TEXT, 1, offsetof(WatchData, media_text), 2 * MEDIA_TEXT_LEN },
+  { MK_MEDIA_ART, 1, offsetof(WatchData, media_art), MEDIA_ART_MAX_BYTES },
 };
 
 // Applied only for valid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP_VALID[] = {
   { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), FORECAST_SLOT_COUNT },
-  { MK_FORECAST_WX, 1, offsetof(WatchData, forecast_wx), FORECAST_SLOT_COUNT },
-  { MK_FORECAST_RAIN, 1, offsetof(WatchData, forecast_rain_pct), FORECAST_SLOT_COUNT },
   { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), FORECAST_SLOT_COUNT },
   { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), FORECAST_SLOT_COUNT },
   { MK_PLANET_RISE, 4, offsetof(WatchData, planet_rise), PLANET_COUNT * 4 },
@@ -331,6 +334,8 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
   uint32_t changes = apply_simple_fields(iter, d, SIMPLE_FIELD_MAP, NELEM(SIMPLE_FIELD_MAP));
   apply_consolidated_fields(iter, d);
   apply_blob_fields(iter, d, BLOB_FIELD_MAP, NELEM(BLOB_FIELD_MAP));
+  // The track position is a snapshot; remember when it was taken so the watch can keep it moving.
+  if (dict_find(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_MEDIA_INFO)) d->media_stamp = time(NULL);
   apply_scattered_u8_blob(iter, d, MK_SETTINGS_U8_BLOB, SETTINGS_BLOB_OFFSETS, NELEM(SETTINGS_BLOB_OFFSETS));
 
   // Feature layout and values are recomputed for every decoded message.

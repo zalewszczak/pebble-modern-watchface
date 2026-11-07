@@ -49,7 +49,7 @@ var WEATHER_ICON_STYLE_PREVIEWS = require('./data/generated/weather-icon-style-p
 var PREVIEW_ICON_IMAGES = require('./data/generated/preview-icon-images');
 var PREVIEW_ICON_TOKENS = require('./config/preview-icons').PREVIEW_ICON_TOKENS;
 
-var EXAMPLE_STYLE_COUNT = 5;
+var EXAMPLE_STYLE_COUNT = require('./config/config-state').EXAMPLE_STYLE_COUNT; // one source of truth (was a stale 5)
 var EXAMPLE_STYLE_IMAGES = platform.shapeImages(require('./data/generated/example-style-images'));
 var EXAMPLE_STYLE_PRESETS = require('./example-style-presets');
 
@@ -2847,6 +2847,10 @@ configPlugins.pluginScript(current) +
 '    var pbReset = document.getElementById("usePluginBg");' +
 '    if (pbReset) pbReset.checked = false;' +
 '  }' +
+'  if (obj && obj.borderSource === undefined && obj.borderWeatherMode !== undefined) {' +
+'    var bsrc = document.getElementById("borderSource");' + // styles saved before the ring had a source selector
+'    if (bsrc) bsrc.value = String(obj.borderWeatherMode) !== "0" ? "1" : "0";' +
+'  }' +
 '  Object.keys(obj).forEach(function (id) {' +
 '    if (id === "__pluginSlots") return;' +
 '    var el = document.getElementById(id);' +
@@ -3734,6 +3738,7 @@ require('./config/config-runtime') +
 '    colors = dayColors();' +
 '  }' +
 '  function dot(hex) { return \'<span class="subhead-dot" style="background:\' + hex + \';"></span>\'; }' +
+'  if (SCREEN_BW) return esc(label) + dot(colors.text) + dot(colors.bg);' + // B&W: two looks only, no accent
 '  return esc(label) + dot(colors.text) + dot(colors.accent) + dot(colors.bg);' +
 '}' +
 'function countActiveFeatures() {' +

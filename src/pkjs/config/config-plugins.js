@@ -40,6 +40,7 @@ function pluginScript(current) {
 'var PLUGIN_INFO = ' + JSON.stringify({ status: cat.status, message: cat.message || '', sources: cat.sources || [] }) + ';\n' +
 'var PLUGIN_SLOTS = ' + JSON.stringify(slots) + ';\n' +
 'var PLUGIN_CONTENT_FIRST = 200, PLUGIN_SLOT_COUNT = 12;\n' +
+'var MEDIA_STATUS = ' + JSON.stringify(current.mediaStatus || {}).replace(/</g, '\\u003c') + ';\n' +
 'var LIVE_MODE = ' + (current.liveMode ? 'true' : 'false') + ';\n' +
 'var PREFERENCES = ' + JSON.stringify(current.preferences || { available: false, units: null, complications: null }).replace(/</g, '\\u003c') + ';\n' +
 'function pluginsAvailable() { return PLUGIN_INFO.status === "ok" && PLUGIN_INFO.sources.length > 0; }\n' +
@@ -264,6 +265,12 @@ function pluginScript(current) {
 '  var help = document.getElementById("slotEditCategoryHelp");\n' +
 '  if (categoryId === "plugins") {\n' +
 '    help.textContent = pluginsAvailable() ? "Shows the latest value of a data source provided by a Pebble plugin, as plain text." : pluginUnavailableText();\n' +
+'    help.style.display = "";\n' +
+'  } else if (categoryId === "phone") {\n' +
+'    var ms = MEDIA_STATUS || {}, extra = "";\n' +
+'    if (ms.music && ms.music.message && ms.music.state !== "off") extra += " Music plugin: " + ms.music.message;\n' +
+'    if (ms.phone && ms.phone.message && ms.phone.state !== "off") extra += " Phone plugin: " + ms.phone.message;\n' +
+'    help.textContent = (findCategory("phone").note || "") + extra;\n' +
 '    help.style.display = "";\n' +
 '  } else if (categoryId === "timezone") {\n' +
 '    help.textContent = "Shows the time-zone option used for the selected location. Daylight saving rules may vary by location.";\n' +

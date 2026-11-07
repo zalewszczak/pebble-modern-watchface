@@ -362,13 +362,9 @@ function startupClockAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_STARTUP_CLOCK_ANIM_MODE', '1'), 10);
   return v === 1 ? 1 : 0;
 }
-function borderWeatherModeCode() {
-  var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_MODE', '0'), 10);
-  // Pattern ring: conditions / rain chance only. Temperature and "all three" (colour-only, possibly saved by
-  // an older profile) fall back to conditions instead of silently turning the border off.
-  if (platform.bw) return v === 3 ? 3 : ((v === 1 || v === 2 || v === 4) ? 1 : 0);
-  return (v >= 1 && v <= 4) ? v : 0;
-}
+// The watch only needs to know whether the ring is on: 0 off, 1 weather, 2 calendar. Everything that decides
+// what it looks like is built on the phone (border/border-data.js) and sent as BORDER_DATA.
+function borderWeatherModeCode() { return require('../border/border-data').source(); }
 function borderWeatherSchemeCode() {
   var v = parseInt(getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'), 10);
   return (v === 1 || v === 2) ? v : 0;

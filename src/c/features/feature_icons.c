@@ -85,6 +85,9 @@ static const IconResourceSet SUN_TIME_ICON_SET[2] = { ICON_SET(SUN_TIME_SET), IC
 static bool s_bt_flash_hidden = false;
 void feature_icons_set_bt_flash_hidden(bool hidden) { s_bt_flash_hidden = hidden; }
 
+static const uint8_t *s_media_art = NULL;
+void feature_icons_set_media_art(const uint8_t *pixels) { s_media_art = pixels; }
+
 
 
 
@@ -271,6 +274,40 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
                                                        outline_style, outline_color, color);
       return;
     }
+    case 31: { // phone (icon_extra = charge 0-100, icon_flag = charge unknown)
+      GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_DRAW_H) / 2);
+      if (do_outline) {
+        for (int i = 0; i < offs_n; i++) {
+          feature_vector_icons_phone(ctx, GPoint(pos.x + offs[i].x, pos.y + offs[i].y), ICON_DRAW_H, outline_color, 0, true);
+        }
+      }
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_phone(ctx, pos, ICON_DRAW_H, color, icon_extra, icon_flag);
+      return;
+    }
+    case 32: { // media state (icon_extra: 0 note, 1 play, 2 pause)
+      GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_DRAW_H) / 2);
+      if (do_outline) {
+        for (int i = 0; i < offs_n; i++) {
+          feature_vector_icons_media_state(ctx, GPoint(pos.x + offs[i].x, pos.y + offs[i].y), ICON_DRAW_H, outline_color, (uint8_t)icon_extra);
+        }
+      }
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_media_state(ctx, pos, ICON_DRAW_H, color, (uint8_t)icon_extra);
+      return;
+    }
+    case 33: { // album art
+      GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_DRAW_H) / 2);
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_media_art(ctx, pos, ICON_DRAW_H, s_media_art, color);
+      return;
+    }
+    case 34: { // progress bar (icon_extra = percent, icon_flag = length unknown)
+      GPoint pos = GPoint(icon_x, box_y + (row_height - 5) / 2);
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_progress_bar(ctx, pos, PL_PROGRESS_BAR_W, icon_extra, icon_flag, color);
+      return;
+    }
     default:
       return;
   }
@@ -297,7 +334,7 @@ uint8_t feature_icons_weather_category(uint8_t weather_condition, uint8_t cloud_
 // On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
 // vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their
 // pixel size and so keep their width.
-static const uint8_t s_icon_plus_gap_width[31] = {
+static const uint8_t s_icon_plus_gap_width[35] = {
   [1] = PL_ICON_PX(15), [2] = PL_ICON_PX(15), [3] = 13, [4] = 21,
   [5] = PL_ICON_PX(15), [6] = PL_ICON_PX(15), [7] = PL_ICON_PX(15), [8] = PL_ICON_PX(15),
   [9] = PL_ICON_PX(15), [10] = PL_ICON_PX(15),
@@ -312,9 +349,12 @@ static const uint8_t s_icon_plus_gap_width[31] = {
   // drawing it "oversized" at 16x16: the layout only pays for the half
   // that's populated.
   [30] = PL_ICON_PX(10),
+  // Phone, media state, album art (a square icon), progress bar (PL_PROGRESS_BAR_W + gap).
+  [31] = PL_ICON_PX(15), [32] = PL_ICON_PX(14), [33] = PL_ICON_PX(21),
+  [34] = PL_PROGRESS_BAR_W + 4,
 };
 
 int16_t feature_icons_plus_gap_width(int icon_kind) {
-  if ((unsigned)icon_kind >= 31u) return 0;
+  if ((unsigned)icon_kind >= 35u) return 0;
   return s_icon_plus_gap_width[icon_kind];
 }

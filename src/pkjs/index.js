@@ -19,6 +19,9 @@ var refreshManager = require('./refresh-manager');
 var refreshAndSend = refreshManager.refreshAndSend;
 var scheduleRefresh = refreshManager.scheduleRefresh;
 var pluginManager = require('./plugins/plugin-manager');
+var borderData = require('./border/border-data');
+var phoneMedia = require('./plugins/phone-media');
+var phoneMedia = require('./plugins/phone-media');
 var preferences = require('./plugins/preferences');
 var firstRun = require('./settings/first-run');
 var configBridge = require('./plugins/config-bridge');
@@ -31,6 +34,7 @@ function serveScheduledStyle() {
   if (r.applied) {
     console.log('modern: scheduled style applied from My style slot ' + r.slot);
     pluginManager.setSlots(pluginManager.getSlots());
+    borderData.sync();
     sendFlatDict({});
     pluginBg.apply();
     bgImageSync.syncIfNeeded();
@@ -54,6 +58,8 @@ function applyFirstRunPreferences() {
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
+  borderData.init(function (bytes) { enqueueFlatDict({ BORDER_DATA: bytes }); });
+  phoneMedia.init(function (dict) { enqueueFlatDict(dict); }, function (art) { enqueueFlatDict({ MEDIA_ART: art }); });
   pluginBg.apply();
   applyFirstRunPreferences();
   serveScheduledStyle();
@@ -119,7 +125,7 @@ function buildCurrent() {
     cornerBRShake: getSetting('CONFIG_CORNER_BR_SHAKE', '0'),
     useCustomBg: getSetting('CONFIG_USE_CUSTOM_BG', 'false') === 'true',
     bgSource: getSetting('CONFIG_BG_SOURCE', 'p:1'),
-    useWeatherBg: getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
+    useWeatherBg: !require('./platform').bw && getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
     weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
     bgTranslucent: getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true',
     usePluginBg: getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
@@ -128,6 +134,13 @@ function buildCurrent() {
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
     pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),
     pluginBgFit: getSetting('CONFIG_PLUGIN_BG_FIT', 'fill'),
+    borderSource: String(borderData.source()),
+    borderCalMode: getSetting('CONFIG_BORDER_CAL_MODE', '1'),
+    borderCalScheme: getSetting('CONFIG_BORDER_CAL_SCHEME', '0'),
+    borderCalColor: getSetting('CONFIG_BORDER_CAL_COLOR', '0'),
+    borderCalAllDay: getSetting('CONFIG_BORDER_CAL_ALLDAY', 'false') === 'true',
+    borderCalStatus: borderData.calendarStatus(),
+    mediaStatus: phoneMedia.status(),
     borderWeatherMode: getSetting('CONFIG_BORDER_WEATHER_MODE', '0'),
     borderWeatherPx: getSetting('CONFIG_BORDER_WEATHER_PX', '8'),
     borderWeatherScheme: getSetting('CONFIG_BORDER_WEATHER_SCHEME', '0'),
@@ -406,7 +419,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_CORNER_BR_SHAKE', settings.CONFIG_CORNER_BR_SHAKE === '1' ? '1' : '0');
   setSetting('CONFIG_USE_CUSTOM_BG', settings.CONFIG_USE_CUSTOM_BG ? 'true' : 'false');
   setSetting('CONFIG_BG_SOURCE', settings.CONFIG_BG_SOURCE || 'p:1');
-  setSetting('CONFIG_USE_WEATHER_BG', settings.CONFIG_USE_WEATHER_BG ? 'true' : 'false');
+  setSetting('CONFIG_USE_WEATHER_BG', (settings.CONFIG_USE_WEATHER_BG && !require('./platform').bw) ? 'true' : 'false'); // no weather backgrounds on B&W
   setSetting('CONFIG_WEATHER_BG_STYLE', settings.CONFIG_WEATHER_BG_STYLE || '');
   setSetting('CONFIG_BG_TRANSLUCENT', settings.CONFIG_BG_TRANSLUCENT ? 'true' : 'false');
   setSetting('CONFIG_USE_PLUGIN_BG', settings.CONFIG_USE_PLUGIN_BG ? 'true' : 'false');
@@ -414,7 +427,14 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
   setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
   setSetting('CONFIG_PLUGIN_BG_FIT', ['fill', 'full', '75', '50', 'center'].indexOf(settings.CONFIG_PLUGIN_BG_FIT) >= 0 ? settings.CONFIG_PLUGIN_BG_FIT : 'fill');
-  setSetting('CONFIG_BORDER_WEATHER_MODE', (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) ? settings.CONFIG_BORDER_WEATHER_MODE : '0');
+  // CONFIG_BORDER_SOURCE: 0 off, 1 weather, 2 calendar. CONFIG_BORDER_WEATHER_MODE keeps the weather style (1-4) either way.
+  if (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) setSetting('CONFIG_BORDER_WEATHER_MODE', String(settings.CONFIG_BORDER_WEATHER_MODE));
+  else if (getSetting('CONFIG_BORDER_WEATHER_MODE', '0') === '0') setSetting('CONFIG_BORDER_WEATHER_MODE', '1'); // keep the last weather style while the ring shows something else
+  setSetting('CONFIG_BORDER_SOURCE', (['0','1','2'].indexOf(String(settings.CONFIG_BORDER_SOURCE)) >= 0) ? String(settings.CONFIG_BORDER_SOURCE) : '0');
+  setSetting('CONFIG_BORDER_CAL_MODE', (['1','2','3'].indexOf(String(settings.CONFIG_BORDER_CAL_MODE)) >= 0) ? String(settings.CONFIG_BORDER_CAL_MODE) : '1');
+  setSetting('CONFIG_BORDER_CAL_SCHEME', (['0','1','2'].indexOf(String(settings.CONFIG_BORDER_CAL_SCHEME)) >= 0) ? String(settings.CONFIG_BORDER_CAL_SCHEME) : '0');
+  setSetting('CONFIG_BORDER_CAL_COLOR', (['0','1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_CAL_COLOR)) >= 0) ? String(settings.CONFIG_BORDER_CAL_COLOR) : '0');
+  setSetting('CONFIG_BORDER_CAL_ALLDAY', settings.CONFIG_BORDER_CAL_ALLDAY ? 'true' : 'false');
   setSetting('CONFIG_BORDER_WEATHER_SCHEME', (settings.CONFIG_BORDER_WEATHER_SCHEME === '1' || settings.CONFIG_BORDER_WEATHER_SCHEME === '2') ? settings.CONFIG_BORDER_WEATHER_SCHEME : '0');
   setSetting('CONFIG_BORDER_WEATHER_SHAKE', settings.CONFIG_BORDER_WEATHER_SHAKE ? 'true' : 'false');
   setSetting('CONFIG_BORDER_WEATHER_SEMI', settings.CONFIG_BORDER_WEATHER_SEMI ? 'true' : 'false');
@@ -576,6 +596,7 @@ function applySettingsObject(settings) {
   if (settings.CONFIG_WEATHER_SOURCE) setSetting('CONFIG_WEATHER_SOURCE', settings.CONFIG_WEATHER_SOURCE === 'openmeteo' ? 'openmeteo' : (/^plugin:[^\s]+$/.test(settings.CONFIG_WEATHER_SOURCE) ? settings.CONFIG_WEATHER_SOURCE : 'plugin'));
   if (settings.CONFIG_PLUGIN_SLOTS !== undefined) pluginManager.setSlots(settings.CONFIG_PLUGIN_SLOTS);
 
+  borderData.sync();
   sendFlatDict({});
   if (unitSettingsSignature() !== unitsBefore) messageEncoder.resendUnitDisplays();
   pluginBg.apply();

@@ -8,7 +8,8 @@ var weatherBgs = require('../data/generated/weather-backgrounds');
 var BG_W = platform.w;
 var BG_H = platform.h;
 var BG_SLOT_COUNT = 9;
-var BG_PACKED_B64_LENGTH = 45600;
+// Length of one packed slot string for THIS screen (200x228: 45600, 260x260: 67600, 144x168: 24192).
+var BG_PACKED_B64_LENGTH = require('../bg-image/bg-image-codec').SLOT_CHARS;
 
 function presetNumbers() { return platform.bw ? [] : (bgImages.numbers || []); }
 function parseSource(current) {
@@ -30,6 +31,7 @@ function validSlots(current) {
 }
 
 function isWeatherOn(current) {
+  if (platform.bw) return false; // no weather backgrounds on the 1-bit watches
   return !!current && (current.useWeatherBg === true || current.useWeatherBg === 'true') && !isOn(current);
 }
 
@@ -113,7 +115,7 @@ function backgroundSectionHtml(current) {
 '    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
 '      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) && !isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
 '      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
-'      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)">WEATHER</button>' +
+'      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)"' + (platform.bw ? ' style="display:none;"' : '') + '>WEATHER</button>' +
 '      <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
 '    </div>' +
 '    <div class="help"><b>IMAGE</b> = ' + (platform.bw ? 'your own photo' : 'a predefined image or your own photo') + ', <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
@@ -600,6 +602,7 @@ var CLIENT_BODY =
 '}\n' +
 'function bgAfterStyleApplied() {\n' +
 '  var cb0 = bgEl("useCustomBg"), wb0 = bgEl("useWeatherBg"), pb0 = bgEl("usePluginBg");\n' +
+'  if (SCREEN_BW && wb0) wb0.checked = false;\n' +
 '  if (cb0 && wb0 && cb0.checked) wb0.checked = false;\n' +
 '  if (pb0 && ((cb0 && cb0.checked) || (wb0 && wb0.checked))) pb0.checked = false;\n' +
 '  var s = bgParseSource();\n' +

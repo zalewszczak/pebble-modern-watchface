@@ -5,29 +5,43 @@ var SEVEN_STOPS = require('../weather/weather-normalize').SEVEN_STOP_GRADIENT_ST
 
 function borderSectionHtml(current) {
   var mode = String(current.borderWeatherMode || '0');
-  if (['1', '2', '3', '4'].indexOf(mode) < 0) mode = '0';
-  if (platform.bw && mode !== '0' && mode !== '3') mode = '1';
+  if (['1', '2', '3', '4'].indexOf(mode) < 0) mode = '1';
+  if (platform.bw && mode !== '3') mode = '1';
+  var source = String(current.borderSource !== undefined ? current.borderSource : (current.borderWeatherMode && current.borderWeatherMode !== '0' ? '1' : '0'));
+  if (['0', '1', '2'].indexOf(source) < 0) source = '0';
   var scheme = String(current.borderWeatherScheme || '0');
   if (scheme !== '1' && scheme !== '2') scheme = '0';
+  var calMode = String(current.borderCalMode || '1');
+  if (['1', '2', '3'].indexOf(calMode) < 0) calMode = '1';
+  var calScheme = String(current.borderCalScheme || '0');
+  if (['0', '1', '2'].indexOf(calScheme) < 0) calScheme = '0';
+  var calColor = String(current.borderCalColor || '0');
+  if (['0', '1', '2', '3', '4'].indexOf(calColor) < 0) calColor = '0';
   var px = parseInt(current.borderWeatherPx, 10);
   if (isNaN(px)) px = 8;
   px = Math.max(2, Math.min(40, px));
   function sel(v, cur) { return v === cur ? ' selected' : ''; }
-  var shown = mode !== '0' ? mode : '1';
+  function act(v) { return v === source ? ' active' : ''; }
+  var cal = current.borderCalStatus || {};
+  var calStatus = cal.state === 'ok' ? ('Calendar plugin connected: ' + cal.events + ' event' + (cal.events === 1 ? '' : 's') + ' found' + (cal.props && cal.props.length ? ' (fields: ' + cal.props.join(', ') + ')' : '') + '. ' + (cal.message || ''))
+    : (cal.message || 'The calendar plugin is contacted once CALENDAR is saved. Turn plugins on in the Pebble app (Settings > Plugins) and allow calendar access.');
   return '' +
-'    <div class="help">Turns the edge of the screen into a 12-hour weather forecast. Like on the dial, the sector at each clock position shows the weather for the next time the hour hand will be there.</div>' +
-'    <div class="checkbox-row" id="borderWeatherEnabledRow" style="margin-top:10px;">' +
-'      <input type="checkbox" id="borderWeatherEnabled" ' + (mode !== '0' ? 'checked' : '') + ' onchange="onBorderWeatherChange()">' +
-'      <label for="borderWeatherEnabled" style="margin:0;">Use border to show weather</label>' +
+'    <div class="help">Turns the edge of the screen into a 12-hour ring: a <b>weather</b> forecast or your <b>calendar</b>. Like on the dial, each clock position shows what is happening the next time the hour hand is there. The phone builds the ring and sends the watch one small block of colors.</div>' +
+'    <div class="mode-btn-group" id="borderSourceGroup" style="margin-top:10px;">' +
+'      <button type="button" class="mode-btn' + act('0') + '" onclick="borderSetSource(0)">OFF</button>' +
+'      <button type="button" class="mode-btn' + act('1') + '" onclick="borderSetSource(1)">WEATHER</button>' +
+'      <button type="button" class="mode-btn' + act('2') + '" onclick="borderSetSource(2)">CALENDAR</button>' +
 '    </div>' +
-'    <input type="hidden" id="borderWeatherMode" value="' + mode + '">' +
-'    <div id="borderWeatherPanel" style="' + (mode !== '0' ? '' : 'display:none;') + '">' +
+'    <input type="hidden" id="borderSource" value="' + source + '">' +
+'    <input type="hidden" id="borderWeatherMode" value="' + (source === '1' ? mode : '0') + '">' +
+'    <input type="checkbox" id="borderWeatherEnabled" style="display:none;" ' + (source === '1' ? 'checked' : '') + '>' +
+'    <div id="borderWeatherPanel" style="' + (source === '1' ? '' : 'display:none;') + '">' +
 '      <div class="field-label-row"><label for="borderWeatherModeSel">Show</label></div>' +
 '      <select id="borderWeatherModeSel" onchange="onBorderWeatherChange()">' +
-'        <option value="1"' + sel('1', shown) + '>Weather conditions</option>' +
-(platform.bw ? '' : '        <option value="2"' + sel('2', shown) + '>Temperature</option>') +
-'        <option value="3"' + sel('3', shown) + '>Rain chance</option>' +
-(platform.bw ? '' : '        <option value="4"' + sel('4', shown) + '>All three (3 stripes)</option>') +
+'        <option value="1"' + sel('1', mode) + '>Weather conditions</option>' +
+(platform.bw ? '' : '        <option value="2"' + sel('2', mode) + '>Temperature</option>') +
+'        <option value="3"' + sel('3', mode) + '>Rain chance</option>' +
+(platform.bw ? '' : '        <option value="4"' + sel('4', mode) + '>All three (3 stripes)</option>') +
 '      </select>' +
 '      <div class="help" id="borderCombinedWarn" style="display:none;"></div>' +
 '      <div class="field-label-row" style="margin-top:12px;' + (platform.bw ? 'display:none;' : '') + '"><label for="borderWeatherScheme">Colors</label></div>' +
@@ -36,6 +50,40 @@ function borderSectionHtml(current) {
 '        <option value="1"' + sel('1', scheme) + '></option>' +
 '        <option value="2"' + sel('2', scheme) + '></option>' +
 '      </select>' +
+(platform.bw ? '      <div class="help">The ring is drawn in your text color with a pattern: the denser the pattern, the cloudier or wetter that hour (empty = clear sky or no rain). Conditions: clear = empty, partly cloudy / fog = sparse dots, overcast / snow = checkerboard, drizzle / rain / sleet = dense, heavy rain / thunder = solid. Rain chance: under 5% empty, then 30%, 60%, 85%.</div>' : '') +
+'    </div>' +
+'    <div id="borderCalPanel" style="' + (source === '2' ? '' : 'display:none;') + '">' +
+'      <div class="field-label-row"><label for="borderCalMode">Show</label></div>' +
+'      <select id="borderCalMode" onchange="onBorderWeatherChange()">' +
+'        <option value="1"' + sel('1', calMode) + '>Busy / free</option>' +
+'        <option value="2"' + sel('2', calMode) + '>Number of events at the same time</option>' +
+'        <option value="3"' + sel('3', calMode) + '>Now and next event</option>' +
+'      </select>' +
+'      <div class="help" id="borderCalModeHelp"></div>' +
+'      <div class="field-label-row" style="margin-top:12px;' + (platform.bw ? 'display:none;' : '') + '"><label for="borderCalScheme">Colors</label></div>' +
+'      <select id="borderCalScheme" style="' + (platform.bw ? 'display:none;' : '') + '" onchange="onBorderWeatherChange()">' +
+'        <option value="0"' + sel('0', calScheme) + '>Each calendar in its own color</option>' +
+'        <option value="1"' + sel('1', calScheme) + '>One color for all events</option>' +
+'        <option value="2"' + sel('2', calScheme) + '>Grayscale</option>' +
+'      </select>' +
+'      <div id="borderCalColorRow" style="display:none;">' +
+'        <div class="field-label-row" style="margin-top:12px;"><label for="borderCalColor">Event color</label></div>' +
+'        <select id="borderCalColor" onchange="onBorderWeatherChange()">' +
+'          <option value="0"' + sel('0', calColor) + '>Blue</option><option value="1"' + sel('1', calColor) + '>Green</option>' +
+'          <option value="2"' + sel('2', calColor) + '>Orange</option><option value="3"' + sel('3', calColor) + '>Red</option>' +
+'          <option value="4"' + sel('4', calColor) + '>Purple</option>' +
+'        </select>' +
+'      </div>' +
+'      <div class="checkbox-row" style="margin-top:12px;">' +
+'        <input type="checkbox" id="borderCalAllDay" ' + (current.borderCalAllDay ? 'checked' : '') + ' onchange="onBorderWeatherChange()">' +
+'        <label for="borderCalAllDay" style="margin:0;">Include all-day events</label>' +
+'      </div>' +
+(platform.bw ? '      <div class="help">This watch has no colors, so the ring is drawn in your text color with a pattern instead: Busy / free = solid for any event. Number of events = sparse dots (1), checkerboard (2), dense (3), solid (4 or more). Now and next = solid for the running event and the next one, checkerboard for the later ones.</div>' : '      <div class="help">Event colors come from the calendar the event belongs to (the calendar plugin decides what it reports; events without a color get one picked from their calendar name). With several events in the same hour, two calendars alternate pixel by pixel.</div>') +
+'      <div class="help">Covers the current hour and the next 11. The ring is rebuilt whenever the calendar plugin reports a change and with every data refresh.</div>' +
+'      <div class="help" id="borderCalStatus">' + esc(calStatus) + '</div>' +
+'      <div class="help" style="color:#d9822b;">Needs the Pebble app&rsquo;s plugin preview (Settings &gt; Plugins) and calendar access for the calendar plugin.</div>' +
+'    </div>' +
+'    <div id="borderCommonPanel" style="' + (source !== '0' ? '' : 'display:none;') + '">' +
 '      <div class="field-label-row" style="margin-top:12px;"><label for="borderWeatherPx">Thickness <span class="val" id="borderWeatherPxVal">' + px + 'px</span></label></div>' +
 '      <div class="slider-with-buttons">' +
 '        <button type="button" class="slider-step-btn" onclick="stepSlider(\'borderWeatherPx\', -1); onBorderWeatherChange();">&minus;</button>' +
@@ -51,7 +99,6 @@ function borderSectionHtml(current) {
 '        <label for="borderWeatherShake" style="margin:0;">Only show when the watch is shaken</label>' +
 '      </div>' +
 '      <div class="help">Shown for the same time as the other show-on-shake features (the shake duration slider in Animation).</div>' +
-(platform.bw ? '      <div class="help">The ring is drawn in your text color with a pattern: the denser the pattern, the cloudier or wetter that hour (empty = clear sky or no rain). Conditions: clear = empty, partly cloudy / fog = sparse dots, overcast / snow = checkerboard, drizzle / rain / sleet = dense, heavy rain / thunder = solid. Rain chance: under 5% empty, then 30%, 60%, 85%.</div>' : '') +
 '      <div class="border-diagram-row" style="' + (platform.bw ? 'display:none;' : '') + '">' +
 '        <canvas id="borderDiagram" width="' + platform.w + '" height="' + platform.h + '"></canvas>' +
 '        <div class="border-legend" id="borderLegend"></div>' +
@@ -188,10 +235,46 @@ function borderScript() {
 'function borderScheme() { var el = document.getElementById("borderWeatherScheme"); var v = el ? parseInt(el.value, 10) : 0; return (v === 1 || v === 2) ? v : 0; }\n' +
 'function borderSemi() { var el = document.getElementById("borderWeatherSemi"); return !!(el && el.checked); }\n' +
 'function borderPx() { var el = document.getElementById("borderWeatherPx"); var v = el ? parseInt(el.value, 10) : 8; return isNaN(v) ? 8 : Math.max(2, Math.min(40, v)); }\n' +
-'function drawWeatherBorderPreview(ctx, w, h) {\n' +
+'function borderSource() { var el = document.getElementById("borderSource"); var v = el ? parseInt(el.value, 10) : 0; return (v === 1 || v === 2) ? v : 0; }\n' +
+'function borderCalModeV() { var el = document.getElementById("borderCalMode"); var v = el ? parseInt(el.value, 10) : 1; return (v >= 1 && v <= 3) ? v : 1; }\n' +
+'function borderCalSchemeV() { var el = document.getElementById("borderCalScheme"); var v = el ? parseInt(el.value, 10) : 0; return (v === 1 || v === 2) ? v : 0; }\n' +
+'function borderCalColorV() { var el = document.getElementById("borderCalColor"); var v = el ? parseInt(el.value, 10) : 0; return (v >= 0 && v <= 4) ? v : 0; }\n' +
+'var BORDER_CAL_COLORS = [[0,85,255], [0,255,85], [255,170,0], [255,0,0], [170,0,255]];\n' +
+'var BORDER_CAL_SAMPLE_CAL = [[0,85,255], [255,170,0], [0,255,85], [170,0,255]];\n' +
+'// Sample day for the preview: per sector from now, the events overlapping it (calendar index, running, next).\n' +
+'var BORDER_CAL_SAMPLE = [[{c:0,run:1}], [{c:0,run:1}], [], [{c:1,nxt:1},{c:2}], [{c:1,nxt:1}], [], [{c:3}], [{c:3}], [], [], [{c:0},{c:1}], []];\n' +
+'function borderCalSector(mode, scheme, ev, k) {\n' +
+'  if (!ev.length) return [null, null];\n' +
+'  var single = BORDER_CAL_COLORS[borderCalColorV()], n = ev.length;\n' +
+'  var c1 = BORDER_CAL_SAMPLE_CAL[ev[0].c], c2 = BORDER_CAL_SAMPLE_CAL[ev[n > 1 ? 1 : 0].c];\n' +
+'  var G1 = [85, 85, 85], G2 = [170, 170, 170], W = [255, 255, 255];\n' +
+'  if (mode === 1) { var c = scheme === 0 ? c1 : (scheme === 1 ? single : G2); return [c, c]; }\n' +
+'  if (mode === 2) {\n' +
+'    if (scheme === 0) return n === 1 ? [c1, c1] : [c1, c2];\n' +
+'    if (scheme === 1) return n === 1 ? [single, null] : [single, single];\n' +
+'    var g = n === 1 ? G1 : (n === 2 ? G2 : W); return [g, g];\n' +
+'  }\n' +
+'  var bright = ev.some(function (e) { return e.run || e.nxt; });\n' +
+'  var col = scheme === 0 ? c1 : (scheme === 1 ? single : W);\n' +
+'  if (bright) return [col, col];\n' +
+'  return scheme === 2 ? [G1, G1] : [col, null];\n' +
+'}\n' +
+'function borderCalSampleLook(hour12) {\n' +
+'  var row = [], hours = [], s, k;\n' +
+'  for (s = 0; s < 12; s++) { row.push([null, null]); hours.push(0); }\n' +
+'  for (k = 0; k < 12; k++) { var sec = (hour12 + k) % 12; hours[sec] = k; row[sec] = borderCalSector(borderCalModeV(), borderCalSchemeV(), BORDER_CAL_SAMPLE[k], k); }\n' +
+'  return { layers: [row], hours: hours, cal: true };\n' +
+'}\n' +
+'function borderCurrentLook(hour12) {\n' +
+'  var src = borderSource();\n' +
+'  if (src === 2) return borderCalSampleLook(hour12);\n' +
 '  var mode = borderMode();\n' +
-'  if (!mode) return;\n' +
-'  drawBorderBand(ctx, w, h, borderPx(), borderSectorColors(mode, borderScheme(), new Date().getHours() % 12), borderSemi());\n' +
+'  return mode ? borderSectorColors(mode, borderScheme(), hour12) : null;\n' +
+'}\n' +
+'function drawWeatherBorderPreview(ctx, w, h) {\n' +
+'  var look = borderCurrentLook(new Date().getHours() % 12);\n' +
+'  if (!look) return;\n' +
+'  drawBorderBand(ctx, w, h, borderPx(), look, borderSemi());\n' +
 '}\n' +
 'function borderCss3(c) { return c ? "rgb(" + c[0] + "," + c[1] + "," + c[2] + ")" : "transparent"; }\n' +
 'function borderTitle(mode) { return ["", "Weather conditions", "Temperature", "Rain chance", "All three"][mode]; }\n' +
@@ -241,78 +324,111 @@ function borderScript() {
 '  }\n' +
 '  return html;\n' +
 '}\n' +
+'function borderCalLegend() {\n' +
+'  var sc = borderCalSchemeV(), m = borderCalModeV(), html = "", sw = function (css, name) { return borderRow(css, name); };\n' +
+'  var one = borderCss3(BORDER_CAL_COLORS[borderCalColorV()]);\n' +
+'  if (m === 1) html = sw("transparent", "Free") + sw(sc === 0 ? "linear-gradient(90deg, rgb(0,85,255), rgb(255,170,0), rgb(0,255,85))" : (sc === 1 ? one : "rgb(170,170,170)"), "Busy" + (sc === 0 ? " (calendar color)" : ""));\n' +
+'  else if (m === 2) {\n' +
+'    if (sc === 0) html = sw("transparent", "Free") + sw("rgb(0,85,255)", "One event") + sw("repeating-conic-gradient(rgb(0,85,255) 0 25%, rgb(255,170,0) 0 50%) 0 0 / 4px 4px", "Two calendars alternate");\n' +
+'    else if (sc === 1) html = sw("transparent", "Free") + sw("repeating-conic-gradient(" + one + " 0 25%, transparent 0 50%) 0 0 / 4px 4px", "One event (half)") + sw(one, "Two or more");\n' +
+'    else html = sw("transparent", "Free") + sw("rgb(85,85,85)", "One event") + sw("rgb(170,170,170)", "Two events") + sw("rgb(255,255,255)", "Three or more");\n' +
+'  } else {\n' +
+'    var b = sc === 0 ? "rgb(0,85,255)" : (sc === 1 ? one : "rgb(255,255,255)");\n' +
+'    html = sw("transparent", "Free") + sw(b, "Running now / next event") + sw(sc === 2 ? "rgb(85,85,85)" : "repeating-conic-gradient(" + b + " 0 25%, transparent 0 50%) 0 0 / 4px 4px", "Later events");\n' +
+'  }\n' +
+'  return html;\n' +
+'}\n' +
+'var BORDER_CAL_MODE_HELP = ["", "Any event in that hour colors the sector.", "Shows how many events overlap that hour.", "The running event and the next one stand out, later events are dimmed."];\n' +
 'function renderBorderDiagram() {\n' +
 '  var cv = document.getElementById("borderDiagram");\n' +
 '  if (!cv || !cv.getContext) return;\n' +
+'  var src = borderSource();\n' +
+'  if (!src) return;\n' +
 '  var mode = borderMode() || 1, scheme = borderScheme(), ctx = cv.getContext("2d"), w = cv.width, h = cv.height;\n' +
 '  var col = (typeof dayColors === "function") ? dayColors() : { bg: "#000", text: "#fff" };\n' +
 '  var hour12 = new Date().getHours() % 12;\n' +
 '  ctx.clearRect(0, 0, w, h); ctx.fillStyle = col.bg; ctx.fillRect(0, 0, w, h);\n' +
-'  var look = borderSectorColors(mode, scheme, hour12);\n' +
+'  var look = borderCurrentLook(hour12);\n' +
+'  if (!look) return;\n' +
 '  drawBorderBand(ctx, w, h, borderPx(), look, borderSemi());\n' +
 '  ctx.fillStyle = col.text; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = "bold 13px sans-serif";\n' +
 '  var cx = w / 2, cy = h / 2, rx = w / 2 - 44, ry = h / 2 - 44;\n' +
 '  for (var s = 0; s < 12; s++) {\n' +
 '    var a = s * Math.PI / 6;\n' +
 '    var tx = cx + Math.sin(a) * rx * 1.05, ty = cy - Math.cos(a) * ry * 1.05;\n' +
-'    ctx.globalAlpha = look.hours[s] === 12 ? 0.55 : 1;\n' +
-'    ctx.fillText("+" + look.hours[s] + "h", tx, ty);\n' +
+'    ctx.globalAlpha = (!look.cal && look.hours[s] === 12) ? 0.55 : 1;\n' +
+'    ctx.fillText(look.cal ? (look.hours[s] === 0 ? "now" : "+" + look.hours[s] + "h") : "+" + look.hours[s] + "h", tx, ty);\n' +
 '  }\n' +
 '  ctx.globalAlpha = 1; ctx.font = "11px sans-serif";\n' +
 '  ctx.fillText("now: " + (hour12 === 0 ? 12 : hour12) + " o\'clock", cx, cy - 8);\n' +
-'  ctx.fillText("(+12h = same spot)", cx, cy + 8);\n' +
+'  ctx.fillText(look.cal ? "(sample events)" : "(+12h = same spot)", cx, cy + 8);\n' +
 '  var lg = document.getElementById("borderLegend");\n' +
 '  if (lg) {\n' +
-'    if (mode === 4) {\n' +
+'    if (src === 2) lg.innerHTML = borderCalLegend();\n' +
+'    else if (mode === 4) {\n' +
 '      lg.innerHTML = \'<div class="sub">Outer: temperature</div>\' + borderLegendFor(2, scheme) + \'<div class="sub">Middle: conditions</div>\' + borderLegendFor(1, scheme) + \'<div class="sub">Inner: rain chance</div>\' + borderLegendFor(3, scheme);\n' +
 '    } else lg.innerHTML = borderLegendFor(mode, scheme);\n' +
 '  }\n' +
-'  var ht = document.getElementById("borderHelpText");\n' +
+'}\n' +
+'function borderTitleNow() {\n' +
+'  var src = borderSource();\n' +
+'  if (src === 2) return "Calendar: " + ["", "busy / free", "number of events", "now and next"][borderCalModeV()];\n' +
+'  return borderTitle(borderMode());\n' +
 '}\n' +
 'function refreshBorderSubsectionPreview() {\n' +
-'  var mode = borderMode();\n' +
+'  var src = borderSource();\n' +
 '  var html = "";\n' +
-'  if (mode) {\n' +
+'  if (src) {\n' +
 '    var cv = document.createElement("canvas"); cv.width = 34; cv.height = 39;\n' +
 '    var c2 = cv.getContext("2d");\n' +
 '    c2.fillStyle = (typeof dayColors === "function") ? dayColors().bg : "#000"; c2.fillRect(0, 0, 34, 39);\n' +
-'    drawBorderBand(c2, 34, 39, Math.max(mode === 4 ? 36 : 10, borderPx()), borderSectorColors(mode, borderScheme(), new Date().getHours() % 12), borderSemi());\n' +
+'    drawBorderBand(c2, 34, 39, Math.max(borderMode() === 4 ? 36 : 10, borderPx()), borderCurrentLook(new Date().getHours() % 12), borderSemi());\n' +
 '    try { html = \'<img src="\' + cv.toDataURL("image/png") + \'" alt="">\'; } catch (e) { html = ""; }\n' +
 '  }\n' +
 '  setPreviewThumbnail("subsecpreview-border", html);\n' +
 '  var extra = "";\n' +
-'  if (mode) { var sh = document.getElementById("borderWeatherShake"); extra = (sh && sh.checked ? ", on shake" : ""); }\n' +
-'  setSubsubheaderText("border", mode ? borderTitle(mode) + ", " + borderPx() + "px" + extra : "Off");\n' +
+'  if (src) { var sh = document.getElementById("borderWeatherShake"); extra = (sh && sh.checked ? ", on shake" : ""); }\n' +
+'  setSubsubheaderText("border", src ? borderTitleNow() + ", " + borderPx() + "px" + extra : "Off");\n' +
 '}\n' +
 'function borderSyncFromHidden() {\n' +
-'  var mode = borderMode();\n' +
-'  var box = document.getElementById("borderWeatherEnabled"), sel = document.getElementById("borderWeatherModeSel");\n' +
-'  if (box) box.checked = mode !== 0;\n' +
+'  var src = borderSource(), mode = borderMode();\n' +
+'  var btns = document.getElementById("borderSourceGroup") ? document.getElementById("borderSourceGroup").getElementsByClassName("mode-btn") : [];\n' +
+'  for (var bi = 0; bi < btns.length; bi++) btns[bi].className = "mode-btn" + (bi === src ? " active" : "");\n' +
+'  var box = document.getElementById("borderWeatherEnabled"); if (box) box.checked = src === 1;\n' +
+'  var sel = document.getElementById("borderWeatherModeSel");\n' +
 '  if (sel && mode) sel.value = String(mode);\n' +
-'  var panel = document.getElementById("borderWeatherPanel");\n' +
-'  if (panel) panel.style.display = mode ? "" : "none";\n' +
+'  var wp = document.getElementById("borderWeatherPanel"); if (wp) wp.style.display = src === 1 ? "" : "none";\n' +
+'  var cp = document.getElementById("borderCalPanel"); if (cp) cp.style.display = src === 2 ? "" : "none";\n' +
+'  var xp = document.getElementById("borderCommonPanel"); if (xp) xp.style.display = src ? "" : "none";\n' +
+'  var crow = document.getElementById("borderCalColorRow"); if (crow) crow.style.display = (borderCalSchemeV() === 1 && !SCREEN_BW) ? "" : "none";\n' +
+'  var ch = document.getElementById("borderCalModeHelp"); if (ch) ch.textContent = BORDER_CAL_MODE_HELP[borderCalModeV()];\n' +
 '  var pv = document.getElementById("borderWeatherPxVal");\n' +
 '  if (pv) pv.textContent = borderPx() + "px";\n' +
-'  var sc = document.getElementById("borderWeatherScheme");\n' +
-'  if (sc) { var names = BORDER_SCHEME_NAMES[mode || 1]; for (var i = 0; i < 3; i++) sc.options[i].text = names[i]; }\n' +
+'  var scs = document.getElementById("borderWeatherScheme");\n' +
+'  if (scs) { var names = BORDER_SCHEME_NAMES[mode || 1]; for (var i = 0; i < 3; i++) scs.options[i].text = names[i]; }\n' +
 '  var warn = document.getElementById("borderCombinedWarn");\n' +
 '  if (warn) {\n' +
-'    warn.style.display = mode === 4 ? "" : "none";\n' +
+'    warn.style.display = (src === 1 && mode === 4) ? "" : "none";\n' +
 '    var per = Math.max(1, Math.floor(borderPx() / 3));\n' +
 '    warn.style.color = borderPx() < 18 ? "#d93025" : "";\n' +
 '    warn.textContent = "Note: this draws three stripes (outside: temperature, middle: conditions, inside: rain chance), each a third of the thickness, so the border has to be thicker to be readable - at least 18 px. Currently " + borderPx() + " px = " + per + " px per stripe." + (borderPx() < 18 ? " Increase the thickness." : "");\n' +
 '  }\n' +
 '}\n' +
-'function onBorderWeatherChange() {\n' +
-'  var box = document.getElementById("borderWeatherEnabled"), sel = document.getElementById("borderWeatherModeSel");\n' +
-'  var on = box && box.checked;\n' +
-'  document.getElementById("borderWeatherMode").value = on ? (sel ? sel.value : "1") : "0";\n' +
+'function borderApply() {\n' +
+'  var src = borderSource(), sel = document.getElementById("borderWeatherModeSel");\n' +
+'  document.getElementById("borderWeatherMode").value = src === 1 ? (sel ? sel.value : "1") : "0";\n' +
 '  borderSyncFromHidden();\n' +
 '  renderBorderDiagram();\n' +
 '  try { refreshAllSectionSubheaders(); } catch (e) {}\n' +
 '  updatePreview();\n' +
 '}\n' +
+'function borderSetSource(n) { document.getElementById("borderSource").value = String(n); borderApply(); }\n' +
+'function onBorderWeatherChange() { borderApply(); }\n' +
 'function borderAfterStyleApplied() {\n' +
+'  // The preview ids are the truth after a style was applied; styles saved before the source selector\n' +
+'  // only know "weather on (mode 1-4) or off (0)".\n' +
+'  var bsel = document.getElementById("borderWeatherModeSel");\n' +
+'  document.getElementById("borderWeatherMode").value = borderSource() === 1 ? (bsel ? bsel.value : "1") : "0";\n' +
 '  borderSyncFromHidden();\n' +
 '  renderBorderDiagram();\n' +
 '}\n' +

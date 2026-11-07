@@ -91,5 +91,6 @@ function deriveConfigState(current) {
 }
 
 module.exports = {
+  EXAMPLE_STYLE_COUNT: EXAMPLE_STYLE_COUNT,
   deriveConfigState: deriveConfigState
 };

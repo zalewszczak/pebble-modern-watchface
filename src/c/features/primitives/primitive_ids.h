@@ -180,5 +180,14 @@ typedef enum {
   // Pebble plugin data (PKJS-supplied text, aux = plugin slot 0..PLUGIN_SLOT_COUNT-1).
   PRIM_PLUGIN_TEXT,
 
+  // Phone battery (Pebble "phone" plugin) and music (Android-only "music" plugin).
+  PRIM_PHONE_ICON,              // phone glyph, tinted by the phone's charge
+  PRIM_PHONE_BATTERY_TEXT,      // "82%" ("82%+" while charging); "--" when unknown
+  PRIM_MEDIA_STATE_ICON,        // play triangle / pause bars (music note while no track)
+  PRIM_MEDIA_ART_ICON,          // tiny album art (a note placeholder until art arrives)
+  PRIM_MEDIA_PROGRESS_BAR,      // track progress, advanced on the watch between phone updates
+  PRIM_MEDIA_TITLE_TEXT,        // track title
+  PRIM_MEDIA_ELAPSED_TEXT,      // "1:23"
+
   PRIM_ID_COUNT,
 } PrimitiveId;

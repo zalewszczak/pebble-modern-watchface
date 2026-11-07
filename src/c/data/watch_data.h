@@ -24,6 +24,9 @@ typedef enum {
   PLANET_COUNT
 } PlanetId;
 
+// Largest BORDER_DATA block: 1 + 3 layers * (12 colours + 2 mask bytes + 12 second colours).
+#define BORDER_DATA_MAX 80
+
 // Sized for the largest inbound AppMessage chunk.
 #define APPMSG_INBOX_SIZE 1200
 #define APPMSG_OUTBOX_SIZE 64
@@ -36,6 +39,8 @@ typedef enum {
 // the latest text of one plugin data source, NUL-terminated.
 #define PLUGIN_SLOT_COUNT 12
 #define PLUGIN_TEXT_LEN 16
+#define MEDIA_TEXT_LEN 20                 // track title, NUL included
+#define MEDIA_ART_MAX_BYTES 256           // 16x16 GColor8 pixels (12x12 on the B&W watches)
 
 typedef struct {
   // Payload/status state.
@@ -124,15 +129,18 @@ typedef struct {
   // colour-processed and dithered it, and keeps it in RAM only (the plugin slot
   // of bg_image_store.h), so it is empty after every restart until re-sent.
   uint8_t custom_bg_mode;
-  // Weather border drawn into the cached background, below the indices:
-  // 0 = off, 1 = conditions, 2 = temperature, 3 = rain chance, 4 = all three
-  // as stripes; thickness 2-40 px; colour scheme 0-2; shake = only while the
-  // "show on shake" window is open; semi = every other pixel (checkerboard).
+  // Border ring drawn into the cached background, below the indices. The phone builds the ring
+  // (weather forecast or calendar) and sends it as border_data (format: see weather_border.h);
+  // the watch only draws it. border_weather_mode is the ring's source, 0 = off, 1 = weather,
+  // 2 = calendar (the watch only tests for != 0); thickness 2-40 px; border_weather_scheme is
+  // unused (kept so the settings blob layout stays put); shake = only while the "show on shake"
+  // window is open; semi = every other pixel (checkerboard).
   uint8_t border_weather_mode;
   uint8_t border_weather_px;
   uint8_t border_weather_scheme;
   uint8_t border_weather_shake;
   uint8_t border_weather_semi;
+  uint8_t border_data[BORDER_DATA_MAX];
   // Translucent background image: only every other pixel (checkerboard) of the
   // image is drawn, the rest stays the background colour. 0 = off.
   uint8_t bg_translucent;
@@ -154,6 +162,14 @@ typedef struct {
   uint8_t cloud_cover_pct; // current cloud cover.
   uint8_t vis_score_pct;   // visibility percentage.
   char plugin_text[PLUGIN_SLOT_COUNT][PLUGIN_TEXT_LEN];
+  // Phone battery: [0] = percent 0-100 (255 = unknown), [1] = 1 while charging.
+  uint8_t phone_battery[2];
+  // Music: [0] = 0 none / 1 playing / 2 paused, [1..2] = position in seconds and [3..4] = track length in
+  // seconds (little endian, 0 = unknown). media_stamp is the watch time the position was received at.
+  uint8_t media_info[5];
+  char media_text[2][MEDIA_TEXT_LEN]; // [0] track title, [1] artist
+  uint8_t media_art[MEDIA_ART_MAX_BYTES]; // row-major GColor8, PL_ICON_DRAW x PL_ICON_DRAW; all zero = none
+  time_t media_stamp;
   uint8_t weather_wx_now; // detailed class of the current weather (see forecast_wx); drives the weather background.
   uint8_t weather_condition; // 0=clear/cloudy, 1=fog, 2=rain, 3=snow, 4=storm.
 
@@ -230,11 +246,6 @@ typedef struct {
   // structurally the same data.
   int16_t forecast_temp_c[FORECAST_SLOT_COUNT];
   uint8_t forecast_condition[FORECAST_SLOT_COUNT];
-  // Weather border (hour slots only): detailed class 0 clear, 1 partly,
-  // 2 overcast, 3 fog, 4 drizzle, 5 rain, 6 heavy rain, 7 snow, 8 thunder,
-  // 9 sleet; and rain chance 0-100 %.
-  uint8_t forecast_wx[FORECAST_SLOT_COUNT];
-  uint8_t forecast_rain_pct[FORECAST_SLOT_COUNT];
   // Phone-computed forecast icon categories, using the same values as weather_icon_category.
   // above but one per forecast index, gated on forecast_temp_display[idx]
   // (see weather resolver's case 87-95).

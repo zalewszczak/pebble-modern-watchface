@@ -49,7 +49,7 @@ function applySlotUpdates(updates) {
 
 function selection() {
   var none = { mode: 0, preset: 0, data: null, stamp: 0 };
-  if (getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true' && getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') {
+  if (!platform.bw && getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true' && getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') {
     var styles = require('../data/generated/weather-backgrounds').styles || [];
     var wantId = getSetting('CONFIG_WEATHER_BG_STYLE', '');
     for (var si = 0; si < styles.length; si++) {
@@ -58,7 +58,7 @@ function selection() {
     if (styles.length) return { mode: 3, preset: styles[0].index, data: null, stamp: 0 };
   }
   if (getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true' && getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true' &&
-      getSetting('CONFIG_USE_WEATHER_BG', 'false') !== 'true') {
+      (platform.bw || getSetting('CONFIG_USE_WEATHER_BG', 'false') !== 'true')) {
     return { mode: 4, preset: 0, data: null, stamp: 0, slot: PLUGIN_SLOT };
   }
   if (getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') return none;

@@ -4,6 +4,7 @@
 #include "../fonts/font_lookup.h"
 #include "../input/input.h"
 #include "./feature_layout.h"
+#include "./feature_icons.h"
 #include "./primitives/primitive_layout.h"
 #include "./primitives/primitive_transport.h"
 
@@ -96,6 +97,7 @@ static void feature_controller_recompute_second_slots(FeaturesState *state) {
 
 void feature_controller_set_data(FeaturesState *state, WatchData *data) {
   state->data = data;
+  feature_icons_set_media_art(data ? data->media_art : NULL);
   feature_layout_recompute(state);
   for (int i = 0; i < FEATURES_MAX_SLOTS; i++) {
     state->slots[i].shake_only = data && ((data->shake_only_mask >> i) & 1u);

@@ -3,24 +3,26 @@
 #include <pebble.h>
 #include "../../data/watch_data.h"
 
-// Weather border: a band along the screen edge (2-40 px) that shows the next
-// 12 hours. It is laid out like the watch face: the sector at a clock
-// position shows the weather for the hour that will next be at that position
-// (at 14:20 the 3 o'clock sector is 15:00, i.e. +1 h, and 2 o'clock is +12 h).
-// Drawn into the dial's static cache below the indices, so it costs nothing
-// per tick.
+// Border ring: a band along the screen edge (2-40 px) split into 12 clock sectors. It is laid out
+// like the watch face: the sector at a clock position shows what happens the next time the hour hand
+// is there. Drawn into the dial's static cache below the indices, so it costs nothing per tick.
 //
-// Styles (border_weather_mode): 1 conditions, 2 temperature, 3 rain chance,
-// 4 all three as stripes (outer = temperature, middle = conditions,
-// inner = rain chance). Each style has three colour schemes
-// (border_weather_scheme 0-2).
+// The watch does not know what the ring means. The phone (src/pkjs/border/border-data.js) builds it
+// from the weather forecast or from the calendar and sends one BORDER_DATA block (WatchData.border_data):
+//
+//   byte 0        layers: 0 = no data, 1..3 stripes, outermost first
+//   per layer     12 bytes  c0[sector]   GColor8 (0 = transparent); on B&W a pattern level 0-4
+//                  2 bytes  mask (LE)    bit s set -> sector s has its own second colour
+//                  n bytes  c1[s] for each set bit, ascending s (otherwise c1 = c0)
+//
+// c0 and c1 alternate per pixel, which gives overcast its two greys and lets a sector show two
+// calendars or a half-density tint.
 
 #define WEATHER_BORDER_MAX_LAYERS 3
 
-// B&W watches (flint, diorite) have no colour to code the weather with, so the border becomes a
-// pattern ring: only the "conditions" (1) and "rain chance" (3) styles exist, and each sector's
-// density says how much weather there is (0 nothing, 1 sparse dots, 2 checkerboard, 3 dense,
-// 4 solid), drawn in the text colour (`ink`). The levels live in c0[0][sector]; c1 is unused.
+// B&W watches (flint, diorite) have no colour, so the border becomes a pattern ring: each sector's
+// density (0 nothing, 1 sparse dots, 2 checkerboard, 3 dense, 4 solid) is the phone's grey-scale
+// equivalent of the colour, drawn in the text colour (`ink`). The levels live in c0[0][sector]; c1 is unused.
 // `ink` is filled in by the dial layer (the compute step does not know the colour scheme).
 //
 // Per-sector colours for each stripe. Two ARGB bytes per sector so overcast
@@ -35,7 +37,7 @@ typedef struct {
   uint8_t ink;     // B&W only: packed GColor of the pattern pixels
 } WeatherBorderLook;
 
-// Returns false when the border is off.
+// Returns false when the ring is off or no data has arrived yet.
 bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *out);
 
 // Hash of everything weather_border_compute() produced, for the cache signature.

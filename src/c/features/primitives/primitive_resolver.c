@@ -130,6 +130,51 @@ static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchDat
       out->dynamic_is_main = true;
       return true;
     }
+    case PRIM_PHONE_ICON:
+    case PRIM_PHONE_BATTERY_TEXT: {
+      uint8_t pct = data->phone_battery[0];
+      bool known = pct <= 100;
+      bool charging = known && data->phone_battery[1];
+      GColor c = !known ? GColorLightGray : (charging ? GColorGreen : feature_colors_red_green_gradient(pct));
+      if (id == PRIM_PHONE_ICON) { resolve_icon(out, 31, known ? pct : 100, !known, c); return true; }
+      char pbuf[8];
+      if (known) snprintf(pbuf, sizeof(pbuf), charging ? "%d%%+" : "%d%%", pct);
+      else snprintf(pbuf, sizeof(pbuf), "--");
+      resolve_text(out, pbuf, c);
+      return true;
+    }
+    case PRIM_MEDIA_STATE_ICON: {
+      uint8_t st = data->media_info[0];
+      // aux = 0 note (nothing playing), 1 play, 2 pause.
+      resolve_icon(out, 32, st > 2 ? 0 : st, false, st == 1 ? GColorGreen : (st == 2 ? GColorOrange : GColorLightGray));
+      return true;
+    }
+    case PRIM_MEDIA_ART_ICON:
+      resolve_icon(out, 33, 0, false, GColorWhite);
+      return true;
+    case PRIM_MEDIA_TITLE_TEXT: { // aux 0 = title, 1 = artist
+      const char *mt = data->media_text[aux_in ? 1 : 0];
+      resolve_text(out, mt[0] ? mt : (data->media_info[0] ? "--" : "No music"), GColorWhite);
+      out->dynamic_is_main = true;
+      return true;
+    }
+    case PRIM_MEDIA_PROGRESS_BAR:
+    case PRIM_MEDIA_ELAPSED_TEXT: {
+      int32_t pos = (int32_t)data->media_info[1] | ((int32_t)data->media_info[2] << 8);
+      int32_t dur = (int32_t)data->media_info[3] | ((int32_t)data->media_info[4] << 8);
+      bool playing = data->media_info[0] == 1;
+      if (playing && data->media_stamp > 0 && now > data->media_stamp) pos += (int32_t)(now - data->media_stamp);
+      if (dur > 0 && pos > dur) pos = dur;
+      if (id == PRIM_MEDIA_PROGRESS_BAR) {
+        resolve_icon(out, 34, dur > 0 ? (int16_t)((pos * 100) / dur) : 0, dur <= 0, playing ? GColorGreen : GColorLightGray);
+        return true;
+      }
+      char tbuf[12];
+      if (data->media_info[0] == 0) snprintf(tbuf, sizeof(tbuf), "-:--");
+      else snprintf(tbuf, sizeof(tbuf), "%d:%02d", (int)(pos / 60), (int)(pos % 60));
+      resolve_text(out, tbuf, playing ? GColorGreen : GColorLightGray);
+      return true;
+    }
     default:
       (void)aux_in;
       return false;

@@ -29,6 +29,8 @@ var altitudeGradientColorByte = require('../weather/weather-normalize').altitude
 var weatherIconCategory = require('../weather/weather-normalize').weatherIconCategory;
 var weatherConditionColorByte = require('../weather/weather-normalize').weatherConditionColorByte;
 var featureDisplay = require('../astronomy/feature-display');
+var phoneMedia = require('../plugins/phone-media');
+var primitiveIds = require('../config/primitive-ids-generated');
 var primitiveIdSequenceForContent = require('../config/primitive-decompose').primitiveIdSequenceForContent;
 var primitiveAuxSequenceForContent = require('../config/primitive-decompose').primitiveAuxSequenceForContent;
 var normalizePrimitiveSequence = require('../config/primitive-decompose').normalizePrimitiveSequence;
@@ -50,6 +52,7 @@ var bigAnalogMarkerStyleCode = settingsCodecs.bigAnalogMarkerStyleCode;
 var bitmapMarkerTransparentCode = settingsCodecs.bitmapMarkerTransparentCode;
 var bitmapMarkerInvertCode = settingsCodecs.bitmapMarkerInvertCode;
 var pluginManager = require('../plugins/plugin-manager');
+var borderData = require('../border/border-data');
 var borderWeatherModeCode = settingsCodecs.borderWeatherModeCode;
 var borderWeatherPxCode = settingsCodecs.borderWeatherPxCode;
 var borderWeatherSchemeCode = settingsCodecs.borderWeatherSchemeCode;
@@ -360,6 +363,7 @@ function populateSettingsFields(dict) {
   dict['CORNER_COLOR_MODE'] = cornerColorModeBytes();
   dict['SHAKE_ONLY_MASK'] = shakeOnlyMaskCode();
   dict['PLUGIN_TEXTS'] = pluginManager.textsBytes();
+  dict['BORDER_DATA'] = borderData.bytes();
   dict['SETTINGS_U8_BLOB'] = [
     tempUnitCode(), windSpeedUnitCode(), shakeSecondsCode(), startupClockAnimModeCode(),
     outlineEnabledCode(), cornerFontCode(), centerCircleRadiusCode(), centerCircleColorCode(),
@@ -390,6 +394,10 @@ function populateSettingsFields(dict) {
     var custom = cornerCustomPrimsSettings[idx];
     return acc.concat(custom.ids.length ? normalizePrimitiveAux(custom.aux) : primitiveAuxSequenceForContent(contentId));
   }, []);
+  // Phone battery / music: subscribe only while a feature uses them, and send what is known.
+  phoneMedia.setNeeds(phoneMedia.needsFromPrimitiveIds(
+    dict['CORNER_PRIMITIVE_IDS'].concat(dict['EDGE_LINE_PRIMITIVE_IDS']), primitiveIds));
+  phoneMedia.fill(dict);
   dict['DAILY_STEP_GOAL'] = dailyStepGoalValue();
   dict['HOURLY_VIBE_START_MIN'] = hourlyVibeStartMinCode();
   dict['HOURLY_VIBE_END_MIN'] = hourlyVibeEndMinCode();
@@ -497,14 +505,12 @@ function extraWeatherFieldsDict(extra) {
     dict['FORECAST_TEMP_COLORS'] = forecastColorBytes;
   }
   if (extra.forecastWx) {
-    dict['FORECAST_WX'] = extra.forecastWx.map(function (c) {
-      return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0;
-    });
-  }
-  if (extra.forecastRainPct) {
-    dict['FORECAST_RAIN'] = extra.forecastRainPct.map(function (c) {
-      return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0;
-    });
+    // The border ring is built from these on the phone (border/border-data.js); the watch gets only the finished ring.
+    borderData.setWeather({
+      forecastTempC: extra.forecastTempC,
+      forecastWx: extra.forecastWx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
+      forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; })
+    }, extra.forecastTempC ? extra.forecastTempC.map(function (c) { return tempGradientColorByte(c); }) : []);
   }
   if (extra.forecastCondition) {
     dict['FORECAST_CONDITION'] = extra.forecastCondition.map(function (c) {

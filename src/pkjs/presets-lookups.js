@@ -714,6 +714,54 @@ var CORNER_CATEGORIES = [
     ]
   },
   {
+    "id": "phone",
+    "label": "Phone & music",
+    "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2\"/><line x1=\"11\" y1=\"18.5\" x2=\"13\" y2=\"18.5\"/></svg>",
+    "note": "Music features work only on Android (a limit of the Pebble app's music plugin). Phone battery works on both Android and iOS (iOS reports it in 5% steps). Both need plugins switched on in the Pebble app.",
+    "items": [
+      {
+        "id": 226,
+        "label": "Phone battery % (phone icon)",
+        "preview": "(phone) 74%"
+      },
+      {
+        "id": 227,
+        "label": "Phone battery (icon only)",
+        "preview": "(phone)"
+      },
+      {
+        "id": 220,
+        "label": "Music: playback state (album art + play/pause) - Android only",
+        "preview": "(art)(play)"
+      },
+      {
+        "id": 221,
+        "label": "Music: playback state + progress bar - Android only",
+        "preview": "(art)(play)[==-]"
+      },
+      {
+        "id": 222,
+        "label": "Music: play/pause + track title - Android only",
+        "preview": "(play) Track title"
+      },
+      {
+        "id": 223,
+        "label": "Music: play/pause + artist - Android only",
+        "preview": "(play) Artist"
+      },
+      {
+        "id": 224,
+        "label": "Music: album art + track title - Android only",
+        "preview": "(art) Track title"
+      },
+      {
+        "id": 225,
+        "label": "Music: progress bar + elapsed time - Android only",
+        "preview": "[===--] 1:23"
+      }
+    ]
+  },
+  {
     "id": "plugins",
     "label": "Plugins",
     "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 4.5a1.8 1.8 0 0 1 3.6 0V6H18a1 1 0 0 1 1 1v3.4h-1.5a1.8 1.8 0 0 0 0 3.6H19V18a1 1 0 0 1-1 1h-3.4v-1.5a1.8 1.8 0 0 0-3.6 0V19H7a1 1 0 0 1-1-1v-4H4.5a1.8 1.8 0 0 1 0-3.6H6V7a1 1 0 0 1 1-1h3z\"/></svg>",

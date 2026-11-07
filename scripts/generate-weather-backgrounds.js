@@ -69,10 +69,8 @@ styles.forEach(function (st, i) {
   var buf = fs.readFileSync(path.join(R.dir('square'), st.files[thumbKey]));
   var rf = path.join(R.dir('round'), st.files[thumbKey]);
   var rbuf = fs.existsSync(rf) ? fs.readFileSync(rf) : null;
-  var lf = path.join(R.dir('legacy'), st.files[thumbKey]);
-  var lbuf = fs.existsSync(lf) ? fs.readFileSync(lf) : null;
   js.push('    { id: ' + JSON.stringify(st.id) + ', label: ' + JSON.stringify(st.label) + ', index: ' + (i + 1) +
-    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ', thumbRound: ' + JSON.stringify(rbuf ? 'data:image/png;base64,' + rbuf.toString('base64') : '') + ', thumbBw: ' + JSON.stringify(lbuf ? 'data:image/png;base64,' + lbuf.toString('base64') : '') + ' }' + (i < styles.length - 1 ? ',' : ''));
+    ', thumb: ' + JSON.stringify('data:image/png;base64,' + buf.toString('base64')) + ', thumbRound: ' + JSON.stringify(rbuf ? 'data:image/png;base64,' + rbuf.toString('base64') : '') + ' }' + (i < styles.length - 1 ? ',' : ''));
 });
 js.push('  ]', '};');
 fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
@@ -88,6 +86,7 @@ var h = ['// GENERATED FILE -- do not hand-edit.',
   '// and white one (flint, diorite) only those in resources/legacy/weatherbg/.',
   'static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {'];
 ['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
+  if (pass === 1) { h.push(cond, '  // No weather backgrounds on the 1-bit watches.', '  (void)style; (void)wx; (void)night;', '  return 0;'); return; }
   h.push(cond, '  switch (style) {');
   styles.forEach(function (st, i) {
     var lines = [];
@@ -126,7 +125,7 @@ styles.forEach(function (st) {
     ['day', 'night'].forEach(function (tod) {
       var f = st.files[idx + '_' + tod];
       if (!f) return;
-      R.shapedMedia(MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase(), f, false).forEach(function (e) { kept.push(e); });
+      R.shapedMedia(MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase(), f, false, true).forEach(function (e) { kept.push(e); });
       count++;
     });
   });
