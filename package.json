@@ -2567,10 +2567,26 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_1",
+          "file": "round/backgrounds/1.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_2",
           "file": "square/backgrounds/2.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_2",
+          "file": "round/backgrounds/2.png",
+          "targetPlatforms": [
+            "gabbro"
           ]
         },
         {
@@ -2583,10 +2599,26 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_3",
+          "file": "round/backgrounds/3.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_4",
           "file": "square/backgrounds/4.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_4",
+          "file": "round/backgrounds/4.png",
+          "targetPlatforms": [
+            "gabbro"
           ]
         },
         {
@@ -2599,10 +2631,26 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_5",
+          "file": "round/backgrounds/5.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_6",
           "file": "square/backgrounds/6.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_6",
+          "file": "round/backgrounds/6.png",
+          "targetPlatforms": [
+            "gabbro"
           ]
         },
         {
@@ -2615,10 +2663,26 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_7",
+          "file": "round/backgrounds/7.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_8",
           "file": "square/backgrounds/8.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_8",
+          "file": "round/backgrounds/8.png",
+          "targetPlatforms": [
+            "gabbro"
           ]
         },
         {
@@ -2631,10 +2695,26 @@
         },
         {
           "type": "bitmap",
+          "name": "BG_PRESET_9",
+          "file": "round/backgrounds/9.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "BG_PRESET_10",
           "file": "square/backgrounds/10.png",
           "targetPlatforms": [
             "emery"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_10",
+          "file": "round/backgrounds/10.png",
+          "targetPlatforms": [
+            "gabbro"
           ]
         },
         {
