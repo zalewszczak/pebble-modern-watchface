@@ -50,6 +50,7 @@ PrimitiveRefreshClass primitive_catalogue_refresh_class_for(PrimitiveId id) {
     case PRIM_QUIET_TIME_ICON: case PRIM_QUIET_TIME_PLAIN_ICON: case PRIM_QUIET_TIME_STATUS_TEXT:
     case PRIM_BLUETOOTH_ONOFF_TEXT:
     case PRIM_BATTERY_ICON: case PRIM_BATTERY_PCT_TEXT: case PRIM_BATTERY_LOGO_ICON:
+    case PRIM_BATTERY_ODD_ICON: case PRIM_BLUETOOTH_ODD_ICON: case PRIM_QUIET_TIME_ODD_ICON:
       return PRIMITIVE_REFRESH_EVENT;
     default:
       // Everything else in the watch-runtime date/time/health range ticks

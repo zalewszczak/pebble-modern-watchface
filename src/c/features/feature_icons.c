@@ -334,7 +334,7 @@ uint8_t feature_icons_weather_category(uint8_t weather_condition, uint8_t cloud_
 // On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
 // vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their
 // pixel size and so keep their width.
-static const uint8_t s_icon_plus_gap_width[35] = {
+static const uint8_t s_icon_plus_gap_width[38] = {
   [1] = PL_ICON_PX(15), [2] = PL_ICON_PX(15), [3] = 13, [4] = 21,
   [5] = PL_ICON_PX(15), [6] = PL_ICON_PX(15), [7] = PL_ICON_PX(15), [8] = PL_ICON_PX(15),
   [9] = PL_ICON_PX(15), [10] = PL_ICON_PX(15),
@@ -352,9 +352,12 @@ static const uint8_t s_icon_plus_gap_width[35] = {
   // Phone, media state, album art (a square icon), progress bar (PL_PROGRESS_BAR_W + gap).
   [31] = PL_ICON_PX(15), [32] = PL_ICON_PX(14), [33] = PL_ICON_PX(21),
   [34] = PL_PROGRESS_BAR_W + 4,
+  // Blank stand-ins for the "odd state" icons (35 = battery 3, 36 = Bluetooth 13, 37 = Quiet Time 29): they
+  // draw nothing (draw switch default) but reserve the real icon's width, so nothing shifts when it appears.
+  [35] = 13, [36] = PL_ICON_PX(15), [37] = PL_ICON_PX(20),
 };
 
 int16_t feature_icons_plus_gap_width(int icon_kind) {
-  if ((unsigned)icon_kind >= 35u) return 0;
+  if ((unsigned)icon_kind >= 38u) return 0;
   return s_icon_plus_gap_width[icon_kind];
 }

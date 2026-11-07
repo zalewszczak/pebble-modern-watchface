@@ -133,6 +133,18 @@ var CORNER_CATEGORIES = [
         "preview": "(bt)"
       },
       {
+        "id": 228,
+        "label": "Battery (icon only)",
+        "preview": "(batt)"
+      },
+      { "id": 230, "label": "Battery icon (odd state only)", "preview": "(batt!)", "oddOf": 228 },
+      { "id": 231, "label": "Bluetooth icon (odd state only)", "preview": "(bt!)", "oddOf": 78 },
+      { "id": 232, "label": "Quiet Time icon (odd state only)", "preview": "(quiet!)", "oddOf": 108 },
+      { "id": 233, "label": "Battery + Bluetooth icons (odd states only)", "preview": "(batt!)(bt!)", "oddOf": 102 },
+      { "id": 234, "label": "Battery + Bluetooth + Quiet Time icons (odd states only)", "preview": "(batt!)(bt!)(quiet!)", "oddOf": 112 },
+      { "id": 235, "label": "Battery % + Bluetooth + Quiet Time (icons odd only)", "preview": "68% (bt!)(quiet!)", "oddOf": 118 },
+      { "id": 236, "label": "Battery % + Bluetooth (icon odd only)", "preview": "68% (bt!)", "oddOf": 103 },
+      {
         "id": 38,
         "label": "Altitude",
         "preview": "380m"

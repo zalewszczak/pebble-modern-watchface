@@ -697,6 +697,12 @@ configPresetSchedule.css +
 '      <input type="checkbox" id="slotEditShake">' +
 '      <label for="slotEditShake" style="margin:0;">Show only when the watch is shaken</label>' +
 '    </div>' +
+'    <div class="checkbox-row" id="slotEditOddRow" style="margin-top:8px; display:none;">' +
+'      <input type="checkbox" id="slotEditOdd" onchange="renderSlotEditPreview()">' +
+'      <label for="slotEditOdd" style="margin:0;">Show only in odd state</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-slotEditOdd\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-slotEditOdd" style="display:none;">The icon appears only when something needs your attention, and leaves empty space otherwise: <b>Battery</b> when the charge drops below 20%, <b>Bluetooth</b> when the connection to your phone is lost, <b>Quiet Time</b> while it is switched on. In combinations, every icon that has no % or ON/OFF text beside it behaves this way.</div>' +
 '    </div>' +
 '    <div class="slot-edit-footer">' +
 '      <button type="button" onclick="saveSlotEditor()" style="width:100%; box-sizing:border-box; padding:14px; font-size:16px; font-weight:600; color:#fff; background:#ff9200; border:none; border-radius:8px;">OK</button>' +
@@ -2083,6 +2089,7 @@ configPlugins.pluginScript(current) +
 '  var items = findCategory(categoryId).items;' +
 '  var html = "";' +
 '  for (var i = 0; i < items.length; i++) {' +
+'    if (items[i].oddOf) continue;' +
 '    html += "<option value=\\"" + items[i].id + "\\"" + (String(selectedContentId) === String(items[i].id) ? " selected" : "") + ">" + items[i].label + "</option>";' +
 '  }' +
 '  return html;' +
@@ -2183,6 +2190,7 @@ configPlugins.pluginScript(current) +
 '  pluginResolveContentSelect(document.getElementById("slotEditContent"));' +
 '  var contentVal = document.getElementById("slotEditContent").value;' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
+'  slotEditOddUpdate();' +
 '  renderSlotEditPrimitiveStrip(contentVal);' +
 '  renderSlotEditPreview();' +
 '}' +
@@ -2212,12 +2220,22 @@ configPlugins.pluginScript(current) +
 '  slotEditCategoryHelpUpdate(categoryId);' +
 '  onSlotEditContentChange();' +
 '}' +
+'var ODD_TO_BASE = {}, BASE_TO_ODD = {};' +
+'(function () { CORNER_CATEGORIES.forEach(function (c) { c.items.forEach(function (it) { if (it.oddOf) { ODD_TO_BASE[String(it.id)] = String(it.oddOf); BASE_TO_ODD[String(it.oddOf)] = String(it.id); } }); }); })();' +
+'function slotEditOddUpdate() {' +
+'  var v = document.getElementById("slotEditContent").value;' +
+'  var has = !!BASE_TO_ODD[v];' +
+'  document.getElementById("slotEditOddRow").style.display = has ? "flex" : "none";' +
+'  if (!has) document.getElementById("slotEditOdd").checked = false;' +
+'}' +
 'function openSlotEditor(slotKey) {' +
 '  var def = SLOT_DEFS[slotKey];' +
 '  if (!def) return;' +
 '  CURRENT_SLOT_KEY = slotKey;' +
 '  document.getElementById("slotEditTitle").textContent = def.label;' +
 '  var contentVal = document.getElementById(def.contentId).value;' +
+'  var oddOn = !!ODD_TO_BASE[contentVal];' +
+'  if (oddOn) contentVal = ODD_TO_BASE[contentVal];' +
 '  var colorVal = document.getElementById(def.colorId).value;' +
 '  var categoryId = categoryForContentId(contentVal);' +
 '  document.getElementById("slotEditCategory").value = categoryId;' +
@@ -2231,6 +2249,8 @@ configPlugins.pluginScript(current) +
 '  setSlotEditorColorButtons(colorVal);' +
 '  composerOpen(def);' +
 '  document.getElementById("slotEditShake").checked = document.getElementById(slotKey + "Shake").value === "1";' +
+'  slotEditOddUpdate();' +
+'  document.getElementById("slotEditOdd").checked = oddOn && !!BASE_TO_ODD[contentVal];' +
 '  document.getElementById("slotEditModal").className = "modal-overlay open";' +
 '  renderSlotEditPreview();' +
 '}' +
@@ -2241,7 +2261,9 @@ configPlugins.pluginScript(current) +
 'function saveSlotEditor() {' +
 '  if (!CURRENT_SLOT_KEY) return;' +
 '  var def = SLOT_DEFS[CURRENT_SLOT_KEY];' +
-'  document.getElementById(def.contentId).value = document.getElementById("slotEditContent").value;' +
+'  var saveContent = document.getElementById("slotEditContent").value;' +
+'  if (BASE_TO_ODD[saveContent] && document.getElementById("slotEditOdd").checked) saveContent = BASE_TO_ODD[saveContent];' +
+'  document.getElementById(def.contentId).value = saveContent;' +
 '  document.getElementById(def.colorId).value = String(SLOT_EDITOR_DRAFT_COLOR);' +
 '  document.getElementById(CURRENT_SLOT_KEY + "Shake").value = document.getElementById("slotEditShake").checked ? "1" : "0";' +
 '  if (def.customPrimsId) {' +

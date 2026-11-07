@@ -189,5 +189,11 @@ typedef enum {
   PRIM_MEDIA_TITLE_TEXT,        // track title
   PRIM_MEDIA_ELAPSED_TEXT,      // "1:23"
 
+  // "Odd state" icons: the usual icon, but blank (same width) unless the state needs attention --
+  // battery below 20%, Bluetooth phone connection lost, Quiet Time on.
+  PRIM_BATTERY_ODD_ICON,
+  PRIM_BLUETOOTH_ODD_ICON,
+  PRIM_QUIET_TIME_ODD_ICON,
+
   PRIM_ID_COUNT,
 } PrimitiveId;

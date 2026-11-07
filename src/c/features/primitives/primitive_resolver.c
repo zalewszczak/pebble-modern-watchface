@@ -721,6 +721,23 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, active ? "ON" : "OFF", c);
       return true;
     }
+    case PRIM_BATTERY_ODD_ICON: {
+      BatteryChargeState bs = battery_state_service_peek();
+      if (bs.charge_percent >= 20) { resolve_icon(out, 35, 0, false, GColorWhite); return true; } // blank, keeps the width
+      resolve_icon(out, 3, bs.charge_percent, bs.is_charging, bs.is_charging ? GColorGreen : feature_colors_red_green_gradient((uint8_t)bs.charge_percent));
+      return true;
+    }
+    case PRIM_BLUETOOTH_ODD_ICON: {
+      if (connection_service_peek_pebble_app_connection()) { resolve_icon(out, 36, 0, false, GColorWhite); return true; }
+      resolve_icon(out, 13, 0, true, GColorFromRGB(255, 0, 0));
+      out->force_color = true;
+      return true;
+    }
+    case PRIM_QUIET_TIME_ODD_ICON: {
+      if (!quiet_time_is_active()) { resolve_icon(out, 37, 0, false, GColorWhite); return true; }
+      resolve_icon(out, 29, 0, true, GColorRed);
+      return true;
+    }
     case PRIM_BLUETOOTH_ONOFF_TEXT: {
       // Same always-its-own-color rule as the other Bluetooth primitives.
       bool connected = connection_service_peek_pebble_app_connection();
