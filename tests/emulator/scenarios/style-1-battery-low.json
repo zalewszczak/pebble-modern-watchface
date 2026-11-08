@@ -1,0 +1,8 @@
+{
+  "description": "Example style 1 with battery at 15% (low-battery colors/odd-state icons).",
+  "exampleStyle": 1,
+  "battery": {
+    "percent": 15
+  },
+  "name": "style-1-battery-low"
+}

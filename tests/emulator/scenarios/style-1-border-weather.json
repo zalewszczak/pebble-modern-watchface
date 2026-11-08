@@ -1,0 +1,8 @@
+{
+  "description": "Example style 1 with the weather border ring on.",
+  "exampleStyle": 1,
+  "settings": {
+    "CONFIG_BORDER_SOURCE": "1"
+  },
+  "name": "style-1-border-weather"
+}

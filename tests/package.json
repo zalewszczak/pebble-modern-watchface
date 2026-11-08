@@ -1,0 +1,12 @@
+{
+  "name": "modern-watchface-tests",
+  "private": true,
+  "description": "Test suite for the Modern watchface. No npm dependencies: everything uses Node built-ins.",
+  "scripts": {
+    "test": "node --test \"emulator/selftest/*.test.js\"",
+    "emulator": "node emulator/run.js",
+    "emulator:dry": "node emulator/run.js --dry-run",
+    "emulator:update": "node emulator/run.js --update"
+  },
+  "engines": { "node": ">=18" }
+}

@@ -1,0 +1,8 @@
+{
+  "description": "Example style 1 at 23:30, to catch night color schemes.",
+  "exampleStyle": 1,
+  "clock": {
+    "time": "23:30:00"
+  },
+  "name": "style-1-night-time"
+}

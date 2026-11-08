@@ -1,0 +1,9 @@
+{
+  "description": "Example style 1 while charging.",
+  "exampleStyle": 1,
+  "battery": {
+    "percent": 55,
+    "charging": true
+  },
+  "name": "style-1-charging"
+}
