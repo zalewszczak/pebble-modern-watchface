@@ -378,7 +378,8 @@ function populateSettingsFields(dict) {
     primitiveTightMask() & 255, (primitiveTightMask() >> 8) & 255,
     bitmapMarkerInvertCode(),
     bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode(),
-    settingsCodecs.centerCircleOutlineCode()
+    settingsCodecs.centerCircleOutlineCode(),
+    bgImageSync.schemeOverrideCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
   ];
   var cornerCustomPrimsSettings = [
     getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),

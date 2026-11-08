@@ -147,6 +147,12 @@ function backgroundSectionHtml(current) {
 '      <select id="pluginBgColor" onchange="bgRefresh()">' + optionList(PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral') + '</select>' +
 '      <label for="pluginBgFit">Screen filling</label>' +
 '      <select id="pluginBgFit" onchange="bgRefresh()">' + optionList(PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill') + '</select>' +
+'      <div class="checkbox-row" style="margin-top:10px;">' +
+'        <input type="checkbox" id="pluginBgAutoScheme" ' + (current && current.pluginBgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'        <label for="pluginBgAutoScheme">Day/night colors from picture brightness</label>' +
+'      </div>' +
+'      <div class="help">Bright pictures use the <b>day</b> colors and dark pictures use the <b>night</b> colors (instead of sunrise/sunset), so text stays legible. Set a <b>white (light) background</b> in the day colors and a <b>dark background</b> in the night colors, with contrasting text. The night colors are used for this even when the night color scheme is switched off.</div>' +
+'      <div id="pluginBgSchemeWarn" class="help" style="display:none;color:#e07a00;font-weight:600;"></div>' +
 (current && current.pluginBgStatus ? '      <div class="help" style="margin-top:8px;"><b>Status:</b> ' + esc(current.pluginBgStatus) + '</div>' : '') +
 '      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. It is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts, and removed when the plugin reports no image. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
@@ -501,6 +507,7 @@ var CLIENT_BODY =
 '}\n' +
 '\n' +
 'function bgSyncUi() {\n' +
+'  try { bgSchemeWarn(); } catch (e) {}\n' +
 '  var box = bgEl("useCustomBg");\n' +
 '  var panel = bgEl("bgPanel");\n' +
 '  var wbox = bgEl("useWeatherBg"), wpanel = bgEl("weatherBgPanel");\n' +
@@ -564,8 +571,25 @@ var CLIENT_BODY =
 '  try { refreshAllSectionSubheaders(); } catch (e) {}\n' +
 '  updatePreview();\n' +
 '}\n' +
+'function bgPackedLum(v) {\n' +
+'  var b = parseInt(v, 10) & 255;\n' +
+'  return ((b >> 4) & 3) * 3 + ((b >> 2) & 3) * 6 + (b & 3);\n' +
+'}\n' +
+'function bgSchemeWarn() {\n' +
+'  var box = bgEl("pluginBgAutoScheme"), warn = bgEl("pluginBgSchemeWarn");\n' +
+'  if (!warn) return;\n' +
+'  var msgs = [];\n' +
+'  if (box && box.checked) {\n' +
+'    var d = bgEl("customBgValue"), n = bgEl("nightCustomBgValue");\n' +
+'    if (d && bgPackedLum(d.value) < 18) msgs.push("&#9888; The day colors background is dark: set a white (light) background for the day colors, or bright pictures will be hard to read.");\n' +
+'    if (n && bgPackedLum(n.value) > 10) msgs.push("&#9888; The night colors background is light: set a dark background for the night colors, or dark pictures will be hard to read.");\n' +
+'  }\n' +
+'  warn.innerHTML = msgs.join("<br>");\n' +
+'  warn.style.display = msgs.length ? "" : "none";\n' +
+'}\n' +
 'function bgInit() {\n' +
 '  var s = bgParseSource();\n' +
+'  try { setInterval(bgSchemeWarn, 1000); } catch (e) {}\n' +
 '  if (s.kind === "u" && !bgSlotHas(s.n)) bgEl("bgSource").value = bgDefaultSource();\n' +
 '  bgSyncUi();\n' +
 '  bgEdSetup();\n' +

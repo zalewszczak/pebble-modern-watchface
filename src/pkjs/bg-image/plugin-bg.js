@@ -2,13 +2,24 @@
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var pluginImage = require('./plugin-image');
+var platform = require('../platform');
 
-var REQUEST_SIZE = { w: 260, h: 260 };
+// Ask the plugin for a picture the size of THIS watch's screen (emery 200x228, gabbro 260x260,
+// flint/diorite 144x168), so the phone never has to resample a picture of the wrong size.
+var REQUEST_SIZE = { w: platform.w, h: platform.h };
+
+// Brightness (0-255 mean luma) above which a picture counts as bright. Once a verdict exists, the
+// picture has to cross the threshold by HYSTERESIS to flip it, so a slowly changing picture
+// (a map, a webcam) does not make the colors flap between day and night.
+var LUMA_THRESHOLD = 110;
+var LUMA_HYSTERESIS = 12;
 
 var s_sub = null;
 var s_raw = null;
 var s_out = null;
 var s_onChange = null;
+var s_onScheme = null;
+var s_lastNight = null; // last brightness verdict: true = dark picture
 var s_loggedShape = false;
 
 function hasApi() {
@@ -26,6 +37,8 @@ function options() {
     fit: getSetting('CONFIG_PLUGIN_BG_FIT', pluginImage.DEFAULT_OPTIONS.fit)
   };
 }
+
+function autoScheme() { return getSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', 'false') === 'true'; }
 
 function optionsKey(o) { return o.dither + '|' + o.color + '|' + o.fit; }
 
@@ -65,6 +78,7 @@ function notify() {
   if (s_onChange) {
     try { s_onChange(); } catch (e) { console.log('modern: plugin background notify failed - ' + e.message); }
   }
+  notifyScheme();
 }
 
 function renderNow() {
@@ -72,7 +86,7 @@ function renderNow() {
   var o = options();
   try {
     var r = pluginImage.render(s_raw, o);
-    s_out = { w: r.w, h: r.h, bytes: r.bytes, stamp: r.stamp, optionsKey: optionsKey(o) };
+    s_out = { w: r.w, h: r.h, bytes: r.bytes, stamp: r.stamp, luma: r.luma, optionsKey: optionsKey(o) };
   } catch (e) {
     console.log('modern: plugin background render failed - ' + (e && e.message));
     s_out = null;
@@ -81,6 +95,23 @@ function renderNow() {
 
 function getOutput() {
   return (enabled() && s_out) ? s_out : null;
+}
+
+// What the watch should do with its color scheme: 0 = follow sunrise/sunset as usual, 1 = use the
+// day colors (bright picture), 2 = use the night colors (dark picture).
+function schemeOverride() {
+  if (!enabled() || !autoScheme() || !s_out || typeof s_out.luma !== 'number') { s_lastNight = null; return 0; }
+  var l = s_out.luma;
+  if (s_lastNight === null) s_lastNight = l < LUMA_THRESHOLD;
+  else if (s_lastNight && l > LUMA_THRESHOLD + LUMA_HYSTERESIS) s_lastNight = false;
+  else if (!s_lastNight && l < LUMA_THRESHOLD - LUMA_HYSTERESIS) s_lastNight = true;
+  return s_lastNight ? 2 : 1;
+}
+
+function notifyScheme() {
+  if (s_onScheme) {
+    try { s_onScheme(); } catch (e) { console.log('modern: plugin background scheme notify failed - ' + e.message); }
+  }
 }
 
 function shapeInfo(img) {
@@ -107,7 +138,7 @@ function onData(parsed, envelope) {
     if (!s_loggedShape) { s_loggedShape = true; console.log('modern: plugin background image payload: ' + shapeInfo(payload)); }
     img = pluginImage.decodeImagePayload(payload);
     if (!img) setStatus('picture could not be decoded: ' + shapeInfo(payload));
-    else setStatus('picture ' + img.w + 'x' + img.h + ' received');
+    else setStatus('picture ' + img.w + 'x' + img.h + ' received (requested ' + REQUEST_SIZE.w + 'x' + REQUEST_SIZE.h + ')');
   }
 
   if (!img) {
@@ -179,11 +210,14 @@ function apply() {
 }
 
 function setOnChange(fn) { s_onChange = fn; }
+function setOnScheme(fn) { s_onScheme = fn; }
 
 module.exports = {
   apply: apply,
   getOutput: getOutput,
   status: status,
   setOnChange: setOnChange,
+  setOnScheme: setOnScheme,
+  schemeOverride: schemeOverride,
   enabled: enabled
 };

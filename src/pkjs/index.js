@@ -55,6 +55,10 @@ function applyFirstRunPreferences() {
   });
 }
 
+// A new plugin picture can be bright or dark enough to flip the color scheme (option "Day/night
+// colors from picture brightness"): push the settings again, but only when the verdict changed.
+pluginBg.setOnScheme(function () { if (bgImageSync.schemeChanged()) sendFlatDict({}); });
+
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
@@ -134,6 +138,7 @@ function buildCurrent() {
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
     pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),
     pluginBgFit: getSetting('CONFIG_PLUGIN_BG_FIT', 'fill'),
+    pluginBgAutoScheme: getSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', 'false') === 'true',
     borderSource: String(borderData.source()),
     borderCalMode: getSetting('CONFIG_BORDER_CAL_MODE', '1'),
     borderCalScheme: getSetting('CONFIG_BORDER_CAL_SCHEME', '0'),
@@ -429,6 +434,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
   setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
   setSetting('CONFIG_PLUGIN_BG_FIT', ['fill', 'full', '75', '50', 'center'].indexOf(settings.CONFIG_PLUGIN_BG_FIT) >= 0 ? settings.CONFIG_PLUGIN_BG_FIT : 'fill');
+  setSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', settings.CONFIG_PLUGIN_BG_AUTO_SCHEME ? 'true' : 'false');
   // CONFIG_BORDER_SOURCE: 0 off, 1 weather, 2 calendar. CONFIG_BORDER_WEATHER_MODE keeps the weather style (1-4) either way.
   if (['1','2','3','4'].indexOf(String(settings.CONFIG_BORDER_WEATHER_MODE)) >= 0) setSetting('CONFIG_BORDER_WEATHER_MODE', String(settings.CONFIG_BORDER_WEATHER_MODE));
   else if (getSetting('CONFIG_BORDER_WEATHER_MODE', '0') === '0') setSetting('CONFIG_BORDER_WEATHER_MODE', '1'); // keep the last weather style while the ring shows something else

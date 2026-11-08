@@ -78,6 +78,14 @@ function selection() {
 function modeCode() { return selection().mode; }
 function presetCode() { return selection().preset; }
 
+// Color scheme the watch should use because of the plugin picture (see plugin-bg.schemeOverride):
+// 0 = sunrise/sunset as usual, 1 = day colors, 2 = night colors. Remembers what was last sent so a
+// new picture only triggers a settings push when the verdict actually changed.
+var s_sentScheme = 0;
+function wantedScheme() { return selection().mode === 4 ? pluginBg.schemeOverride() : 0; }
+function schemeOverrideCode() { s_sentScheme = wantedScheme(); return s_sentScheme; }
+function schemeChanged() { return wantedScheme() !== s_sentScheme; }
+
 function le32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
 function le16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
 
@@ -239,6 +247,8 @@ module.exports = {
   selection: selection,
   modeCode: modeCode,
   presetCode: presetCode,
+  schemeOverrideCode: schemeOverrideCode,
+  schemeChanged: schemeChanged,
   noteWatchStamp: noteWatchStamp,
   syncIfNeeded: syncIfNeeded
 };

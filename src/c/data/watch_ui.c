@@ -24,7 +24,11 @@ bool watch_ui_is_daylight(const WatchData *d, time_t now) {
 
 void watch_ui_get_active_color_scheme(const WatchData *data, time_t now,
                                       GColor *background, GColor *text, GColor *accent) {
-  const bool night = data->night_scheme_enabled && !watch_ui_is_daylight(data, now);
+  // A plugin picture can force the scheme by its brightness (1 = day colors, 2 = night colors);
+  // otherwise the night scheme, when enabled, follows sunrise/sunset.
+  const bool night = data->bg_scheme_override
+      ? data->bg_scheme_override == 2
+      : (data->night_scheme_enabled && !watch_ui_is_daylight(data, now));
   if (night) {
     *background = watch_ui_color_from_packed(data->night_custom_bg);
     *text = watch_ui_color_from_packed(data->night_custom_text);

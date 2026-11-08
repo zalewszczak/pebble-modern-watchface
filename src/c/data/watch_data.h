@@ -79,6 +79,9 @@ typedef struct {
 
   // Optional night color scheme.
   bool night_scheme_enabled;
+  // Set by the phone while a plugin background picture picks the scheme by its brightness:
+  // 0 = follow sunrise/sunset, 1 = day colors, 2 = night colors (even if the night scheme is off).
+  uint8_t bg_scheme_override;
   uint8_t night_custom_bg;
   uint8_t night_custom_text;
   uint8_t night_custom_accent;

@@ -360,6 +360,28 @@ function stampFor(bytes, w, h) {
   return hash === 0 ? 1 : hash;
 }
 
+// Mean perceived brightness (0-255) of the visible part of the finished picture. On the round
+// watch the corners of the square are cut off by the bezel, so only the inscribed circle counts.
+// Space left around a smaller picture is not counted (it shows the background color).
+function meanLuma(vals, w, h) {
+  var offX = (SCREEN_W - w) / 2, offY = (SCREEN_H - h) / 2;
+  var cx = SCREEN_W / 2, cy = SCREEN_H / 2, r2 = cx * cx;
+  var sum = 0, n = 0;
+  for (var y = 0; y < h; y++) {
+    for (var x = 0; x < w; x++) {
+      if (platform.round) {
+        var dx = offX + x + 0.5 - cx, dy = offY + y + 0.5 - cy;
+        if (dx * dx + dy * dy > r2) continue;
+      }
+      var v = vals[y * w + x];
+      var r = ((v >> 4) & 3) * 85, g = ((v >> 2) & 3) * 85, b = (v & 3) * 85;
+      sum += 0.299 * r + 0.587 * g + 0.114 * b;
+      n++;
+    }
+  }
+  return n ? sum / n : 0;
+}
+
 function pick(list, value, fallback) { return list.indexOf(value) >= 0 ? value : fallback; }
 
 function render(img, options) {
@@ -372,7 +394,7 @@ function render(img, options) {
   applyColor(f, plan.dw * plan.dh, color);
   var vals = quantize(f, plan.dw, plan.dh, dither);
   var bytes = pack(vals);
-  return { w: plan.dw, h: plan.dh, bytes: bytes, stamp: stampFor(bytes, plan.dw, plan.dh), vals: vals };
+  return { w: plan.dw, h: plan.dh, bytes: bytes, stamp: stampFor(bytes, plan.dw, plan.dh), vals: vals, luma: meanLuma(vals, plan.dw, plan.dh) };
 }
 
 module.exports = {
@@ -387,5 +409,6 @@ module.exports = {
   decodeImagePayload: decodeImagePayload,
   planFit: planFit,
   render: render,
-  stampFor: stampFor
+  stampFor: stampFor,
+  meanLuma: meanLuma
 };
