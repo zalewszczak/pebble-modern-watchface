@@ -139,7 +139,7 @@ void feature_vector_icons_phone(GContext *ctx, GPoint top_left, int size, GColor
   int inner_h = h - 6;
   int fill = (inner_h * level) / 100;
   if (level > 0 && fill < 1) fill = 1;
-  graphics_fill_rect(ctx, GRect(x + 2, y + h - 2 - fill, w - 3, fill), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(x + 2, y + h - 2 - fill, w - 4, fill), 0, GCornerNone); // x+2 .. x+w-3: one clear pixel before the right outline, as on the left
 }
 
 void feature_vector_icons_media_state(GContext *ctx, GPoint top_left, int size, GColor color, uint8_t state) {

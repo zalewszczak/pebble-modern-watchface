@@ -305,7 +305,7 @@ configPresetSchedule.css +
 '  .top-bar-desc { font-size: 7px; line-height: 1.3; color: var(--text-muted); margin-top: 3px; }' +
 '  .top-bar-preview { flex: 0 1 33%; display: flex; justify-content: center; align-items: center; min-width: 0; height: 100%; max-height: calc(25vh - 20px); padding: 1%; box-sizing: border-box; }' +
 '  #previewCanvas { height: 50%; max-height: 50%; width: auto; max-width: 98%; border-radius: ' + (platform.round ? '50%' : '4px') + '; }' +
-(platform.bw ? '  .top-bar-preview { display: none !important; } .top-bar-left { flex: 1 1 100%; }' : '') +
+((platform.bw || current.liveMode) ? '  .top-bar-preview { display: none !important; } .top-bar-left { flex: 1 1 100%; }' : '') +
 (platform.round ? '  .slot-corner-tl, .slot-corner-tr, .slot-corner-bl, .slot-corner-br { display: none !important; }' : '') +
 '  .subsection { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-light); }' +
 '  .scheme-active-badge { font-size: 11px; font-weight: 700; color: #2e8b3d; background: rgba(46,139,61,0.15); border-radius: 4px; padding: 2px 6px; margin-left: 8px; vertical-align: middle; }' +
@@ -603,8 +603,8 @@ configPresetSchedule.css +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
 '    </div>' +
-'    <div class="top-bar-title">Modern Watchface' + (platform.bw ? '' : ' Preview') + '</div>' +
-(platform.bw ? '' : '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>') +
+(current.liveMode ? '' : '    <div class="top-bar-title">Modern Watchface' + (platform.bw ? '' : ' Preview') + '</div>') +
+((platform.bw || current.liveMode) ? '' : '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>') +
 '  </div>' +
 '  <div class="top-bar-preview">' +
 '    <canvas id="previewCanvas" width="176" height="' + Math.round(176 * platform.h / platform.w) + '"></canvas>' +

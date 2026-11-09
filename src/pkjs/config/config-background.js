@@ -50,18 +50,23 @@ function isPluginOn(current) {
   return !!current && (current.usePluginBg === true || current.usePluginBg === 'true') && !isOn(current) && !isWeatherOn(current);
 }
 
-var PLUGIN_DITHERS = [['none', 'None (nearest color)'], ['fs', 'Floyd&ndash;Steinberg'], ['atkinson', 'Atkinson'],
-  ['bayer4', 'Ordered 4x4 (Bayer)'], ['bayer8', 'Ordered 8x8 (Bayer)']];
-var PLUGIN_COLORS = [['neutral', 'Normal'], ['vivid', 'Vivid colors'], ['bw', 'Black &amp; white'], ['sepia', 'Sepia']];
-var PLUGIN_FITS = [['fill', 'Scale to fill the screen'], ['full', 'Scale to show the full image'],
-  ['75', 'Scale to 75% of the screen'], ['50', 'Scale to 50% of the screen'], ['center', 'Original size, centered']];
+// Plugin picture processing options: [value, button label]
+var PLUGIN_DITHERS = [['none', 'NONE'], ['fs', 'FL-ST'], ['atkinson', 'ATK'], ['bayer4', '4x4'], ['bayer8', '8x8']];
+var PLUGIN_COLORS = [['neutral', 'NORMAL'], ['vivid', 'VIVID'], ['bw', 'B&amp;W'], ['sepia', 'SEPIA']];
+var PLUGIN_FITS = [['fill', 'FILL'], ['full', 'FIT'], ['75', '75%'], ['50', '50%'], ['center', 'NONE']];
 
-function optionList(list, selected, fallback) {
+// A row of segmented buttons that behaves like a dropdown: a hidden input keeps the value (read by the
+// save code under `id`), `helpId` is the explanation the "?" button on the left reveals.
+function segmentedHtml(id, list, selected, fallback, helpId) {
   var known = list.some(function (e) { return e[0] === selected; });
   var sel = known ? selected : fallback;
-  return list.map(function (e) {
-    return '<option value="' + e[0] + '"' + (e[0] === sel ? ' selected' : '') + '>' + e[1] + '</option>';
+  var btns = list.map(function (e) {
+    return '<button type="button" class="mode-btn' + (e[0] === sel ? ' active' : '') + '" data-value="' + e[0] + '" onclick="bgPick(\'' + id + '\', \'' + e[0] + '\')">' + e[1] + '</button>';
   }).join('');
+  return '<div class="bg-sel-row">' +
+    '<div class="mode-btn-group" id="' + id + 'Group">' + btns + '</div>' +
+    '<button type="button" class="help-btn" onclick="toggleHelp(\'' + helpId + '\')">?</button></div>' +
+    '<input type="hidden" id="' + id + '" value="' + sel + '">';
 }
 
 function pluginSourceLabel(src) {
@@ -112,13 +117,16 @@ function backgroundSectionHtml(current) {
     presetHtml = '<div class="help">No predefined backgrounds yet.</div>';
   }
   return '' +
-'    <div class="mode-btn-group" id="bgModeGroup" style="margin-top:2px;">' +
-'      <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) && !isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
-'      <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
-'      <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)"' + (platform.bw ? ' style="display:none;"' : '') + '>WEATHER</button>' +
-'      <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
+'    <div class="bg-sel-row" style="margin-top:2px;">' +
+'      <div class="mode-btn-group" id="bgModeGroup">' +
+'        <button type="button" class="mode-btn' + (!isOn(current) && !isWeatherOn(current) && !isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(0)">OFF</button>' +
+'        <button type="button" class="mode-btn' + (isOn(current) ? ' active' : '') + '" onclick="bgSetMode(1)">IMAGE</button>' +
+'        <button type="button" class="mode-btn' + (isWeatherOn(current) ? ' active' : '') + '" onclick="bgSetMode(2)"' + (platform.bw ? ' style="display:none;"' : '') + '>WEATHER</button>' +
+'        <button type="button" class="mode-btn' + (isPluginOn(current) ? ' active' : '') + '" onclick="bgSetMode(3)">PLUGIN</button>' +
+'      </div>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgMode\')">?</button>' +
 '    </div>' +
-'    <div class="help"><b>IMAGE</b> = ' + (platform.bw ? 'your own photo' : 'a predefined image or your own photo') + ', <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
+'    <div class="help" id="help-bgMode" style="display:none;"><b>IMAGE</b> = ' + (platform.bw ? 'your own photo' : 'a predefined image or your own photo') + ', <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
@@ -130,6 +138,21 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and complications stay easy to read.</div>' +
+'    <div id="pluginBgChecks" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
+'      <div class="checkbox-row" style="margin-top:10px;">' +
+'        <input type="checkbox" id="pluginBgAutoScheme" ' + (current && current.pluginBgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'        <label for="pluginBgAutoScheme" style="margin:0;">Day/night colors from picture brightness</label>' +
+'        <button type="button" class="help-btn" onclick="toggleHelp(\'help-pluginBgAutoScheme\')">?</button>' +
+'      </div>' +
+'      <div class="help" id="help-pluginBgAutoScheme" style="display:none;">Bright pictures use the <b>day</b> colors and dark pictures use the <b>night</b> colors (instead of sunrise/sunset), so text stays legible. Set a <b>white (light) background</b> in the day colors and a <b>dark background</b> in the night colors, with contrasting text. The night colors are used for this even when the night color scheme is switched off.</div>' +
+'      <div id="pluginBgSchemeWarn" class="help" style="display:none;color:#e07a00;font-weight:600;"></div>' +
+'      <div class="checkbox-row" style="margin-top:10px;">' +
+'        <input type="checkbox" id="pluginBgCache" ' + (current && current.pluginBgCache ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'        <label for="pluginBgCache" style="margin:0;">Cache picture on the watch</label>' +
+'        <button type="button" class="help-btn" onclick="toggleHelp(\'help-pluginBgCache\')">?</button>' +
+'      </div>' +
+'      <div class="help" id="help-pluginBgCache" style="display:none;">Keeps the picture in the watch\'s storage so it is still there after the watchface restarts and is only sent again when it changed (a full picture is a large transfer). Best for pictures that rarely change; every change rewrites about 35&ndash;50 KB of storage, and it needs that much free storage on the watch (free some of your own background images if it runs out). Without it the picture is held in memory only.</div>' +
+'    </div>' +
 '    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <label for="weatherBgStyle">Style</label>' +
@@ -141,25 +164,17 @@ function backgroundSectionHtml(current) {
 '      <label for="pluginBgSource">Image source</label>' +
 '      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
 (pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
-'      <label for="pluginBgDither">Dithering</label>' +
-'      <select id="pluginBgDither" onchange="bgRefresh()">' + optionList(PLUGIN_DITHERS, String((current && current.pluginBgDither) || ''), 'fs') + '</select>' +
-'      <label for="pluginBgColor">Color processing</label>' +
-'      <select id="pluginBgColor" onchange="bgRefresh()">' + optionList(PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral') + '</select>' +
-'      <label for="pluginBgFit">Screen filling</label>' +
-'      <select id="pluginBgFit" onchange="bgRefresh()">' + optionList(PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill') + '</select>' +
-'      <div class="checkbox-row" style="margin-top:10px;">' +
-'        <input type="checkbox" id="pluginBgAutoScheme" ' + (current && current.pluginBgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
-'        <label for="pluginBgAutoScheme">Day/night colors from picture brightness</label>' +
-'      </div>' +
-'      <div class="help">Bright pictures use the <b>day</b> colors and dark pictures use the <b>night</b> colors (instead of sunrise/sunset), so text stays legible. Set a <b>white (light) background</b> in the day colors and a <b>dark background</b> in the night colors, with contrasting text. The night colors are used for this even when the night color scheme is switched off.</div>' +
-'      <div id="pluginBgSchemeWarn" class="help" style="display:none;color:#e07a00;font-weight:600;"></div>' +
-'      <div class="checkbox-row" style="margin-top:10px;">' +
-'        <input type="checkbox" id="pluginBgCache" ' + (current && current.pluginBgCache ? 'checked' : '') + ' onchange="bgRefresh()">' +
-'        <label for="pluginBgCache">Cache picture on the watch</label>' +
-'      </div>' +
-'      <div class="help">Keeps the picture in the watch\'s storage so it is still there after the watchface restarts and is only sent again when it changed (a full picture is a large transfer). Best for pictures that rarely change; every change rewrites about 35&ndash;50 KB of storage, and it needs that much free storage on the watch (free some of your own background images if it runs out). Without it the picture is held in memory only.</div>' +
+'      <label>Dithering</label>' +
+'      ' + segmentedHtml('pluginBgDither', PLUGIN_DITHERS, String((current && current.pluginBgDither) || ''), 'fs', 'help-pluginBgDither') +
+'      <div class="help" id="help-pluginBgDither" style="display:none;"><b>NONE</b> = every pixel snaps to the nearest of the 64 colors (flat, may show bands). <b>FL-ST</b> = Floyd&ndash;Steinberg error diffusion, smooth and the best for photos. <b>ATK</b> = Atkinson, lighter with cleaner highlights and higher contrast. <b>4x4</b> / <b>8x8</b> = ordered Bayer patterns: a regular texture that does not shimmer between updates, 8x8 gives finer gradients.</div>' +
+'      <label>Color processing</label>' +
+'      ' + segmentedHtml('pluginBgColor', PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral', 'help-pluginBgColor') +
+'      <div class="help" id="help-pluginBgColor" style="display:none;"><b>NORMAL</b> = the colors as the plugin sends them. <b>VIVID</b> = stronger saturation and contrast. <b>B&amp;W</b> = grayscale. <b>SEPIA</b> = warm brown monochrome.</div>' +
+'      <label>Screen filling</label>' +
+'      ' + segmentedHtml('pluginBgFit', PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill', 'help-pluginBgFit') +
+'      <div class="help" id="help-pluginBgFit" style="display:none;"><b>FILL</b> = scaled so the whole screen is covered (edges may be cropped). <b>FIT</b> = scaled so the full picture is visible (space around it shows the background color). <b>75%</b> / <b>50%</b> = scaled to that part of the screen, centered. <b>NONE</b> = original size, centered, not scaled.</div>' +
 (current && current.pluginBgStatus ? '      <div class="help" style="margin-top:8px;"><b>Status:</b> ' + esc(current.pluginBgStatus) + '</div>' : '') +
-'      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. Unless "Cache picture on the watch" is ticked it is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts. It is removed when the plugin reports no image. A progress bar shows on the watch while the picture is transferred. Space around a smaller picture shows the background color.</div>' +
+'      <div class="help section-intro" style="margin-top:8px;" onclick="toggleSectionIntro(this)">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. Unless "Cache picture on the watch" is ticked it is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts. It is removed when the plugin reports no image. A progress bar shows on the watch while the picture is transferred. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
@@ -519,6 +534,8 @@ var CLIENT_BODY =
 '  var pbox = bgEl("usePluginBg"), ppanel = bgEl("pluginBgPanel");\n' +
 '  if (wpanel) wpanel.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
 '  if (ppanel) ppanel.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
+'  var pchecks = bgEl("pluginBgChecks");\n' +
+'  if (pchecks) pchecks.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
 '  var bmode = (wbox && wbox.checked) ? 2 : ((box && box.checked) ? 1 : ((pbox && pbox.checked) ? 3 : 0));\n' +
 '  var bbtns = bgEl("bgModeGroup") ? bgEl("bgModeGroup").getElementsByClassName("mode-btn") : [];\n' +
 '  for (var bi = 0; bi < bbtns.length; bi++) bbtns[bi].className = "mode-btn" + (bi === bmode ? " active" : "");\n' +
@@ -598,6 +615,13 @@ var CLIENT_BODY =
 '  if (s.kind === "u" && !bgSlotHas(s.n)) bgEl("bgSource").value = bgDefaultSource();\n' +
 '  bgSyncUi();\n' +
 '  bgEdSetup();\n' +
+'}\n' +
+'function bgPick(id, value) {\n' +
+'  var hid = bgEl(id), grp = bgEl(id + "Group");\n' +
+'  if (hid) hid.value = value;\n' +
+'  var btns = grp ? grp.getElementsByClassName("mode-btn") : [];\n' +
+'  for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + (btns[i].getAttribute("data-value") === value ? " active" : "");\n' +
+'  bgRefresh();\n' +
 '}\n' +
 'function bgSetMode(m) {\n' +
 '  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg"), pb = bgEl("usePluginBg");\n' +
@@ -956,6 +980,9 @@ var CLIENT_BODY =
 '}\n';
 
 var CSS_TEXT =
+'.bg-sel-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }' +
+'.bg-sel-row .mode-btn-group { flex: 1 1 auto; width: auto; min-width: 0; margin-top: 0; }' +
+'.bg-sel-row .mode-btn { min-width: 0; padding: 9px 0; }' +
 '  .example-style-btn.selected { outline: 3px solid #ff9200; outline-offset: -3px; }\n' +
 '  .bg-slot { display: flex; flex-direction: column; gap: 4px; }\n' +
 '  .bg-slot-actions { display: flex; gap: 4px; justify-content: center; font-size: 11px; color: var(--text-muted); min-height: 24px; align-items: center; }\n' +
