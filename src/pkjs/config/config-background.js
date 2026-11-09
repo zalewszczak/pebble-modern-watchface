@@ -153,8 +153,13 @@ function backgroundSectionHtml(current) {
 '      </div>' +
 '      <div class="help">Bright pictures use the <b>day</b> colors and dark pictures use the <b>night</b> colors (instead of sunrise/sunset), so text stays legible. Set a <b>white (light) background</b> in the day colors and a <b>dark background</b> in the night colors, with contrasting text. The night colors are used for this even when the night color scheme is switched off.</div>' +
 '      <div id="pluginBgSchemeWarn" class="help" style="display:none;color:#e07a00;font-weight:600;"></div>' +
+'      <div class="checkbox-row" style="margin-top:10px;">' +
+'        <input type="checkbox" id="pluginBgCache" ' + (current && current.pluginBgCache ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'        <label for="pluginBgCache">Cache picture on the watch</label>' +
+'      </div>' +
+'      <div class="help">Keeps the picture in the watch\'s storage so it is still there after the watchface restarts and is only sent again when it changed (a full picture is a large transfer). Best for pictures that rarely change; every change rewrites about 35&ndash;50 KB of storage, and it needs that much free storage on the watch (free some of your own background images if it runs out). Without it the picture is held in memory only.</div>' +
 (current && current.pluginBgStatus ? '      <div class="help" style="margin-top:8px;"><b>Status:</b> ' + esc(current.pluginBgStatus) + '</div>' : '') +
-'      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. It is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts, and removed when the plugin reports no image. Space around a smaller picture shows the background color.</div>' +
+'      <div class="help" style="margin-top:8px;">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. Unless "Cache picture on the watch" is ticked it is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts. It is removed when the plugin reports no image. A progress bar shows on the watch while the picture is transferred. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +

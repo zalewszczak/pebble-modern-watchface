@@ -81,19 +81,21 @@ static void startup_request_delay_callback(void *context) {
 // straight to persistent storage and skip the settings/feature pipeline (and
 // the WatchData save) entirely, so streaming an image costs almost nothing.
 //
-// BEGIN payload (15 bytes, little endian):
-//   stamp u32 | chunks u16 | w u16 | h u16 | slot u8 | batch_total u16 | batch_done u16
+// BEGIN payload (15 or 16 bytes, little endian):
+//   stamp u32 | chunks u16 | w u16 | h u16 | slot u8 | batch_total u16 | batch_done u16 | flags u8
+// flags (optional, 0 when absent): bit 0 = keep the plugin picture in persistent storage (cache).
 // chunks == 0 && stamp == 0 means "empty this slot" (no DATA/END follow).
 // batch_total / batch_done are chunk counts of the whole sync (several images
 // may follow one another) and only drive the progress bar.
-// Slot BG_IMG_PLUGIN_SLOT (the plugin picture, RAM only) is transferred the same
-// way but silently: it never starts, advances or finishes the progress bar.
+// The plugin picture (slot BG_IMG_PLUGIN_SLOT) is transferred the same way. It drives the progress
+// bar like any image when its BEGIN carries a batch_total; with batch_total == 0 it is silent.
 // END payload: stamp u32.
 //
 // If the phone goes away mid-transfer the bar must not stay forever: any
 // BG_IMG message re-arms this timer, and when it fires the transfer is dropped.
 #define BG_TRANSFER_TIMEOUT_MS 20000
 static AppTimer *s_bg_timeout_timer = NULL;
+static bool s_bg_silent; // the transfer in progress does not drive the progress bar
 
 static void notify_progress(void) {
   if (s_data_applied) s_data_applied(COMMS_CHANGE_BG_PROGRESS, s_data_context);
@@ -140,7 +142,8 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
     uint16_t chunks = read_le16(b + 4), w = read_le16(b + 6), h = read_le16(b + 8);
     uint8_t slot = b[10];
     uint16_t batch_total = read_le16(b + 11), batch_done = read_le16(b + 13);
-    const bool silent = (slot == BG_IMG_PLUGIN_SLOT);
+    const bool persist = begin->length >= 16 && (b[15] & 1);
+    const bool silent = (slot == BG_IMG_PLUGIN_SLOT && batch_total == 0);
     if (stamp == 0 && chunks == 0) {
       bg_image_store_clear(slot);
       redraw_dial = true; // the selected slot may just have been emptied
@@ -150,14 +153,15 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
         if (!bg_progress_active()) bg_progress_start(batch_total, batch_done);
         else bg_progress_set_done(batch_done);
       }
-      bg_image_store_begin(slot, stamp, chunks, w, h);
+      s_bg_silent = silent;
+      bg_image_store_begin(slot, stamp, chunks, w, h, persist);
       bg_transfer_arm_timeout();
     }
   }
   if (data) {
     Tuple *index = dict_find(iter, base + MK_BG_IMG_INDEX);
     if (index) {
-      const bool silent = (bg_image_store_pending_slot() == BG_IMG_PLUGIN_SLOT);
+      const bool silent = s_bg_silent;
       bg_image_store_write(index->value->uint16, data->value->data, data->length);
       if (!silent) bg_progress_update(bg_image_store_pending_progress());
       bg_transfer_arm_timeout();
@@ -165,11 +169,11 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
   }
   if (end && end->length >= 4) {
     uint16_t chunks = bg_image_store_pending_chunks();
-    const bool silent = (bg_image_store_pending_slot() == BG_IMG_PLUGIN_SLOT);
+    const bool silent = s_bg_silent;
     if (bg_image_store_commit(read_le32(end->value->data))) {
       if (!silent) bg_progress_update(chunks);
       redraw_dial = true; // the dial rebuilds its background cache if this slot is in use
-    } else if (silent) {
+    } else {
       redraw_dial = true; // failed (e.g. out of memory): let the dial notice and report it
     }
     // The next image of the batch (if any) sends its own BEGIN with the new

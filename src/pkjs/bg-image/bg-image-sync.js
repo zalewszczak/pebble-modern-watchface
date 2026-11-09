@@ -20,6 +20,12 @@ var s_sending = false;
 var s_resync = false;
 var s_batchSlots = {};
 
+// Whether the picture the watch holds for the plugin slot is kept in its persistent storage
+// (the cache option). Remembered next to the stamps so turning the option on or off re-sends once.
+var PLUGIN_CACHED_KEY = 'BG_PLUGIN_CACHED' + platform.suffix;
+function pluginCachedOnWatch() { try { return localStorage.getItem(PLUGIN_CACHED_KEY) === '1'; } catch (e) { return false; } }
+function setPluginCachedOnWatch(on) { try { localStorage.setItem(PLUGIN_CACHED_KEY, on ? '1' : '0'); } catch (e) { } }
+
 function slotKey(k) { return 'CONFIG_BG_SLOT_' + k + platform.suffix; }
 
 function getSlots() {
@@ -142,11 +148,16 @@ function pendingWork() {
     }
   }
   var pic = selection().mode === 4 ? pluginBg.getOutput() : null;
+  var cacheWanted = pluginBg.cacheWanted();
+  // After a restart the cached picture is on the watch already; do not wipe it just because the
+  // plugin has not reported yet.
+  var waitingForPlugin = selection().mode === 4 && cacheWanted && !pluginBg.heard();
   if (pic) {
-    if (watch[PLUGIN_SLOT - 1] !== pic.stamp) {
-      work.push({ slot: PLUGIN_SLOT, bytes: pic.bytes, stamp: pic.stamp, chunks: Math.ceil(pic.bytes.length / PERSIST_CHUNK_BYTES), w: pic.w, h: pic.h });
+    // Send when the picture changed, or when it is the same but must now be stored (or no longer stored) in the cache.
+    if (watch[PLUGIN_SLOT - 1] !== pic.stamp || pluginCachedOnWatch() !== cacheWanted) {
+      work.push({ slot: PLUGIN_SLOT, bytes: pic.bytes, stamp: pic.stamp, chunks: Math.ceil(pic.bytes.length / PERSIST_CHUNK_BYTES), w: pic.w, h: pic.h, persist: cacheWanted });
     }
-  } else if (watch[PLUGIN_SLOT - 1] !== 0) {
+  } else if (watch[PLUGIN_SLOT - 1] !== 0 && !waitingForPlugin) {
     work.push({ slot: PLUGIN_SLOT, data: null, stamp: 0, chunks: 0 });
   }
   work.sort(function (a, b) {
@@ -159,7 +170,7 @@ function pendingWork() {
 function sendBatch(work) {
   var batch = { aborted: false };
   var batchTotal = 0;
-  work.forEach(function (w) { if (w.slot !== PLUGIN_SLOT) batchTotal += w.chunks; });
+  work.forEach(function (w) { batchTotal += w.chunks; }); // the plugin picture shows the progress bar too
   var done = 0;
   var remaining = work.length;
   s_batchSlots = {};
@@ -195,13 +206,14 @@ function sendBatch(work) {
       onFail: failBatch
     };
     var isPlugin = w.slot === PLUGIN_SLOT;
+    var persistFlag = isPlugin && w.persist ? 1 : 0;
     var hasImage = !!(w.data || w.bytes);
     var begin = le32(w.stamp).concat(le16(w.chunks), le16(hasImage ? w.w : 0), le16(hasImage ? w.h : 0),
-                                     [w.slot], le16(isPlugin ? 0 : batchTotal), le16(isPlugin ? 0 : done));
+                                     [w.slot], le16(batchTotal), le16(done), [persistFlag]);
     if (!hasImage) {
       messageQueue.enqueueRaw({ BG_IMG_BEGIN: begin }, {
         retries: 2, skipIf: common.skipIf, onFail: failBatch,
-        onAck: function () { setWatchStamp(w.slot, 0); finishOne(); }
+        onAck: function () { setWatchStamp(w.slot, 0); if (isPlugin) setPluginCachedOnWatch(false); finishOne(); }
       });
       return;
     }
@@ -222,9 +234,9 @@ function sendBatch(work) {
     }
     messageQueue.enqueueRaw({ BG_IMG_END: le32(w.stamp) }, {
       retries: 2, skipIf: common.skipIf, onFail: failBatch,
-      onAck: function () { setWatchStamp(w.slot, w.stamp); finishOne(); }
+      onAck: function () { setWatchStamp(w.slot, w.stamp); if (isPlugin) setPluginCachedOnWatch(!!w.persist); finishOne(); }
     });
-    if (!isPlugin) done += w.chunks;
+    done += w.chunks;
   });
   if (remaining === 0) finishBatch();
 }

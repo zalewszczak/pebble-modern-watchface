@@ -19,6 +19,7 @@ var s_raw = null;
 var s_out = null;
 var s_onChange = null;
 var s_onScheme = null;
+var s_heard = false; // the plugin has reported (a picture or none) since we subscribed
 var s_lastNight = null; // last brightness verdict: true = dark picture
 var s_loggedShape = false;
 
@@ -37,6 +38,10 @@ function options() {
     fit: getSetting('CONFIG_PLUGIN_BG_FIT', pluginImage.DEFAULT_OPTIONS.fit)
   };
 }
+
+// Keep the picture in the watch's persistent storage (survives a watchface restart, so it is only
+// sent again when it changed).
+function cacheWanted() { return getSetting('CONFIG_PLUGIN_BG_CACHE', 'false') === 'true'; }
 
 function autoScheme() { return getSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', 'false') === 'true'; }
 
@@ -123,6 +128,7 @@ function shapeInfo(img) {
 }
 
 function onData(parsed, envelope) {
+  s_heard = true;
   var count = envelope && envelope.instances ? envelope.instances.length : 0;
   var inst = envelope && envelope.instances && envelope.instances[parsed.index];
   var prop = inst && inst.properties ? inst.properties[parsed.property] : null;
@@ -154,6 +160,7 @@ function onData(parsed, envelope) {
 function unsubscribe() {
   var sub = s_sub;
   s_sub = null;
+  s_heard = false;
   if (sub && sub.handle && typeof sub.handle.unsubscribe === 'function') {
     try { sub.handle.unsubscribe(); } catch (e) { }
   }
@@ -218,6 +225,8 @@ module.exports = {
   status: status,
   setOnChange: setOnChange,
   setOnScheme: setOnScheme,
+  cacheWanted: cacheWanted,
+  heard: function () { return s_heard; },
   schemeOverride: schemeOverride,
   enabled: enabled
 };

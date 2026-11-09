@@ -14,8 +14,10 @@ static uint32_t chunk_key(uint8_t slot, uint16_t chunk) {
   return PERSIST_KEY_BG_CHUNK_BASE + (uint32_t)slot * BG_CHUNK_KEY_SPAN + chunk;
 }
 static bool slot_ok(uint8_t slot) { return slot >= 1 && slot <= BG_IMG_PLUGIN_SLOT; }
-// The plugin slot lives in RAM only: nothing below touches persistent storage for it.
-static bool is_ram(uint8_t slot) { return slot == BG_IMG_PLUGIN_SLOT; }
+// The plugin slot lives in RAM unless the phone asked for it to be cached (BEGIN flag): then it is
+// stored in persistent storage like a user slot and survives a restart of the watchface.
+static bool s_plugin_persist;
+static bool is_ram(uint8_t slot) { return slot == BG_IMG_PLUGIN_SLOT && !s_plugin_persist; }
 
 // Free heap that must stay available after the plugin picture is allocated: the
 // dial cache and the other layers need room too.
@@ -58,13 +60,19 @@ static void load_header(uint8_t slot) {
   if (!slot_ok(slot) || s_loaded[slot]) return;
   s_loaded[slot] = true;
   memset(&s_header[slot], 0, sizeof(BgHeader));
-  if (is_ram(slot)) return; // starts empty, always
+  if (is_ram(slot)) {
+    // The plugin slot starts empty unless a cached picture was left in persistent storage.
+    if (slot != BG_IMG_PLUGIN_SLOT) return;
+    s_plugin_persist = true; // tentatively: read the header the persistent way
+  }
   BgHeader h;
   if (persist_exists(header_key(slot)) &&
       persist_get_size(header_key(slot)) == (int)sizeof(h) &&
       persist_read_data(header_key(slot), &h, sizeof(h)) == (int)sizeof(h) &&
       h.stamp != 0 && h.w != 0 && h.h != 0 && h.chunks == expected_chunks(h.w, h.h)) {
     s_header[slot] = h;
+  } else if (slot == BG_IMG_PLUGIN_SLOT) {
+    s_plugin_persist = false; // nothing cached: RAM mode
   }
 }
 
@@ -98,6 +106,7 @@ void bg_image_store_clear(uint8_t slot) {
   }
   memset(&s_header[slot], 0, sizeof(BgHeader));
   delete_chunks(slot, 0, n);
+  if (slot == BG_IMG_PLUGIN_SLOT) s_plugin_persist = false;
 }
 
 uint8_t bg_image_store_pending_slot(void) { return s_pending_slot; }
@@ -120,7 +129,7 @@ void bg_image_store_abort(void) {
   pending_reset();
 }
 
-bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h) {
+bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h, bool persist) {
   bg_image_store_abort();
   if (!slot_ok(slot)) return false;
   load_header(slot);
@@ -133,6 +142,12 @@ bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_
     persist_delete(header_key(slot));
   }
   memset(&s_header[slot], 0, sizeof(BgHeader));
+  if (slot == BG_IMG_PLUGIN_SLOT) {
+    // Leaving the cache: give the old chunks back before the slot becomes RAM-only.
+    if (s_plugin_persist && !persist) delete_chunks(slot, 0, s_old_chunks);
+    if (s_plugin_persist != persist) s_old_chunks = 0;
+    s_plugin_persist = persist;
+  }
   if (stamp == 0 || w == 0 || h == 0 || (uint32_t)w * h > BG_IMG_MAX_PIXELS ||
       chunks != expected_chunks(w, h) || chunks > BG_CHUNK_KEY_SPAN) return false;
   if (is_ram(slot)) {

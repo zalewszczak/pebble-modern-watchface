@@ -26,6 +26,10 @@
 // may be any size up to the screen -- the phone has already applied fit, colour
 // and dither settings, so the watch just draws what it is given, centred.
 // It is allocated when a transfer starts and freed when the slot is emptied.
+// Optionally (BEGIN flag, the "cache picture" setting) the plugin picture is instead written to
+// persistent storage like a user slot: then it survives restarts, the stamp reported after one is
+// that of the cached picture, and the phone only sends a picture that actually changed. A cached
+// picture needs no RAM at all while it is drawn.
 
 #define BG_IMG_SLOTS 9
 #define BG_IMG_PLUGIN_SLOT (BG_IMG_SLOTS + 1)
@@ -52,7 +56,8 @@ bool bg_image_store_ram_failed(void);
 
 // Starts a transfer into `slot`: invalidates that slot's current image and
 // records what is coming. Other slots are untouched.
-bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h);
+// `persist` only matters for the plugin slot (cache it in persistent storage instead of RAM).
+bool bg_image_store_begin(uint8_t slot, uint32_t stamp, uint16_t chunks, uint16_t w, uint16_t h, bool persist);
 
 // Stores `len` bytes of the stream beginning at persist chunk `first_chunk`
 // of the slot being transferred. Returns false if no transfer is active.

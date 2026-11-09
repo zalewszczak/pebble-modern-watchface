@@ -57,6 +57,7 @@ module.exports =
 '    CONFIG_PLUGIN_BG_COLOR: document.getElementById("pluginBgColor").value,' +
 '    CONFIG_PLUGIN_BG_FIT: document.getElementById("pluginBgFit").value,' +
 '    CONFIG_PLUGIN_BG_AUTO_SCHEME: document.getElementById("pluginBgAutoScheme").checked,' +
+'    CONFIG_PLUGIN_BG_CACHE: document.getElementById("pluginBgCache").checked,' +
 '    CONFIG_BORDER_SOURCE: document.getElementById("borderSource").value,' +
 '    CONFIG_BORDER_CAL_MODE: document.getElementById("borderCalMode").value,' +
 '    CONFIG_BORDER_CAL_SCHEME: document.getElementById("borderCalScheme").value,' +
