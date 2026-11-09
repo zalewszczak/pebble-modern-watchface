@@ -61,7 +61,7 @@ test('compare: size mismatch fails with a message', function () {
 
 test('messages: int, string and byte values become CLI arguments', function () {
   var args = messages.messageArgs({ A: 5, B: 'hi', C: [1, 255] }, { A: 10001, B: 10002, C: 10003 }, cli, 'emery', 'uuid-1');
-  assert.deepStrictEqual(args.slice(-9), ['--int', '10001', '5', '--string', '10002', 'hi', '--bytes', '10003', '01ff']);
+  assert.deepStrictEqual(args.slice(-6), ['--int', '10001=5', '--string', '10002=hi', '--bytes', '10003=01ff']);
   assert.ok(args.indexOf('uuid-1') > 0);
   assert.throws(function () { messages.messageArgs({ NOPE: 1 }, {}, cli, 'emery', 'u'); }, /not in the message key table/);
 });

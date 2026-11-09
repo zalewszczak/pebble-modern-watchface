@@ -7,8 +7,16 @@ var path = require('path');
 // rule (ids count up from 10000 in package.json order), which is only right if no key is declared as an array.
 function loadKeyIds(projectRoot) {
   var candidates = [];
-  var buildDir = path.join(projectRoot, 'build');
-  ['include/message_keys.auto.h', 'message_keys.auto.h'].forEach(function (f) { candidates.push(path.join(buildDir, f)); });
+  (function walk(dir, depth) {
+    var names;
+    try { names = fs.readdirSync(dir); } catch (e) { return; }
+    names.forEach(function (n) {
+      var p = path.join(dir, n), st;
+      try { st = fs.statSync(p); } catch (e) { return; }
+      if (st.isDirectory() && depth < 4) walk(p, depth + 1);
+      else if (n === 'message_keys.auto.h') candidates.push(p);
+    });
+  })(path.join(projectRoot, 'build'), 0);
   for (var i = 0; i < candidates.length; i++) {
     if (fs.existsSync(candidates[i])) {
       var ids = {}, n = 0;
@@ -39,18 +47,24 @@ function hex(bytes) {
 }
 
 // One message (a dict of NAME -> number | string | byte array) -> one pebble send-app-message argument list.
+// The CLI takes one flag per value type followed by all its KEY=VALUE pairs:
+//   send-app-message --int 1=5 2=7 --string 3=hi --bytes 4=DEADBEEF
 function messageArgs(dict, keyIds, cli, platform, uuid) {
   var vars = { platform: platform, uuid: uuid };
-  var args = expandAll(cli.sendAppMessage.base, vars);
+  var groups = { int: [], string: [], bytes: [] };
   Object.keys(dict).forEach(function (name) {
     var id = keyIds[name];
     if (id === undefined) throw new Error('message key ' + name + ' is not in the message key table');
-    var v = dict[name];
-    if (Array.isArray(v)) args = args.concat(expandAll(cli.sendAppMessage.bytes, { key: id, hex: hex(v) }));
-    else if (typeof v === 'string') args = args.concat(expandAll(cli.sendAppMessage.string, { key: id, value: v }));
-    else if (typeof v === 'number') args = args.concat(expandAll(cli.sendAppMessage.int, { key: id, value: Math.trunc(v) }));
-    else if (typeof v === 'boolean') args = args.concat(expandAll(cli.sendAppMessage.int, { key: id, value: v ? 1 : 0 }));
+    var v = dict[name], type, pair;
+    if (Array.isArray(v)) { type = 'bytes'; pair = expand(cli.sendAppMessage.bytes.pair, { key: id, hex: hex(v) }); }
+    else if (typeof v === 'string') { type = 'string'; pair = expand(cli.sendAppMessage.string.pair, { key: id, value: v }); }
+    else if (typeof v === 'number' || typeof v === 'boolean') { type = 'int'; pair = expand(cli.sendAppMessage.int.pair, { key: id, value: Math.trunc(Number(v)) }); }
     else throw new Error('message key ' + name + ' has an unsupported value type ' + typeof v);
+    groups[type].push(pair);
+  });
+  var args = expandAll(cli.sendAppMessage.base, vars);
+  ['int', 'string', 'bytes'].forEach(function (t) {
+    if (groups[t].length) args = args.concat([cli.sendAppMessage[t].flag], groups[t]);
   });
   return args;
 }
