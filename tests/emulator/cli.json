@@ -106,7 +106,7 @@
   "timing": {
     "afterInstallMs": 12000,
     "betweenMessagesMs": 300,
-    "afterTimeMs": 500
+    "afterPreTimeMs": 600, "afterTimeMs": 400
   },
   "platformsDefault": [
     "flint",

@@ -22,8 +22,9 @@
     "UV_INDEX_X10": 40, "UV_INDEX_CURRENT_X10": 30, "RAIN_CHANCE_PCT": 10, "HUMIDITY_PCT": 55, "WIND_SPEED_KMH": 12,
     "WIND_DIR_DEG": 180, "DEW_POINT_C": 9, "PRESSURE_HPA": 1015, "PRESSURE_TREND": 0, "AQI_US": 30, "AQI_EU": 15
   },
-  "clock": { "time": "10:08:30", "format": "24h" },
+  "clock": { "time": "10:08:00", "format": "24h" },
   "battery": { "percent": 80, "charging": false },
   "bluetooth": true,
-  "settleMs": 3000
+  "settleMs": 3000,
+  "retries": 2
 }

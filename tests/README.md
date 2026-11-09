@@ -20,11 +20,14 @@ Later layers (see `testing_suite.md`): PKJS unit tests, host-compiled C tests, s
 For every platform (flint = also covers diorite, emery, gabbro) and scenario:
 
 1. `pebble kill`, `pebble wipe`, `pebble install --emulator <platform>`, wait for the app's own startup traffic.
-2. Pin the world: `emu-time-format`, `emu-set-time`, `emu-battery`, `emu-bt-connection`.
+2. Pin the world: `emu-time-format`, `emu-battery`, `emu-bt-connection`.
 3. Run the **real phone code** (`src/pkjs`, in `lib/capture.js`) with the scenario's settings: the example style is applied by
    the app's own `scheduled-style.applyPreset`, then `buildFullKeysetDict` / `sendFakeWeather` build the real AppMessages.
    Those are sent to the watch with `pebble send-app-message`. So settings encoding, message layout and the watch decoder are all exercised.
-4. `pebble screenshot --no-correction --no-open`, then compare with `golden/<platform>/<scenario>.png`
+4. Pin the clock LAST (set one minute earlier, then to the target time, so the watch redraws), wait 0.4 s and run
+   `pebble screenshot --no-correction --no-open`. The emulator clock keeps running, and a hand is drawn at the time of the last redraw,
+   so anything that redraws (messages, battery, Bluetooth) must happen before the clock is set. On a mismatch the runner retakes
+   the clock+screenshot up to `retries` times (default 2) before failing. Then compare with `golden/<platform>/<scenario>.png`
    (exact by default; gabbro's transparent round corners are handled; transparent vs opaque counts as a difference).
 5. On a mismatch: `out/<platform>/<scenario>.diff.png` (magenta = changed) and `out/report.html` (golden | new | diff side by side).
 
@@ -65,6 +68,9 @@ Everything is optional except `name` and something to show. `preset` uses the se
 
 - **Not yet run against a real emulator** (the sandbox this was written in has no pebble CLI). Everything up to the CLI call is tested:
   message capture, key-id mapping, PNG codec, comparison, dry run. The exact flags for `send-app-message` are a best guess in `cli.json`.
+- With the second hand hidden, the watch draws hour and minute hands on whole minutes (seconds ignored), so a redraw a few seconds
+  late looks identical. With the second hand shown, hands are second-precise and such a scenario would be timing-sensitive; the default
+  scenarios all hide it.
 - The emulator also runs the app's own PKJS, which sends default settings ~5 s after start. The runner waits `afterInstallMs` (12 s)
   before sending; if a screenshot shows default settings, raise it, or add a test-build switch that silences the app's own phone traffic.
 - Scenarios that vary battery / Bluetooth / time only show a difference if the chosen style has a complication that uses it.

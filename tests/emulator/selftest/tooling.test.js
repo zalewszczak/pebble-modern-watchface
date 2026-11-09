@@ -107,3 +107,23 @@ test('dry run end to end writes a report and exits 0', function () {
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
   assert.match(r.stdout, /DRY\s+style-2/);
 });
+
+test('clock: minusMinutes wraps over midnight and keeps seconds', function () {
+  var clock = require('../lib/clock');
+  assert.strictEqual(clock.minusMinutes('10:08:30', 1), '10:07:30');
+  assert.strictEqual(clock.minusMinutes('00:00:00', 1), '23:59:00');
+  assert.strictEqual(clock.minusMinutes('12:00:05', 1), '11:59:05');
+  assert.throws(function () { clock.parse('10:08'); }, /HH:MM:SS/);
+});
+
+test('dry run sets the clock last, immediately before the screenshot', function () {
+  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'run.js'), '--dry-run', '--no-build', '--platform', 'flint', '--scenario', 'style-2'], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
+  var cmds = fs.readFileSync(path.join(EMU, 'out', 'dry-run-commands.txt'), 'utf8').split('\n');
+  var shot = cmds.findIndex(function (l) { return /pebble screenshot/.test(l); });
+  var lastMsg = cmds.map(function (l, i) { return /send-app-message/.test(l) ? i : -1; }).pop();
+  assert.deepStrictEqual(cmds.slice(shot - 2, shot).map(function (l) { return /emu-set-time/.test(l); }), [true, true]);
+  assert.ok(lastMsg < shot - 2, 'clock must be pinned after the last message');
+  assert.match(cmds[shot - 2], /emu-set-time 10:07:00/);
+  assert.match(cmds[shot - 1], /emu-set-time 10:08:00/);
+});

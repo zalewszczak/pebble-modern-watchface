@@ -17,6 +17,7 @@ var messages = require('./lib/messages');
 var png = require('./lib/png');
 var compareLib = require('./lib/compare');
 var cli = require('./cli.json');
+var clockLib = require('./lib/clock');
 
 var HERE = __dirname;
 var PROJECT = path.resolve(HERE, '..', '..');
@@ -61,16 +62,29 @@ function capture(platform, scenario) {
   return JSON.parse(r.stdout);
 }
 
+// Everything that makes the watch redraw (format, battery, Bluetooth, messages) is done BEFORE the clock is pinned,
+// because the emulator clock keeps running: a hand is drawn at the time of the last redraw, so the clock must be
+// set last, right before the screenshot.
 function applyEnvironment(pb, d, sc, platform) {
-  var clock = Object.assign({}, d.clock, sc.clock);
   var battery = Object.assign({}, d.battery, sc.battery);
   var bt = sc.bluetooth !== undefined ? sc.bluetooth : d.bluetooth;
+  var clock = Object.assign({}, d.clock, sc.clock);
   var v = { platform: platform };
   pb.run(messages.expandAll(cli.commands.timeFormat, Object.assign({ format: clock.format }, v)));
-  pb.run(messages.expandAll(cli.commands.setTime, Object.assign({ time: clock.time }, v)));
   pb.run(messages.expandAll(battery.charging ? cli.commands.batteryCharging : cli.commands.battery, Object.assign({ percent: battery.percent }, v)));
   pb.run(messages.expandAll(cli.commands.bluetooth, Object.assign({ connected: bt ? 'yes' : 'no' }, v)));
+}
+
+// Pin the clock and take the screenshot as close together as possible. The clock is first set one minute earlier
+// so that setting the target time is a minute change (which makes the watch redraw), then set to the target.
+function pinClockAndShoot(pb, d, sc, platform, shot) {
+  var clock = Object.assign({}, d.clock, sc.clock);
+  var v = { platform: platform };
+  pb.run(messages.expandAll(cli.commands.setTime, Object.assign({ time: clockLib.minusMinutes(clock.time, 1) }, v)));
+  pb.sleep(cli.timing.afterPreTimeMs);
+  pb.run(messages.expandAll(cli.commands.setTime, Object.assign({ time: clock.time }, v)));
   pb.sleep(cli.timing.afterTimeMs);
+  pb.run(messages.expandAll(cli.commands.screenshot, Object.assign({ file: shot }, v)));
 }
 
 function installFresh(pb, platform) {
@@ -130,7 +144,7 @@ function main() {
         cmds.forEach(function (c) { pb.run(c); pb.sleep(cli.timing.betweenMessagesMs); });
         pb.sleep(sc.settleMs || d.settleMs || 3000);
         var shot = path.join(OUT, platform, sc.name + '.png');
-        pb.run(messages.expandAll(cli.commands.screenshot, { platform: platform, file: shot }));
+        pinClockAndShoot(pb, d, sc, platform, shot);
         var golden = path.join(GOLDEN, platform, sc.name + '.png');
         res.shot = shot; res.golden = golden;
         if (args.dry) { res.status = 'dry'; res.detail = cmds.length + ' messages, ' + cmds.reduce(function (n, c) { return n + c.length; }, 0) + ' CLI args'; }
@@ -141,7 +155,14 @@ function main() {
         } else if (!fs.existsSync(golden)) {
           res.status = 'fail'; res.detail = 'no golden image yet (run with --update after checking the screenshot by eye)';
         } else {
-          var cmp = compareLib.compare(png.decode(fs.readFileSync(golden)), png.decode(fs.readFileSync(shot)), tolerance(d, sc, platform));
+          var goldenImg = png.decode(fs.readFileSync(golden)), tol = tolerance(d, sc, platform);
+          var cmp = compareLib.compare(goldenImg, png.decode(fs.readFileSync(shot)), tol);
+          // The clock runs between pinning it and the screenshot, so a hand can land a pixel off: retake a few times.
+          for (var attempt = 1; !cmp.ok && attempt <= (sc.retries !== undefined ? sc.retries : (d.retries || 0)); attempt++) {
+            pinClockAndShoot(pb, d, sc, platform, shot);
+            cmp = compareLib.compare(goldenImg, png.decode(fs.readFileSync(shot)), tol);
+            if (cmp.ok) cmp.message = 'identical after ' + attempt + ' retake(s)';
+          }
           res.detail = cmp.message;
           if (!cmp.ok) {
             res.status = 'fail';

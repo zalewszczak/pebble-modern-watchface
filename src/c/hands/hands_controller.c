@@ -80,9 +80,14 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
 
   feature_controller_ensure_corner_custom_font(s_data->corner_font);
 
-  int32_t hour_angle = (int32_t)(((int64_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + t->tm_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
+  // Without a visible second hand the hour and minute hands sit on whole minutes: the angle does not depend on the
+  // seconds, so any redraw within the same minute (a message, a battery change, a seconds-based complication)
+  // draws exactly the same picture. With the second hand shown they keep their second-precise angles.
+  const int hands_sec = s_data->show_seconds ? t->tm_sec : 0;
 
-  int32_t min_angle = ((t->tm_min * 60 + t->tm_sec) * TRIG_MAX_ANGLE) / (60 * 60);
+  int32_t hour_angle = (int32_t)(((int64_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
+
+  int32_t min_angle = ((t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (60 * 60);
 
   int32_t sec_angle;
   // Shake modes that request smooth seconds use the sub-second timestamp.
