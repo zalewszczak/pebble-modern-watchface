@@ -1,5 +1,5 @@
 {
-  "_comment": "Applied to every scenario before its own preset/settings. These make a screenshot deterministic: no seconds hand, no animations, no network weather, no plugins, no vibration.",
+  "_comment": "Applied to every scenario before its own preset/settings. Makes a screenshot deterministic: fixed date and time, no seconds hand, no animations, fixed data (see lib/datasets.js), no plugins, no vibration. platformDefaults are applied on top of the example style, before the scenario's own preset.",
   "settings": {
     "CONFIG_SHOW_SECONDS": "false",
     "CONFIG_STARTUP_CLOCK_ANIM_MODE": "0",
@@ -11,20 +11,29 @@
     "CONFIG_DRAW_DEBUG": "false",
     "CONFIG_WEATHER_SOURCE": "openmeteo"
   },
-  "afterPreset": {
+  "settingsAfter": {
     "CONFIG_SHOW_SECONDS": "false",
     "CONFIG_STARTUP_CLOCK_ANIM_MODE": "0",
     "CONFIG_BG_ANIM_MODE": "0",
     "CONFIG_SHAKE_ANIM_MODE": "0"
   },
-  "weather": {
-    "WEATHER_CONDITION": 0, "CLOUD_COVER": 20, "WEATHER_TEMP_C": 18, "WEATHER_TEMP_HIGH_C": 22, "WEATHER_TEMP_LOW_C": 11,
-    "UV_INDEX_X10": 40, "UV_INDEX_CURRENT_X10": 30, "RAIN_CHANCE_PCT": 10, "HUMIDITY_PCT": 55, "WIND_SPEED_KMH": 12,
-    "WIND_DIR_DEG": 180, "DEW_POINT_C": 9, "PRESSURE_HPA": 1015, "PRESSURE_TREND": 0, "AQI_US": 30, "AQI_EU": 15
+  "platformDefaults": {
+    "flint": {
+      "_comment": "1-bit screen: a clean white-on-black scheme (the colour presets reduce to odd combinations), no translucency or night scheme.",
+      "preset": {
+        "customBgValue": "192", "customTextValue": "255", "customAccentValue": "255",
+        "nightEnabled": false, "bitmapMarkerTransparent": false,
+        "handHourTranslucent": "false", "handMinTranslucent": "false", "handSecTranslucent": "false"
+      }
+    }
   },
-  "clock": { "time": "10:08:00", "format": "24h" },
+  "dataset": "mild",
+  "data": {},
+  "location": { "lat": 48.2082, "lon": 16.3738 },
+  "clock": { "date": "2026-09-24", "time": "10:08:00", "format": "24h" },
   "battery": { "percent": 80, "charging": false },
   "bluetooth": true,
-  "settleMs": 3000,
-  "retries": 2
+  "settleMs": 1500,
+  "retries": 2,
+  "doubleSetTime": false
 }

@@ -5,5 +5,6 @@
     "format": "12h",
     "time": "15:42:10"
   },
-  "name": "style-1-12h"
+  "name": "style-1-12h",
+  "group": "env"
 }

@@ -2,5 +2,6 @@
   "description": "Example style 1 with Bluetooth disconnected.",
   "exampleStyle": 1,
   "bluetooth": false,
-  "name": "style-1-bt-lost"
+  "name": "style-1-bt-lost",
+  "group": "env"
 }

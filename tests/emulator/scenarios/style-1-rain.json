@@ -1,12 +1,7 @@
 {
   "description": "Example style 1 in rain (weather icon + background).",
   "exampleStyle": 1,
-  "weather": {
-    "WEATHER_CONDITION": 5,
-    "WEATHER_TEMP_C": 9,
-    "RAIN_CHANCE_PCT": 80,
-    "HUMIDITY_PCT": 90,
-    "CLOUD_COVER": 90
-  },
-  "name": "style-1-rain"
+  "name": "style-1-rain",
+  "dataset": "rain",
+  "group": "env"
 }

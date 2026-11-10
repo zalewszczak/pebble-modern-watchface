@@ -4,5 +4,6 @@
   "battery": {
     "percent": 15
   },
-  "name": "style-1-battery-low"
+  "name": "style-1-battery-low",
+  "group": "env"
 }

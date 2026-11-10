@@ -66,13 +66,28 @@ test('messages: int, string and byte values become CLI arguments', function () {
   assert.throws(function () { messages.messageArgs({ NOPE: 1 }, {}, cli, 'emery', 'u'); }, /not in the message key table/);
 });
 
-test('every key the real PKJS encoder sends exists in package.json messageKeys', function () {
+function effFor(name, platform) {
+  var scenarioLib = require('../lib/scenario');
+  var defaults = JSON.parse(fs.readFileSync(path.join(EMU, 'scenarios', '_defaults.json'), 'utf8'));
+  var sc = JSON.parse(fs.readFileSync(path.join(EMU, 'scenarios', name + '.json'), 'utf8'));
+  var rs = scenarioLib.resolve(sc, defaults, platform, cli);
+  var dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'eff-'));
+  var p = path.join(dir, name + '.json');
+  fs.writeFileSync(p, JSON.stringify(rs.eff));
+  return { path: p, rs: rs };
+}
+function captureFor(name, platform) {
+  var e = effFor(name, platform);
+  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'lib', 'capture.js'), e.path], { encoding: 'utf8', maxBuffer: 1 << 26 });
+  assert.strictEqual(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+test('every key the real PKJS encoder sends exists in the message key table', function () {
   var ids = messages.loadKeyIds(PROJECT).ids;
   ['flint', 'emery', 'gabbro'].forEach(function (platform) {
-    var r = cp.spawnSync(process.execPath, [path.join(EMU, 'lib', 'capture.js'), platform, path.join(EMU, 'scenarios', 'style-1.json')], { encoding: 'utf8', maxBuffer: 1 << 26 });
-    assert.strictEqual(r.status, 0, r.stderr);
-    var cap = JSON.parse(r.stdout);
-    assert.ok(cap.messages.length >= 3, 'expected several message chunks');
+    var cap = captureFor('style-1', platform);
+    assert.ok(cap.messages.length >= 5, 'expected settings and data chunks');
     assert.ok(cap.presetFieldsApplied > 50, 'example style should apply many fields');
     cap.messages.forEach(function (m) {
       Object.keys(m).forEach(function (k) { assert.ok(ids[k] !== undefined, platform + ': key ' + k + ' has no id'); });
@@ -81,12 +96,68 @@ test('every key the real PKJS encoder sends exists in package.json messageKeys',
   });
 });
 
-test('scenarios: file names match, example styles exist, platforms are known', function () {
+test('the fixed date makes the phone data identical on every run (sunrise, moon, last update)', function () {
+  var a = captureFor('style-1', 'emery'), b = captureFor('style-1', 'emery');
+  assert.strictEqual(JSON.stringify(a.messages), JSON.stringify(b.messages));
+  var all = Object.assign.apply(null, [{}].concat(a.messages));
+  assert.strictEqual(all.WEATHER_LAST_UPDATE, effFor('style-1', 'emery').rs.clock.unix);
+  assert.ok(all.SUN_RISE > 0 && all.SUN_SET > all.SUN_RISE);
+});
+
+test('datasets change the data sent', function () {
+  var rain = Object.assign.apply(null, [{}].concat(captureFor('style-1-rain', 'emery').messages));
+  var mild = Object.assign.apply(null, [{}].concat(captureFor('style-1', 'emery').messages));
+  assert.notStrictEqual(rain.WEATHER_TEMP_C, mild.WEATHER_TEMP_C);
+  assert.throws(function () { require('../lib/datasets').resolve('nope'); }, /unknown dataset/);
+});
+
+test('flint gets the clean white-on-black scheme, other platforms keep the example style', function () {
+  assert.strictEqual(effFor('style-2', 'flint').rs.eff.preset.customBgValue, '192');
+  assert.strictEqual(effFor('style-2', 'emery').rs.eff.preset.customBgValue, undefined);
+});
+
+test('backgrounds: a preset that does not exist on the platform is replaced or switched off', function () {
+  var fix = require('../lib/capture').fixBackground;
+  var imgs = { numbers: [1, 2, 3], imagesRound: { '2': 'x' }, imagesBw: {} };
+  assert.strictEqual(fix({ useCustomBg: true, bgSource: 'p:3' }, 'emery', imgs).bgSource, 'p:3');
+  assert.strictEqual(fix({ useCustomBg: true, bgSource: 'p:3' }, 'gabbro', imgs).bgSource, 'p:2');
+  assert.strictEqual(fix({ useCustomBg: true, bgSource: 'p:3' }, 'flint', imgs).useCustomBg, false);
+  assert.strictEqual(fix({ useCustomBg: false, bgSource: 'p:3' }, 'gabbro', imgs).bgSource, 'p:3');
+});
+
+test('indices: a bitmap style missing on the platform is replaced by an available one', function () {
+  var fix = require('../lib/capture').fixMarkerStyle, pi = require('../lib/projectinfo');
+  var first = pi.info('flint').bitmapIndices[0];
+  assert.strictEqual(fix({ bigAnalogMarkerStyle: '9' }, 'flint').bigAnalogMarkerStyle, '9'); // drawn by code everywhere
+  assert.strictEqual(fix({ bigAnalogMarkerStyle: first }, 'flint').bigAnalogMarkerStyle, first);
+  assert.strictEqual(fix({ useCustomBg: false }, 'flint').bigAnalogMarkerStyle, undefined);
+});
+
+test('clock: the instant is built from a date and time', function () {
+  var sl = require('../lib/scenario');
+  var u = sl.clockInstant({ date: '2026-09-24', time: '10:08:00' }, 'utc');
+  assert.strictEqual(u.unix, Date.UTC(2026, 8, 24, 10, 8, 0) / 1000);
+  assert.throws(function () { sl.clockInstant({ date: '24.09.2026', time: '10:08:00' }, 'utc'); }, /YYYY-MM-DD/);
+});
+
+test('families: unique names per platform, indices and backgrounds follow the platform, round has no corner slots', function () {
+  var fam = require('../scenarios/_families'), pi = require('../lib/projectinfo');
+  ['flint', 'emery', 'gabbro'].forEach(function (p) {
+    var list = fam(p, pi.info(p)), names = {};
+    list.forEach(function (s) { assert.ok(!names[s.name], 'duplicate ' + s.name); names[s.name] = 1; assert.ok(s.group); });
+    assert.ok(list.some(function (s) { return s.group === 'indices'; }));
+  });
+  var round = fam('gabbro', pi.info('gabbro')).filter(function (s) { return s.group === 'complications'; });
+  round.forEach(function (s) { assert.ok(!('cornerTL' in s.preset) || s.preset.cornerTL === '0'); });
+  var bw = fam('flint', pi.info('flint')).filter(function (s) { return s.group === 'indices'; });
+  assert.ok(bw.some(function (s) { return /-dark$/.test(s.name); }) && bw.some(function (s) { return /-light$/.test(s.name); }));
+});
+
+test('scenarios: file names match, example styles exist', function () {
   var dir = path.join(EMU, 'scenarios');
   var presets = require(path.join(PROJECT, 'src', 'pkjs', 'example-style-presets'));
-  fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f); }).forEach(function (f) {
+  fs.readdirSync(dir).filter(function (f) { return /\.json$/.test(f) && f[0] !== '_'; }).forEach(function (f) {
     var s = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
-    if (f[0] === '_') return;
     assert.strictEqual(s.name, f.replace(/\.json$/, ''), f + ' name must equal file name');
     assert.ok(s.exampleStyle || s.preset || s.settings, f + ' defines nothing to show');
     if (s.exampleStyle) assert.ok(presets[String(s.exampleStyle)] && presets[String(s.exampleStyle)].preset, f + ': unknown example style');
@@ -95,17 +166,47 @@ test('scenarios: file names match, example styles exist, platforms are known', f
 });
 
 test('different example styles produce different settings messages', function () {
-  function run(n) {
-    var r = cp.spawnSync(process.execPath, [path.join(EMU, 'lib', 'capture.js'), 'emery', path.join(EMU, 'scenarios', 'style-' + n + '.json')], { encoding: 'utf8', maxBuffer: 1 << 26 });
-    return JSON.stringify(JSON.parse(r.stdout).messages.slice(0, 3));
-  }
-  assert.notStrictEqual(run(1), run(2));
+  assert.notStrictEqual(JSON.stringify(captureFor('style-1', 'emery').messages.slice(0, 3)), JSON.stringify(captureFor('style-2', 'emery').messages.slice(0, 3)));
 });
 
-test('dry run end to end writes a report and exits 0', function () {
-  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'run.js'), '--dry-run', '--platform', 'emery', '--scenario', 'style-2'], { encoding: 'utf8' });
+function dry(extra) {
+  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'run.js'), '--dry-run', '--no-build'].concat(extra), { encoding: 'utf8' });
   assert.strictEqual(r.status, 0, r.stdout + r.stderr);
-  assert.match(r.stdout, /DRY\s+style-2/);
+  return { out: r.stdout, cmds: fs.readFileSync(path.join(EMU, 'out', 'dry-run-commands.txt'), 'utf8').split('\n') };
+}
+
+test('dry run: timers are printed per scenario, per platform and in total', function () {
+  var r = dry(['--platform', 'emery', '--scenario', 'style-2']);
+  assert.match(r.out, /DRY\s+style-2\s+\d/);
+  assert.match(r.out, /-- emery: .* for 1 scenarios/);
+  assert.match(r.out, /Total .*emery /);
+});
+
+test('dry run: the clock is set once and last by default, twice with --double-time', function () {
+  var one = dry(['--platform', 'flint', '--scenario', 'style-2']).cmds;
+  var shot = one.findIndex(function (l) { return /pebble screenshot/.test(l); });
+  assert.strictEqual(one.filter(function (l) { return /emu-set-time/.test(l); }).length, 1);
+  assert.ok(/emu-set-time/.test(one[shot - 1]));
+  var lastMsg = one.map(function (l, i) { return /send-app-message/.test(l) ? i : -1; }).pop();
+  assert.ok(lastMsg < shot - 1, 'clock must be pinned after the last message');
+  var two = dry(['--platform', 'flint', '--scenario', 'style-2', '--double-time']).cmds;
+  var times = two.filter(function (l) { return /emu-set-time/.test(l); });
+  assert.strictEqual(times.length, 2);
+  var u = function (l) { return +/emu-set-time (\d+)/.exec(l)[1]; };
+  assert.strictEqual(u(times[1]) - u(times[0]), 60);
+});
+
+test('dry run: messages identical to the last scenario are not sent again, unless --resend-all', function () {
+  var skip = dry(['--platform', 'emery', '--scenario', 'style-1-12h', '--scenario', 'style-1-rain']).cmds.filter(function (l) { return /send-app-message/.test(l); }).length;
+  var all = dry(['--platform', 'emery', '--scenario', 'style-1-12h', '--scenario', 'style-1-rain', '--resend-all']).cmds.filter(function (l) { return /send-app-message/.test(l); }).length;
+  assert.ok(skip < all, skip + ' should be fewer than ' + all);
+});
+
+test('dry run: --list works for groups', function () {
+  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'run.js'), '--list', '--group', 'indices', '--platform', 'gabbro'], { encoding: 'utf8' });
+  assert.strictEqual(r.status, 0);
+  assert.match(r.stdout, /indices \(\d+\)/);
+  assert.ok(!/complications/.test(r.stdout));
 });
 
 test('clock: minusMinutes wraps over midnight and keeps seconds', function () {
@@ -116,14 +217,3 @@ test('clock: minusMinutes wraps over midnight and keeps seconds', function () {
   assert.throws(function () { clock.parse('10:08'); }, /HH:MM:SS/);
 });
 
-test('dry run sets the clock last, immediately before the screenshot', function () {
-  var r = cp.spawnSync(process.execPath, [path.join(EMU, 'run.js'), '--dry-run', '--no-build', '--platform', 'flint', '--scenario', 'style-2'], { encoding: 'utf8' });
-  assert.strictEqual(r.status, 0, r.stdout + r.stderr);
-  var cmds = fs.readFileSync(path.join(EMU, 'out', 'dry-run-commands.txt'), 'utf8').split('\n');
-  var shot = cmds.findIndex(function (l) { return /pebble screenshot/.test(l); });
-  var lastMsg = cmds.map(function (l, i) { return /send-app-message/.test(l) ? i : -1; }).pop();
-  assert.deepStrictEqual(cmds.slice(shot - 2, shot).map(function (l) { return /emu-set-time/.test(l); }), [true, true]);
-  assert.ok(lastMsg < shot - 2, 'clock must be pinned after the last message');
-  assert.match(cmds[shot - 2], /emu-set-time 10:07:00/);
-  assert.match(cmds[shot - 1], /emu-set-time 10:08:00/);
-});

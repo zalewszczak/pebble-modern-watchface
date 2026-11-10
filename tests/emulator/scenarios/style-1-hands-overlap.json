@@ -4,5 +4,6 @@
   "clock": {
     "time": "12:00:00"
   },
-  "name": "style-1-hands-overlap"
+  "name": "style-1-hands-overlap",
+  "group": "env"
 }

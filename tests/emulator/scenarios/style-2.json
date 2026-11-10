@@ -1,5 +1,6 @@
 {
   "description": "Example style 2 (\"Braun\") at 10:08:00, clear weather, battery 80%.",
   "exampleStyle": 2,
-  "name": "style-2"
+  "name": "style-2",
+  "group": "styles"
 }
