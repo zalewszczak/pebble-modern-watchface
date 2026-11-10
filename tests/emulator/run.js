@@ -7,6 +7,8 @@
 //   node tests/emulator/run.js --scenario style-1   scenario name contains this (repeatable)
 //   node tests/emulator/run.js --group indices      scenario group: styles, env, complications, indices, backgrounds (repeatable)
 //   node tests/emulator/run.js --update             write the screenshots taken as the new golden images
+//   node tests/emulator/run.js --update2 / --update3  same, but only when 2 / 3 consecutive screenshots are identical
+//   node tests/emulator/run.js --serve [port]       serve out/report.html locally; its "Accept as golden" buttons update golden images
 //   node tests/emulator/run.js --list               list the scenarios that would run, per platform
 //   node tests/emulator/run.js --dry-run            no emulator: build and check the messages, print the commands
 //   node tests/emulator/run.js --probe              print the pebble CLI help texts (to confirm cli.json)
@@ -21,6 +23,8 @@ var Pebble = require('./lib/pebble');
 var messages = require('./lib/messages');
 var png = require('./lib/png');
 var compareLib = require('./lib/compare');
+var agree = require('./lib/agree');
+var serverLib = require('./lib/server');
 var scenarioLib = require('./lib/scenario');
 var projectInfo = require('./lib/projectinfo');
 var cli = require('./cli.json');
@@ -32,14 +36,17 @@ var GOLDEN = path.join(HERE, 'golden');
 var OUT = path.join(HERE, 'out');
 
 function parseArgs(argv) {
-  var o = { platforms: [], scenarios: [], groups: [], update: false, dry: false, probe: false, list: false, build: true, fresh: false,
+  var o = { platforms: [], scenarios: [], groups: [], update: false, agree: 1, serve: false, port: 8765, dry: false, probe: false, list: false, build: true, fresh: false,
     verbose: false, doubleTime: false, resendAll: false };
   for (var i = 0; i < argv.length; i++) {
     var a = argv[i];
     if (a === '--platform') o.platforms.push(argv[++i]);
     else if (a === '--scenario') o.scenarios.push(argv[++i]);
     else if (a === '--group') o.groups.push(argv[++i]);
-    else if (a === '--update') o.update = true;
+    else if (a === '--update') { o.update = true; o.agree = 1; }
+    else if (a === '--update2') { o.update = true; o.agree = 2; }
+    else if (a === '--update3') { o.update = true; o.agree = 3; }
+    else if (a === '--serve') { o.serve = true; if (/^\d+$/.test(argv[i + 1] || '')) o.port = +argv[++i]; }
     else if (a === '--dry-run') o.dry = true;
     else if (a === '--probe') o.probe = true;
     else if (a === '--list') o.list = true;
@@ -133,6 +140,12 @@ function main() {
     return 0;
   }
 
+  if (args.serve) {
+    var srv = serverLib.createServer({ outDir: OUT, goldenDir: GOLDEN });
+    srv.listen(args.port, '127.0.0.1', function () { console.log('Report: http://127.0.0.1:' + args.port + '/   (Ctrl+C to stop). The "Accept as golden" buttons replace golden images.'); });
+    return 0;
+  }
+
   var platforms = args.platforms.length ? args.platforms : cli.platformsDefault;
   var staticList = loadStatic();
   var defaults = JSON.parse(fs.readFileSync(path.join(SCEN_DIR, '_defaults.json'), 'utf8'));
@@ -192,14 +205,25 @@ function main() {
         toSend.forEach(function (m) { pb.run(messages.messageArgs(m, keys.ids, cli, platform, uuid)); pb.sleep(cli.timing.betweenMessagesMs); });
         pb.sleep(toSend.length ? rs.settleMs : Math.min(rs.settleMs, 500));
         var shot = path.join(OUT, platform, sc.name + '.png');
-        pinClockAndShoot(pb, rs, platform, shot, args.doubleTime || rs.doubleSetTime);
+        if (!args.update || args.dry) pinClockAndShoot(pb, rs, platform, shot, args.doubleTime || rs.doubleSetTime);
         var golden = path.join(GOLDEN, platform, sc.name + '.png');
         res.shot = shot; res.golden = golden;
         if (args.dry) { res.status = 'dry'; res.detail = toSend.length + ' of ' + cap.messages.length + ' messages sent'; }
         else if (args.update) {
-          fs.mkdirSync(path.dirname(golden), { recursive: true });
-          fs.copyFileSync(shot, golden);
-          res.status = 'updated'; res.detail = 'golden written';
+          // Take screenshots until `agree` consecutive ones are identical; only then is the golden written.
+          var tmp = shot + '.take.png', maxTakes = args.agree * 3;
+          var got = agree.takeAgreed(args.agree, maxTakes, function (i) {
+            pinClockAndShoot(pb, rs, platform, tmp, i > 0 || args.doubleTime || rs.doubleSetTime);
+            return png.decode(fs.readFileSync(tmp));
+          }, function (a, b) { return compareLib.compare(a, b, { channelTolerance: 0, maxDiffPixels: 0 }).ok; });
+          if (fs.existsSync(tmp)) fs.unlinkSync(tmp);
+          if (!got.ok) { res.status = 'error'; res.detail = 'screenshots did not agree (' + args.agree + ' identical in a row needed, ' + got.takes + ' taken): golden NOT written'; }
+          else {
+            fs.mkdirSync(path.dirname(golden), { recursive: true });
+            fs.writeFileSync(golden, png.encode(got.image));
+            fs.copyFileSync(golden, shot);
+            res.status = 'updated'; res.detail = 'golden written' + (args.agree > 1 ? ' (' + args.agree + ' identical screenshots in ' + got.takes + ' takes)' : '');
+          }
         } else if (!fs.existsSync(golden)) {
           res.status = 'fail'; res.detail = 'no golden image yet (run with --update after checking the screenshot by eye)';
         } else {
@@ -238,6 +262,7 @@ function main() {
   console.log('\n' + results.length + ' checks, ' + bad + ' failing. Total ' + fmt(total) + (parts ? ' (' + parts + ')' : '') + '. Report: ' + path.relative(process.cwd(), path.join(OUT, 'report.html')));
   var slow = results.slice().sort(function (a, b) { return b.ms - a.ms; }).slice(0, 3).map(function (r) { return r.platform + '/' + r.scenario + ' ' + fmt(r.ms); });
   if (slow.length && !args.dry) console.log('slowest: ' + slow.join(', '));
+  if (bad && !args.dry && !args.update) console.log('Review the failures in the browser and accept the changes you want:  node tests/emulator/run.js --serve');
   if (args.dry) fs.writeFileSync(path.join(OUT, 'dry-run-commands.txt'), pb.log.join('\n') + '\n');
   return bad ? 1 : 0;
 }
@@ -246,6 +271,18 @@ function img(p) {
   try { return 'data:image/png;base64,' + fs.readFileSync(p).toString('base64'); } catch (e) { return ''; }
 }
 function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+// Needs the local report server (node tests/emulator/run.js --serve); opened as a plain file the buttons explain that.
+var REPORT_SCRIPT = '<script>' +
+  'document.addEventListener("click",function(e){var b=e.target;if(!b.classList||!b.classList.contains("accept"))return;' +
+  'var p=b.getAttribute("data-platform"),s=b.getAttribute("data-scenario");' +
+  'if(location.protocol==="file:"){alert("Start the report server first:\\n  node tests/emulator/run.js --serve\\nand open the address it prints.");return;}' +
+  'if(!confirm("Replace the golden image for "+p+" / "+s+" with the new screenshot?\\n\\nThe old golden is overwritten (restore it with git if needed)."))return;' +
+  'fetch("/update",{method:"POST",headers:{"Content-Type":"application/json","X-Test-Report":"1"},body:JSON.stringify({platform:p,scenario:s})})' +
+  '.then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j;},function(){throw new Error("HTTP "+r.status);});})' +
+  '.then(function(){b.disabled=true;b.textContent="Golden updated";b.closest("tr").className="accepted";})' +
+  '.catch(function(err){alert("Could not update the golden: "+err.message);});});' +
+  '</script>';
 
 function writeReport(results, timing) {
   fs.mkdirSync(OUT, { recursive: true });
@@ -258,13 +295,16 @@ function writeReport(results, timing) {
     var cells = kinds.map(function (k) {
       return '<td>' + (r[k] && fs.existsSync(r[k]) ? '<img src="' + img(r[k]) + '"><div>' + k + '</div>' : '') + '</td>';
     }).join('');
-    return '<tr class="' + r.status + '"><td><b>' + esc(r.scenario) + '</b><br>' + esc(r.platform) + ' &middot; ' + esc(r.group || '') + '<br>' + r.status + ' &middot; ' + (r.ms / 1000).toFixed(1) + 's<br><small>' + esc(r.detail) + '</small></td>' + cells + '</tr>';
+    return '<tr class="' + r.status + '"><td><b>' + esc(r.scenario) + '</b><br>' + esc(r.platform) + ' &middot; ' + esc(r.group || '') + '<br>' + r.status + ' &middot; ' + (r.ms / 1000).toFixed(1) + 's<br><small>' + esc(r.detail) + '</small>' +
+      (r.status === 'fail' && r.shot ? '<br><button class="accept" data-platform="' + esc(r.platform) + '" data-scenario="' + esc(r.scenario) + '">Accept new screenshot as golden</button>' : '') +
+      '</td>' + cells + '</tr>';
   }).join('\n');
   fs.writeFileSync(path.join(OUT, 'report.html'),
     '<!doctype html><meta charset="utf-8"><title>Emulator test report</title><style>body{font:14px sans-serif;background:#222;color:#eee}' +
     'table{border-collapse:collapse}td{padding:6px;vertical-align:top;border-bottom:1px solid #444}img{background:#555;image-rendering:pixelated;max-width:320px}' +
-    'tr.fail td:first-child,tr.error td:first-child{color:#f77}tr.pass td:first-child{color:#7f7}</style>' +
-    '<p>Total ' + (timing.totalMs / 1000).toFixed(1) + 's. ' + Object.keys(timing.platformTimes).map(function (p) { return esc(p) + ' ' + (timing.platformTimes[p] / 1000).toFixed(1) + 's'; }).join(', ') + '</p><table>' + rows + '</table>');
+    'tr.fail td:first-child,tr.error td:first-child{color:#f77}tr.pass td:first-child{color:#7f7}tr.accepted td:first-child{color:#7cf}' +
+    'button.accept{margin-top:6px;padding:4px 8px;cursor:pointer}</style>' +
+    '<p>Total ' + (timing.totalMs / 1000).toFixed(1) + 's. ' + Object.keys(timing.platformTimes).map(function (p) { return esc(p) + ' ' + (timing.platformTimes[p] / 1000).toFixed(1) + 's'; }).join(', ') + '</p><table>' + rows + '</table>' + REPORT_SCRIPT);
 }
 
 try { process.exitCode = main(); } catch (e) { console.error(e.message); process.exitCode = 2; }

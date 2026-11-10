@@ -9,7 +9,8 @@ function Pebble(opts) {
   this.cwd = opts.cwd;
   this.verbose = !!opts.verbose;
   this.log = [];
-  this.bin = opts.bin || cliCfg.pebble;
+  this.bin = opts.bin || process.env.PEBBLE_BIN || cliCfg.pebble; // PEBBLE_BIN: use another executable (the self-tests use a fake)
+  this.noSleep = !!process.env.MODERN_TEST_NO_SLEEP;
 }
 
 Pebble.prototype.run = function (args, runOpts) {
@@ -27,7 +28,7 @@ Pebble.prototype.run = function (args, runOpts) {
 };
 
 Pebble.prototype.sleep = function (ms) {
-  if (this.dry || !ms) return;
+  if (this.dry || this.noSleep || !ms) return;
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 };
 

@@ -1,9 +1,0 @@
-{
-  "description": "Example style 1 at 12:00:00, all hands stacked.",
-  "exampleStyle": 1,
-  "clock": {
-    "time": "12:00:00"
-  },
-  "name": "style-1-hands-overlap",
-  "group": "env"
-}

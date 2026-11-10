@@ -1,0 +1,14 @@
+{
+  "description": "Style 1 charging at 55% in rain, hands stacked at 12:00.",
+  "exampleStyle": 1,
+  "battery": {
+    "percent": 55,
+    "charging": true
+  },
+  "dataset": "rain",
+  "clock": {
+    "time": "12:00:00"
+  },
+  "name": "env-charging-rain",
+  "group": "env"
+}

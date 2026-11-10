@@ -1,0 +1,14 @@
+{
+  "description": "Style 1 with battery 15%, Bluetooth lost, 12 hour clock: low-battery colours and the odd-state icons.",
+  "exampleStyle": 1,
+  "battery": {
+    "percent": 15
+  },
+  "bluetooth": false,
+  "clock": {
+    "time": "15:42:00",
+    "format": "12h"
+  },
+  "name": "env-alert",
+  "group": "env"
+}

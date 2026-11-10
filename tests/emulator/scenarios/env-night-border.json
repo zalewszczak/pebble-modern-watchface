@@ -1,0 +1,12 @@
+{
+  "description": "Style 1 at 23:30 (night colour scheme) with the weather border ring on.",
+  "exampleStyle": 1,
+  "settings": {
+    "CONFIG_BORDER_SOURCE": "1"
+  },
+  "clock": {
+    "time": "23:30:00"
+  },
+  "name": "env-night-border",
+  "group": "env"
+}
