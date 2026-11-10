@@ -1,0 +1,118 @@
+{
+  "_comment": "The ONLY place that knows the exact pebble CLI syntax. If a command fails in Phase 0, adjust it here (run `node emulator/run.js --probe` to print the real --help texts). Placeholders: {platform} {uuid} {key} {value} {hex} {file}. send-app-message takes ONE flag per value type with all KEY=VALUE pairs after it (confirmed from --help). clockTimezone: \"host\" if the emulator shows the host computer's local time for emu-set-time <unix>, \"utc\" if it shows UTC.",
+  "pebble": "pebble",
+  "commands": {
+    "kill": [
+      "kill"
+    ],
+    "wipe": [
+      "wipe"
+    ],
+    "build": [
+      "build"
+    ],
+    "install": [
+      "install",
+      "--emulator",
+      "{platform}"
+    ],
+    "setTime": [
+      "emu-set-time",
+      "{unix}",
+      "--emulator",
+      "{platform}"
+    ],
+    "timeFormat": [
+      "emu-time-format",
+      "--format",
+      "{format}",
+      "--emulator",
+      "{platform}"
+    ],
+    "battery": [
+      "emu-battery",
+      "--percent",
+      "{percent}",
+      "--emulator",
+      "{platform}"
+    ],
+    "batteryCharging": [
+      "emu-battery",
+      "--percent",
+      "{percent}",
+      "--charging",
+      "--emulator",
+      "{platform}"
+    ],
+    "bluetooth": [
+      "emu-bt-connection",
+      "--connected",
+      "{connected}",
+      "--emulator",
+      "{platform}"
+    ],
+    "screenshot": [
+      "screenshot",
+      "{file}",
+      "--no-correction",
+      "--no-open",
+      "--emulator",
+      "{platform}"
+    ]
+  },
+  "sendAppMessage": {
+    "base": [
+      "send-app-message",
+      "--emulator",
+      "{platform}",
+      "--app-uuid",
+      "{uuid}"
+    ],
+    "int": {
+      "flag": "--int",
+      "pair": "{key}={value}"
+    },
+    "string": {
+      "flag": "--string",
+      "pair": "{key}={value}"
+    },
+    "bytes": {
+      "flag": "--bytes",
+      "pair": "{key}={hex}"
+    }
+  },
+  "probe": [
+    [
+      "install",
+      "--help"
+    ],
+    [
+      "send-app-message",
+      "--help"
+    ],
+    [
+      "screenshot",
+      "--help"
+    ],
+    [
+      "emu-set-time",
+      "--help"
+    ],
+    [
+      "emu-battery",
+      "--help"
+    ]
+  ],
+  "timing": {
+    "afterPreTimeMs": 600,
+    "afterTimeMs": 400,
+    "betweenMessagesMs": 150,
+    "afterInstallMs": 12000
+  },
+  "platformsDefault": [
+    "flint",
+    "emery",
+    "gabbro"
+  ],
+  "clockTimezone": "host"
+}

@@ -1,0 +1,39 @@
+{
+  "_comment": "Applied to every scenario before its own preset/settings. Makes a screenshot deterministic: fixed date and time, no seconds hand, no animations, fixed data (see lib/datasets.js), no plugins, no vibration. platformDefaults are applied on top of the example style, before the scenario's own preset.",
+  "settings": {
+    "CONFIG_SHOW_SECONDS": "false",
+    "CONFIG_STARTUP_CLOCK_ANIM_MODE": "0",
+    "CONFIG_BG_ANIM_MODE": "0",
+    "CONFIG_SHAKE_ANIM_MODE": "0",
+    "CONFIG_HOURLY_VIBE_MODE": "0",
+    "CONFIG_BT_LOST_VIBE": "0",
+    "CONFIG_BATTERY_SAVER_ENABLED": "false",
+    "CONFIG_DRAW_DEBUG": "false",
+    "CONFIG_WEATHER_SOURCE": "openmeteo"
+  },
+  "settingsAfter": {
+    "CONFIG_SHOW_SECONDS": "false",
+    "CONFIG_STARTUP_CLOCK_ANIM_MODE": "0",
+    "CONFIG_BG_ANIM_MODE": "0",
+    "CONFIG_SHAKE_ANIM_MODE": "0"
+  },
+  "platformDefaults": {
+    "flint": {
+      "_comment": "1-bit screen: a clean white-on-black scheme (the colour presets reduce to odd combinations), no translucency or night scheme.",
+      "preset": {
+        "customBgValue": "192", "customTextValue": "255", "customAccentValue": "255",
+        "nightEnabled": false, "bitmapMarkerTransparent": false,
+        "handHourTranslucent": "false", "handMinTranslucent": "false", "handSecTranslucent": "false"
+      }
+    }
+  },
+  "dataset": "mild",
+  "data": {},
+  "location": { "lat": 48.2082, "lon": 16.3738 },
+  "clock": { "date": "2026-09-24", "time": "10:08:00", "format": "24h" },
+  "battery": { "percent": 80, "charging": false },
+  "bluetooth": true,
+  "settleMs": 1500,
+  "retries": 2,
+  "doubleSetTime": false
+}
