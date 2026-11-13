@@ -78,15 +78,15 @@ fs.writeFileSync(JS_OUT, js.join('\n') + '\n');
 // 2. C header
 var h = ['// GENERATED FILE -- do not hand-edit.',
   '// Produced by scripts/generate-weather-backgrounds.js from resources/square/weatherbg/<style>/.',
-  '#pragma once', '', '#include <pebble.h>', '',
+  '#pragma once', '', '#include <pebble.h>', '#include "../rendering/dial/bg_picture.h"', '',
   '#define WEATHERBG_STYLE_COUNT ' + styles.length, '',
   '// Resource id of the weather background for style (1-based), detailed weather',
   '// class wx (0-9) and time of day, or 0 when that exact image does not exist.',
   '// On a round watch only images that exist in resources/round/weatherbg/ are available, on a black',
   '// and white one (flint, diorite) only those in resources/legacy/weatherbg/.',
-  'static inline uint32_t weatherbg_resource_id_exact(uint8_t style, uint8_t wx, bool night) {'];
+  'static inline BgPicture weatherbg_picture_exact(uint8_t style, uint8_t wx, bool night) {'];
 ['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
-  if (pass === 1) { h.push(cond, '  // No weather backgrounds on the 1-bit watches.', '  (void)style; (void)wx; (void)night;', '  return 0;'); return; }
+  if (pass === 1) { h.push(cond, '  // No weather backgrounds on the 1-bit watches.', '  (void)style; (void)wx; (void)night;', '  return BG_PIC_NONE;'); return; }
   h.push(cond, '  switch (style) {');
   styles.forEach(function (st, i) {
     var lines = [];
@@ -95,25 +95,27 @@ var h = ['// GENERATED FILE -- do not hand-edit.',
         if (!st.files[idx + '_' + tod]) return;
         if (pass === 0 && !R.exists('round/' + st.files[idx + '_' + tod])) return;
         if (pass === 1 && !R.exists('legacy/' + st.files[idx + '_' + tod])) return;
-        lines.push('        case ' + (idx * 2 + t) + ': return RESOURCE_ID_' + MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase() + ';');
+        var rid = 'RESOURCE_ID_' + MEDIA_PREFIX + st.ident + '_' + cIdent(c) + '_' + tod.toUpperCase();
+        var parts = (pass === 0) ? R.roundPartRels(st.files[idx + '_' + tod]) : [];
+        lines.push('        case ' + (idx * 2 + t) + ': return ' + (parts.length === 2 ? 'BG_PIC2(' + rid + '_P0, ' + rid + '_P1)' : 'BG_PIC1(' + rid + ')') + ';');
       });
     });
     if (!lines.length) return;
     h.push('    case ' + (i + 1) + ':', '      switch (wx * 2 + (night ? 1 : 0)) {');
     Array.prototype.push.apply(h, lines);
-    h.push('        default: return 0;', '      }');
+    h.push('        default: return BG_PIC_NONE;', '      }');
   });
-  h.push('    default: return 0;', '  }');
+  h.push('    default: return BG_PIC_NONE;', '  }');
 });
 h.push('#endif', '}', '',
   '// Same, falling back to the other time of day and then to clear sky.',
-  'static inline uint32_t weatherbg_resource_id(uint8_t style, uint8_t wx, bool night) {',
+  'static inline BgPicture weatherbg_picture(uint8_t style, uint8_t wx, bool night) {',
   '  if (wx > 9) wx = 0;',
-  '  uint32_t id = weatherbg_resource_id_exact(style, wx, night);',
-  '  if (!id) id = weatherbg_resource_id_exact(style, wx, !night);',
-  '  if (!id) id = weatherbg_resource_id_exact(style, 0, night);',
-  '  if (!id) id = weatherbg_resource_id_exact(style, 0, !night);',
-  '  return id;', '}');
+  '  BgPicture p = weatherbg_picture_exact(style, wx, night);',
+  '  if (!p.id[0]) p = weatherbg_picture_exact(style, wx, !night);',
+  '  if (!p.id[0]) p = weatherbg_picture_exact(style, 0, night);',
+  '  if (!p.id[0]) p = weatherbg_picture_exact(style, 0, !night);',
+  '  return p;', '}');
 fs.writeFileSync(H_OUT, h.join('\n') + '\n');
 
 // 3. package.json

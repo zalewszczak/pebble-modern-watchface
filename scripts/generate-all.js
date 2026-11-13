@@ -43,6 +43,7 @@ var STEPS = [
   { label: 'generate-preset-previews.js', command: 'node scripts/generate-preset-previews.js' },
   { label: 'generate-example-style-previews.js', command: 'node scripts/generate-example-style-previews.js' },
   { label: 'generate-preview-icons.js (real icon PNGs for the settings preview)', command: 'node scripts/generate-preview-icons.js' },
+  { label: 'split-gabbro-backgrounds.py (round backgrounds -> top/bottom halves so gabbro can decode them; needs Pillow)', command: 'python3 scripts/split-gabbro-backgrounds.py' },
   { label: 'generate-backgrounds.js (predefined custom backgrounds: settings page + C resource table + package.json media)', command: 'node scripts/generate-backgrounds.js' },
   { label: 'generate-weather-backgrounds.js (weather background styles: settings page + C resource table + package.json media)', command: 'node scripts/generate-weather-backgrounds.js' },
   // Must stay last: rewrites the PNG data URIs every generator above just wrote as lossless WebP.

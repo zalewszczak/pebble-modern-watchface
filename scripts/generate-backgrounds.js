@@ -84,6 +84,7 @@ h.push('// Produced by scripts/generate-backgrounds.js from resources/{square,ro
 h.push('#pragma once');
 h.push('');
 h.push('#include <pebble.h>');
+h.push('#include "../rendering/dial/bg_picture.h"');
 h.push('');
 h.push('// Number of predefined background images compiled into this build.');
 h.push('#define BG_PRESET_COUNT ' + numbers.length);
@@ -92,20 +93,24 @@ h.push('// Resource id of predefined background <n> (1-based, the number in the 
 h.push('// file name), or 0 when there is no such image.');
 h.push('// On a round watch only the presets that have a resources/round/backgrounds/<n>.png exist, on a');
 h.push('// black and white one (flint, diorite) none (predefined backgrounds are not offered there).');
-h.push('static inline uint32_t bg_preset_resource_id(uint8_t n) {');
+h.push('static inline BgPicture bg_preset_picture(uint8_t n) {');
 ['#ifdef PBL_ROUND', '#elif defined(PBL_BW)', '#else'].forEach(function (cond, pass) {
   h.push(cond);
   h.push('  switch (n) {');
   numbers.forEach(function (n) {
     if (pass === 0 && !imagesRound[String(n)]) return;
     if (pass === 1 && !imagesBw[String(n)]) return;
-    h.push('    case ' + n + ': return RESOURCE_ID_' + MEDIA_PREFIX + n + ';');
+    var parts = (pass === 0) ? R.roundPartRels('backgrounds/' + n + '.png') : [];
+    h.push('    case ' + n + ': return ' + (parts.length === 2
+      ? 'BG_PIC2(RESOURCE_ID_' + MEDIA_PREFIX + n + '_P0, RESOURCE_ID_' + MEDIA_PREFIX + n + '_P1)'
+      : 'BG_PIC1(RESOURCE_ID_' + MEDIA_PREFIX + n + ')') + ';');
   });
-  h.push('    default: return 0;');
+  h.push('    default: return BG_PIC_NONE;');
   h.push('  }');
 });
 h.push('#endif');
 h.push('}');
+h.push('static inline uint32_t bg_preset_resource_id(uint8_t n) { return bg_preset_picture(n).id[0]; }');
 fs.writeFileSync(H_OUT, h.join('\n') + '\n');
 
 // ---- 3. package.json media entries ------------------------------------------

@@ -18,17 +18,35 @@ var RES = path.join(ROOT, 'resources');
 var PLATFORM = { square: 'emery', round: 'gabbro' };
 // Black and white platforms that share the legacy art (same 144x168 screen).
 var LEGACY_PLATFORMS = ['flint', 'diorite'];
+// gabbro cannot decode a whole 260 x 260 PNG at once (heap), so a background may be cut into
+// horizontal bands by scripts/split-gabbro-backgrounds.py: resources/round/<dir>/halves/<name>_h<i>.png.
+var ROUND_PARTS = 2;
 var warned = {};
 
 function dir(shape, sub) { return path.join(RES, shape, sub || ''); }
 function exists(rel) { return fs.existsSync(path.join(RES, rel)); }
+
+// Band files (rel paths under resources/) of a round picture, or [] when it was not split.
+function roundPartRels(rel) {
+  var d = path.posix.dirname(rel), base = path.posix.basename(rel, '.png'), out = [];
+  for (var i = 0; i < ROUND_PARTS; i++) {
+    var r = 'round/' + d + '/halves/' + base + '_h' + i + '.png';
+    if (!exists(r)) return [];
+    out.push(r);
+  }
+  return out;
+}
 
 // Media entries for one picture that exists in both shapes. rel is relative to the shape folder.
 function shapedMedia(name, rel, fallback, noLegacy) {
   var roundRel = 'round/' + rel;
   var haveRound = exists(roundRel);
   var out = [{ type: 'bitmap', name: name, file: 'square/' + rel, targetPlatforms: [PLATFORM.square] }];
-  if (haveRound) out.push({ type: 'bitmap', name: name, file: roundRel, targetPlatforms: [PLATFORM.round] });
+  if (haveRound) {
+    var parts = roundPartRels(rel);
+    if (parts.length) parts.forEach(function (f, i) { out.push({ type: 'bitmap', name: name + '_P' + i, file: f, targetPlatforms: [PLATFORM.round] }); });
+    else out.push({ type: 'bitmap', name: name, file: roundRel, targetPlatforms: [PLATFORM.round] });
+  }
   else if (fallback) {
     // Only for art the C code cannot do without; costs .pbw size, so use sparingly.
     if (!warned[rel]) { warned[rel] = 1; console.log('  note: no round/' + rel + ' yet - gabbro falls back to square/' + rel); }
@@ -46,4 +64,4 @@ function commonMedia(type, name, rel) { return { type: type, name: name, file: '
 
 function dataUri(file) { return 'data:image/png;base64,' + fs.readFileSync(file).toString('base64'); }
 
-module.exports = { ROOT: ROOT, RES: RES, dir: dir, exists: exists, shapedMedia: shapedMedia, commonMedia: commonMedia, dataUri: dataUri, PLATFORM: PLATFORM, LEGACY_PLATFORMS: LEGACY_PLATFORMS };
+module.exports = { ROOT: ROOT, RES: RES, dir: dir, exists: exists, shapedMedia: shapedMedia, roundPartRels: roundPartRels, commonMedia: commonMedia, dataUri: dataUri, PLATFORM: PLATFORM, LEGACY_PLATFORMS: LEGACY_PLATFORMS };

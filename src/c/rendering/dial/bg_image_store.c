@@ -1,6 +1,7 @@
 // B&W watches have no uploaded / plugin / preset background pictures: compiled out.
 #include <pebble.h>
 #ifndef PBL_BW
+#include "./fb_row.h"
 #include "./bg_image_store.h"
 #include <string.h>
 #include "../../platform/platform_bw.h"
@@ -257,12 +258,21 @@ bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origi
 #else
   const GBitmapFormat want_format = GBitmapFormat8Bit;
 #endif
+#ifdef PBL_BW
   if (gbitmap_get_format(fb) != want_format) {
+#else
+  if (!fb_is_8bit(fb)) { // plain or circular 8-bit (gabbro)
+#endif
     graphics_release_frame_buffer(ctx, fb);
     return false;
   }
+#ifdef PBL_BW
   uint8_t *screen = gbitmap_get_data(fb);
   const uint16_t stride = gbitmap_get_bytes_per_row(fb);
+#else
+  FbRow row = {NULL, 0, -1};
+  int16_t row_y = -1;
+#endif
   const GRect fb_bounds = gbitmap_get_bounds(fb);
 
   // Image top-left on screen, and the on-screen rectangle it may touch.
@@ -301,7 +311,8 @@ bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origi
           // legacy_support.md, section 8.1); anything above the middle is white.
           bw_fb_put(screen, stride, sx, sy, v[k] > 31);
 #else
-          screen[(int32_t)sy * stride + sx] = (uint8_t)(0xC0 | v[k]); // opaque GColor8
+          if (sy != row_y) { row = fb_row8(fb, sy); row_y = sy; }
+          if (sx >= row.min_x && sx <= row.max_x) row.data[sx] = (uint8_t)(0xC0 | v[k]); // opaque GColor8
 #endif
         }
         pixel++;

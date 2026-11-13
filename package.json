@@ -2555,8 +2555,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_1",
-          "file": "round/backgrounds/1.png",
+          "name": "BG_PRESET_1_P0",
+          "file": "round/backgrounds/halves/1_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_1_P1",
+          "file": "round/backgrounds/halves/1_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2571,8 +2579,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_2",
-          "file": "round/backgrounds/2.png",
+          "name": "BG_PRESET_2_P0",
+          "file": "round/backgrounds/halves/2_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_2_P1",
+          "file": "round/backgrounds/halves/2_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2587,8 +2603,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_3",
-          "file": "round/backgrounds/3.png",
+          "name": "BG_PRESET_3_P0",
+          "file": "round/backgrounds/halves/3_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_3_P1",
+          "file": "round/backgrounds/halves/3_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2603,8 +2627,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_4",
-          "file": "round/backgrounds/4.png",
+          "name": "BG_PRESET_4_P0",
+          "file": "round/backgrounds/halves/4_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_4_P1",
+          "file": "round/backgrounds/halves/4_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2619,8 +2651,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_5",
-          "file": "round/backgrounds/5.png",
+          "name": "BG_PRESET_5_P0",
+          "file": "round/backgrounds/halves/5_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_5_P1",
+          "file": "round/backgrounds/halves/5_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2635,8 +2675,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_6",
-          "file": "round/backgrounds/6.png",
+          "name": "BG_PRESET_6_P0",
+          "file": "round/backgrounds/halves/6_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_6_P1",
+          "file": "round/backgrounds/halves/6_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2651,8 +2699,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_7",
-          "file": "round/backgrounds/7.png",
+          "name": "BG_PRESET_7_P0",
+          "file": "round/backgrounds/halves/7_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_7_P1",
+          "file": "round/backgrounds/halves/7_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2667,8 +2723,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_8",
-          "file": "round/backgrounds/8.png",
+          "name": "BG_PRESET_8_P0",
+          "file": "round/backgrounds/halves/8_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_8_P1",
+          "file": "round/backgrounds/halves/8_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2683,8 +2747,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_9",
-          "file": "round/backgrounds/9.png",
+          "name": "BG_PRESET_9_P0",
+          "file": "round/backgrounds/halves/9_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_9_P1",
+          "file": "round/backgrounds/halves/9_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2699,8 +2771,16 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_10",
-          "file": "round/backgrounds/10.png",
+          "name": "BG_PRESET_10_P0",
+          "file": "round/backgrounds/halves/10_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "BG_PRESET_10_P1",
+          "file": "round/backgrounds/halves/10_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2779,8 +2859,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY",
-          "file": "round/weatherbg/baroque_beach/clear_sky_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/clear_sky_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/clear_sky_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2795,8 +2883,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT",
-          "file": "round/weatherbg/baroque_beach/clear_sky_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/clear_sky_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_CLEAR_SKY_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/clear_sky_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2811,8 +2907,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY",
-          "file": "round/weatherbg/baroque_beach/partly_cloudy_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/partly_cloudy_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/partly_cloudy_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2827,8 +2931,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT",
-          "file": "round/weatherbg/baroque_beach/partly_cloudy_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/partly_cloudy_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_PARTLY_CLOUDY_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/partly_cloudy_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2843,8 +2955,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY",
-          "file": "round/weatherbg/baroque_beach/overcast_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/overcast_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/overcast_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2859,8 +2979,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT",
-          "file": "round/weatherbg/baroque_beach/overcast_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/overcast_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_OVERCAST_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/overcast_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2875,8 +3003,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY",
-          "file": "round/weatherbg/baroque_beach/fog_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/fog_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/fog_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2891,8 +3027,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT",
-          "file": "round/weatherbg/baroque_beach/fog_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/fog_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_FOG_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/fog_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2907,8 +3051,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY",
-          "file": "round/weatherbg/baroque_beach/drizzle_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/drizzle_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/drizzle_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2923,8 +3075,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT",
-          "file": "round/weatherbg/baroque_beach/drizzle_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/drizzle_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_DRIZZLE_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/drizzle_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2939,8 +3099,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY",
-          "file": "round/weatherbg/baroque_beach/rain_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/rain_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/rain_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2955,8 +3123,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT",
-          "file": "round/weatherbg/baroque_beach/rain_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/rain_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_RAIN_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/rain_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2971,8 +3147,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY",
-          "file": "round/weatherbg/baroque_beach/heavy_rain_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/heavy_rain_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/heavy_rain_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -2987,8 +3171,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT",
-          "file": "round/weatherbg/baroque_beach/heavy_rain_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/heavy_rain_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_HEAVY_RAIN_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/heavy_rain_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3003,8 +3195,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY",
-          "file": "round/weatherbg/baroque_beach/snow_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/snow_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/snow_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3019,8 +3219,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT",
-          "file": "round/weatherbg/baroque_beach/snow_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/snow_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SNOW_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/snow_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3035,8 +3243,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY",
-          "file": "round/weatherbg/baroque_beach/thunderstorm_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/thunderstorm_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/thunderstorm_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3051,8 +3267,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT",
-          "file": "round/weatherbg/baroque_beach/thunderstorm_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/thunderstorm_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_THUNDERSTORM_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/thunderstorm_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3067,8 +3291,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY",
-          "file": "round/weatherbg/baroque_beach/sleet_day.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY_P0",
+          "file": "round/weatherbg/baroque_beach/halves/sleet_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_DAY_P1",
+          "file": "round/weatherbg/baroque_beach/halves/sleet_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3083,8 +3315,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT",
-          "file": "round/weatherbg/baroque_beach/sleet_night.png",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT_P0",
+          "file": "round/weatherbg/baroque_beach/halves/sleet_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_BAROQUE_BEACH_SLEET_NIGHT_P1",
+          "file": "round/weatherbg/baroque_beach/halves/sleet_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3099,8 +3339,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY",
-          "file": "round/weatherbg/manhattan/clear_sky_day.png",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/clear_sky_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/clear_sky_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3115,8 +3363,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT",
-          "file": "round/weatherbg/manhattan/clear_sky_night.png",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/clear_sky_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_CLEAR_SKY_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/clear_sky_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3131,8 +3387,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY",
-          "file": "round/weatherbg/manhattan/partly_cloudy_day.png",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/partly_cloudy_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/partly_cloudy_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3147,8 +3411,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT",
-          "file": "round/weatherbg/manhattan/partly_cloudy_night.png",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/partly_cloudy_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_PARTLY_CLOUDY_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/partly_cloudy_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3163,8 +3435,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY",
-          "file": "round/weatherbg/manhattan/overcast_day.png",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/overcast_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/overcast_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3179,8 +3459,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT",
-          "file": "round/weatherbg/manhattan/overcast_night.png",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/overcast_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_OVERCAST_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/overcast_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3195,8 +3483,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_FOG_DAY",
-          "file": "round/weatherbg/manhattan/fog_day.png",
+          "name": "WEATHERBG_MANHATTAN_FOG_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/fog_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/fog_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3211,8 +3507,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT",
-          "file": "round/weatherbg/manhattan/fog_night.png",
+          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/fog_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_FOG_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/fog_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3227,8 +3531,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY",
-          "file": "round/weatherbg/manhattan/drizzle_day.png",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/drizzle_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/drizzle_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3243,8 +3555,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT",
-          "file": "round/weatherbg/manhattan/drizzle_night.png",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/drizzle_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_DRIZZLE_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/drizzle_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3259,8 +3579,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_RAIN_DAY",
-          "file": "round/weatherbg/manhattan/rain_day.png",
+          "name": "WEATHERBG_MANHATTAN_RAIN_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/rain_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/rain_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3275,8 +3603,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT",
-          "file": "round/weatherbg/manhattan/rain_night.png",
+          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/rain_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_RAIN_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/rain_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3291,8 +3627,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY",
-          "file": "round/weatherbg/manhattan/heavy_rain_day.png",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/heavy_rain_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/heavy_rain_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3307,8 +3651,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT",
-          "file": "round/weatherbg/manhattan/heavy_rain_night.png",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/heavy_rain_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_HEAVY_RAIN_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/heavy_rain_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3323,8 +3675,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SNOW_DAY",
-          "file": "round/weatherbg/manhattan/snow_day.png",
+          "name": "WEATHERBG_MANHATTAN_SNOW_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/snow_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/snow_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3339,8 +3699,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT",
-          "file": "round/weatherbg/manhattan/snow_night.png",
+          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/snow_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SNOW_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/snow_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3355,8 +3723,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY",
-          "file": "round/weatherbg/manhattan/thunderstorm_day.png",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/thunderstorm_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/thunderstorm_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3371,8 +3747,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT",
-          "file": "round/weatherbg/manhattan/thunderstorm_night.png",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/thunderstorm_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_THUNDERSTORM_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/thunderstorm_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3387,8 +3771,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SLEET_DAY",
-          "file": "round/weatherbg/manhattan/sleet_day.png",
+          "name": "WEATHERBG_MANHATTAN_SLEET_DAY_P0",
+          "file": "round/weatherbg/manhattan/halves/sleet_day_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_DAY_P1",
+          "file": "round/weatherbg/manhattan/halves/sleet_day_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
@@ -3403,8 +3795,16 @@
         },
         {
           "type": "bitmap",
-          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT",
-          "file": "round/weatherbg/manhattan/sleet_night.png",
+          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT_P0",
+          "file": "round/weatherbg/manhattan/halves/sleet_night_h0.png",
+          "targetPlatforms": [
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "WEATHERBG_MANHATTAN_SLEET_NIGHT_P1",
+          "file": "round/weatherbg/manhattan/halves/sleet_night_h1.png",
           "targetPlatforms": [
             "gabbro"
           ]
