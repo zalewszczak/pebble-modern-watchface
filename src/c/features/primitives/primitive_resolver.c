@@ -650,6 +650,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
     }
 
     // Health and status values come directly from Pebble's watch services.
+#ifndef PBL_PLATFORM_GABBRO
     case PRIM_HEART_RATE_ICON:
     case PRIM_HEART_RATE_VALUE: {
       int bpm = feature_health_peek_current_bpm();
@@ -660,6 +661,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, vbuf, c);
       return true;
     }
+#endif
     case PRIM_STEPS_ICON:
     case PRIM_STEPS_VALUE:
     case PRIM_STEP_GOAL_PCT: {

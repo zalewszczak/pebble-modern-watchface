@@ -15,5 +15,7 @@ typedef struct {
 void feature_health_format_duration_hm(char *buf, size_t buf_size, int32_t total_seconds);
 FeatureSleepSpan feature_health_get_sleep_span(void);
 bool feature_health_metric_available(HealthMetric metric);
+#ifndef PBL_PLATFORM_GABBRO
 int feature_health_peek_current_bpm(void);
+#endif
 HealthValue feature_health_sum_today(HealthMetric metric);

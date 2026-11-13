@@ -1,3 +1,4 @@
+var platform = require('../platform');
 // Marker controls: index grids, rings, and marker text
 var configTemplate = require('./config-template');
 var esc = configTemplate.esc;
@@ -27,10 +28,10 @@ var MARKER_BORDER_MAX = 100;
 function customMarkerHiddenInputsHtml(current) {
   var d = {
     customHourStyle: '0', customHourThickness: '3', customHourInnerThickness: '3',
-    customHourInnerEcc: '0', customHourOuterEcc: '0', customHourInnerBorder: '20', customHourOuterBorder: '100',
+    customHourInnerEcc: platform.eccDefault, customHourOuterEcc: platform.eccDefault, customHourInnerBorder: '20', customHourOuterBorder: '100',
     customHourTranslucent: 'false', customHourColor: '0',
     customSecStyle: '0', customSecThickness: '1', customSecInnerThickness: '1',
-    customSecInnerEcc: '0', customSecOuterEcc: '0', customSecInnerBorder: '70', customSecOuterBorder: '100',
+    customSecInnerEcc: platform.eccDefault, customSecOuterEcc: platform.eccDefault, customSecInnerBorder: '70', customSecOuterBorder: '100',
     customSecTranslucent: 'false', customSecColor: '0',
     markerTextHourMask: '4095', markerTextSecMask: '4095'
   };

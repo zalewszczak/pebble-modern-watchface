@@ -51,6 +51,7 @@ module.exports =
 '    CONFIG_USE_WEATHER_BG: document.getElementById("useWeatherBg").checked,' +
 '    CONFIG_WEATHER_BG_STYLE: document.getElementById("weatherBgStyle").value,' +
 '    CONFIG_BG_TRANSLUCENT: document.getElementById("bgTranslucent").checked,' +
+'    CONFIG_BG_CYCLE: document.getElementById("bgCycle") ? document.getElementById("bgCycle").value : "0",' +
 '    CONFIG_USE_PLUGIN_BG: document.getElementById("usePluginBg").checked,' +
 '    CONFIG_PLUGIN_BG_SOURCE: document.getElementById("pluginBgSource").value,' +
 '    CONFIG_PLUGIN_BG_DITHER: document.getElementById("pluginBgDither").value,' +

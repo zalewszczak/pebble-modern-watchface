@@ -40,6 +40,7 @@ bool feature_health_metric_available(HealthMetric metric) {
           HealthServiceAccessibilityMaskAvailable) != 0;
 }
 
+#ifndef PBL_PLATFORM_GABBRO // Pebble Round 2 has no heart-rate sensor
 int feature_health_peek_current_bpm(void) {
   time_t now = time(NULL);
   HealthServiceAccessibilityMask mask = health_service_metric_accessible(
@@ -47,6 +48,7 @@ int feature_health_peek_current_bpm(void) {
   if (!(mask & HealthServiceAccessibilityMaskAvailable)) return 0;
   return (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
 }
+#endif
 
 HealthValue feature_health_sum_today(HealthMetric metric) {
   return health_service_sum_today(metric);

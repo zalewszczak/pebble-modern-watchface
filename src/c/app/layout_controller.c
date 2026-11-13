@@ -23,10 +23,14 @@ Layer *layout_controller_features_layer(void) { return s_features_layer; }
 // The plugin background picture needs a RAM buffer about the size of the dial cache.
 // When the heap is too full for both, the cache is dropped (it is rebuilt on the next
 // draw, uncached if there is still no room).
+#ifndef PBL_BW
 static void release_dial_cache_for_picture(void) { dial_layer_release_cache(s_dial_layer); }
+#endif
 
 void layout_controller_init(WatchData *data, Window *window) {
+#ifndef PBL_BW
   bg_image_store_set_memory_relief(release_dial_cache_for_picture);
+#endif
   s_data = data;
   s_window = window;
   s_current_draw_features_beneath_hands = false;
@@ -38,7 +42,9 @@ void layout_controller_unload(void) {
     s_dial_layer = NULL;
   }
   if (s_progress_layer) {
+#ifndef PBL_BW
     bg_progress_layer_destroy(s_progress_layer);
+#endif
     s_progress_layer = NULL;
   }
   if (s_hands_layer) {
@@ -103,8 +109,10 @@ void layout_controller_apply(void) {
   s_dial_layer = dial_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   layer_add_child(root, s_dial_layer);
 
+#ifndef PBL_BW
   s_progress_layer = bg_progress_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
   if (s_progress_layer) layer_add_child(root, s_progress_layer);
+#endif
 
   s_hands_layer = hands_controller_create_layer(GRect(0, 0, bounds.size.w, bounds.size.h));
   s_features_layer = features_layer_create(GRect(0, 0, bounds.size.w, bounds.size.h));
@@ -118,7 +126,9 @@ void layout_controller_apply(void) {
 
   status_label_bring_to_front(root);
   dial_layer_set_data(s_dial_layer, s_data);
+#ifndef PBL_BW
   bg_progress_layer_set_data(s_progress_layer, s_data);
+#endif
   features_layer_set_data(s_features_layer, s_data);
 
   layout_controller_handle_unobstructed(0);

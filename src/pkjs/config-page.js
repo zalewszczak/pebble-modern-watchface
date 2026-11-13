@@ -963,8 +963,8 @@ configPresetSchedule.modalHtml +
 '        <input type="checkbox" id="bitmapMarkerTransparent" ' + (current.bitmapMarkerTransparent ? 'checked' : '') + ' onchange="onBitmapMarkerTransparentChange()">' +
 '        <label for="bitmapMarkerTransparent" style="margin:0;">Semi transparent markers (see the background through them)</label>' +
 '      </div>' +
-'      <div class="checkbox-row" id="bitmapMarkerInvertRow" style="margin-top:8px;' + (isBitmapMarkerStyle ? '' : ' display:none;') + '">' +
-'        <input type="checkbox" id="bitmapMarkerInvert" ' + (current.bitmapMarkerInvert ? 'checked' : '') + ' onchange="updatePreview()">' +
+'      <div class="checkbox-row" id="bitmapMarkerInvertRow" style="margin-top:8px;' + (isBitmapMarkerStyle && !platform.bw ? '' : ' display:none;') + '">' +
+'        <input type="checkbox" id="bitmapMarkerInvert" ' + (current.bitmapMarkerInvert && !platform.bw ? 'checked' : '') + ' onchange="updatePreview()">' +
 '        <label for="bitmapMarkerInvert" style="margin:0;">Inverted blend (markers turn black or white for contrast with the background)</label>' +
 '      </div>' +
 '      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face. Custom lets you edit them.</div>' +
@@ -978,7 +978,7 @@ configPresetSchedule.modalHtml +
 '      </div>' +
 '    </div>' +
 
-'    <div>' +
+'    <div' + (platform.bw ? ' style="display:none;"' : '') + '>' +  // no picture backgrounds on the B&W watches
       subsectionLegendHtml('background', 'Background style') +
 '      <div class="subsection-body" id="subsec-background" style="display:none;">' +
         configBackground.backgroundSectionHtml(current) +
@@ -1488,10 +1488,7 @@ configPresetSchedule.modalHtml +
 '    <label for="testDateTime">Test date &amp; time</label>' +
 '    <input type="datetime-local" id="testDateTime" ' + testDisabled + ' value="' + esc(current.testDateTime) + '">' +
 '    <div class="help" id="help-testMode" style="display:none;">Uses the selected date and time for astronomy calculations so you can preview another date.</div>' +
-'    <div class="checkbox-row subsection">' +
-'      <input type="checkbox" id="drawDebug" ' + (current.drawDebug ? 'checked' : '') + '>' +
-'      <label for="drawDebug" style="margin:0;">Draw debug bounding boxes</label>' +
-'    </div>' +
+'    <input type="checkbox" id="drawDebug" style="display:none;">' + // debug bounding boxes were removed (kept so the page script still finds it)
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label for="fontImportTarget">Import font for preview</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-fontImport\')">?</button></div>' +
 '      <div class="help" id="help-fontImport" style="display:none;">Imports a local TTF, OTF, WOFF or WOFF2 file as the live settings-page preview for the selected font. This does not change the font installed on the watch or the app resources. Choose the exact font entry the file is replacing before importing it, and use the same family, weight and italic/regular style. For the most accurate result, use the original font file rather than a different webfont or a visually similar substitute. The replacement is matched to the selected font entry, not detected automatically from the filename. If the same font is used by several entries (for example different sizes), import it separately for each entry you want to override.</div>' +
@@ -2395,7 +2392,7 @@ configPlugins.pluginScript(current) +
 '  document.getElementById("customMarkerSection").style.display = (val === "8") ? "" : "none";' +
 '  var isBitmap = isBitmapMarkerStyleId(parseInt(val, 10));' +
 '  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
-'  document.getElementById("bitmapMarkerInvertRow").style.display = isBitmap ? "" : "none";' +
+'  document.getElementById("bitmapMarkerInvertRow").style.display = (isBitmap && ' + (platform.bw ? 'false' : 'true') + ') ? "" : "none";' +
 '  document.getElementById("bitmapCornerOverrideRow").style.display = (isBitmap && val !== "5") ? "" : "none";' +
 '  updateMarkerStyleButtonLabel();' +
 '  clearGrayedSlotsIfUnavailable();' +

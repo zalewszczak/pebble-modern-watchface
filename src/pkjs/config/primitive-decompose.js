@@ -334,6 +334,15 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_PLUGIN_TEXT, label: 'Plugin data', param: 'plugin' }
   ]}
 ];
+// No heart-rate sensor on the round watch (gabbro).
+if (require('../platform').round) {
+  PRIMITIVE_PALETTE.forEach(function (g) {
+    g.items = g.items.filter(function (it) {
+      return it.id !== PRIM.PRIM_HEART_RATE_ICON && it.id !== PRIM.PRIM_HEART_RATE_VALUE;
+    });
+  });
+}
+
 var PRIMITIVE_LABEL_BY_ID = {};
 PRIMITIVE_PALETTE.forEach(function (g) {
   g.items.forEach(function (it) { PRIMITIVE_LABEL_BY_ID[it.id] = it.label; });

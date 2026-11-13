@@ -80,10 +80,18 @@ void watch_defaults_apply(WatchData *d) {
   // The Modern bitmap dial.
   d->big_analog_marker_style = 3;
 
+  // Eccentricity: round watches follow the circle (0 %), square ones the screen edges (100 %).
+#ifdef PBL_ROUND
+#define DEFAULT_MARKER_ECC 0
+#else
+#define DEFAULT_MARKER_ECC 100
+#endif
   d->custom_hour_marker = (MarkerRingConfig){
-    .style = 0, .thickness = 3, .inner_border_pct = 20, .outer_border_pct = 100, .color = 0 };
+    .style = 0, .thickness = 3, .inner_border_pct = 20, .outer_border_pct = 100, .color = 0,
+    .inner_eccentricity = DEFAULT_MARKER_ECC, .outer_eccentricity = DEFAULT_MARKER_ECC };
   d->custom_second_marker = (MarkerRingConfig){
-    .style = 0, .thickness = 1, .inner_border_pct = 70, .outer_border_pct = 100, .color = 0 };
+    .style = 0, .thickness = 1, .inner_border_pct = 70, .outer_border_pct = 100, .color = 0,
+    .inner_eccentricity = DEFAULT_MARKER_ECC, .outer_eccentricity = DEFAULT_MARKER_ECC };
   d->marker_text.hour_mask = 4095;
   d->marker_text.second_mask = 4095;
   d->custom_hour_marker_inner_thickness = 3;

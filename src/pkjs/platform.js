@@ -46,7 +46,11 @@ function bwFont(id, fallback) {
   return BW_FONT_IDS.indexOf(id) >= 0 ? id : (fallback === undefined ? 27 : fallback);
 }
 
+// Default eccentricity (%) of the custom indices: round watches follow the circle, square ones the screen edges.
+var eccDefault = round ? '0' : '100';
+
 module.exports = {
+  eccDefault: eccDefault,
   shapeImages: shapeImages,
   name: name,
   round: round,

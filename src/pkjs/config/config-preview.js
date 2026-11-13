@@ -181,7 +181,7 @@ module.exports =
 '  var rightPt = pointOnRing(cx, cy, w, h, Math.PI / 2, pct, ecc);' +
 '  var bottomPt = pointOnRing(cx, cy, w, h, Math.PI, pct, ecc);' +
 '  var leftPt = pointOnRing(cx, cy, w, h, 3 * Math.PI / 2, pct, ecc);' +
-'  var margin = 4 * scale;' +
+'  var margin = (4 + ((typeof SCREEN_ROUND !== "undefined" && SCREEN_ROUND) ? 3 : 0)) * scale;' +
 '  if (topPt.y + margin > margins.top) margins.top = topPt.y + margin;' +
 '  if (h - bottomPt.y + margin > margins.bottom) margins.bottom = h - bottomPt.y + margin;' +
 '  var leftReach = leftPt.x + margin, rightReach = w - rightPt.x + margin;' +

@@ -17,4 +17,8 @@ void marker_bitmap_tint(GBitmap *bitmap, bool *bitmap_tinted, GColor *tint_color
                         bool *tint_transparent, GColor tint, bool transparent);
 void marker_bitmap_draw(GContext *ctx, GBitmap *bitmap, GRect bounds,
                         bool anim_active, int32_t anim_progress_1000);
+#ifdef PBL_BW
+static inline void marker_bitmap_draw_inverted(GContext *ctx, GBitmap *bitmap, GRect bounds, GPoint origin, bool semi) { (void)ctx; (void)bitmap; (void)bounds; (void)origin; (void)semi; }
+#else
 void marker_bitmap_draw_inverted(GContext *ctx, GBitmap *bitmap, GRect bounds, GPoint origin, bool semi);
+#endif

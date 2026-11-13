@@ -128,7 +128,12 @@ void feature_layout_recompute(FeaturesState *state) {
     right_pt.x -= h_offset; // close enough
     bottom_pt.y -= h_offset;
     left_pt.x += h_offset;
+    // Round watch: 3 px more room around programmatically drawn indices.
+#ifdef PBL_ROUND
+    int16_t margin = 2 + 3;
+#else
     int16_t margin = 2;
+#endif
     if (top_pt.y + margin > dyn_upper_offset) dyn_upper_offset = top_pt.y + margin;
     if (screen.size.h - bottom_pt.y + margin > dyn_bottom_shift) dyn_bottom_shift = screen.size.h - bottom_pt.y + margin;
     int16_t left_reach = left_pt.x + margin, right_reach = screen.size.w - right_pt.x + margin;

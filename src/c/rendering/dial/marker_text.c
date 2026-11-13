@@ -61,15 +61,7 @@ void marker_text_draw(GContext *ctx, GPoint center, GRect screen, FontSlot *font
     GRect box = GRect(pos.x - box_w / 2, pos.y - box_h / 2, box_w, box_h);
     graphics_draw_text(ctx, buf, font, box, GTextOverflowModeFill, GTextAlignmentCenter, NULL);
     
-    if (draw_debug){
-      graphics_context_set_stroke_width(ctx, 1);
-      graphics_context_set_stroke_color(ctx, GColorYellow);
-      
-      graphics_draw_rect(ctx, box);
-      graphics_context_set_stroke_color(ctx, GColorOrange);
-      graphics_draw_rect(ctx, GRect(pos.x-15, pos.y, 30, 1));
-      graphics_draw_rect(ctx, GRect(pos.x, pos.y-15, 1, 30));
-    }
+    (void)draw_debug;
   }
 }
 

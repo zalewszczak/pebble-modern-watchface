@@ -38,6 +38,13 @@
 #define BG_IMG_CHUNK_BYTES 255
 #define BG_IMG_MAX_PIXELS (320 * 320)
 
+#ifdef PBL_BW
+// B&W watches: no stored pictures (compiled out, see bg_image_store.c).
+static inline uint32_t bg_image_store_stamp(uint8_t slot) { (void)slot; return 0; }
+static inline void bg_image_store_stamps(uint32_t out[BG_IMG_REPORTED_SLOTS]) { for (int i = 0; i < BG_IMG_REPORTED_SLOTS; i++) out[i] = 0; }
+static inline void bg_image_store_set_memory_relief(void (*relief)(void)) { (void)relief; }
+static inline bool bg_image_store_ram_failed(void) { return false; }
+#else
 // Stamp (content hash chosen by the phone) of the complete image in `slot`,
 // or 0 when the slot is empty -- including while a transfer into it is half done.
 uint32_t bg_image_store_stamp(uint8_t slot);
@@ -87,3 +94,5 @@ void bg_image_store_abort(void);
 // Nothing is allocated: pixels go from persistent storage (or, for the plugin
 // slot, from its RAM copy) to the screen in 255-byte pieces. Returns false if the slot has no (readable) image.
 bool bg_image_store_draw(uint8_t slot, GContext *ctx, GRect bounds, GPoint origin);
+
+#endif // PBL_BW

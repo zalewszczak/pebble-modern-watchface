@@ -55,10 +55,6 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
     GRect box = text_box_for(p, box_x, box_y, row_height, font_h, font_offset);
     feature_render_draw_text_content_only(ctx, text, font, box, GTextOverflowModeTrailingEllipsis,
                                           GTextAlignmentLeft, p->color);
-    if (draw_debug) {
-      graphics_context_set_stroke_width(ctx, 1);
-      graphics_context_set_stroke_color(ctx, GColorGreen);
-      graphics_draw_rect(ctx, box);
-    }
+    (void)draw_debug;
   }
 }

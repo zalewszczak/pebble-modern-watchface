@@ -51,6 +51,7 @@ static void request_update(void) {
   // ten little-endian uint32 stamps, user slot 1 first, 0 = empty slot; the tenth
   // is the plugin picture, which is only in RAM and so reads 0 after every
   // restart. The phone sends whatever is missing or out of date.
+#ifndef PBL_BW
   uint8_t stamps[BG_IMG_REPORTED_SLOTS * 4];
   for (uint8_t slot = 1; slot <= BG_IMG_REPORTED_SLOTS; slot++) {
     uint32_t v = bg_image_store_stamp(slot);
@@ -58,6 +59,7 @@ static void request_update(void) {
     p[0] = (uint8_t)v; p[1] = (uint8_t)(v >> 8); p[2] = (uint8_t)(v >> 16); p[3] = (uint8_t)(v >> 24);
   }
   dict_write_data(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_BG_IMG_STAMP, stamps, sizeof(stamps));
+#endif
   app_message_outbox_send();
 }
 
@@ -93,6 +95,9 @@ static void startup_request_delay_callback(void *context) {
 //
 // If the phone goes away mid-transfer the bar must not stay forever: any
 // BG_IMG message re-arms this timer, and when it fires the transfer is dropped.
+#ifdef PBL_BW
+static bool handle_bg_image_message(DictionaryIterator *iter) { (void)iter; return false; }
+#else
 #define BG_TRANSFER_TIMEOUT_MS 20000
 static AppTimer *s_bg_timeout_timer = NULL;
 static bool s_bg_silent; // the transfer in progress does not drive the progress bar
@@ -191,6 +196,8 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
   return true;
 }
 
+#endif // PBL_BW
+
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
   if (handle_bg_image_message(iter)) return;
@@ -218,7 +225,9 @@ void comms_init(WatchData *data, CommsDataAppliedHandler handler, void *context)
 }
 
 void comms_deinit(void) {
+#ifndef PBL_BW
   bg_transfer_disarm_timeout();
+#endif
   if (s_startup_timer) {
     app_timer_cancel(s_startup_timer);
     s_startup_timer = NULL;

@@ -136,8 +136,8 @@ function customMarkerBorderCode(key, fallback) { return clampInt(customMarkerSet
 function customHourStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_HOUR_STYLE', 0); }
 function customHourThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'), 0, 20, 3); }
 function customHourInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_THICKNESS', '3'), 1, 20, 3); }
-function customHourInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', '0'), 0, 100, 0); }
-function customHourOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', '0'), 0, 100, 0); }
+function customHourInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', platform.eccDefault), 0, 100, parseInt(platform.eccDefault, 10)); }
+function customHourOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', platform.eccDefault), 0, 100, parseInt(platform.eccDefault, 10)); }
 function customHourInnerBorderCode() { return customMarkerBorderCode('CONFIG_CUSTOM_HOUR_INNER_BORDER', 20); }
 function customHourOuterBorderCode() {
   var outer = customMarkerBorderCode('CONFIG_CUSTOM_HOUR_OUTER_BORDER', 100);
@@ -149,8 +149,8 @@ function customHourColorCode() { return clampInt(customMarkerSetting('CONFIG_CUS
 function customSecStyleCode() { return customMarkerStyleCode('CONFIG_CUSTOM_SEC_STYLE', 0); }
 function customSecThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_THICKNESS', '1'), 0, 10, 1); }
 function customSecInnerThicknessCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_THICKNESS', '1'), 1, 10, 1); }
-function customSecInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_ECC', '0'), 0, 100, 0); }
-function customSecOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', '0'), 0, 100, 0); }
+function customSecInnerEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_INNER_ECC', platform.eccDefault), 0, 100, parseInt(platform.eccDefault, 10)); }
+function customSecOuterEccCode() { return clampInt(customMarkerSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', platform.eccDefault), 0, 100, parseInt(platform.eccDefault, 10)); }
 function customSecInnerBorderCode() { return customMarkerBorderCode('CONFIG_CUSTOM_SEC_INNER_BORDER', 70); }
 function customSecOuterBorderCode() {
   var outer = customMarkerBorderCode('CONFIG_CUSTOM_SEC_OUTER_BORDER', 100);

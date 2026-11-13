@@ -10,6 +10,9 @@
 // drawn in its own small layer between the dial and the hands/features, using
 // the active colour scheme, so it never forces the dial cache to rebuild.
 
+#ifdef PBL_BW
+static inline bool bg_progress_active(void) { return false; }
+#else
 void bg_progress_start(uint16_t batch_total_chunks, uint16_t batch_done_chunks);
 // `current_chunks` = chunks received so far of the image being transferred.
 void bg_progress_update(uint16_t current_chunks);
@@ -23,3 +26,5 @@ int bg_progress_permille(void);
 Layer *bg_progress_layer_create(GRect frame);
 void bg_progress_layer_set_data(Layer *layer, WatchData *data);
 void bg_progress_layer_destroy(Layer *layer);
+
+#endif // PBL_BW

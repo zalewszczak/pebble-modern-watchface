@@ -4,6 +4,11 @@
 #include "./marker_text.h"
 #include <string.h>
 #include <limits.h>
+#ifdef PBL_BW
+#define MARKER_PLATFORM_BW 1
+#else
+#define MARKER_PLATFORM_BW 0
+#endif
 
 // Marker renderer
 
@@ -227,7 +232,7 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
   marker_bitmap_ensure(&state->bitmap, &state->bitmap_style, &state->bitmap_tinted,
                          &state->bitmap_tint_color, &state->bitmap_tint_transparent, marker_style);
 
-  if (is_bitmap_style && d->bitmap_marker_invert) {
+  if (is_bitmap_style && d->bitmap_marker_invert && !MARKER_PLATFORM_BW) {
     // A previously tinted bitmap lost its anti-aliasing alpha: reload it.
     if (state->bitmap_tinted) {
       marker_bitmap_release(&state->bitmap, &state->bitmap_style, &state->bitmap_tinted);

@@ -53,6 +53,39 @@ function applySlotUpdates(updates) {
   });
 }
 
+// "Cycle through my images" (CONFIG_BG_CYCLE): 1 = a random one of the stored own images, chosen once
+// per start of the watchface (this script lives as long as the watchface runs); 2 = a different one
+// each day. Only while one of the user's own images is the selected source and at least two exist.
+var s_startupPick = 0;
+var s_lastCycleSlot = 0;
+function cycleMode() { var v = getSetting('CONFIG_BG_CYCLE', '0'); return (v === '1' || v === '2') ? v : '0'; }
+function cycledSlot(selected) {
+  var mode = cycleMode();
+  if (mode === '0') return selected;
+  var filled = [];
+  for (var k = 1; k <= SLOT_COUNT; k++) if (codec.isValidSlot(localStorage.getItem(slotKey(k)))) filled.push(k);
+  if (filled.length < 2) return selected;
+  if (mode === '2') {
+    var now = new Date();
+    var day = Math.floor((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000);
+    return filled[day % filled.length];
+  }
+  if (filled.indexOf(s_startupPick) < 0) {
+    var last = 0;
+    try { last = parseInt(localStorage.getItem('BG_CYCLE_LAST' + platform.suffix), 10) || 0; } catch (e) { }
+    var pool = filled.filter(function (x) { return x !== last; });
+    s_startupPick = pool[Math.floor(Math.random() * pool.length)];
+    try { localStorage.setItem('BG_CYCLE_LAST' + platform.suffix, String(s_startupPick)); } catch (e) { }
+  }
+  return s_startupPick;
+}
+// True when the daily pick has moved on since it was last sent to the watch.
+function cycleChanged() {
+  if (cycleMode() !== '2') return false;
+  var sel = selection();
+  return sel.mode === 2 && sel.slot !== s_lastCycleSlot;
+}
+
 function selection() {
   var none = { mode: 0, preset: 0, data: null, stamp: 0 };
   if (!platform.bw && getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true' && getSetting('CONFIG_USE_CUSTOM_BG', 'false') !== 'true') {
@@ -76,13 +109,14 @@ function selection() {
     return { mode: 1, preset: n, data: null, stamp: 0 };
   }
   if (!(n >= 1 && n <= SLOT_COUNT)) return none;
+  n = cycledSlot(n);
   var data = localStorage.getItem(slotKey(n));
   if (!codec.isValidSlot(data)) return none;
   return { mode: 2, preset: n, slot: n, data: data, stamp: codec.stampFor(data) };
 }
 
 function modeCode() { return selection().mode; }
-function presetCode() { return selection().preset; }
+function presetCode() { var sel = selection(); s_lastCycleSlot = sel.slot || 0; return sel.preset; }
 
 // Color scheme the watch should use because of the plugin picture (see plugin-bg.schemeOverride):
 // 0 = sunrise/sunset as usual, 1 = day colors, 2 = night colors. Remembers what was last sent so a
@@ -261,6 +295,7 @@ module.exports = {
   presetCode: presetCode,
   schemeOverrideCode: schemeOverrideCode,
   schemeChanged: schemeChanged,
+  cycleChanged: cycleChanged,
   noteWatchStamp: noteWatchStamp,
   syncIfNeeded: syncIfNeeded
 };

@@ -1,3 +1,6 @@
+// B&W watches have no uploaded / plugin / preset background pictures: compiled out.
+#include <pebble.h>
+#ifndef PBL_BW
 #include "./bg_progress.h"
 #include "../../data/watch_ui.h"
 
@@ -90,3 +93,5 @@ void bg_progress_layer_set_data(Layer *layer, WatchData *data) {
 void bg_progress_layer_destroy(Layer *layer) {
   if (layer) layer_destroy(layer);
 }
+
+#endif // !PBL_BW

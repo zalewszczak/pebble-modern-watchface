@@ -59,6 +59,9 @@ function applyFirstRunPreferences() {
 // colors from picture brightness"): push the settings again, but only when the verdict changed.
 pluginBg.setOnScheme(function () { if (bgImageSync.schemeChanged()) sendFlatDict({}); });
 
+// "A different picture each day": when midnight passes, push the new selection.
+setInterval(function () { if (bgImageSync.cycleChanged()) { sendFlatDict({}); bgImageSync.syncIfNeeded(); } }, 60000);
+
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
   pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
@@ -127,12 +130,13 @@ function buildCurrent() {
     cornerTRShake: getSetting('CONFIG_CORNER_TR_SHAKE', '0'),
     cornerBLShake: getSetting('CONFIG_CORNER_BL_SHAKE', '0'),
     cornerBRShake: getSetting('CONFIG_CORNER_BR_SHAKE', '0'),
-    useCustomBg: getSetting('CONFIG_USE_CUSTOM_BG', 'false') === 'true',
+    useCustomBg: !require('./platform').bw && getSetting('CONFIG_USE_CUSTOM_BG', 'false') === 'true', // no picture backgrounds on B&W
     bgSource: getSetting('CONFIG_BG_SOURCE', 'p:1'),
     useWeatherBg: !require('./platform').bw && getSetting('CONFIG_USE_WEATHER_BG', 'false') === 'true',
     weatherBgStyle: getSetting('CONFIG_WEATHER_BG_STYLE', ''),
     bgTranslucent: getSetting('CONFIG_BG_TRANSLUCENT', 'false') === 'true',
-    usePluginBg: getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
+    bgCycle: getSetting('CONFIG_BG_CYCLE', '0'),
+    usePluginBg: !require('./platform').bw && getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
     pluginBgStatus: pluginBg.status(),
     pluginBgSource: getSetting('CONFIG_PLUGIN_BG_SOURCE', ''),
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
@@ -161,8 +165,8 @@ function buildCurrent() {
     customHourStyle: getSetting('CONFIG_CUSTOM_HOUR_STYLE', '0'),
     customHourThickness: getSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'),
     customHourInnerThickness: getSetting('CONFIG_CUSTOM_HOUR_INNER_THICKNESS', '3'),
-    customHourInnerEcc: getSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', '0'),
-    customHourOuterEcc: getSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', '0'),
+    customHourInnerEcc: getSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', require('./platform').eccDefault),
+    customHourOuterEcc: getSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', require('./platform').eccDefault),
     customHourInnerBorder: getSetting('CONFIG_CUSTOM_HOUR_INNER_BORDER', '20'),
     customHourOuterBorder: getSetting('CONFIG_CUSTOM_HOUR_OUTER_BORDER', '100'),
     customHourTranslucent: getSetting('CONFIG_CUSTOM_HOUR_TRANSLUCENT', 'false'),
@@ -170,8 +174,8 @@ function buildCurrent() {
     customSecStyle: getSetting('CONFIG_CUSTOM_SEC_STYLE', '0'),
     customSecThickness: getSetting('CONFIG_CUSTOM_SEC_THICKNESS', '1'),
     customSecInnerThickness: getSetting('CONFIG_CUSTOM_SEC_INNER_THICKNESS', '1'),
-    customSecInnerEcc: getSetting('CONFIG_CUSTOM_SEC_INNER_ECC', '0'),
-    customSecOuterEcc: getSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', '0'),
+    customSecInnerEcc: getSetting('CONFIG_CUSTOM_SEC_INNER_ECC', require('./platform').eccDefault),
+    customSecOuterEcc: getSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', require('./platform').eccDefault),
     customSecInnerBorder: getSetting('CONFIG_CUSTOM_SEC_INNER_BORDER', '70'),
     customSecOuterBorder: getSetting('CONFIG_CUSTOM_SEC_OUTER_BORDER', '100'),
     customSecTranslucent: getSetting('CONFIG_CUSTOM_SEC_TRANSLUCENT', 'false'),
@@ -426,12 +430,13 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_CORNER_TR_SHAKE', settings.CONFIG_CORNER_TR_SHAKE === '1' ? '1' : '0');
   setSetting('CONFIG_CORNER_BL_SHAKE', settings.CONFIG_CORNER_BL_SHAKE === '1' ? '1' : '0');
   setSetting('CONFIG_CORNER_BR_SHAKE', settings.CONFIG_CORNER_BR_SHAKE === '1' ? '1' : '0');
-  setSetting('CONFIG_USE_CUSTOM_BG', settings.CONFIG_USE_CUSTOM_BG ? 'true' : 'false');
+  setSetting('CONFIG_USE_CUSTOM_BG', (settings.CONFIG_USE_CUSTOM_BG && !require('./platform').bw) ? 'true' : 'false');
   setSetting('CONFIG_BG_SOURCE', settings.CONFIG_BG_SOURCE || 'p:1');
   setSetting('CONFIG_USE_WEATHER_BG', (settings.CONFIG_USE_WEATHER_BG && !require('./platform').bw) ? 'true' : 'false'); // no weather backgrounds on B&W
   setSetting('CONFIG_WEATHER_BG_STYLE', settings.CONFIG_WEATHER_BG_STYLE || '');
   setSetting('CONFIG_BG_TRANSLUCENT', settings.CONFIG_BG_TRANSLUCENT ? 'true' : 'false');
-  setSetting('CONFIG_USE_PLUGIN_BG', settings.CONFIG_USE_PLUGIN_BG ? 'true' : 'false');
+  setSetting('CONFIG_BG_CYCLE', (settings.CONFIG_BG_CYCLE === '1' || settings.CONFIG_BG_CYCLE === '2') ? settings.CONFIG_BG_CYCLE : '0');
+  setSetting('CONFIG_USE_PLUGIN_BG', (settings.CONFIG_USE_PLUGIN_BG && !require('./platform').bw) ? 'true' : 'false');
   setSetting('CONFIG_PLUGIN_BG_SOURCE', settings.CONFIG_PLUGIN_BG_SOURCE || '');
   setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
   setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
@@ -458,8 +463,8 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_CUSTOM_HOUR_STYLE', settings.CONFIG_CUSTOM_HOUR_STYLE || '0');
   setSetting('CONFIG_CUSTOM_HOUR_THICKNESS', settings.CONFIG_CUSTOM_HOUR_THICKNESS || '3');
   setSetting('CONFIG_CUSTOM_HOUR_INNER_THICKNESS', settings.CONFIG_CUSTOM_HOUR_INNER_THICKNESS || '3');
-  setSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', settings.CONFIG_CUSTOM_HOUR_INNER_ECC || '0');
-  setSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', settings.CONFIG_CUSTOM_HOUR_OUTER_ECC || '0');
+  setSetting('CONFIG_CUSTOM_HOUR_INNER_ECC', settings.CONFIG_CUSTOM_HOUR_INNER_ECC || require('./platform').eccDefault);
+  setSetting('CONFIG_CUSTOM_HOUR_OUTER_ECC', settings.CONFIG_CUSTOM_HOUR_OUTER_ECC || require('./platform').eccDefault);
   setSetting('CONFIG_CUSTOM_HOUR_INNER_BORDER', settings.CONFIG_CUSTOM_HOUR_INNER_BORDER || '20');
   setSetting('CONFIG_CUSTOM_HOUR_OUTER_BORDER', settings.CONFIG_CUSTOM_HOUR_OUTER_BORDER || '100');
   setSetting('CONFIG_CUSTOM_HOUR_TRANSLUCENT', settings.CONFIG_CUSTOM_HOUR_TRANSLUCENT ? 'true' : 'false');
@@ -467,8 +472,8 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_CUSTOM_SEC_STYLE', settings.CONFIG_CUSTOM_SEC_STYLE || '0');
   setSetting('CONFIG_CUSTOM_SEC_THICKNESS', settings.CONFIG_CUSTOM_SEC_THICKNESS || '1');
   setSetting('CONFIG_CUSTOM_SEC_INNER_THICKNESS', settings.CONFIG_CUSTOM_SEC_INNER_THICKNESS || '1');
-  setSetting('CONFIG_CUSTOM_SEC_INNER_ECC', settings.CONFIG_CUSTOM_SEC_INNER_ECC || '0');
-  setSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', settings.CONFIG_CUSTOM_SEC_OUTER_ECC || '0');
+  setSetting('CONFIG_CUSTOM_SEC_INNER_ECC', settings.CONFIG_CUSTOM_SEC_INNER_ECC || require('./platform').eccDefault);
+  setSetting('CONFIG_CUSTOM_SEC_OUTER_ECC', settings.CONFIG_CUSTOM_SEC_OUTER_ECC || require('./platform').eccDefault);
   setSetting('CONFIG_CUSTOM_SEC_INNER_BORDER', settings.CONFIG_CUSTOM_SEC_INNER_BORDER || '70');
   setSetting('CONFIG_CUSTOM_SEC_OUTER_BORDER', settings.CONFIG_CUSTOM_SEC_OUTER_BORDER || '100');
   setSetting('CONFIG_CUSTOM_SEC_TRANSLUCENT', settings.CONFIG_CUSTOM_SEC_TRANSLUCENT ? 'true' : 'false');

@@ -102,6 +102,8 @@ function weatherStyleOptions(current) {
   }).join('');
 }
 
+function cycleVal(current) { var v = String((current && current.bgCycle) || '0'); return (v === '1' || v === '2') ? v : '0'; }
+
 function backgroundSectionHtml(current) {
   var numbers = presetNumbers();
   var pluginSrc = pluginSourceOptions(current);
@@ -182,6 +184,15 @@ function backgroundSectionHtml(current) {
 (platform.bw ? '' : '      <div class="bg-subtitle">Predefined</div>' + presetHtml + '      <div class="bg-subtitle">My images</div>') +
 '      <div class="example-style-grid" id="bgSlotGrid"></div>' +
 '      <div class="help" style="margin-top:8px;">Tap a slot to add a photo. Images are converted to 64 colors and sent to the watch on Save.</div>' +
+'      <div id="bgCycleRow" style="margin-top:10px;">' +
+'        <div class="field-label-row"><label for="bgCycle">Cycle through my images</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgCycle\')">?</button></div>' +
+'        <select id="bgCycle">' +
+'          <option value="0"' + (cycleVal(current) === '0' ? ' selected' : '') + '>Off (always the selected image)</option>' +
+'          <option value="1"' + (cycleVal(current) === '1' ? ' selected' : '') + '>Random one at every start</option>' +
+'          <option value="2"' + (cycleVal(current) === '2' ? ' selected' : '') + '>A different one each day</option>' +
+'        </select>' +
+'        <div class="help" id="help-bgCycle" style="display:none;">Works while one of "My images" is selected and at least two of your own images are stored. The watchface then picks among all your own images: randomly each time it starts, or a different one every day (switching at midnight).</div>' +
+'      </div>' +
 '    </div>';
 }
 

@@ -1,4 +1,5 @@
 // presets-lookups.js -- every hand-curated, largely-static lookup table
+var platform = require('./platform');
 var FONT_LOOKUP = [
   { id: 0 , grid: false, label: 'Gothic'             , height: 14, preview: 'font-family: Arial, sans-serif;'                                                                         , small: true , google: null                   , sizePx: 14, sizeCategory: 'XS', approx: true, categories: ['pebbleos', 'modern']                                      , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14'               , fileName: null                                       },
   { id: 1 , grid: false, label: 'Gothic'             , height: 18, preview: 'font-family: Arial, sans-serif; font-weight: 700;'                                                       , small: true , google: null                   , sizePx: 14, sizeCategory: 'S' , approx: true, categories: ['pebbleos', 'modern', 'bold']                              , sidesAllowed: null, sidesWithSeconds: null, romanOk: true , resourceName: 'FONT_KEY_GOTHIC_14_BOLD'          , fileName: null                                       },
@@ -1156,6 +1157,14 @@ var HAND_PRESETS = {
     }
   }
 };
+
+// Pebble Round 2 (gabbro) has no heart-rate sensor: the heart-rate complications (ids 1 and 100) are
+// not offered there (and the watch build has no code for them).
+if (platform.round) {
+  CORNER_CATEGORIES.forEach(function (cat) {
+    cat.items = cat.items.filter(function (it) { return it.id !== 1 && it.id !== 100; });
+  });
+}
 
 var MARKER_STYLE_HOUR_PRESETS = [
   { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 66,  outerBorderPct: 100, translucent: false, color: 0 },

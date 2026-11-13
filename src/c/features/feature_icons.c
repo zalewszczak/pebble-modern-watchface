@@ -26,14 +26,8 @@
 #define SUN_TIME_ICON_DRAW_W PL_SUN_ICON_DRAW_W
 #define SUN_TIME_ICON_DRAW_H PL_ICON_DRAW
 
-// Optional debug crosshair for icon anchor points and geometry.
-static void draw_debug_marker_point(GContext *ctx, bool draw_debug, GPoint pos, GColor color) {
-  if (!draw_debug) return;
-  graphics_context_set_stroke_width(ctx, 1);
-  graphics_context_set_stroke_color(ctx, color);
-  graphics_draw_rect(ctx, GRect(pos.x, pos.y - 15, 1, 30));
-  graphics_draw_rect(ctx, GRect(pos.x - 15, pos.y, 30, 1));
-}
+// Debug crosshairs were removed; the call sites compile to nothing.
+#define draw_debug_marker_point(ctx, draw_debug, pos, color) ((void)(ctx), (void)(draw_debug), (void)(pos), (void)(color))
 
 static const uint8_t PEBBLE_ICON[62]     = { 0x00, 0x02, 0x04, 0x08, 0x00, 0x00, 0x02, 0x04, 0x08, 0x00, 0xFD, 0xFB,
   0xF7, 0xE9, 0xF8, 0x85, 0x0A, 0x14, 0x29, 0x08, 0x85, 0x0A, 0x14, 0x29,

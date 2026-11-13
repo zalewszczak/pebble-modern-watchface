@@ -14,8 +14,16 @@
 // image is replaced by `bg`, so the plain background colour shows through.
 // Returns false only when an image was supposed to be drawn but could not be
 // (out of memory, storage read problem); the caller retries instead of caching.
+#ifdef PBL_BW
+static inline bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin, GColor bg) { (void)ctx; (void)d; (void)bounds; (void)origin; (void)bg; return true; }
+#else
 bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origin, GColor bg);
+#endif
 
 // Identifies what bg_image_draw() would draw (0 = nothing), for the cache
 // signature: changes whenever the selected image changes.
+#ifdef PBL_BW
+static inline uint32_t bg_image_signature(const WatchData *d) { (void)d; return 0; }
+#else
 uint32_t bg_image_signature(const WatchData *d);
+#endif

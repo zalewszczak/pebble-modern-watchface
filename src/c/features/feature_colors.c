@@ -66,6 +66,7 @@ GColor feature_colors_white_to_red_gradient(uint8_t kp_x10) {
 #define HR_LOW_BPM 60
 #define HR_HIGH_BPM 120
 #define HR_DANGER_BPM 180
+#ifndef PBL_PLATFORM_GABBRO
 GColor feature_colors_heart_rate_gradient(int bpm) {
   const int16_t pink[3]   = { 255, 105, 180 };
   const int16_t red[3]    = { 220,  20,  20 };
@@ -88,6 +89,7 @@ GColor feature_colors_heart_rate_gradient(int bpm) {
   int16_t b = from[2] + (int16_t)(((to[2] - from[2]) * frac1000) / 1000);
   return GColorFromRGB((uint8_t)r, (uint8_t)g, (uint8_t)b);
 }
+#endif
 
 // White (sea level) -> turquoise (high), for the "Altitude" content
 #define ALTITUDE_GRADIENT_MAX_M 4000

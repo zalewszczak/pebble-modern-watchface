@@ -1,3 +1,6 @@
+// B&W watches have no uploaded / plugin / preset background pictures: compiled out.
+#include <pebble.h>
+#ifndef PBL_BW
 #include "./bg_image_cache.h"
 #include "./bg_image_store.h"
 #include "../../generated/background_presets.h"
@@ -101,3 +104,5 @@ bool bg_image_draw(GContext *ctx, const WatchData *d, GRect bounds, GPoint origi
   }
   return true;
 }
+
+#endif // !PBL_BW

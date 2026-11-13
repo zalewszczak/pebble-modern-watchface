@@ -145,15 +145,12 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
   const int layers = look->layers ? look->layers : 1;
   const bool semi = look->semi != 0;
   GBitmap *fb = graphics_capture_frame_buffer(ctx);
+#ifdef PBL_BW
   uint8_t *data = NULL;
   uint16_t stride = 0;
-#ifdef PBL_BW
   GColor ink_color; ink_color.argb = look->ink;
   const bool ink_white = bw_color_is_white(ink_color);
   if (fb && gbitmap_get_format(fb) == GBitmapFormat1Bit) {
-#else
-  if (fb && gbitmap_get_format(fb) == GBitmapFormat8Bit) {
-#endif
     GRect fbb = gbitmap_get_bounds(fb);
     if (origin.x >= fbb.origin.x && origin.y >= fbb.origin.y &&
         origin.x + w <= fbb.origin.x + fbb.size.w && origin.y + h <= fbb.origin.y + fbb.size.h) {
@@ -161,9 +158,33 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
       stride = gbitmap_get_bytes_per_row(fb);
     }
   }
+  if (fb && !data) { graphics_release_frame_buffer(ctx, fb); fb = NULL; }
+#else
+  // Round screens (gabbro) keep their frame buffer in a circular 8-bit format whose rows have
+  // different lengths, so rows are always addressed through gbitmap_get_data_row_info (valid for
+  // every 8-bit format). While the frame buffer is captured, ordinary drawing calls draw nothing,
+  // so a frame buffer that cannot be written directly is released before the per-pixel fallback.
+  if (fb) {
+    const GBitmapFormat f = gbitmap_get_format(fb);
+    if (f != GBitmapFormat8Bit && f != GBitmapFormat8BitCircular) {
+      static bool logged;
+      if (!logged) { logged = true; APP_LOG(APP_LOG_LEVEL_WARNING, "border: fb format %d unsupported", (int)f); }
+      graphics_release_frame_buffer(ctx, fb);
+      fb = NULL;
+    }
+  }
+#endif
 
   for (int y = 0; y < h; y++) {
     const int dy2 = 2 * y + 1 - h; // doubled offsets keep the centre exact
+#ifndef PBL_BW
+    uint8_t *row_data = NULL;
+    int row_min = 1, row_max = 0; // empty range unless a frame-buffer row is available
+    if (fb) {
+      const GBitmapDataRowInfo ri = gbitmap_get_data_row_info(fb, (uint16_t)(origin.y + y));
+      row_data = ri.data; row_min = ri.min_x; row_max = ri.max_x;
+    }
+#endif
 #ifdef PBL_ROUND
     // Circular ring: depth is the distance inward from the circle edge. Doubled
     // coordinates again, so the circle radius is w (= 2 * w / 2).
@@ -204,8 +225,9 @@ void weather_border_draw(GContext *ctx, const WeatherBorderLook *look, GRect bou
       // pixels are all one parity, so alternate per row instead.
       uint8_t c = (semi ? (y & 1) : ((x + y) & 1)) ? look->c1[layer][s] : look->c0[layer][s];
       if (!c) continue;
-      if (data) {
-        data[(int32_t)(origin.y + y) * stride + origin.x + x] = c;
+      if (fb) {
+        const int fx = origin.x + x;
+        if (fx >= row_min && fx <= row_max) row_data[fx] = c;
       } else {
         GColor gc; gc.argb = c;
         graphics_context_set_stroke_color(ctx, gc);
