@@ -34,28 +34,30 @@ static FGPoint marker_layer_point_on_ring_fp(FGPoint center, GRect screen, int32
   int32_t reach_fp = marker_reach_fp(screen, pct);
 
   FGPoint circle_pt = subpixel_fgpoint_new(
-    center.x + (int32_t)(((int64_t)reach_fp * sin_v) / TRIG_MAX_RATIO),
-    center.y - (int32_t)(((int64_t)reach_fp * cos_v) / TRIG_MAX_RATIO));
+    center.x + render_math_mul_q16(reach_fp, sin_v),
+    center.y - render_math_mul_q16(reach_fp, cos_v));
 
   if (eccentricity_pct == 0) return circle_pt;
 
   int16_t reach_max = marker_max(screen_hw, screen_hh);
-  int32_t rect_hw_fp = (int32_t)(((int64_t)reach_fp * screen_hw) / reach_max);
-  int32_t rect_hh_fp = (int32_t)(((int64_t)reach_fp * screen_hh) / reach_max);
+  int32_t rect_hw_fp = render_math_muldiv(reach_fp, screen_hw, reach_max);
+  int32_t rect_hh_fp = render_math_muldiv(reach_fp, screen_hh, reach_max);
 
   int32_t adx = sin_v < 0 ? -sin_v : sin_v;
   int32_t ady = cos_v < 0 ? -cos_v : cos_v;
-  int32_t t_x = (adx == 0) ? INT32_MAX : (int32_t)(((int64_t)rect_hw_fp * TRIG_MAX_RATIO) / adx);
-  int32_t t_y = (ady == 0) ? INT32_MAX : (int32_t)(((int64_t)rect_hh_fp * TRIG_MAX_RATIO) / ady);
+  // rect_*_fp are positive and < 2^16 (a half screen in Q24.8), so << 16 stays inside 32 unsigned bits.
+  int32_t t_x = (adx == 0) ? INT32_MAX : (int32_t)(((uint32_t)rect_hw_fp << 16) / (uint32_t)adx);
+  int32_t t_y = (ady == 0) ? INT32_MAX : (int32_t)(((uint32_t)rect_hh_fp << 16) / (uint32_t)ady);
   int32_t t = t_x < t_y ? t_x : t_y;
 
   FGPoint rect_pt = subpixel_fgpoint_new(
-    center.x + (int32_t)(((int64_t)t * sin_v) / TRIG_MAX_RATIO),
-    center.y - (int32_t)(((int64_t)t * cos_v) / TRIG_MAX_RATIO));
+    center.x + render_math_mul_q16(t, sin_v),
+    center.y - render_math_mul_q16(t, cos_v));
 
   FGPoint result;
-  result.x = circle_pt.x + (int32_t)(((int64_t)(rect_pt.x - circle_pt.x) * eccentricity_pct) / 100);
-  result.y = circle_pt.y + (int32_t)(((int64_t)(rect_pt.y - circle_pt.y) * eccentricity_pct) / 100);
+  // |difference| < 2^17 and pct <= 100: the product fits in 32 bits.
+  result.x = circle_pt.x + ((rect_pt.x - circle_pt.x) * (int32_t)eccentricity_pct) / 100;
+  result.y = circle_pt.y + ((rect_pt.y - circle_pt.y) * (int32_t)eccentricity_pct) / 100;
   return result;
 }
 
@@ -81,18 +83,18 @@ static void draw_ring_mark_fp(GContext *ctx, FGPoint inner, FGPoint outer, int32
     return;
   }
 
-  int32_t inner_dx_w = (int32_t)(((int64_t)inner_half_thick_fp * cos_v) / TRIG_MAX_RATIO);
-  int32_t inner_dy_w = (int32_t)(((int64_t)inner_half_thick_fp * sin_v) / TRIG_MAX_RATIO);
-  int32_t outer_dx_w = (int32_t)(((int64_t)outer_half_thick_fp * cos_v) / TRIG_MAX_RATIO);
-  int32_t outer_dy_w = (int32_t)(((int64_t)outer_half_thick_fp * sin_v) / TRIG_MAX_RATIO);
+  int32_t inner_dx_w = render_math_mul_q16(inner_half_thick_fp, cos_v);
+  int32_t inner_dy_w = render_math_mul_q16(inner_half_thick_fp, sin_v);
+  int32_t outer_dx_w = render_math_mul_q16(outer_half_thick_fp, cos_v);
+  int32_t outer_dy_w = render_math_mul_q16(outer_half_thick_fp, sin_v);
 
   FGPoint a = inner, b = outer;
   if (style == 2 || style == 4) { // square/tapered caps -- extend each end along the same
                                     // radial direction outer sits on, by that end's own thickness
-    int32_t inner_ex = (int32_t)(((int64_t)inner_half_thick_fp * sin_v) / TRIG_MAX_RATIO);
-    int32_t inner_ey = (int32_t)(((int64_t)inner_half_thick_fp * cos_v) / TRIG_MAX_RATIO);
-    int32_t outer_ex = (int32_t)(((int64_t)outer_half_thick_fp * sin_v) / TRIG_MAX_RATIO);
-    int32_t outer_ey = (int32_t)(((int64_t)outer_half_thick_fp * cos_v) / TRIG_MAX_RATIO);
+    int32_t inner_ex = render_math_mul_q16(inner_half_thick_fp, sin_v);
+    int32_t inner_ey = render_math_mul_q16(inner_half_thick_fp, cos_v);
+    int32_t outer_ex = render_math_mul_q16(outer_half_thick_fp, sin_v);
+    int32_t outer_ey = render_math_mul_q16(outer_half_thick_fp, cos_v);
     a = subpixel_fgpoint_new(inner.x - inner_ex, inner.y + inner_ey);
     b = subpixel_fgpoint_new(outer.x + outer_ex, outer.y - outer_ey);
   }
@@ -132,19 +134,6 @@ static GColor marker_ring_color(uint8_t choice, GColor main_color, GColor accent
 
 // "Animate background on start": each mark staggers in starting from
 #define MARKER_ANIM_STAGGER_1000 600 // marks' own starts spread across the first 60% of the duration
-
-static int32_t marker_ease_out_1000(int32_t t) {
-  int32_t inv = 1000 - t;
-  int64_t inv3 = ((int64_t)inv * inv * inv) / 1000000;
-  int32_t r = 1000 - (int32_t)inv3;
-  return (r > 1000) ? 1000 : r;
-}
-
-int32_t marker_layer_ease_in_1000(int32_t t) {
-  int64_t t64 = t;
-  int32_t r = (int32_t)((t64 * t64 * t64) / 1000000);
-  return (r > 1000) ? 1000 : r;
-}
 
 int32_t marker_anim_mark_progress_1000_raw(int mark_index, int marks, int32_t overall_progress_1000) {
   int32_t start_frac = ((int32_t)mark_index * MARKER_ANIM_STAGGER_1000) / marks;
@@ -189,7 +178,7 @@ static void draw_marker_ring(GContext *ctx, GPoint center, GRect screen, const M
     uint8_t use_inner_pct = inner_pct, use_outer_pct = outer_pct;
     uint8_t use_inner_ecc = cfg->inner_eccentricity, use_outer_ecc = cfg->outer_eccentricity;
     if (anim_active) {
-      int32_t p = marker_ease_out_1000(marker_anim_mark_progress_1000_raw(i, marks, anim_overall_progress_1000));
+      int32_t p = render_math_ease_out_1000(marker_anim_mark_progress_1000_raw(i, marks, anim_overall_progress_1000));
       use_inner_pct = (uint8_t)render_math_lerp8(100, inner_pct, p, 1000);
       use_outer_pct = (uint8_t)render_math_lerp8(100, outer_pct, p, 1000);
       use_inner_ecc = (uint8_t)render_math_lerp8(100, cfg->inner_eccentricity, p, 1000);
@@ -230,7 +219,7 @@ void marker_layer_deinit(MarkerLayerState *state) {
 // know about them.
 void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GRect screen,
                               const WatchData *d, GColor main_color, GColor accent_color, GColor bg_color,
-                              bool anim_active, int32_t anim_progress_1000, bool draw_debug) {
+                              MarkerDrawPart part, bool anim_active, int32_t anim_progress_1000, bool draw_debug) {
   uint8_t marker_style = d->big_analog_marker_style;
 
   bool is_bitmap_style = marker_style_is_bitmap(marker_style);
@@ -256,16 +245,16 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
     return;
   }
 
+  if (part != MARKER_DRAW_HOUR) {
+    // Second ring first so the hour ring's marks draw on top at shared positions.
+    draw_marker_ring(ctx, center, screen, &d->custom_second_marker, 60, 5, main_color, accent_color, bg_color, false, 0,
+                     d->custom_second_marker_inner_thickness);
+  }
+  if (part == MARKER_DRAW_BASE) return;
+
   const MarkerRingConfig *hour_cfg = &d->custom_hour_marker;
-  const MarkerRingConfig *second_cfg = &d->custom_second_marker;
-  uint8_t hour_inner_thickness = d->custom_hour_marker_inner_thickness;
-  uint8_t second_inner_thickness = d->custom_second_marker_inner_thickness;
+  draw_marker_ring(ctx, center, screen, hour_cfg, 12, 0, main_color, accent_color, bg_color, anim_active, anim_progress_1000,
+                   d->custom_hour_marker_inner_thickness);
 
-  // Second ring first so the hour ring's marks draw on top at shared
-  draw_marker_ring(ctx, center, screen, second_cfg, 60, 5, main_color, accent_color, bg_color, false, 0, second_inner_thickness);
-  draw_marker_ring(ctx, center, screen, hour_cfg, 12, 0, main_color, accent_color, bg_color, anim_active, anim_progress_1000, hour_inner_thickness);
-
-  marker_text_draw(ctx, center, screen, &state->text_font_slot, &d->marker_text, hour_cfg, second_cfg, main_color, anim_active, anim_progress_1000, draw_debug);
+  marker_text_draw(ctx, center, screen, &state->text_font_slot, &d->marker_text, hour_cfg, &d->custom_second_marker, main_color, draw_debug);
 }
-
-

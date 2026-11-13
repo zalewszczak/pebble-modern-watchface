@@ -54,8 +54,10 @@ void marker_bitmap_ensure(GBitmap **bitmap, uint8_t *bitmap_style, bool *bitmap_
   if (res_id != 0) {
     *bitmap = gbitmap_create_with_resource(res_id);
     if (!*bitmap) {
-      // OUT OF MEMORY?
-      status_label_set("MALLOC: Restart watch", GColorRed, false);
+      // OUT OF MEMORY? Log the heap so `pebble logs` shows how much was left (gabbro PNG decode failures).
+      APP_LOG(APP_LOG_LEVEL_ERROR, "marker bitmap %d: no memory (heap free %u, used %u)",
+              (int)style, (unsigned)heap_bytes_free(), (unsigned)heap_bytes_used());
+      status_label_set("MALLOC: Restart watch", STATUS_WARNING_COLOR, false);
     }
   }
   

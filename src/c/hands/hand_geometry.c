@@ -1,17 +1,18 @@
 #include "./hand_geometry.h"
 #include "../data/watch_data.h"
+#include "../rendering/render_math.h"
 
 // Build points from axial distance and perpendicular width in fixed-point space.
 
 static FGPoint point_at_axial_fp(FGPoint center, int32_t sin_v, int32_t cos_v, int32_t axial_fp) {
-  int32_t dx = (int32_t)(((int64_t)axial_fp * sin_v) / TRIG_MAX_RATIO);
-  int32_t dy = (int32_t)(((int64_t)axial_fp * cos_v) / TRIG_MAX_RATIO);
+  int32_t dx = render_math_mul_q16(axial_fp, sin_v);
+  int32_t dy = render_math_mul_q16(axial_fp, cos_v);
   return subpixel_fgpoint_new(center.x + dx, center.y - dy);
 }
 
 static void perp_offset_fp(int32_t sin_v, int32_t cos_v, int32_t half_w_fp, int32_t *dx_w, int32_t *dy_w) {
-  *dx_w = (int32_t)(((int64_t)half_w_fp * cos_v) / TRIG_MAX_RATIO);
-  *dy_w = (int32_t)(((int64_t)half_w_fp * sin_v) / TRIG_MAX_RATIO);
+  *dx_w = render_math_mul_q16(half_w_fp, cos_v);
+  *dy_w = render_math_mul_q16(half_w_fp, sin_v);
 }
 
 
@@ -254,8 +255,8 @@ void hand_geometry_compute_fp(FGPoint center, int32_t angle, const HandConfig *c
         for (int k = 1; k <= LEAF_HALF_SAMPLES; k++) {
           int32_t u_num = k, u_den = LEAF_HALF_SAMPLES + 1; 
           int32_t ax = back_fp + subpixel_round_div((peak_ax - back_fp) * u_num, u_den);
-          int32_t angle_half_pi_u = (int32_t)(((int64_t)u_num * (TRIG_MAX_ANGLE / 4)) / u_den); 
-          int32_t w = (int32_t)(((int64_t)half_w_fp * sin_lookup(angle_half_pi_u)) / TRIG_MAX_RATIO);
+          int32_t angle_half_pi_u = (u_num * (TRIG_MAX_ANGLE / 4)) / u_den;
+          int32_t w = render_math_mul_q16(half_w_fp, sin_lookup(angle_half_pi_u));
           FGPoint p = point_at_axial_fp(center, sin_v, cos_v, ax);
           int32_t dx, dy; perp_offset_fp(sin_v, cos_v, w, &dx, &dy);
           plus_side[k - 1] = subpixel_fgpoint_new(p.x + dx, p.y + dy);
@@ -266,8 +267,8 @@ void hand_geometry_compute_fp(FGPoint center, int32_t angle, const HandConfig *c
         for (int k = 1; k <= LEAF_HALF_SAMPLES; k++) {
           int32_t u_num = k, u_den = LEAF_HALF_SAMPLES + 1; 
           int32_t ax = peak_ax + subpixel_round_div((len_fp - peak_ax) * u_num, u_den);
-          int32_t angle_half_pi_v = (int32_t)(((int64_t)u_num * (TRIG_MAX_ANGLE / 4)) / u_den); 
-          int32_t w = (int32_t)(((int64_t)half_w_fp * cos_lookup(angle_half_pi_v)) / TRIG_MAX_RATIO);
+          int32_t angle_half_pi_v = (u_num * (TRIG_MAX_ANGLE / 4)) / u_den;
+          int32_t w = render_math_mul_q16(half_w_fp, cos_lookup(angle_half_pi_v));
           FGPoint p = point_at_axial_fp(center, sin_v, cos_v, ax);
           int32_t dx, dy; perp_offset_fp(sin_v, cos_v, w, &dx, &dy);
           plus_side2[k - 1] = subpixel_fgpoint_new(p.x + dx, p.y + dy);
@@ -397,10 +398,9 @@ void hand_geometry_compute_fp(FGPoint center, int32_t angle, const HandConfig *c
       for (int i = 0; i <= SERP_SEGMENTS; i++) {
         int32_t s_rel_fp = subpixel_round_div(span_fp * i, SERP_SEGMENTS);
         int32_t ax = back_fp + s_rel_fp;
-        int64_t angle_raw = ((int64_t)s_rel_fp * TRIG_MAX_ANGLE) / period_fp;
-        int32_t angle = (int32_t)(angle_raw % TRIG_MAX_ANGLE);
+        int32_t angle = render_math_muldiv(s_rel_fp, TRIG_MAX_ANGLE, period_fp) % TRIG_MAX_ANGLE;
         int32_t sin_val = sin_lookup(angle) * dir_sign;
-        int32_t dev_fp = (int32_t)(((int64_t)amp_fp * sin_val) / TRIG_MAX_RATIO);
+        int32_t dev_fp = render_math_mul_q16(amp_fp, sin_val);
         verts[i] = point_at_axial_fp(center, sin_v, cos_v, ax);
         int32_t dx, dy;
         perp_offset_fp(sin_v, cos_v, dev_fp, &dx, &dy);

@@ -19,18 +19,42 @@ static bool pattern_on(uint8_t level, int x, int y) {
 // Decodes the phone-built ring (WatchData.border_data, format in weather_border.h). Everything that
 // decides what the ring shows (weather style and colour scheme, calendar events and colours) was
 // already worked out on the phone; the watch only validates and unpacks it.
+// Seconds since the ring started waiting for its first data (0 = not waiting).
+static time_t s_wait_start;
+
+static void make_placeholder(WeatherBorderLook *out, time_t now) {
+  if (s_wait_start == 0) s_wait_start = now;
+  const bool pending = (now - s_wait_start) < BORDER_WAIT_S;
+  const int step = (int)(now % 12);
+  out->state = pending ? WEATHER_BORDER_PENDING : WEATHER_BORDER_MISSING;
+  out->layers = 1;
+  out->semi = 0;
+  for (int s = 0; s < 12; s++) {
+    const bool lit = !pending || ((s - step + 12) % 12) < 4;
+#ifdef PBL_BW
+    out->c0[0][s] = lit ? (pending ? 3 : 2) : 0;
+#else
+    out->c0[0][s] = lit ? (pending ? GColorOrange.argb : GColorRed.argb) : 0;
+    out->c1[0][s] = pending ? out->c0[0][s] : 0; // missing: every other pixel -> checkerboard
+#endif
+  }
+}
+
+// Decodes the phone-built ring (WatchData.border_data, format in weather_border.h). Everything that
+// decides what the ring shows (weather style and colour scheme, calendar events and colours) was
+// already worked out on the phone; the watch only validates and unpacks it.
 bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *out) {
-  (void)now;
   memset(out, 0, sizeof(*out));
-  if (d->border_weather_mode == 0) return false;
-  const uint8_t *b = d->border_data;
-  const int layers = b[0];
-  if (layers < 1 || layers > WEATHER_BORDER_MAX_LAYERS) return false; // no data yet: nothing to draw
+  if (d->border_weather_mode == 0) { s_wait_start = 0; return false; }
   int px = d->border_weather_px;
   if (px < 2) px = 2;
   if (px > 40) px = 40;
   out->px = (uint8_t)px;
   out->semi = d->border_weather_semi ? 1 : 0;
+
+  const uint8_t *b = d->border_data;
+  const int layers = b[0];
+  bool ok = layers >= 1 && layers <= WEATHER_BORDER_MAX_LAYERS;
 #ifdef PBL_BW
   out->layers = 1; // a pattern ring has one stripe; its levels are the first layer's c0
 #else
@@ -38,15 +62,15 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
 #endif
 
   int pos = 1;
-  for (int l = 0; l < layers; l++) {
-    if (pos + 14 > BORDER_DATA_MAX) return false;
+  for (int l = 0; ok && l < layers; l++) {
+    if (pos + 14 > BORDER_DATA_MAX) { ok = false; break; }
     const uint8_t *c0 = &b[pos];
     const uint16_t mask = (uint16_t)(b[pos + 12] | (b[pos + 13] << 8));
     pos += 14;
     for (int s = 0; s < 12; s++) {
       uint8_t second = c0[s];
       if (mask & (1u << s)) {
-        if (pos >= BORDER_DATA_MAX) return false;
+        if (pos >= BORDER_DATA_MAX) { ok = false; break; }
         second = b[pos++];
       }
 #ifdef PBL_BW
@@ -58,6 +82,14 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
 #endif
     }
   }
+  if (!ok) {
+    memset(out->c0, 0, sizeof(out->c0));
+    memset(out->c1, 0, sizeof(out->c1));
+    make_placeholder(out, now);
+    return true;
+  }
+  s_wait_start = 0;
+  out->state = WEATHER_BORDER_DATA;
   return true;
 }
 
@@ -67,6 +99,7 @@ uint32_t weather_border_signature(const WeatherBorderLook *look) {
   h = (h ^ look->semi) * 16777619u;
   h = (h ^ look->layers) * 16777619u;
   h = (h ^ look->ink) * 16777619u;
+  h = (h ^ look->state) * 16777619u;
   for (int l = 0; l < WEATHER_BORDER_MAX_LAYERS; l++) {
     for (int i = 0; i < 12; i++) {
       h = (h ^ look->c0[l][i]) * 16777619u;

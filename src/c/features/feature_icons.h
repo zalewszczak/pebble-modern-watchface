@@ -1,5 +1,8 @@
 #pragma once
 
+#define ICON_KIND_PEBBLE_LOGO 12
+#define PL_LOGO_W 40
+
 #include <pebble.h>
 
 #include "../platform/platform_bw.h"

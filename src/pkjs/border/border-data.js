@@ -110,7 +110,12 @@ function loadWxCache() {
 // Called with the forecast arrays every time weather data is built (message-encoder.js).
 function setWeather(extra, tempColors) {
   if (!extra || !extra.forecastWx) return;
+  // A failed fetch hands over an "empty" forecast (every temperature null). It must not replace the last
+  // good forecast: that overwrite is what left the ring blank until the next successful fetch.
+  var hasData = (extra.forecastTempC || []).some(function (c) { return typeof c === 'number'; });
+  if (!hasData) return;
   wxCache = {
+    ts: Date.now(),
     temp: (extra.forecastTempC || []).map(function (c) { return typeof c === 'number' ? Math.round(c) : null; }),
     wx: extra.forecastWx.slice(0, 15),
     rain: (extra.forecastRainPct || []).slice(0, 15),
@@ -139,8 +144,13 @@ function buildWeather(now) {
   var nl = (style === 4 && !platform.bw) ? 3 : 1, layers = [], l;
   for (l = 0; l < nl; l++) layers.push(emptyLayer());
   var hour12 = now.getHours() % 12;
+  // The forecast is "h hours from the moment it was fetched"; shift by the whole hours passed since, so a
+  // forecast that is a few hours old still lands on the right sectors (the far end becomes transparent).
+  var age = c.ts ? Math.max(0, Math.floor(now.getTime() / 3600000) - Math.floor(c.ts / 3600000)) : 0;
+  if (age > 12) return [0];
   for (var h = 1; h <= 12; h++) {
-    var slot = slotForHour(h), sec = (hour12 + h) % 12;
+    var slot = slotForHour(h + age), sec = (hour12 + h) % 12;
+    if (h + age > 12) continue;
     var t = c.temp[slot];
     if (typeof t !== 'number') continue; // no data: stays transparent
     var wx = c.wx[slot] || 0, rain = c.rain[slot] || 0;
@@ -234,6 +244,14 @@ function bytes() {
 var pushFn = null;
 function init(push) {
   pushFn = push;
+  // The ring is laid out by clock position, so it has to be rebuilt when the hour changes.
+  var lastHour = new Date().getHours();
+  setInterval(function () {
+    var hr = new Date().getHours();
+    if (hr === lastHour) return;
+    lastHour = hr;
+    if (source() > 0 && pushFn) pushFn(bytes());
+  }, 60000);
   calendar.setOnChange(function () { if (source() === 2 && pushFn) pushFn(bytes()); });
   sync();
 }

@@ -10,5 +10,4 @@
 void marker_text_draw(GContext *ctx, GPoint center, GRect screen, FontSlot *font_slot,
                       const MarkerTextConfig *text_cfg, const MarkerRingConfig *hour_cfg,
                       const MarkerRingConfig *second_cfg, GColor color,
-                      bool anim_active, int32_t anim_overall_progress_1000,
                       bool draw_debug);

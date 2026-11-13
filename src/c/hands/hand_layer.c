@@ -1,4 +1,5 @@
 #include "./hand_layer.h"
+#include "../rendering/render_math.h"
 #include "./hand_geometry.h"
 #include "../graphics/subpixel.h"
 
@@ -142,10 +143,10 @@ static void draw_hand_shadow_once_fp(GContext *ctx, FGPoint center, int32_t angl
                                       bool shadow_translucent_style, uint16_t shadow_angle_deg) {
   if (!cfg->shadow_enabled) return;
 
-  int32_t shadow_native_angle = (int32_t)(((int64_t)shadow_angle_deg * TRIG_MAX_ANGLE) / 360);
+  int32_t shadow_native_angle = ((int32_t)shadow_angle_deg * TRIG_MAX_ANGLE) / 360;
   int32_t dist_fp = (int32_t)cfg->shadow_distance_px << SUBPIXEL_BITS;
-  int32_t dx = (int32_t)(((int64_t)dist_fp * sin_lookup(shadow_native_angle)) / TRIG_MAX_RATIO);
-  int32_t dy = -(int32_t)(((int64_t)dist_fp * cos_lookup(shadow_native_angle)) / TRIG_MAX_RATIO);
+  int32_t dx = render_math_mul_q16(dist_fp, sin_lookup(shadow_native_angle));
+  int32_t dy = -render_math_mul_q16(dist_fp, cos_lookup(shadow_native_angle));
   FGPoint shadow_center = subpixel_fgpoint_new(center.x + dx, center.y + dy);
 
   HandGeometry geo;

@@ -35,9 +35,20 @@ typedef struct {
   uint8_t px;      // total thickness
   uint8_t semi;    // draw only every other pixel
   uint8_t ink;     // B&W only: packed GColor of the pattern pixels
+  uint8_t state;   // WEATHER_BORDER_DATA / _PENDING / _MISSING
 } WeatherBorderLook;
 
-// Returns false when the ring is off or no data has arrived yet.
+// What the ring shows. While the ring is switched on but the phone has sent nothing usable the watch
+// draws a placeholder instead of an empty edge, so a missing ring is never a silent failure:
+//   PENDING  a third of the ring (4 sectors, orange / dense pattern) steps round once a second, for the
+//            first BORDER_WAIT_S seconds the ring has been waiting for data
+//   MISSING  after that: the whole ring as a red checkerboard (B&W: a checkerboard of the text colour)
+#define WEATHER_BORDER_DATA 0
+#define WEATHER_BORDER_PENDING 1
+#define WEATHER_BORDER_MISSING 2
+#define BORDER_WAIT_S 120
+
+// Returns false only when the ring is off. With no usable data it returns a placeholder (see above).
 bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *out);
 
 // Hash of everything weather_border_compute() produced, for the cache signature.

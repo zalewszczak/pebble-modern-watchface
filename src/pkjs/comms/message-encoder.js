@@ -344,6 +344,18 @@ function colorsBytes() {
   ];
 }
 
+// The 15 forecast temperature strings travel as ONE blob of fixed 6-byte slots (NUL padded, so a slot
+// holds at most 5 characters): one tuple header instead of fifteen, and 14 fewer message keys.
+var FORECAST_DISPLAY_SLOT = 6;
+function forecastDisplayBlob(temps, unitCode) {
+  var out = [];
+  for (var i = 0; i < 15; i++) {
+    var txt = String(formatTempDisplay(i < temps.length ? temps[i] : null, unitCode) || '').slice(0, FORECAST_DISPLAY_SLOT - 1);
+    for (var j = 0; j < FORECAST_DISPLAY_SLOT; j++) out.push(j < txt.length ? txt.charCodeAt(j) & 127 : 0);
+  }
+  return out;
+}
+
 function populateSettingsFields(dict) {
   dict['SHOW_SECONDS'] = showSecondsCode();
   dict['COLORS'] = colorsBytes();
@@ -500,10 +512,8 @@ function extraWeatherFieldsDict(extra) {
     });
     var forecastUnitCode = tempUnitCode();
     var forecastColorBytes = [];
-    extra.forecastTempC.forEach(function (c, i) {
-      dict['FORECAST_TEMP_DISPLAY_' + i] = formatTempDisplay(c, forecastUnitCode);
-      forecastColorBytes.push(tempGradientColorByte(c));
-    });
+    extra.forecastTempC.forEach(function (c) { forecastColorBytes.push(tempGradientColorByte(c)); });
+    dict['FORECAST_TEMP_DISPLAY'] = forecastDisplayBlob(extra.forecastTempC, forecastUnitCode);
     dict['FORECAST_TEMP_COLORS'] = forecastColorBytes;
   }
   if (extra.forecastWx) {
@@ -606,7 +616,7 @@ function unitDisplayDict() {
   if (typeof raw.dewC === 'number') dict['DEW_POINT_DISPLAY'] = formatTempDisplay(raw.dewC, tempUnit);
   if (typeof raw.altM === 'number') dict['ALTITUDE_DISPLAY'] = formatAltitudeDisplay(raw.altM, altitudeUnitCode());
   if (Array.isArray(raw.forecastTempC)) {
-    raw.forecastTempC.forEach(function (c, i) { dict['FORECAST_TEMP_DISPLAY_' + i] = formatTempDisplay(c, tempUnit); });
+    dict['FORECAST_TEMP_DISPLAY'] = forecastDisplayBlob(raw.forecastTempC, tempUnit);
   }
   if (typeof raw.aqiUs === 'number' || typeof raw.aqiEu === 'number') {
     var aqiUnit = aqiUnitCode();

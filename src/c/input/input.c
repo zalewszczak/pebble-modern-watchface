@@ -29,7 +29,7 @@ static bool s_compass_heading_has_reading = false;
 
 static int32_t compass_heading_to_degrees(CompassHeadingData data) {
   CompassHeading clockwise = TRIG_MAX_ANGLE - data.true_heading;
-  int32_t heading = (int32_t)(((int64_t)clockwise * 360) / TRIG_MAX_ANGLE) % 360;
+  int32_t heading = (((int32_t)clockwise * 360) / TRIG_MAX_ANGLE) % 360;
   if (heading < 0) heading += 360;
   return heading;
 }

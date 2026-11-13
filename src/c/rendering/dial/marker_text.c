@@ -24,16 +24,12 @@ static void int_to_roman(int num, char *buf, size_t buf_size) {
 void marker_text_draw(GContext *ctx, GPoint center, GRect screen, FontSlot *font_slot,
                                const MarkerTextConfig *text_cfg, const MarkerRingConfig *hour_cfg,
                                const MarkerRingConfig *second_cfg, GColor color,
-                               bool anim_active, int32_t anim_overall_progress_1000,
                                bool draw_debug) {
   if (text_cfg->target == 0) return;
   bool is_hour = (text_cfg->target == 1);
   const MarkerRingConfig *ring = is_hour ? hour_cfg : second_cfg;
   uint16_t mask = is_hour ? text_cfg->hour_mask : text_cfg->second_mask;
   if (mask == 0) return;
-// Same "hour only" scoping as marker_layer_draw()'s own two ring
-  if (!is_hour) { anim_active = false; anim_overall_progress_1000 = 0; }
-
   GFont font = font_lookup_resolve(font_slot, text_cfg->font_choice);
   int16_t fh = font_lookup_height(text_cfg->font_choice) + font_lookup_y_offset(text_cfg->font_choice);
 // Size the box from the selected font rather than a fixed pixel height.
@@ -57,16 +53,9 @@ void marker_text_draw(GContext *ctx, GPoint center, GRect screen, FontSlot *font
 
     char buf[8];
     int label = is_hour ? (i == 0 ? 12 : i) : (i * 5);
-// "Animate background on start": each label counts up from 0 to
-    if (anim_active) {
-      int32_t local = marker_anim_mark_progress_1000_raw(i, 12, anim_overall_progress_1000);
-      int32_t eased = marker_layer_ease_in_1000(local);
-      label = (int)(((int32_t)label * eased) / 1000);
-// Hour markers never legitimately target 0 (i==0 maps to 12
-      if (label == 0) continue;
-    }
+    // The launch animation does not touch the numerals: they simply appear in place.
     if (text_cfg->roman_numerals && label > 0) int_to_roman(label, buf, sizeof(buf));
-    else if (text_cfg->roman_numerals) buf[0] = '\0'; // roman numerals have no glyph for 0 -- blank rather than garbage mid-count-up
+    else if (text_cfg->roman_numerals) buf[0] = '\0'; // Roman numerals have no glyph for 0
     else snprintf(buf, sizeof(buf), "%d", label);
 
     GRect box = GRect(pos.x - box_w / 2, pos.y - box_h / 2, box_w, box_h);

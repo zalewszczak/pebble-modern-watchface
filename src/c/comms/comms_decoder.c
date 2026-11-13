@@ -148,6 +148,8 @@ static const BlobFieldMapping BLOB_FIELD_MAP_VALID[] = {
   { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), FORECAST_SLOT_COUNT },
   { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), FORECAST_SLOT_COUNT },
   { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), FORECAST_SLOT_COUNT },
+  // 15 fixed 6-byte NUL-padded strings, see forecastDisplayBlob() in comms/message-encoder.js.
+  { MK_FORECAST_TEMP_DISPLAY, 1, offsetof(WatchData, forecast_temp_display), FORECAST_SLOT_COUNT * 6 },
   { MK_PLANET_RISE, 4, offsetof(WatchData, planet_rise), PLANET_COUNT * 4 },
   { MK_PLANET_SET, 4, offsetof(WatchData, planet_set), PLANET_COUNT * 4 },
 };
@@ -268,16 +270,6 @@ static void apply_cstring(DictionaryIterator *iter, uint8_t key_index, char *dst
   dst[cap - 1] = '\0';
 }
 
-// One MK_* per forecast-temp index (see watch_data.h's forecast_temp_display
-// comment for why 9 discrete keys rather than one delimited string).
-static const uint8_t FORECAST_TEMP_DISPLAY_KEYS[FORECAST_SLOT_COUNT] = {
-  MK_FORECAST_TEMP_DISPLAY_0, MK_FORECAST_TEMP_DISPLAY_1, MK_FORECAST_TEMP_DISPLAY_2,
-  MK_FORECAST_TEMP_DISPLAY_3, MK_FORECAST_TEMP_DISPLAY_4, MK_FORECAST_TEMP_DISPLAY_5,
-  MK_FORECAST_TEMP_DISPLAY_6, MK_FORECAST_TEMP_DISPLAY_7, MK_FORECAST_TEMP_DISPLAY_8,
-  MK_FORECAST_TEMP_DISPLAY_9, MK_FORECAST_TEMP_DISPLAY_10, MK_FORECAST_TEMP_DISPLAY_11,
-  MK_FORECAST_TEMP_DISPLAY_12, MK_FORECAST_TEMP_DISPLAY_13, MK_FORECAST_TEMP_DISPLAY_14,
-};
-
 // Consolidated settings fields use fixed wire layouts.
 // HANDS, MARKER_RINGS, and EDGE_LINE_COLOR_MODE use fixed byte layouts;
 // MARKER_TEXT and COLORS are unpacked field-by-field.
@@ -394,9 +386,6 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
   apply_cstring(iter, MK_DEW_POINT_DISPLAY, d->dew_point_display, sizeof(d->dew_point_display));
   apply_cstring(iter, MK_PRESSURE_DISPLAY, d->pressure_display, sizeof(d->pressure_display));
   apply_cstring(iter, MK_AQI_DISPLAY, d->aqi_display, sizeof(d->aqi_display));
-  for (int i = 0; i < FORECAST_SLOT_COUNT; i++) {
-    apply_cstring(iter, FORECAST_TEMP_DISPLAY_KEYS[i], d->forecast_temp_display[i], sizeof(d->forecast_temp_display[i]));
-  }
-
+  for (int i = 0; i < FORECAST_SLOT_COUNT; i++) d->forecast_temp_display[i][5] = '\0'; // a slot is always terminated
   return changes;
 }

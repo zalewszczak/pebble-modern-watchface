@@ -389,6 +389,7 @@ function applySettingsObject(settings) {
 
   firstRun.markDone();
   var unitsBefore = unitSettingsSignature();
+  var weatherSourceBefore = getSetting('CONFIG_WEATHER_SOURCE', 'plugin');
 
   setSetting('CONFIG_AUTO_LOC', settings.CONFIG_AUTO_LOC ? 'true' : 'false');
   setSetting('CONFIG_LAT', settings.CONFIG_LAT || '');
@@ -614,7 +615,10 @@ function applySettingsObject(settings) {
   bgImageSync.syncIfNeeded();
 
   scheduleRefresh();
-  refreshAndSend(!!settings.CONFIG_FORCE_REFRESH, false);
+  // Changing the weather source must show its data now, not after the next scheduled fetch: force
+  // past the "fetched recently, location unchanged" shortcut.
+  var sourceChanged = getSetting('CONFIG_WEATHER_SOURCE', 'plugin') !== weatherSourceBefore;
+  refreshAndSend(!!settings.CONFIG_FORCE_REFRESH || sourceChanged, false);
 }
 
 configBridge.install(function () {

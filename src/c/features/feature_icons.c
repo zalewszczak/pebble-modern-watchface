@@ -148,7 +148,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
       return;
     }
     case 12: { // Pebble battery logo
-      GPoint pos = GPoint(icon_x - 15, box_y + (row_height - 10) / 2);
+      GPoint pos = GPoint(icon_x, box_y + (row_height - 10) / 2); // art spans PL_LOGO_W px from here, see primitive_layout.c
       GColor c = icon_flag ? PBL_IF_COLOR_ELSE(GColorGreen, color) : color;
       GColor oc = icon_flag ? PBL_IF_COLOR_ELSE(GColorBlack, outline_color) : outline_color;
       GPoint p1 = GPoint(pos.x + 3, pos.y + 9);

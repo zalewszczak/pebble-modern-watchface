@@ -83,7 +83,7 @@ void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *sl
     for (int i = 0; i < slot->primitives.count; i++) {
       const PrimitiveInstance *it = &slot->primitives.items[i];
       if (it->width <= 0) continue;
-      int16_t vis = (it->kind == PRIMITIVE_KIND_ICON) ? FEATURE_ICON_WIDTH
+      int16_t vis = (it->kind == PRIMITIVE_KIND_ICON) ? (it->width > FEATURE_ICON_WIDTH ? it->width - 1 : FEATURE_ICON_WIDTH)
                   : (it->kind == PRIMITIVE_KIND_SPACE ? 0 : it->width - 2);
       if (vis <= 0) continue;
       if (first_x < 0) first_x = it->x_offset;

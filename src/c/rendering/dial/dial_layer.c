@@ -7,6 +7,7 @@
 #include "../../data/watch_ui.h"
 #include "../../input/input.h"
 #include "../status/status_label.h"
+#include "../../power/battery_saver.h"
 
 typedef struct {
   WatchData *data;
@@ -63,8 +64,9 @@ static uint32_t dial_static_signature(const WatchData *d, GSize size,
   // Custom background image (selection, or the uploaded image's stamp).
   h = sig_mix(h, bg_image_signature(d));
   h = sig_mix(h, d->bg_translucent ? 1u : 0u);
-  // Weather border (colours already fold in the current hour and the forecast).
-  h = sig_mix(h, border_on ? weather_border_signature(border) : 0);
+  // Weather border (colours already fold in the current hour and the forecast). The "no data yet" /
+  // "fetching" placeholders are not part of the cache: they are drawn over it (see dial_update_proc).
+  h = sig_mix(h, (border_on && border->state == WEATHER_BORDER_DATA) ? weather_border_signature(border) : 0);
   return h ? h : 1u;
 }
 
@@ -72,42 +74,57 @@ static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoi
                              const WatchData *d, GColor bg, GColor main_color, GColor accent_color,
                              const WeatherBorderLook *border, bool border_on,
                              bool animating, int32_t progress_1000) {
+  (void)progress_1000;
   graphics_context_set_fill_color(ctx, bg);
   graphics_fill_rect(ctx, bounds, 0, GCornerNone);
 
   state->bg_ok = bg_image_draw(ctx, d, bounds, origin, bg);
   // Below the indices, above the background image.
-  if (border_on) weather_border_draw(ctx, border, bounds, origin);
+  if (border_on && border->state == WEATHER_BORDER_DATA) weather_border_draw(ctx, border, bounds, origin);
 
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
   state->markers.draw_origin = origin;
   marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
-                    animating, progress_1000, d->draw_debug);
+                    animating ? MARKER_DRAW_BASE : MARKER_DRAW_ALL, false, 0, d->draw_debug);
+
 }
 
-static void dial_update_proc(Layer *layer, GContext *ctx) {
-  DialState *state = (DialState *)layer_get_data(layer);
-  WatchData *d = state->data;
-  if (!d) return;
+// Launch animation frame. Only the hour ring moves, so everything else (background, image, border,
+// second ring) is drawn once into the cache and blitted; each frame then draws just the hour ring and
+// numerals on top. The cache carries a different signature than the normal one, so the full static
+// picture is rebuilt once when the animation ends.
+static void dial_draw_animation_frame(Layer *layer, GContext *ctx, DialState *state, GRect bounds, GPoint origin,
+                                      const WatchData *d, GColor bg, GColor main_color, GColor accent_color,
+                                      const WeatherBorderLook *border, bool border_on) {
+  int32_t progress_1000 = ((int32_t)state->anim_elapsed_ms * 1000) / DIAL_ANIMATION_DURATION_MS;
+  if (progress_1000 > 1000) progress_1000 = 1000;
 
-  GRect bounds = layer_get_bounds(layer);
-  GPoint origin = layer_get_frame(layer).origin; // the dial sits directly under the root layer
+  uint32_t sig = dial_static_signature(d, bounds.size, bg, main_color, accent_color, border, border_on) ^ 0x5bd1e995u;
+  if (!sig) sig = 1u;
 
-  GColor bg, main_color, accent_color;
-  watch_ui_get_active_color_scheme(d, time(NULL), &bg, &main_color, &accent_color);
+  if (!(dial_cache_valid(&state->cache, sig, bounds.size) && dial_cache_blit(ctx, &state->cache, origin))) {
+    dial_cache_release(&state->cache);
+    dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, border, border_on, true, 0);
+    // Snapshot the base only if the background came out right and the cache is not known to fail.
+    if (state->bg_ok && !dial_cache_failed(&state->cache, sig)) {
+      marker_layer_release_resources(&state->markers);
+      dial_cache_capture(ctx, &state->cache, bounds.size, origin, sig);
+    }
+  }
+  (void)layer;
+  GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
+  marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
+                    MARKER_DRAW_HOUR, true, progress_1000, d->draw_debug);
+}
 
-  WeatherBorderLook border;
-  bool border_on = weather_border_compute(d, time(NULL), &border);
-  border.ink = main_color.argb; // used by the B&W pattern border only
-  // "Only on shake": visible just while the show-on-shake window is open.
-  if (border_on && d->border_weather_shake && !input_shake_features_active()) border_on = false;
-
-  // The launch animation moves the indices every frame, so it cannot be cached.
+static void dial_draw_cached(Layer *layer, GContext *ctx, DialState *state, GRect bounds, GPoint origin,
+                             const WatchData *d, GColor bg, GColor main_color, GColor accent_color,
+                             const WeatherBorderLook *border_in, bool border_on) {
+  const WeatherBorderLook border = *border_in;
+  // The launch animation moves the indices every frame, so it cannot use the normal cache.
   bool animating = state->anim_active && d->bg_anim_mode == 1;
   if (animating) {
-    int32_t progress_1000 = ((int32_t)state->anim_elapsed_ms * 1000) / DIAL_ANIMATION_DURATION_MS;
-    if (progress_1000 > 1000) progress_1000 = 1000;
-    dial_draw_static(ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on, true, progress_1000);
+    dial_draw_animation_frame(layer, ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on);
     return;
   }
 
@@ -136,7 +153,7 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
     if (state->bg_fail_streak < 4) {
       layer_mark_dirty(layer);
     } else if (state->bg_fail_streak == 4) {
-      status_label_set("BG: image failed", GColorRed, false);
+      status_label_set("BG: image failed", STATUS_WARNING_COLOR, false);
     }
     return;
   }
@@ -146,6 +163,48 @@ static void dial_update_proc(Layer *layer, GContext *ctx) {
   // them BEFORE allocating the cache so the cache has the room.
   marker_layer_release_resources(&state->markers);
   dial_cache_capture(ctx, &state->cache, bounds.size, origin, sig);
+}
+
+// "No data yet" ring: a third of it chases around once a second while the phone is expected to deliver,
+// then it turns into a static red checker. It is drawn over the cached picture, so animating it never
+// rebuilds the cache (which would reload the background image every second).
+static AppTimer *s_border_timer;
+static Layer *s_border_layer;
+
+static void border_chase_tick(void *context) {
+  (void)context;
+  s_border_timer = NULL;
+  if (s_border_layer) layer_mark_dirty(s_border_layer);
+}
+
+static void dial_update_proc(Layer *layer, GContext *ctx) {
+  DialState *state = (DialState *)layer_get_data(layer);
+  WatchData *d = state->data;
+  if (!d) return;
+
+  GRect bounds = layer_get_bounds(layer);
+  GPoint origin = layer_get_frame(layer).origin; // the dial sits directly under the root layer
+
+  time_t now = time(NULL);
+  GColor bg, main_color, accent_color;
+  watch_ui_get_active_color_scheme(d, now, &bg, &main_color, &accent_color);
+
+  WeatherBorderLook border;
+  bool border_on = weather_border_compute(d, now, &border);
+  border.ink = main_color.argb; // used by the B&W pattern border only
+  // "Only on shake": visible just while the show-on-shake window is open.
+  if (border_on && d->border_weather_shake && !input_shake_features_active()) border_on = false;
+
+  dial_draw_cached(layer, ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on);
+
+  if (border_on && border.state != WEATHER_BORDER_DATA) {
+    weather_border_draw(ctx, &border, bounds, origin);
+    if (border.state == WEATHER_BORDER_PENDING && !s_border_timer &&
+        battery_saver_phase() == BATTERY_SAVER_AWAKE) {
+      s_border_layer = layer;
+      s_border_timer = app_timer_register(1000, border_chase_tick, NULL);
+    }
+  }
 }
 
 Layer *dial_layer_create(GRect frame) {
@@ -166,6 +225,8 @@ Layer *dial_layer_create(GRect frame) {
 void dial_layer_destroy(Layer *layer) {
   if (!layer) return;
   DialState *state = (DialState *)layer_get_data(layer);
+  if (s_border_timer) { app_timer_cancel(s_border_timer); s_border_timer = NULL; }
+  s_border_layer = NULL;
   marker_layer_deinit(&state->markers);
   dial_cache_release(&state->cache);
   layer_destroy(layer);

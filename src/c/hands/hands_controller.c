@@ -5,6 +5,7 @@
 #include "../data/watch_ui.h"
 #include "../features/feature_controller.h"
 #include "../timing/hourly_vibration.h"
+#include "../rendering/render_math.h"
 
 static WatchData *s_data = NULL;
 static Layer *s_hands_layer = NULL;
@@ -20,22 +21,24 @@ static bool s_startup_clock_anim_active = false;
 static bool s_startup_clock_anim_played = false; // Prevent replay after settings/data updates.
 
 static uint16_t s_startup_anim_elapsed_ms = 0;
+static uint32_t s_startup_anim_start_ms = 0;
 
-// Animation progress uses integer 0..1000 values.
-static int32_t ease_out_cubic_1000(int32_t t) {
-  int32_t inv = 1000 - t;
-  int64_t inv3 = ((int64_t)inv * inv * inv) / 1000000;
-  int32_t r = 1000 - (int32_t)inv3;
-  return (r > 1000) ? 1000 : r;
+static uint32_t startup_now_ms(void) {
+  time_t sec; uint16_t ms;
+  time_ms(&sec, &ms);
+  return (uint32_t)sec * 1000u + ms;
 }
 
-// Ease out with a decaying oscillation for the analog-hand settle.
+// Animation progress uses integer 0..1000 values. Easing is a lookup table (render_math.c).
+#define ease_out_cubic_1000 render_math_ease_out_1000
+
+// Ease out with a decaying oscillation for the analog-hand settle. 32-bit maths only.
 static int32_t ease_out_wiggle_1000(int32_t t) {
   int32_t base = ease_out_cubic_1000(t);
   int32_t inv = 1000 - t;
-  int32_t decay = (int32_t)(((int64_t)inv * inv) / 1000);
-  int32_t wiggle_angle = (int32_t)(((int64_t)t * TRIG_MAX_ANGLE * 5) / 1000);
-  int32_t wiggle = (int32_t)(((int64_t)sin_lookup(wiggle_angle) * decay) / TRIG_MAX_RATIO / 12);
+  int32_t decay = (inv * inv) / 1000;                                   // 0..1000
+  int32_t wiggle_angle = (t * (TRIG_MAX_ANGLE / 8) * 5 / 125);          // t * TRIG_MAX_ANGLE * 5 / 1000
+  int32_t wiggle = (sin_lookup(wiggle_angle) * decay) / TRIG_MAX_RATIO / 12;
   return base + wiggle;
 }
 
@@ -48,7 +51,7 @@ static void compute_startup_hand_anim(int32_t target_angle, uint16_t elapsed_ms,
     int32_t eased = ease_out_cubic_1000(p);
     *out_length_scale_1000 = (uint16_t)eased;
     int32_t start_angle = -(TRIG_MAX_ANGLE / 6);
-    int32_t angle = start_angle + (int32_t)(((int64_t)(-start_angle) * eased) / 1000);
+    int32_t angle = start_angle + ((-start_angle) * eased) / 1000;
     if (angle < 0) angle += TRIG_MAX_ANGLE;
     *out_angle = angle;
   } else {
@@ -61,7 +64,7 @@ static void compute_startup_hand_anim(int32_t target_angle, uint16_t elapsed_ms,
 
     int32_t delta = target_angle;
     if (delta > TRIG_MAX_ANGLE / 2) delta -= TRIG_MAX_ANGLE;
-    int32_t angle = (int32_t)(((int64_t)delta * eased) / 1000);
+    int32_t angle = (delta * eased) / 1000;
     if (angle < 0) angle += TRIG_MAX_ANGLE;
     *out_angle = angle;
   }
@@ -85,7 +88,7 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
   // draws exactly the same picture. With the second hand shown they keep their second-precise angles.
   const int hands_sec = s_data->show_seconds ? t->tm_sec : 0;
 
-  int32_t hour_angle = (int32_t)(((int64_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
+  int32_t hour_angle = (int32_t)(((uint32_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
 
   int32_t min_angle = ((t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (60 * 60);
 
@@ -98,7 +101,7 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
     uint16_t smooth_ms;
     time_ms(&smooth_now, &smooth_ms);
     struct tm *smooth_t = localtime(&smooth_now);
-    sec_angle = (int32_t)((((int64_t)smooth_t->tm_sec * 1000 + smooth_ms) * TRIG_MAX_ANGLE) / 60000);
+    sec_angle = (int32_t)((((uint32_t)smooth_t->tm_sec * 1000 + smooth_ms) * TRIG_MAX_ANGLE) / 60000);
   } else {
     sec_angle = (t->tm_sec * TRIG_MAX_ANGLE) / 60;
   }
@@ -150,7 +153,9 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void startup_anim_timer_callback(void *data) {
-  s_startup_anim_elapsed_ms += STARTUP_ANIM_FRAME_MS;
+  // Wall clock, not nominal frame length: frames are slower than STARTUP_ANIM_FRAME_MS.
+  uint32_t elapsed = startup_now_ms() - s_startup_anim_start_ms;
+  s_startup_anim_elapsed_ms = elapsed > STARTUP_CLOCK_ANIM_MS ? STARTUP_CLOCK_ANIM_MS : (uint16_t)elapsed;
   if (s_startup_anim_elapsed_ms >= STARTUP_CLOCK_ANIM_MS) {
     s_startup_clock_anim_active = false;
     s_startup_anim_timer = NULL;
@@ -194,5 +199,6 @@ void hands_controller_start_startup_animation(void) {
   s_startup_clock_anim_played = true;
   s_startup_clock_anim_active = true;
   s_startup_anim_elapsed_ms = 0;
+  s_startup_anim_start_ms = startup_now_ms();
   s_startup_anim_timer = app_timer_register(STARTUP_ANIM_FRAME_MS, startup_anim_timer_callback, NULL);
 }

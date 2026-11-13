@@ -1,4 +1,5 @@
 #include "./subpixel.h"
+#include "../rendering/render_math.h"
 
 // ---- shared tables -----------------------------------------------------
 
@@ -366,8 +367,8 @@ bool subpixel_inset_convex_polygon_fp(const FGPoint *pts, int n, int32_t d_fp, F
     }
     int64_t t_num = (int64_t)dir_x[i] * ey - (int64_t)dir_y[i] * ex;
     out_pts[i] = subpixel_fgpoint_new(
-      offset_a[prev].x + (int32_t)((t_num * dir_x[prev]) / det),
-      offset_a[prev].y + (int32_t)((t_num * dir_y[prev]) / det)
+      offset_a[prev].x + (int32_t)render_math_div64(t_num * dir_x[prev], det),
+      offset_a[prev].y + (int32_t)render_math_div64(t_num * dir_y[prev], det)
     );
   }
 

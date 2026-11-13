@@ -58,7 +58,7 @@ void feature_vector_icons_compass(GContext *ctx, GPoint top_left, int16_t headin
   int32_t north_angle = (int32_t)((((360 - (heading_deg % 360)) % 360) * TRIG_MAX_ANGLE)) / 360;
 
   for (int k = 0; k < 4; k++) {
-    int32_t angle = north_angle + (int32_t)((int64_t)k * TRIG_MAX_ANGLE / 4);
+    int32_t angle = north_angle + (int32_t)k * (TRIG_MAX_ANGLE / 4);
     bool is_north = (k == 0);
     int16_t len = is_north ? 6 : 4;
     GColor color = is_north ? north_color : other_color;

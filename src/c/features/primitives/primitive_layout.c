@@ -27,6 +27,11 @@ void primitive_layout_compute(PrimitiveFeature *feature, const FeatureSlot *slot
       p->width = FEATURE_ICON_WIDTH;
       // User-built sequences add no automatic gap after an icon.
       advance[i] = feature->tight ? FEATURE_ICON_WIDTH : feature_icons_plus_gap_width(p->icon_kind);
+      if (p->icon_kind == ICON_KIND_PEBBLE_LOGO) {
+        // The Pebble logo + battery bar is 40 px wide. It used to be drawn 15 px left of an item that
+        // reserved no room at all, which left it 4 px right of centre; now it owns its whole width.
+        p->width = advance[i] = PL_LOGO_W;
+      }
     } else if ((p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) && p->text[0] == '\0') {
       // Empty text (e.g. the AM/PM part of a world clock in 24 h style) takes no room at all.
       p->width = 0;
