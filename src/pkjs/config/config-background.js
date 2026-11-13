@@ -5,6 +5,7 @@ var bgImages = require('../data/generated/background-images');
 var bgImagesRound = bgImages.imagesRound || {};
 var weatherBgs = require('../data/generated/weather-backgrounds');
 
+var pluginImage = require('../bg-image/plugin-image');
 var BG_W = platform.w;
 var BG_H = platform.h;
 var BG_SLOT_COUNT = 9;
@@ -175,6 +176,13 @@ function backgroundSectionHtml(current) {
 '      <label>Screen filling</label>' +
 '      ' + segmentedHtml('pluginBgFit', PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill', 'help-pluginBgFit') +
 '      <div class="help" id="help-pluginBgFit" style="display:none;"><b>FILL</b> = scaled so the whole screen is covered (edges may be cropped). <b>FIT</b> = scaled so the full picture is visible (space around it shows the background color). <b>75%</b> / <b>50%</b> = scaled to that part of the screen, centered. <b>NONE</b> = original size, centered, not scaled.</div>' +
+'      <div id="pluginBgPreview" style="display:none;margin-top:10px;">' +
+'        <div class="bg-prev-row">' +
+'          <div class="bg-prev-col"><canvas id="pluginBgRawCanvas"></canvas><div class="help" id="pluginBgRawLabel"></div></div>' +
+'          <div class="bg-prev-col"><canvas id="pluginBgOutCanvas"' + (platform.round ? ' style="border-radius:50%;"' : '') + '></canvas><div class="help" id="pluginBgOutLabel"></div></div>' +
+'        </div>' +
+'      </div>' +
+'      <div id="pluginBgPreviewNone" class="help" style="margin-top:10px;">' + (current && current.pluginBgRaw ? '' : 'No picture has been received from the plugin yet, so there is nothing to preview.') + '</div>' +
 (current && current.pluginBgStatus ? '      <div class="help" style="margin-top:8px;"><b>Status:</b> ' + esc(current.pluginBgStatus) + '</div>' : '') +
 '      <div class="help section-intro" style="margin-top:8px;" onclick="toggleSectionIntro(this)">The phone converts the plugin\'s picture to 64 colors with these settings and sends it to the watch. Unless "Cache picture on the watch" is ticked it is kept in the watch\'s memory only, so it is sent again whenever the watchface restarts. It is removed when the plugin reports no image. A progress bar shows on the watch while the picture is transferred. Space around a smaller picture shows the background color.</div>' +
 '    </div>' +
@@ -599,8 +607,45 @@ var CLIENT_BODY =
 '  setPreviewThumbnail("subsecpreview-background", html);\n' +
 '  setSubsubheaderText("background", title);\n' +
 '}\n' +
+'var PLUGIN_PREV = { img: null, key: "" };\n' +
+'function pluginPreviewUpdate() {\n' +
+'  var wrap = bgEl("pluginBgPreview"), none = bgEl("pluginBgPreviewNone"), panel = bgEl("pluginBgPanel");\n' +
+'  if (!wrap || (panel && panel.style.display === "none")) return;\n' +
+'  var pi = null;\n' +
+'  try { if (PLUGIN_RAW && typeof createPluginImage === "function") pi = createPluginImage({ w: BG_W, h: BG_H, bw: SCREEN_BW, round: SCREEN_ROUND }); } catch (e) {}\n' +
+'  if (pi && !PLUGIN_PREV.img) { try { PLUGIN_PREV.img = pi.decodeImagePayload(PLUGIN_RAW); } catch (e) {} }\n' +
+'  var img = PLUGIN_PREV.img;\n' +
+'  if (!pi || !img) { wrap.style.display = "none"; if (none) none.style.display = ""; return; }\n' +
+'  wrap.style.display = ""; if (none) none.style.display = "none";\n' +
+'  var rc = bgEl("pluginBgRawCanvas"), oc = bgEl("pluginBgOutCanvas");\n' +
+'  var dither = (bgEl("pluginBgDither") || {}).value, color = (bgEl("pluginBgColor") || {}).value, fit = (bgEl("pluginBgFit") || {}).value;\n' +
+'  var key = dither + "|" + color + "|" + fit;\n' +
+'  if (rc && !rc.getAttribute("data-done")) {\n' +
+'    rc.width = img.w; rc.height = img.h;\n' +
+'    var rctx = rc.getContext("2d"), rd = rctx.createImageData(img.w, img.h);\n' +
+'    for (var i = 0; i < img.rgba.length; i++) rd.data[i] = img.rgba[i];\n' +
+'    rctx.putImageData(rd, 0, 0); rc.setAttribute("data-done", "1");\n' +
+'    bgEl("pluginBgRawLabel").textContent = "Raw from the plugin (" + img.w + "x" + img.h + ")";\n' +
+'  }\n' +
+'  if (!oc || key === PLUGIN_PREV.key) return;\n' +
+'  PLUGIN_PREV.key = key;\n' +
+'  var r = pi.render(img, { dither: dither, color: color, fit: fit });\n' +
+'  oc.width = BG_W; oc.height = BG_H;\n' +
+'  var octx = oc.getContext("2d"), od = octx.createImageData(BG_W, BG_H);\n' +
+'  var offX = Math.floor((BG_W - r.w) / 2), offY = Math.floor((BG_H - r.h) / 2);\n' +
+'  for (var p = 0; p < BG_W * BG_H * 4; p += 4) { od.data[p] = 27; od.data[p + 1] = 27; od.data[p + 2] = 27; od.data[p + 3] = 255; }\n' +
+'  for (var y = 0; y < r.h; y++) {\n' +
+'    for (var x = 0; x < r.w; x++) {\n' +
+'      var v = r.vals[y * r.w + x], q = ((offY + y) * BG_W + offX + x) * 4;\n' +
+'      od.data[q] = ((v >> 4) & 3) * 85; od.data[q + 1] = ((v >> 2) & 3) * 85; od.data[q + 2] = (v & 3) * 85;\n' +
+'    }\n' +
+'  }\n' +
+'  octx.putImageData(od, 0, 0);\n' +
+'  bgEl("pluginBgOutLabel").textContent = "On the watch (" + r.w + "x" + r.h + ")";\n' +
+'}\n' +
 'function bgRefresh() {\n' +
 '  bgSyncUi();\n' +
+'  try { pluginPreviewUpdate(); } catch (e) {}\n' +
 '  try { refreshAllSectionSubheaders(); } catch (e) {}\n' +
 '  updatePreview();\n' +
 '}\n' +
@@ -634,6 +679,7 @@ var CLIENT_BODY =
 '  for (var i = 0; i < btns.length; i++) btns[i].className = "mode-btn" + (btns[i].getAttribute("data-value") === value ? " active" : "");\n' +
 '  bgRefresh();\n' +
 '}\n' +
+'window.addEventListener("load", function () { try { pluginPreviewUpdate(); } catch (e) {} });\n' +
 'function bgSetMode(m) {\n' +
 '  var cb = bgEl("useCustomBg"), wb = bgEl("useWeatherBg"), pb = bgEl("usePluginBg");\n' +
 '  if (cb) cb.checked = (m === 1);\n' +
@@ -1009,6 +1055,9 @@ var CSS_TEXT =
 '  .bg-ed-slot { flex: 1; padding: 8px 0; font-size: 13px; font-weight: 600; border-radius: 6px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); }\n' +
 '  .bg-ed-slot.used { border-style: dashed; }\n' +
 '  .bg-ed-slot.active { background: #ff9200; border-color: #ff9200; color: #fff; }\n' +
+'  .bg-prev-row { display: flex; gap: 10px; align-items: flex-start; }\n' +
+'  .bg-prev-col { flex: 1 1 0; min-width: 0; text-align: center; }\n' +
+'  .bg-prev-col canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; background: #1b1b1b; border: 1px solid rgba(128,128,128,.4); box-sizing: border-box; }\n' +
 '  #bgEditorModal .modal-box { overflow-y: auto; }\n' +
 '  #bgEditorModal label { display: block; margin-top: 12px; }\n';
 
@@ -1024,6 +1073,8 @@ function backgroundScript(current) {
 'var BG_SLOT_COUNT = ' + BG_SLOT_COUNT + ';\n' +
 'var BG_PRESET_NUMBERS = ' + JSON.stringify(numbers) + ';\n' +
 'var BG_USER_SLOTS = ' + JSON.stringify(validSlots(current)) + ';\n' +
+'var PLUGIN_RAW = ' + JSON.stringify((current && current.pluginBgRaw) || null).replace(/</g, '\\u003c') + ';\n' +
+'var createPluginImage = ' + pluginImage.factory.toString() + ';\n' +
   CLIENT_BODY;
 }
 

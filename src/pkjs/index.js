@@ -138,6 +138,7 @@ function buildCurrent() {
     bgCycle: getSetting('CONFIG_BG_CYCLE', '0'),
     usePluginBg: !require('./platform').bw && getSetting('CONFIG_USE_PLUGIN_BG', 'false') === 'true',
     pluginBgStatus: pluginBg.status(),
+    pluginBgRaw: pluginBg.rawPayload(),
     pluginBgSource: getSetting('CONFIG_PLUGIN_BG_SOURCE', ''),
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
     pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),

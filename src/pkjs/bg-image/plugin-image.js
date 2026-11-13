@@ -1,5 +1,7 @@
 // Plugin background images: everything that happens to a picture between the
-var platform = require('../platform');
+// Written as a factory so the very same code can also run on the settings page (the page embeds
+// createPluginImage.toString()) to preview what a picture looks like with the chosen options.
+function createPluginImage(platform) {
 var SCREEN_W = platform.w;
 var SCREEN_H = platform.h;
 
@@ -397,7 +399,7 @@ function render(img, options) {
   return { w: plan.dw, h: plan.dh, bytes: bytes, stamp: stampFor(bytes, plan.dw, plan.dh), vals: vals, luma: meanLuma(vals, plan.dw, plan.dh) };
 }
 
-module.exports = {
+return {
   SCREEN_W: SCREEN_W,
   SCREEN_H: SCREEN_H,
   DITHERS: DITHERS,
@@ -412,3 +414,7 @@ module.exports = {
   stampFor: stampFor,
   meanLuma: meanLuma
 };
+}
+
+module.exports = createPluginImage(require('../platform'));
+module.exports.factory = createPluginImage;

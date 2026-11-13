@@ -16,6 +16,7 @@ var LUMA_HYSTERESIS = 12;
 
 var s_sub = null;
 var s_raw = null;
+var s_payload = null; // the picture as the plugin sent it (for the settings page preview)
 var s_out = null;
 var s_onChange = null;
 var s_onScheme = null;
@@ -148,11 +149,13 @@ function onData(parsed, envelope) {
   }
 
   if (!img) {
+    s_payload = null;
     if (s_raw || s_out) { s_raw = null; s_out = null; notify(); }
     return;
   }
   if (s_raw && s_raw.signature === img.signature && s_out && s_out.optionsKey === optionsKey(options())) return;
   s_raw = img;
+  s_payload = { width: img.w, height: img.h, pixels: payload.pixels, palette: payload.palette };
   renderNow();
   notify();
 }
@@ -200,13 +203,13 @@ function apply() {
 
   if (!want) {
     unsubscribe();
-    s_raw = null; s_out = null;
+    s_raw = null; s_out = null; s_payload = null;
     if (hadPicture) notify();
     return;
   }
   if (s_sub && s_sub.key !== key) {
     unsubscribe();
-    s_raw = null; s_out = null;
+    s_raw = null; s_out = null; s_payload = null;
     notify();
   }
   if (!s_sub) subscribe(key);
@@ -219,7 +222,11 @@ function apply() {
 function setOnChange(fn) { s_onChange = fn; }
 function setOnScheme(fn) { s_onScheme = fn; }
 
+// The last picture received, {width, height, pixels, palette}, or null.
+function rawPayload() { return s_payload; }
+
 module.exports = {
+  rawPayload: rawPayload,
   apply: apply,
   getOutput: getOutput,
   status: status,
