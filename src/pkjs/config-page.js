@@ -1,5 +1,5 @@
 // config-page.js -- builds the settings webview HTML for the classic
-var APP_VERSION = "4.0.6-beta";
+var APP_VERSION = "4.0.7-beta";
 
 var PRESETS_LOOKUPS = require('./presets-lookups');
 var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
