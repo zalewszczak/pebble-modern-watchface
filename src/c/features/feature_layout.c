@@ -51,20 +51,20 @@ void feature_layout_recompute(FeaturesState *state) {
   };
 #elif defined(PBL_ROUND)
   static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
-    {  3, { 43, 42, 54, 50 } }, // Modern
-    {  4, { 42, 37, 49, 42 } }, // Simple
-    {  5, { 50, 48, 35, 26 } }, // Tally
-    {  6, { 52, 50, 58, 58 } }, // Bell
+    {  3, { 48, 48, 50, 50 } }, // Modern
+    {  4, { 45, 45, 49, 49 } }, // Simple
+    {  5, { 51, 51, 48, 48 } }, // Tally
+    {  6, { 58, 59, 65, 65 } }, // Bell
     {  7, { 50, 45, 39, 33 } }, // Fancy
-    { 11, { 43, 43, 54, 50 } }, // Modern Bold
-    { 12, { 42, 42, 48, 45 } }, // Roman Tall
-    { 13, { 44, 44, 46, 45 } }, // Bebas
-    { 14, { 44, 44, 50, 49 } }, // Modern P
-    { 15, { 46, 46, 52, 50 } }, // Modern P Round
-    { 16, { 42, 42, 49, 46 } }, // Modern S
-    { 17, { 45, 45, 52, 49 } }, // Modern W
-    { 18, { 45, 45, 50, 49 } }, // Modern W Round
-    { 19, { 44, 44, 52, 52 } }, // Roman
+    { 11, { 48, 48, 52, 52 } }, // Modern Bold
+    { 12, { 63, 63, 63, 63 } }, // Roman Tall
+    { 13, { 54, 54, 54, 54 } }, // Bebas
+    { 14, { 47, 47, 50, 49 } }, // Modern P
+    { 15, { 52, 52, 52, 50 } }, // Modern P Round
+    { 16, { 42, 42, 45, 45 } }, // Modern S
+    { 17, { 47, 47, 49, 49 } }, // Modern W
+    { 18, { 40, 40, 36, 36 } }, // Modern W Round
+    { 19, { 57, 57, 57, 57 } }, // Roman
   };
 #else
   static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {

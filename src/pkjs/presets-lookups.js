@@ -1198,19 +1198,19 @@ var MARKER_STYLE_HOUR_PRESETS_ROUND = [
   { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 31,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 58,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 9,  innerThickness: 1, innerEccentricity: 0,  outerEccentricity: 0, innerBorderPct: 56,  outerBorderPct: 89, translucent: false, color: 0 },
-  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 60,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
 var MARKER_STYLE_SECOND_PRESETS_ROUND = [
   { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 76,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 3, innerThickness: 1, innerEccentricity: 0,  outerEccentricity: 0,  innerBorderPct: 85,  outerBorderPct: 93,  translucent: false, color: 0 },
-  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 84,  translucent: false, color: 0 },
   { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
 var MARKER_STYLE_TEXT_PRESETS_ROUND = [
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
-  { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 1, font: 3, offset: -26, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }
