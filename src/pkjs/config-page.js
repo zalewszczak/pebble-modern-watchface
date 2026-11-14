@@ -2849,6 +2849,9 @@ configPlugins.pluginScript(current) +
 '  updatePreview();' +
 '}' +
 'var PRESET_SCOPE_IDS = ["section-style", "section-colors", "section-corners", "section-animation"];' +
+// Style controls that live in popups outside those sections (so the scan above never sees them).
+'var PRESET_EXTRA_IDS = ["markerTextTarget", "markerTextFont", "markerTextRoman", "markerTextOffset",' +
+'  "centerCircleRadius", "centerCircleColor", "centerCircleOutline", "shadowTranslucent", "shadowAngle"];' +
 'function collectStyleCornersJson() {' +
 '  var obj = {};' +
 '  PRESET_SCOPE_IDS.forEach(function (containerId) {' +
@@ -2862,6 +2865,10 @@ configPlugins.pluginScript(current) +
 '      }' +
 '      obj[el.id] = (el.type === "checkbox") ? el.checked : el.value;' +
 '    });' +
+'  });' +
+'  PRESET_EXTRA_IDS.forEach(function (id) {' +
+'    var el = document.getElementById(id);' +
+'    if (el) obj[id] = (el.type === "checkbox") ? el.checked : el.value;' +
 '  });' +
 '  if (typeof pluginSlotsInUse === "function" && typeof PLUGIN_SLOTS !== "undefined") {' +
 '    var used = pluginSlotsInUse(), slots = [], any = false;' +
@@ -2901,6 +2908,15 @@ configPlugins.pluginScript(current) +
 '  bgAfterStyleApplied();' +
 '  borderAfterStyleApplied();' +
 '  onMarkerStyleChange();' +
+'  if (document.getElementById("markerTextTarget")) {' + // popups outside the saved sections: refresh their labels/buttons
+'    selectModeButton("markerTextTargetGroup", "markerTextTarget", document.getElementById("markerTextTarget").value);' +
+'    onMarkerTextFontChange();' +
+'    onMarkerTextTargetChange();' +
+'    document.getElementById("markerTextOffsetVal").textContent = document.getElementById("markerTextOffset").value + "px";' +
+'  }' +
+'  document.getElementById("centerCircleRadiusVal").textContent = document.getElementById("centerCircleRadius").value + "px";' +
+'  selectShadowTranslucent(document.getElementById("shadowTranslucent").value);' +
+'  onShadowAngleInput();' +
 '  updateHandStyleButtonLabel();' +
 '  onCornerFontChange();' +
 '  onShowSecondsChange();' +
