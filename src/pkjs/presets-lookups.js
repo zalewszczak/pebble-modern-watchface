@@ -1166,27 +1166,82 @@ if (platform.round) {
   });
 }
 
-var MARKER_STYLE_HOUR_PRESETS = [
+// Marker-style (predefined indices) presets, one set per platform shape so the styles can be tuned
+// independently: square = Pebble Time 2 (emery), round = Pebble Round 2 (gabbro), legacy = the 144x168
+// black and white watches (flint, diorite). Row i belongs to the style id that MARKER_STYLE_PRESET_INDEX
+// maps to i-<name>(<legacy_i>): 0 - Minimal('10'), 1 - Braun('1'), 2 - Swiss('2'), 3 - Classy('9'), 4 - None('0')
+// ---- square ----
+var MARKER_STYLE_HOUR_PRESETS_SQUARE = [
   { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 66,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 48,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 7,  innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 100, innerBorderPct: 75,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
-var MARKER_STYLE_SECOND_PRESETS = [
+var MARKER_STYLE_SECOND_PRESETS_SQUARE = [
   { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
   { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 75,  innerBorderPct: 75,  outerBorderPct: 80,  translucent: false, color: 0 },
   { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 },
   { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
 ];
-var MARKER_STYLE_TEXT_PRESETS = [
+var MARKER_STYLE_TEXT_PRESETS_SQUARE = [
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
   { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }
 ];
+
+// ---- round ---- 0 - Minimal, 1 - Braun, 2 - Swiss, 3 - Classy, 4 - None
+var MARKER_STYLE_HOUR_PRESETS_ROUND = [
+  { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 31,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 58,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 9,  innerThickness: 1, innerEccentricity: 0,  outerEccentricity: 0, innerBorderPct: 56,  outerBorderPct: 89, translucent: false, color: 0 },
+  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
+];
+var MARKER_STYLE_SECOND_PRESETS_ROUND = [
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0, outerEccentricity: 0, innerBorderPct: 76,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 3, innerThickness: 1, innerEccentricity: 0,  outerEccentricity: 0,  innerBorderPct: 85,  outerBorderPct: 93,  translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
+];
+var MARKER_STYLE_TEXT_PRESETS_ROUND = [
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }
+];
+
+// ---- legacy ---- 0 - Minimal, 1 - Braun, 2 - Swiss, 3 - Classy, 4 - None
+var MARKER_STYLE_HOUR_PRESETS_LEGACY = [
+  { style: 1, thickness: 2,  innerThickness: 2, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 66,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 1, thickness: 3,  innerThickness: 3, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 48,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 7,  innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 100, innerBorderPct: 75,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 4, thickness: 10, innerThickness: 3, innerEccentricity: 0,   outerEccentricity: 100, innerBorderPct: 69,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 0, thickness: 0,  innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
+];
+var MARKER_STYLE_SECOND_PRESETS_LEGACY = [
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 73,  outerBorderPct: 100, translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 70,  outerEccentricity: 75,  innerBorderPct: 75,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 2, thickness: 1, innerThickness: 1, innerEccentricity: 0,   outerEccentricity: 0,   innerBorderPct: 73,  outerBorderPct: 80,  translucent: false, color: 0 },
+  { style: 0, thickness: 0, innerThickness: 1, innerEccentricity: 100, outerEccentricity: 100, innerBorderPct: 100, outerBorderPct: 100, translucent: false, color: 0 }
+];
+var MARKER_STYLE_TEXT_PRESETS_LEGACY = [
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 2, font: 2, offset: -45, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 },
+  { target: 0, font: 0, offset: 0, roman: false, hourMask: 4095, secondMask: 4095 }
+];
+
+var MARKER_STYLE_HOUR_PRESETS = platform.round ? MARKER_STYLE_HOUR_PRESETS_ROUND : (platform.bw ? MARKER_STYLE_HOUR_PRESETS_LEGACY : MARKER_STYLE_HOUR_PRESETS_SQUARE);
+var MARKER_STYLE_SECOND_PRESETS = platform.round ? MARKER_STYLE_SECOND_PRESETS_ROUND : (platform.bw ? MARKER_STYLE_SECOND_PRESETS_LEGACY : MARKER_STYLE_SECOND_PRESETS_SQUARE);
+var MARKER_STYLE_TEXT_PRESETS = platform.round ? MARKER_STYLE_TEXT_PRESETS_ROUND : (platform.bw ? MARKER_STYLE_TEXT_PRESETS_LEGACY : MARKER_STYLE_TEXT_PRESETS_SQUARE);
 
 var MARKER_STYLE_PRESET_INDEX = { '10': 0, '1': 1, '2': 2, '9': 3, '0': 4 };
 

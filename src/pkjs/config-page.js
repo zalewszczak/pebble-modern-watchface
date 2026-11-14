@@ -48,7 +48,7 @@ var MARKER_VARIANT_STYLES = [
 ];
 
 var HAND_STYLE_IMAGES = require('./data/generated/hand-style-images');
-var MARKER_PRESET_IMAGES = require('./data/generated/marker-preset-images');
+var MARKER_PRESET_IMAGES = platform.shapeImages(require('./data/generated/marker-preset-images'));
 
 var HAND_STYLE_DIAGRAM_IMAGES = require('./data/generated/hand-style-diagram-images');
 var HAND_STYLE_ICON_IMAGES = require('./data/generated/hand-style-icon-images');

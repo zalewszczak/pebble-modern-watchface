@@ -24,7 +24,6 @@ static inline BgPicture bg_preset_picture(uint8_t n) {
     case 7: return BG_PIC2(RESOURCE_ID_BG_PRESET_7_P0, RESOURCE_ID_BG_PRESET_7_P1);
     case 8: return BG_PIC2(RESOURCE_ID_BG_PRESET_8_P0, RESOURCE_ID_BG_PRESET_8_P1);
     case 9: return BG_PIC2(RESOURCE_ID_BG_PRESET_9_P0, RESOURCE_ID_BG_PRESET_9_P1);
-    case 10: return BG_PIC2(RESOURCE_ID_BG_PRESET_10_P0, RESOURCE_ID_BG_PRESET_10_P1);
     default: return BG_PIC_NONE;
   }
 #elif defined(PBL_BW)

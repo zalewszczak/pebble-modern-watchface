@@ -2771,22 +2771,6 @@
         },
         {
           "type": "bitmap",
-          "name": "BG_PRESET_10_P0",
-          "file": "round/backgrounds/halves/10_h0.png",
-          "targetPlatforms": [
-            "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
-          "name": "BG_PRESET_10_P1",
-          "file": "round/backgrounds/halves/10_h1.png",
-          "targetPlatforms": [
-            "gabbro"
-          ]
-        },
-        {
-          "type": "bitmap",
           "name": "BG_PRESET_11",
           "file": "square/backgrounds/11.png",
           "targetPlatforms": [

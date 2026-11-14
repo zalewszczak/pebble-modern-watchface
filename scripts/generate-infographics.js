@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Reads the settings page's picker-popup and hand-editor image sets --
 //   resources/infographics/hands<n>.png       (n = 1..HAND_PRESETS slot count)
-//   resources/infographics/marker_preset_<name>.png  (none/minimal/small/big)
+//   (marker_preset_<name>.png now lives in resources/{square,round,legacy}/images, see generate-preset-previews.js)
 //   resources/infographics/<style name>.png   (one per HandConfig.style value)
 // -- and generates src/pkjs/data/generated/hand-style-images.js, marker-preset-images.js,
 // and hand-style-diagram-images.js as lookup tables of data: URIs the
