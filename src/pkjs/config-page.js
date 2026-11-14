@@ -30,7 +30,7 @@ var platform = require('./platform');
 var MARKER_PREVIEW_IMAGES = platform.shapeImages(require('./data/generated/marker-preview-images'));
 // Per-platform display names for the bitmap indices (the art differs per platform, so do the names).
 var MARKER_TITLE_OVERRIDES = platform.round
-  ? { '4': 'Simple', '12': 'Roman Tall', '13': 'Bebas' }
+  ? { '4': 'Simple', '12': 'Roman Tall', '13': 'Bebas', '16': 'Segments', '18': 'Speed' }
   : (platform.bw
     ? { '11': 'Rays', '12': 'Heavy', '13': 'Classy', '15': 'Squared', '16': 'Maurice', '17': 'Quickie', '18': 'Speed' }
     : {});

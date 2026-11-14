@@ -12,13 +12,22 @@ var BG_SLOT_COUNT = 9;
 // Length of one packed slot string for THIS screen (200x228: 45600, 260x260: 67600, 144x168: 24192).
 var BG_PACKED_B64_LENGTH = require('../bg-image/bg-image-codec').SLOT_CHARS;
 
-function presetNumbers() { return platform.bw ? [] : (bgImages.numbers || []); }
+// Predefined backgrounds on offer: none on B&W; on round only those that have their own round picture
+// (resources/round/backgrounds/<n>.png), so the list follows what is actually in that folder.
+function presetNumbers() {
+  if (platform.bw) return [];
+  var all = bgImages.numbers || [];
+  if (!platform.round) return all;
+  return all.filter(function (n) { return !!bgImagesRound[String(n)]; });
+}
 function parseSource(current) {
   var m = /^([pu]):([0-9]+)$/.exec(String((current && current.bgSource) || ''));
   var numbers = presetNumbers();
   if (platform.bw && (!m || m[1] === 'p')) return 'u:1';
   if (!m) return 'p:' + (numbers.length ? numbers[0] : 1);
-  return m[1] + ':' + parseInt(m[2], 10);
+  var pn = parseInt(m[2], 10);
+  if (m[1] === 'p' && numbers.indexOf(pn) < 0) return 'p:' + (numbers.length ? numbers[0] : 1);
+  return m[1] + ':' + pn;
 }
 
 function validSlots(current) {
