@@ -4,13 +4,13 @@
 
 #define PERSIST_KEY_DATA_BASE 1
 #define PERSIST_CHUNK_SIZE 200
-#define PERSIST_CHUNK_COUNT 16 // 3200 bytes: room for the plugin text slots
+#define PERSIST_CHUNK_COUNT 16 // 3200 bytes: room for the phone slot table
 
 // Stores the struct size alongside the data. Persisted blobs written by a
 // build with a different WatchData layout (including any release that
 // predates this struct) are rejected instead of being misread.
 #define PERSIST_KEY_SCHEMA 100
-#define PERSIST_SCHEMA_VERSION 2
+#define PERSIST_SCHEMA_VERSION 3 // 3: phone slot table replaced the per-value display strings
 
 typedef char persist_capacity_check[
   (PERSIST_CHUNK_SIZE * PERSIST_CHUNK_COUNT >= (int)sizeof(WatchData)) ? 1 : -1];

@@ -44,52 +44,63 @@ static void strip_text(PrimitiveResolved *out, const char *prefix, const char *s
   if (sl && len >= sl && strcmp(out->text + len - sl, suffix) == 0) out->text[len - sl] = '\0';
 }
 
-// Custom-feature builder additions: punctuation, bare values, unit symbols.
-// Returns true when `id` is one of them (and *ok says whether it resolved).
+// Phone slot table (see PHONE_SLOT_* in watch_data.h): finds record number `idx`, or NULL when the table
+// has fewer records (nothing received yet, or the phone ran out of slot budget).
+static const uint8_t *phone_slot_find(const WatchData *data, uint8_t idx) {
+  const uint8_t *p = data->phone_slots;
+  const uint8_t *end = p + PHONE_SLOTS_BYTES;
+  while (p + 3 <= end && p[0] != PHONE_SLOT_END) {
+    uint8_t size = (p[0] & PHONE_SLOT_ICON) ? 5 : (uint8_t)(3 + p[2]);
+    if (p + size > end) return NULL;
+    if (idx == 0) return p;
+    idx--;
+    p += size;
+  }
+  return NULL;
+}
+
+// One slot is drawn as it arrived: PKJS already chose text/glyph, colour and colour-mode behaviour.
+static void resolve_phone_slot(PrimitiveResolved *out, const WatchData *data, uint8_t idx) {
+  const uint8_t *s = phone_slot_find(data, idx);
+  if (!s) { // not received yet: an unobtrusive placeholder rather than a blank complication
+    resolve_text(out, "--", GColorLightGray);
+    out->force_color = true;
+    return;
+  }
+  GColor color;
+  color.argb = s[1];
+  if (s[0] & PHONE_SLOT_ICON) {
+    resolve_icon(out, s[2], (int16_t)(s[3] | (s[4] << 8)), (s[0] & PHONE_SLOT_FLAG) != 0, color);
+  } else {
+    uint8_t len = s[2];
+    if (len > sizeof(out->text) - 1) len = sizeof(out->text) - 1;
+    out->kind = (s[0] & PHONE_SLOT_PUNCT) ? PRIMITIVE_KIND_PUNCT : PRIMITIVE_KIND_TEXT;
+    memcpy(out->text, s + 3, len);
+    out->text[len] = '\0';
+    out->dynamic_color = color;
+  }
+  out->dynamic_is_main = (s[0] & PHONE_SLOT_MAIN) != 0;
+  out->force_color = (s[0] & PHONE_SLOT_FORCE) != 0;
+}
+
+// Custom-feature builder additions that stay on the watch: punctuation (coloured like the date), and the two
+// values that depend on the watch clock (planets visible now, next planet to rise) plus the music
+// elements that move between phone updates. Returns true when `id` is one of them (*ok says whether it
+// resolved).
 static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchData *data, time_t now,
                                   struct tm *t, PrimitiveResolved *out, bool *ok) {
   *ok = true;
   switch (id) {
+    case PRIM_PHONE_SLOT: resolve_phone_slot(out, data, aux_in); return true;
+
     case PRIM_PAREN_OPEN: resolve_punct(out, "(", feature_colors_date_year_progress_gradient(t)); return true;
     case PRIM_PAREN_CLOSE: resolve_punct(out, ")", feature_colors_date_year_progress_gradient(t)); return true;
     case PRIM_DOT: resolve_punct(out, ".", feature_colors_date_year_progress_gradient(t)); return true;
     case PRIM_COMMA: resolve_punct(out, ",", feature_colors_date_year_progress_gradient(t)); return true;
 
-    case PRIM_FEELS_LIKE_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_FEELS_LIKE_TEXT, 0, data, now, t, out);
-      if (*ok) strip_text(out, "FL ", NULL);
-      return true;
-    case PRIM_UV_DAILY_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_UV_DAILY_TEXT, 0, data, now, t, out);
-      if (*ok) strip_text(out, "UV", NULL);
-      return true;
-    case PRIM_UV_CURRENT_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_UV_CURRENT_TEXT, 0, data, now, t, out);
-      if (*ok) strip_text(out, "UV", NULL);
-      return true;
-    case PRIM_PRESSURE_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_PRESSURE_TEXT, 0, data, now, t, out);
-      if (*ok) strip_text(out, NULL, " hPa");
-      return true;
-    case PRIM_AQI_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_AQI_TEXT, 0, data, now, t, out);
-      if (*ok) strip_text(out, "AQI ", NULL);
-      return true;
-    case PRIM_ALTITUDE_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_ALTITUDE_TEXT, 0, data, now, t, out);
-      if (*ok) { strip_text(out, NULL, "ft"); strip_text(out, NULL, "m"); }
-      return true;
     case PRIM_PLANETS_VISIBLE_VALUE:
       *ok = primitive_resolver_resolve(PRIM_PLANETS_VISIBLE_COUNT, 0, data, now, t, out);
       if (*ok) { strip_text(out, NULL, " planets"); strip_text(out, NULL, " planet"); }
-      return true;
-    case PRIM_SATURN_RINGS_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_SATURN_RINGS_PCT, 0, data, now, t, out);
-      if (*ok) strip_text(out, "Rings ", NULL);
-      return true;
-    case PRIM_AURORA_KP_VALUE:
-      *ok = primitive_resolver_resolve(PRIM_AURORA_KP, 0, data, now, t, out);
-      if (*ok) strip_text(out, "Kp ", NULL);
       return true;
     case PRIM_NEXT_PLANET_NAME:
     case PRIM_NEXT_PLANET_TIME: {
@@ -103,46 +114,6 @@ static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchDat
       return true;
     }
 
-    case PRIM_TEMP_UNIT_TEXT: {
-      static const char *const UNITS[3] = { "C", "F", "K" };
-      resolve_punct(out, UNITS[data->temp_unit < 3 ? data->temp_unit : 0], GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    }
-    case PRIM_WIND_UNIT_TEXT: {
-      static const char *const UNITS[4] = { "km/h", "mph", "m/s", "kn" };
-      resolve_punct(out, UNITS[data->wind_speed_unit < 4 ? data->wind_speed_unit : 0], GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    }
-    case PRIM_PRESSURE_UNIT_TEXT:
-      resolve_punct(out, "hPa", GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    case PRIM_ALTITUDE_UNIT_TEXT:
-      resolve_punct(out, data->altitude_unit == 1 ? "ft" : "m", GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    case PRIM_PLUGIN_TEXT: {
-      if (aux_in >= PLUGIN_SLOT_COUNT) return false;
-      const char *txt = data->plugin_text[aux_in];
-      resolve_text(out, txt[0] ? txt : "--", GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    }
-    case PRIM_PHONE_ICON:
-    case PRIM_PHONE_BATTERY_TEXT: {
-      uint8_t pct = data->phone_battery[0];
-      bool known = pct <= 100;
-      bool charging = known && data->phone_battery[1];
-      GColor c = !known ? GColorLightGray : (charging ? GColorGreen : feature_colors_red_green_gradient(pct));
-      if (id == PRIM_PHONE_ICON) { resolve_icon(out, 31, known ? pct : 100, !known, c); return true; }
-      char pbuf[8];
-      if (known) snprintf(pbuf, sizeof(pbuf), charging ? "%d%%+" : "%d%%", pct);
-      else snprintf(pbuf, sizeof(pbuf), "--");
-      resolve_text(out, pbuf, c);
-      return true;
-    }
     case PRIM_MEDIA_STATE_ICON: {
       uint8_t st = data->media_info[0];
       // aux = 0 note (nothing playing), 1 play, 2 pause.
@@ -152,12 +123,6 @@ static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchDat
     case PRIM_MEDIA_ART_ICON:
       resolve_icon(out, 33, 0, false, GColorWhite);
       return true;
-    case PRIM_MEDIA_TITLE_TEXT: { // aux 0 = title, 1 = artist
-      const char *mt = data->media_text[aux_in ? 1 : 0];
-      resolve_text(out, mt[0] ? mt : (data->media_info[0] ? "--" : "No music"), GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    }
     case PRIM_MEDIA_PROGRESS_BAR:
     case PRIM_MEDIA_ELAPSED_TEXT: {
       int32_t pos = (int32_t)data->media_info[1] | ((int32_t)data->media_info[2] << 8);
@@ -180,6 +145,7 @@ static bool resolve_builder_extra(PrimitiveId id, uint8_t aux_in, const WatchDat
       return false;
   }
 }
+
 
 bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData *data, time_t now, struct tm *t, PrimitiveResolved *out) {
   // `now` is used by PRIM_WEATHER_CONDITION_ICON's day/night check below;
@@ -322,312 +288,18 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, lbuf, date_c);
       return true;
     }
-    // "WK" is a constant glyph, same reasoning as "H"/"L" above -- matches
-    // PRIM_WEEK_NUMBER's own color rather than duplicating its logic.
-    case PRIM_LABEL_WK_PREFIX: {
-      PrimitiveResolved wv;
-      primitive_resolver_resolve(PRIM_WEEK_NUMBER, 0, data, now, t, &wv);
-      resolve_text(out, "WK", wv.dynamic_color);
+    // "WK" is a constant glyph that takes the week number's own colour (the shared date gradient).
+    case PRIM_LABEL_WK_PREFIX:
+      resolve_text(out, "WK", date_c);
       return true;
-    }
 
-    case PRIM_TEMP_HIGH_TEXT: {
-      char num[8];
-      GColor c;
-      if (data->temp_high_display[0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->temp_high_display);
-        c = feature_color_from_packed(data->temp_high_color);
-      } else {
-        snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_high_c, data->temp_unit));
-        c = feature_colors_seven_stop_gradient(data->temp_high_c, -10, 40);
-      }
-      resolve_text(out, num, c);
-      return true;
-    }
-    case PRIM_TEMP_LOW_TEXT: {
-      char num[8];
-      GColor c;
-      if (data->temp_low_display[0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->temp_low_display);
-        c = feature_color_from_packed(data->temp_low_color);
-      } else {
-        snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_low_c, data->temp_unit));
-        c = feature_colors_seven_stop_gradient(data->temp_low_c, -10, 40);
-      }
-      resolve_text(out, num, c);
-      return true;
-    }
-    // Match each label's color to the temperature value it describes.
-    case PRIM_LABEL_HIGH_PREFIX: {
-      PrimitiveResolved hv;
-      primitive_resolver_resolve(PRIM_TEMP_HIGH_TEXT, 0, data, now, t, &hv);
-      resolve_text(out, "H", hv.dynamic_color);
-      return true;
-    }
-    case PRIM_LABEL_LOW_PREFIX: {
-      PrimitiveResolved lv;
-      primitive_resolver_resolve(PRIM_TEMP_LOW_TEXT, 0, data, now, t, &lv);
-      resolve_text(out, "L", lv.dynamic_color);
-      return true;
-    }
-    // Temperature text and the weather icon use their own colors: the
-    // temperature follows its gradient, while the icon uses the color
-    // supplied with its weather category.
-    case PRIM_CURRENT_TEMP_TEXT: {
-      char num[8];
-      GColor c;
-      if (data->current_temp_display[0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->current_temp_display);
-        c = feature_color_from_packed(data->current_temp_color);
-      } else {
-        snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->weather_temp_c, data->temp_unit));
-        c = feature_colors_seven_stop_gradient(data->weather_temp_c, -10, 40);
-      }
-      resolve_text(out, num, c);
-      return true;
-    }
+    // The weather icon stays on the watch: its day/night art depends on the watch clock and the sun times.
+    // PKJS sends the category and its colour (weather_last_update > 0 once weather has been received).
     case PRIM_WEATHER_CONDITION_ICON: {
-      uint8_t category;
-      GColor c;
-      if (data->current_temp_display[0] != '\0') {
-        category = data->weather_icon_category;
-        c = feature_color_from_packed(data->weather_icon_color);
-      } else {
-        category = feature_icons_weather_category(data->weather_condition, data->cloud_cover_pct);
-        c = data->valid
-          ? feature_colors_weather_condition_color(data->weather_condition, data->cloud_cover_pct, data->rain_chance_pct)
-          : GColorLightGray;
-      }
+      bool have = data->weather_last_update > 0;
       bool night = !watch_ui_is_daylight(data, now); // day/night art for sun/partly-cloudy
-      resolve_icon(out, 14, category, night, c);
-      return true;
-    }
-
-    // ---- weather cluster (primitive weather-value resolution, content
-    // 5/6/7/8/9/14/15/34/35/36/37/38/87-97/107) -- PKJS-supplied display
-    // string when present, watch-side fallback otherwise. Color rules
-    // copied 1:1 from the switch; every case is force_color-free
-    // (each already resolves its own natural gradient, no flat/COLOR-mode
-    // dispatch needed beyond the shared transport step).
-    case PRIM_CURRENT_CONDITIONS_TEXT: {
-      GColor c = data->valid
-        ? feature_colors_weather_condition_color(data->weather_condition, data->cloud_cover_pct, data->rain_chance_pct)
-        : GColorLightGray;
-      resolve_text(out, feature_weather_short_condition_text(data->weather_condition, data->cloud_cover_pct), c);
-      return true;
-    }
-    case PRIM_UV_DAILY_TEXT: {
-      char num[6];
-      GColor c;
-      if (data->uv_daily_display[0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->uv_daily_display);
-        c = feature_color_from_packed(data->uv_daily_color);
-      } else {
-        uint8_t uv = data->uv_index_x10 / 10;
-        snprintf(num, sizeof(num), "UV%d", uv);
-        c = feature_colors_seven_stop_gradient(uv, 1, 13);
-      }
-      resolve_text(out, num, c);
-      return true;
-    }
-    case PRIM_UV_CURRENT_TEXT: {
-      char num[6];
-      GColor c;
-      if (data->uv_current_display[0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->uv_current_display);
-        c = feature_color_from_packed(data->uv_current_color);
-      } else {
-        uint8_t uv = data->uv_index_current_x10 / 10;
-        snprintf(num, sizeof(num), "UV%d", uv);
-        c = feature_colors_seven_stop_gradient(uv, 1, 13);
-      }
-      resolve_text(out, num, c);
-      return true;
-    }
-    case PRIM_RAIN_CHANCE_ICON:
-    case PRIM_RAIN_CHANCE_TEXT: {
-      char buf2[8];
-      GColor c;
-      if (data->rain_chance_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->rain_chance_display);
-        c = feature_color_from_packed(data->rain_chance_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d%%", data->rain_chance_pct);
-        c = feature_colors_white_to_turquoise_gradient(data->rain_chance_pct, 0, 100);
-      }
-      if (id == PRIM_RAIN_CHANCE_ICON) { resolve_icon(out, 5, 0, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_HUMIDITY_ICON:
-    case PRIM_HUMIDITY_TEXT: {
-      char buf2[8];
-      GColor c;
-      if (data->humidity_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->humidity_display);
-        c = feature_color_from_packed(data->humidity_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d%%", data->humidity_pct);
-        c = feature_colors_white_to_turquoise_gradient(data->humidity_pct, 0, 100);
-      }
-      if (id == PRIM_HUMIDITY_ICON) { resolve_icon(out, 6, 0, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_WIND_SPEED_ICON:
-    case PRIM_WIND_SPEED_TEXT: {
-      char buf2[8];
-      GColor c;
-      if (data->wind_speed_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->wind_speed_display);
-        c = feature_color_from_packed(data->wind_speed_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d", feature_rules_convert_wind(data->wind_speed_kmh, data->wind_speed_unit));
-        c = feature_colors_white_to_turquoise_gradient(data->wind_speed_kmh, 0, 60);
-      }
-      if (id == PRIM_WIND_SPEED_ICON) { resolve_icon(out, 7, 0, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_VISIBILITY_ICON:
-    case PRIM_VISIBILITY_TEXT: {
-      char buf2[8];
-      GColor c;
-      if (data->vis_score_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->vis_score_display);
-        c = feature_color_from_packed(data->vis_score_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d%%", data->vis_score_pct);
-        uint8_t equiv_cloud_pct = 100 - data->vis_score_pct;
-        c = feature_colors_overcast_gray_gradient(equiv_cloud_pct < OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : equiv_cloud_pct);
-      }
-      if (id == PRIM_VISIBILITY_ICON) { resolve_icon(out, 9, 0, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_CLOUD_COVER_ICON:
-    case PRIM_CLOUD_COVER_TEXT: {
-      char buf2[8];
-      GColor c;
-      if (data->cloud_cover_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->cloud_cover_display);
-        c = feature_color_from_packed(data->cloud_cover_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d%%", data->cloud_cover_pct);
-        c = feature_colors_overcast_gray_gradient(data->cloud_cover_pct < OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : data->cloud_cover_pct);
-      }
-      if (id == PRIM_CLOUD_COVER_ICON) { resolve_icon(out, 10, 0, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_PRESSURE_TREND_ICON:
-    case PRIM_PRESSURE_TEXT: {
-      char buf2[16];
-      GColor c;
-      if (data->pressure_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->pressure_display);
-        c = feature_color_from_packed(data->pressure_color);
-      } else {
-        snprintf(buf2, sizeof(buf2), "%d hPa", data->pressure_hpa);
-        c = feature_colors_seven_stop_gradient(data->pressure_hpa, 970, 1050);
-      }
-      if (id == PRIM_PRESSURE_TREND_ICON) { resolve_icon(out, 15, data->pressure_trend, false, c); return true; }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_WIND_DIRECTION_ICON:
-    case PRIM_WIND_DIRECTION_TEXT: {
-      static const char *const COMPASS8[8] = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
-      int idx = ((data->wind_dir_deg + 22) / 45) % 8;
-      if (idx < 0) idx += 8;
-      // Legacy case 35 always uses main_color, not a graded value.
-      if (id == PRIM_WIND_DIRECTION_ICON) { resolve_icon(out, 16, data->wind_dir_deg, false, GColorWhite); }
-      else { resolve_text(out, COMPASS8[idx], GColorWhite); }
-      out->dynamic_is_main = true;
-      return true;
-    }
-    case PRIM_AQI_TEXT: {
-      char buf2[10];
-      GColor c;
-      if (data->aqi_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->aqi_display);
-        c = feature_color_from_packed(data->aqi_color);
-      } else {
-        bool use_eu = (data->aqi_unit == 1);
-        uint16_t aqi_value = use_eu ? data->aqi_eu : data->aqi_us;
-        snprintf(buf2, sizeof(buf2), "AQI %d", aqi_value);
-        c = feature_colors_seven_stop_gradient(aqi_value, 0, use_eu ? 100 : 300);
-      }
-      resolve_text(out, buf2, c);
-      return true;
-    }
-    case PRIM_DEW_POINT_TEXT: {
-      // Legacy case 37 never has a dynamic color -- always the slot's flat
-      // color_mode color (main_color here; primitive_transport.c resolves
-      // the same way any dynamic_is_main primitive does).
-      char num[8];
-      if (data->dew_point_display[0] != '\0') { snprintf(num, sizeof(num), "%s", data->dew_point_display); }
-      else { snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->dew_point_c, data->temp_unit)); }
-      resolve_text(out, num, GColorWhite);
-      out->dynamic_is_main = true;
-      return true;
-    }
-    case PRIM_ALTITUDE_ICON:
-    case PRIM_ALTITUDE_TEXT: {
-      char buf2[10];
-      GColor c;
-      if (data->altitude_m <= -32000) {
-        snprintf(buf2, sizeof(buf2), "N/A");
-        c = GColorLightGray;
-        if (id == PRIM_ALTITUDE_ICON) { resolve_icon(out, 17, 0, false, c); } else { resolve_text(out, buf2, c); }
-        out->force_color = true;
-        return true;
-      }
-      if (data->altitude_display[0] != '\0') {
-        snprintf(buf2, sizeof(buf2), "%s", data->altitude_display);
-        c = feature_color_from_packed(data->altitude_color);
-      } else {
-        if (data->altitude_unit == 1) {
-          int32_t feet = ((int32_t)data->altitude_m * 328) / 100;
-          snprintf(buf2, sizeof(buf2), "%ldft", (long)feet);
-        } else {
-          snprintf(buf2, sizeof(buf2), "%dm", data->altitude_m);
-        }
-        c = feature_colors_altitude_gradient(data->altitude_m);
-      }
-      if (id == PRIM_ALTITUDE_ICON) { resolve_icon(out, 17, 0, false, c); } else { resolve_text(out, buf2, c); }
-      return true;
-    }
-    case PRIM_FORECAST_OFFSET_ICON:
-    case PRIM_FORECAST_TEMP_TEXT: {
-      // aux_in carries the forecast index (0-8: 1-6h ahead, then 1-3 days
-      // ahead) -- the one astronomy/weather primitive whose aux is a plain
-      // index rather than a timezone slot. A custom sequence can therefore
-      // pick any of the 9 forecast slots via the composer's zone-style aux
-      // picker (labelled "Forecast slot" there, not "Zone").
-      if (aux_in >= FORECAST_SLOT_COUNT) return false;
-      bool is_hour = aux_in <= 5 || aux_in >= 9;
-      if (data->forecast_temp_c[aux_in] <= -128) {
-        if (id == PRIM_FORECAST_OFFSET_ICON) { resolve_icon(out, 30, aux_in, false, GColorLightGray); }
-        else { resolve_text(out, "N/A", GColorLightGray); }
-        out->force_color = true;
-        return true;
-      }
-      char num[12];
-      GColor c;
-      if (data->forecast_temp_display[aux_in][0] != '\0') {
-        snprintf(num, sizeof(num), "%s", data->forecast_temp_display[aux_in]);
-        c = feature_color_from_packed(data->forecast_temp_color[aux_in]);
-      } else {
-        snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->forecast_temp_c[aux_in], data->temp_unit));
-        c = feature_colors_seven_stop_gradient(data->forecast_temp_c[aux_in], -10, 40);
-      }
-      if (id == PRIM_FORECAST_OFFSET_ICON) {
-        resolve_icon(out, 30, aux_in, false, c);
-      } else {
-        resolve_text(out, num, c);
-      }
-      (void)is_hour; // the half-icon's glyph itself is aux-driven; no separate flag needed here
+      resolve_icon(out, 14, data->weather_icon_category, night,
+                   have ? feature_color_from_packed(data->weather_icon_color) : GColorLightGray);
       return true;
     }
     case PRIM_WEATHER_REFRESH_ICON:
@@ -648,6 +320,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       resolve_text(out, buf2, c);
       return true;
     }
+
 
     // Health and status values come directly from Pebble's watch services.
 #ifndef PBL_PLATFORM_GABBRO
@@ -815,60 +488,6 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- weather singles (weather resolver cases 73/74/75/77) ---
-    // Each is a distinct primitive ID from content 4/32/76's *_TEXT
-    // primitives (no color-ownership conflict -- see
-    // so each value can be resolved independently.
-    case PRIM_CURRENT_TEMP_ONLY_TEXT:
-    case PRIM_TEMP_HIGH_ONLY_TEXT:
-    case PRIM_TEMP_LOW_ONLY_TEXT:
-    case PRIM_FEELS_LIKE_TEXT: {
-      char num[8];
-      GColor dyn;
-      const char *prefix = "";
-      if (id == PRIM_CURRENT_TEMP_ONLY_TEXT) {
-        if (data->current_temp_display[0] != '\0') {
-          snprintf(num, sizeof(num), "%s", data->current_temp_display);
-          dyn = feature_color_from_packed(data->current_temp_color);
-        } else {
-          snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->weather_temp_c, data->temp_unit));
-          dyn = feature_colors_seven_stop_gradient(data->weather_temp_c, -10, 40);
-        }
-      } else if (id == PRIM_TEMP_HIGH_ONLY_TEXT) {
-        prefix = "H ";
-        if (data->temp_high_display[0] != '\0') {
-          snprintf(num, sizeof(num), "%s", data->temp_high_display);
-          dyn = feature_color_from_packed(data->temp_high_color);
-        } else {
-          snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_high_c, data->temp_unit));
-          dyn = feature_colors_seven_stop_gradient(data->temp_high_c, -10, 40);
-        }
-      } else if (id == PRIM_TEMP_LOW_ONLY_TEXT) {
-        prefix = "L ";
-        if (data->temp_low_display[0] != '\0') {
-          snprintf(num, sizeof(num), "%s", data->temp_low_display);
-          dyn = feature_color_from_packed(data->temp_low_color);
-        } else {
-          snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(data->temp_low_c, data->temp_unit));
-          dyn = feature_colors_seven_stop_gradient(data->temp_low_c, -10, 40);
-        }
-      } else { // PRIM_FEELS_LIKE_TEXT
-        prefix = "FL ";
-        if (data->feels_like_display[0] != '\0') {
-          snprintf(num, sizeof(num), "%s", data->feels_like_display);
-          dyn = feature_color_from_packed(data->feels_like_color);
-        } else {
-          int16_t temp_c = feature_rules_apparent_temp_c(data->weather_temp_c, data->wind_speed_kmh, data->humidity_pct);
-          snprintf(num, sizeof(num), "%d", feature_rules_convert_temp(temp_c, data->temp_unit));
-          dyn = feature_colors_seven_stop_gradient(temp_c, -10, 40);
-        }
-      }
-      char full[16];
-      snprintf(full, sizeof(full), "%s%s", prefix, num);
-      resolve_text(out, full, dyn);
-      return true;
-    }
-
     // ---- timezone cluster (timezone resolver) --------------
     // aux_in is the zone index (feature_timezone_get()'s own index space,
     // 0-18) rather than a raw UTC offset -- see primitive_resolver.h's own
@@ -915,34 +534,11 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 
-    // ---- Astronomy ----------------------------------------------------------
-    // Values are either PKJS-supplied display strings (moon, meteor, Saturn,
-    // aurora) or watch-runtime selections over phone-supplied data
-    // (sun event, planets visible, next planet rise -- time-dependent and
-    // 12h/24h-formatted, so they can't be precomputed). Color rules copied
-    // 1:1 from the cases: an error is always red and an unavailable
-    // value always gray, both bypassing color_mode (force_color); otherwise
-    // most use the slot's main color as their COLOR-mode candidate
+    // ---- Astronomy: only what depends on the watch clock stays here (next sun event, planets above
+    // the horizon now, next planet to rise, ISS pass, compass). Moon, meteor, Saturn, aurora and the
+    // location name are phone slots. An error is always red and an unavailable value always gray, both
+    // bypassing color_mode (force_color); otherwise the slot's main color is the COLOR-mode candidate
     // (dynamic_is_main).
-    case PRIM_MOON_PHASE_ICON:
-    case PRIM_MOON_PHASE_NAME: {
-      // Moon phase has no natural value to grade -- always white in COLOR mode.
-      if (id == PRIM_MOON_PHASE_ICON) {
-        resolve_icon(out, 4, data->moon_phase_pct, data->moon_waxing, GColorWhite);
-        return true;
-      }
-      resolve_text(out, data->moon_phase_display[0] != '\0'
-                          ? data->moon_phase_display
-                          : feature_moon_phase_short_name(data->moon_phase_pct, data->moon_waxing),
-                   GColorWhite);
-      return true;
-    }
-    case PRIM_LOCATION_ICON:
-    case PRIM_LOCATION_NAME:
-      if (id == PRIM_LOCATION_ICON) { resolve_icon(out, 8, 0, false, GColorWhite); }
-      else { resolve_text(out, data->location_name[0] != '\0' ? data->location_name : "Unknown", GColorWhite); }
-      out->dynamic_is_main = true;
-      return true;
     case PRIM_SUN_EVENT_ICON:
     case PRIM_SUN_EVENT_TIME: {
       bool is_sunrise = false;
@@ -975,41 +571,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       out->dynamic_is_main = true;
       return true;
     }
-    case PRIM_METEOR_SHOWER_NAME: {
-      char mbuf[20];
-      if (data->error_code != 0) {
-        snprintf(mbuf, sizeof(mbuf), "ERR %d", data->error_code);
-        resolve_text(out, mbuf, GColorRed);
-        out->force_color = true;
-      } else if (data->meteor_display[0] != '\0') {
-        // Legacy assigns the PKJS-graded color directly (no color_mode dispatch).
-        resolve_text(out, data->meteor_display, feature_color_from_packed(data->meteor_color));
-        out->force_color = true;
-      } else if (data->meteor_intensity > 0 && data->meteor_shower_name[0] != '\0') {
-        resolve_text(out, data->meteor_shower_name, feature_colors_meteor_intensity_gradient(data->meteor_intensity));
-      } else {
-        resolve_text(out, "N/A", GColorLightGray);
-        out->force_color = true;
-      }
-      return true;
-    }
-    case PRIM_SATURN_RINGS_ICON:
-    case PRIM_SATURN_RINGS_PCT: {
-      char sbuf[20];
-      if (data->error_code != 0) {
-        snprintf(sbuf, sizeof(sbuf), "ERR %d", data->error_code);
-        if (id == PRIM_SATURN_RINGS_ICON) { resolve_icon(out, 24, 0, false, GColorRed); }
-        else { resolve_text(out, sbuf, GColorRed); }
-        out->force_color = true;
-        return true;
-      }
-      if (data->saturn_rings_display[0] != '\0') { snprintf(sbuf, sizeof(sbuf), "%s", data->saturn_rings_display); }
-      else { snprintf(sbuf, sizeof(sbuf), "Rings %d%%", data->saturn_ring_open_pct); }
-      if (id == PRIM_SATURN_RINGS_ICON) { resolve_icon(out, 24, 0, false, GColorWhite); }
-      else { resolve_text(out, sbuf, GColorWhite); }
-      out->dynamic_is_main = true;
-      return true;
-    }
+
     case PRIM_NEXT_PLANET_RISE: {
       char rbuf[20];
       if (data->error_code != 0) {
@@ -1056,26 +618,7 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       out->dynamic_is_main = !forced;
       return true;
     }
-    case PRIM_AURORA_ICON:
-    case PRIM_AURORA_KP: {
-      char abuf[20];
-      GColor c;
-      if (data->aurora_error_code != 0) {
-        snprintf(abuf, sizeof(abuf), "ERR %d", data->aurora_error_code);
-        c = GColorRed;
-        out->force_color = true;
-      } else if (data->aurora_kp_display[0] != '\0') {
-        snprintf(abuf, sizeof(abuf), "%s", data->aurora_kp_display);
-        c = feature_color_from_packed(data->aurora_kp_color);
-      } else {
-        snprintf(abuf, sizeof(abuf), "Kp %d.%d", data->aurora_kp_x10 / 10, data->aurora_kp_x10 % 10);
-        c = feature_colors_white_to_red_gradient(data->aurora_kp_x10);
-      }
-      bool forced = out->force_color;
-      if (id == PRIM_AURORA_ICON) { resolve_icon(out, 26, 0, false, c); } else { resolve_text(out, abuf, c); }
-      out->force_color = forced;
-      return true;
-    }
+
     case PRIM_COMPASS_ICON:
     case PRIM_COMPASS_DIR_TEXT: {
       // Active (real heading) for 15s after a shake, then asleep (input.c).

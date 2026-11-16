@@ -177,7 +177,7 @@ typedef enum {
   PRIM_PRESSURE_UNIT_TEXT,      // "hPa"
   PRIM_ALTITUDE_UNIT_TEXT,      // "m" / "ft"
 
-  // Pebble plugin data (PKJS-supplied text, aux = plugin slot 0..PLUGIN_SLOT_COUNT-1).
+  // Pebble plugin data (aux = plugin slot 0..11; compiled to a phone slot by PKJS).
   PRIM_PLUGIN_TEXT,
 
   // Phone battery (Pebble "phone" plugin) and music (Android-only "music" plugin).
@@ -194,6 +194,15 @@ typedef enum {
   PRIM_BATTERY_ODD_ICON,
   PRIM_BLUETOOTH_ODD_ICON,
   PRIM_QUIET_TIME_ODD_ICON,
+
+  // Phone slot (aux = slot index in WatchData.phone_slots). PKJS compiles every value that is a pure
+  // function of phone-side data (weather, units, astronomy, location, plugin texts, phone battery,
+  // track title) into a text or icon slot that already carries its final text/glyph, colour and
+  // colour-mode flags; the watch only draws it. The ids that used to resolve these values on the watch
+  // (weather, UV, forecast, moon, meteor, Saturn, aurora, location, units, *_VALUE, labels, plugin,
+  // phone battery, track title) are RETIRED: they keep their numbers (the enum must stay stable) but the
+  // watch no longer resolves them and PKJS never sends them. See docs/COMPLICATIONS_REPORT.md.
+  PRIM_PHONE_SLOT,
 
   PRIM_ID_COUNT,
 } PrimitiveId;

@@ -99,29 +99,11 @@ function textFromPayloads(payloads) {
   return '';
 }
 
-function utf8Fit(str, maxBytes) {
+// The 12 plugin texts as plain strings (whitespace collapsed); the phone slots carry them to the watch.
+function texts() {
   var out = [];
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charCodeAt(i);
-    if (c >= 0xD800 && c <= 0xDBFF) { i++; c = 63; }
-    var enc;
-    if (c < 0x80) enc = [c];
-    else if (c < 0x800) enc = [0xC0 | (c >> 6), 0x80 | (c & 63)];
-    else enc = [0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)];
-    if (out.length + enc.length > maxBytes) break;
-    out = out.concat(enc);
-  }
+  for (var s = 0; s < SLOT_COUNT; s++) out.push(String(slotTexts[s] || '').replace(/\s+/g, ' ').trim().slice(0, TEXT_LEN - 1));
   return out;
-}
-
-function textsBytes() {
-  var bytes = [];
-  for (var s = 0; s < SLOT_COUNT; s++) {
-    var enc = utf8Fit(String(slotTexts[s] || '').replace(/\s+/g, ' ').trim(), TEXT_LEN - 1);
-    while (enc.length < TEXT_LEN) enc.push(0);
-    bytes = bytes.concat(enc);
-  }
-  return bytes;
 }
 
 function schedulePush() {
@@ -129,7 +111,7 @@ function schedulePush() {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(function () {
     pushTimer = null;
-    try { pushFn(textsBytes()); } catch (e) { console.log('modern: plugin push failed - ' + e.message); }
+    try { pushFn(); } catch (e) { console.log('modern: plugin push failed - ' + e.message); }
   }, 600);
 }
 
@@ -234,7 +216,7 @@ module.exports = {
   readCatalogue: readCatalogue,
   getSlots: getSlots,
   setSlots: setSlots,
-  textsBytes: textsBytes,
+  texts: texts,
   init: init,
   textFromPayloads: textFromPayloads
 };

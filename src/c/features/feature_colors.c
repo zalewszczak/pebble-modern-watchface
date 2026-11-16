@@ -52,16 +52,6 @@ GColor feature_colors_red_green_gradient(uint8_t pct) {
   return GColorFromRGB((uint8_t)r, (uint8_t)g, 0);
 }
 
-// White (Kp 0, geomagnetically quiet) -> red (Kp 9, extreme storm)
-GColor feature_colors_white_to_red_gradient(uint8_t kp_x10) {
-  if (kp_x10 >= 90) return GColorFromRGB(220, 0, 0);
-  int32_t frac1000 = ((int32_t)kp_x10 * 1000) / 90;
-  // Cap the green channel at 170. Pebble quantizes each RGB channel to
-  int16_t g = 170 - (int16_t)((170 * frac1000) / 1000);
-  int16_t b = g;
-  return GColorFromRGB(255, (uint8_t)g, (uint8_t)b);
-}
-
 // Pink (calm/resting) -> red -> violet (dangerously high), scaled by
 #define HR_LOW_BPM 60
 #define HR_HIGH_BPM 120
@@ -90,19 +80,6 @@ GColor feature_colors_heart_rate_gradient(int bpm) {
   return GColorFromRGB((uint8_t)r, (uint8_t)g, (uint8_t)b);
 }
 #endif
-
-// White (sea level) -> turquoise (high), for the "Altitude" content
-#define ALTITUDE_GRADIENT_MAX_M 4000
-GColor feature_colors_altitude_gradient(int16_t altitude_m) {
-  return feature_colors_white_to_turquoise_gradient(altitude_m, 0, ALTITUDE_GRADIENT_MAX_M);
-}
-
-// Dim gray (faint) -> white (strong), for the meteor-shower intensity
-GColor feature_colors_meteor_intensity_gradient(uint8_t pct) {
-  int32_t frac1000 = ((int32_t)pct * 1000) / 100;
-  int16_t v = 90 + (int16_t)((165 * frac1000) / 1000);
-  return GColorFromRGB((uint8_t)v, (uint8_t)v, (uint8_t)v);
-}
 
 // White during the day, black at night, blending linearly across the
 #define DAYNIGHT_TRANSITION_SECS 3600
@@ -151,39 +128,4 @@ GColor feature_colors_weather_staleness_gradient(time_t now, time_t last_update)
   return GColorFromRGB(255, (uint8_t)gb, (uint8_t)gb);
 }
 
-// The four weather-family color gradients "current conditions" (and
-
-// Clear/sunny: white fading toward a warm golden-white as skies get
-static GColor feature_colors_sunny_yellow_white_gradient(uint8_t cloud_pct) {
-  uint8_t clamped = cloud_pct > OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : cloud_pct;
-  int32_t frac1000 = ((int32_t)(OVERCAST_CLOUD_THRESHOLD - clamped) * 1000) / OVERCAST_CLOUD_THRESHOLD;
-  int16_t b = 255 - (int16_t)((85 * frac1000) / 1000);
-  return GColorFromRGB(255, 255, (uint8_t)b);
-}
-
-// Overcast/fog: light gray darkening toward a heavier gray as cloud
-GColor feature_colors_overcast_gray_gradient(uint8_t cloud_pct) {
-  uint8_t clamped = cloud_pct < OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : cloud_pct;
-  int32_t frac1000 = ((int32_t)(clamped - OVERCAST_CLOUD_THRESHOLD) * 1000) / (100 - OVERCAST_CLOUD_THRESHOLD);
-  int16_t v = 200 - (int16_t)((115 * frac1000) / 1000);
-  return GColorFromRGB((uint8_t)v, (uint8_t)v, (uint8_t)v);
-}
-
-// Snow: white gaining a faint blue-white cast as it gets heavier
-static GColor feature_colors_snow_white_gradient(uint8_t cloud_pct) {
-  int32_t frac1000 = ((int32_t)cloud_pct * 1000) / 100;
-  int16_t rg = 255 - (int16_t)((85 * frac1000) / 1000);
-  return GColorFromRGB((uint8_t)rg, (uint8_t)rg, 255);
-}
-
-// weather_condition: 0=clear/cloudy (cloud_pct alone decides sunny vs
-GColor feature_colors_weather_condition_color(uint8_t condition, uint8_t cloud_pct, uint8_t rain_chance_pct) {
-  if (condition == 4) return GColorFromRGB(255, 0, 0);
-  if (condition == 3) return feature_colors_snow_white_gradient(cloud_pct);
-  if (condition == 2) return feature_colors_white_to_turquoise_gradient(rain_chance_pct, 0, 100);
-  if (condition == 1) return feature_colors_overcast_gray_gradient(cloud_pct < OVERCAST_CLOUD_THRESHOLD ? OVERCAST_CLOUD_THRESHOLD : cloud_pct);
-  return (cloud_pct < OVERCAST_CLOUD_THRESHOLD) ? feature_colors_sunny_yellow_white_gradient(cloud_pct) : feature_colors_overcast_gray_gradient(cloud_pct);
-}
-
-// temp_unit: 0=Celsius (input is already Celsius, passed through),
 #endif // PBL_COLOR

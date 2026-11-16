@@ -306,24 +306,6 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
       return;
   }
 }
-
-
-
-uint8_t feature_icons_weather_category(uint8_t weather_condition, uint8_t cloud_pct) {
-  switch (weather_condition) {
-    case 1: return 3; // fog
-    case 2: return 4; // rain
-    case 3: return 5; // snow
-    case 4: return 6; // storm
-    default:
-      if (cloud_pct < 20) return 0; // sunny
-      if (cloud_pct < 60) return 1; // partly cloudy
-      return 2; // cloudy/overcast
-  }
-}
-
-
-
 // Widths include the fixed 5px gap after the icon. Keeping this as a compact
 // On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
 // vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their

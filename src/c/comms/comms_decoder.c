@@ -47,23 +47,6 @@ static const SimpleFieldMapping SIMPLE_FIELD_MAP[] = {
   { MK_WEATHER_ICON_CATEGORY, F_U8, offsetof(WatchData, weather_icon_category) },
   { MK_WEATHER_ICON_COLOR, F_U8, offsetof(WatchData, weather_icon_color) },
   { MK_WEATHER_WX_NOW, F_U8, offsetof(WatchData, weather_wx_now) },
-  { MK_WIND_DIR_DEG, F_I16, offsetof(WatchData, wind_dir_deg) },
-  { MK_DEW_POINT_C, F_I16, offsetof(WatchData, dew_point_c) },
-  { MK_PRESSURE_HPA, F_I16, offsetof(WatchData, pressure_hpa) },
-  { MK_PRESSURE_TREND, F_U8, offsetof(WatchData, pressure_trend) },
-  { MK_AQI_US, F_U16, offsetof(WatchData, aqi_us) },
-  { MK_AQI_EU, F_U16, offsetof(WatchData, aqi_eu) },
-  { MK_ALTITUDE_M, F_I16, offsetof(WatchData, altitude_m) },
-  { MK_AURORA_KP_X10, F_U8, offsetof(WatchData, aurora_kp_x10) },
-  { MK_AURORA_ERROR_CODE, F_U8, offsetof(WatchData, aurora_error_code) },
-  { MK_WEATHER_TEMP_C, F_I16, offsetof(WatchData, weather_temp_c) },
-  { MK_WEATHER_TEMP_HIGH_C, F_I16, offsetof(WatchData, temp_high_c) },
-  { MK_WEATHER_TEMP_LOW_C, F_I16, offsetof(WatchData, temp_low_c) },
-  { MK_ALTITUDE_COLOR, F_U8, offsetof(WatchData, altitude_color) },
-  { MK_PRESSURE_COLOR, F_U8, offsetof(WatchData, pressure_color) },
-  { MK_AQI_COLOR, F_U8, offsetof(WatchData, aqi_color) },
-  { MK_AURORA_KP_COLOR, F_U8, offsetof(WatchData, aurora_kp_color) },
-  { MK_WIND_SPEED_KMH, F_I16, offsetof(WatchData, wind_speed_kmh) },
   { MK_SUN_RISE, F_TIME, offsetof(WatchData, sun_rise) },
   { MK_SUN_SET, F_TIME, offsetof(WatchData, sun_set) },
   { MK_SUN_RISE_TOMORROW, F_TIME, offsetof(WatchData, sun_rise_tomorrow) },
@@ -135,21 +118,16 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
 #endif
   { MK_EDGE_LINE_PRIMITIVE_IDS, 1, offsetof(WatchData, edge_line_primitive_ids), 80 }, // 8 * 10, see watch_data.h
   { MK_EDGE_LINE_PRIMITIVE_AUX, 1, offsetof(WatchData, edge_line_primitive_aux), 80 },
-  { MK_PLUGIN_TEXTS, 1, offsetof(WatchData, plugin_text), PLUGIN_SLOT_COUNT * PLUGIN_TEXT_LEN },
+  // Phone slot table: every phone-computed complication value (see PHONE_SLOT_* in watch_data.h). Applied to
+  // every message, including invalid payloads, so error states reach the display.
+  { MK_PHONE_SLOTS, 1, offsetof(WatchData, phone_slots), PHONE_SLOTS_BYTES },
   { MK_BORDER_DATA, 1, offsetof(WatchData, border_data), BORDER_DATA_MAX },
-  { MK_PHONE_BATTERY, 1, offsetof(WatchData, phone_battery), sizeof(((WatchData *)0)->phone_battery) },
   { MK_MEDIA_INFO, 1, offsetof(WatchData, media_info), sizeof(((WatchData *)0)->media_info) },
-  { MK_MEDIA_TEXT, 1, offsetof(WatchData, media_text), 2 * MEDIA_TEXT_LEN },
   { MK_MEDIA_ART, 1, offsetof(WatchData, media_art), MEDIA_ART_MAX_BYTES },
 };
 
 // Applied only for valid payloads.
 static const BlobFieldMapping BLOB_FIELD_MAP_VALID[] = {
-  { MK_FORECAST_CONDITION, 1, offsetof(WatchData, forecast_condition), FORECAST_SLOT_COUNT },
-  { MK_FORECAST_ICON_CATEGORIES, 1, offsetof(WatchData, forecast_icon_category), FORECAST_SLOT_COUNT },
-  { MK_FORECAST_TEMP_COLORS, 1, offsetof(WatchData, forecast_temp_color), FORECAST_SLOT_COUNT },
-  // 15 fixed 6-byte NUL-padded strings, see forecastDisplayBlob() in comms/message-encoder.js.
-  { MK_FORECAST_TEMP_DISPLAY, 1, offsetof(WatchData, forecast_temp_display), FORECAST_SLOT_COUNT * 6 },
   { MK_PLANET_RISE, 4, offsetof(WatchData, planet_rise), PLANET_COUNT * 4 },
   { MK_PLANET_SET, 4, offsetof(WatchData, planet_set), PLANET_COUNT * 4 },
 };
@@ -186,10 +164,8 @@ static void apply_scattered_u8_blob(DictionaryIterator *iter, WatchData *d, uint
   }
 }
 
-// Group 1 (23 fields): plain settings, set on every settings push.
+// Plain settings, set on every settings push.
 static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
-  offsetof(WatchData, temp_unit),
-  offsetof(WatchData, wind_speed_unit),
   offsetof(WatchData, shake_seconds),
   offsetof(WatchData, startup_clock_anim_mode),
   offsetof(WatchData, outline_style),
@@ -203,8 +179,6 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, hourly_vibe_pattern),
   offsetof(WatchData, hourly_vibe_days_mask),
   offsetof(WatchData, icon_style),
-  offsetof(WatchData, aqi_unit),
-  offsetof(WatchData, altitude_unit),
   offsetof(WatchData, battery_saver_enabled),
   offsetof(WatchData, bitmap_marker_transparent),
   offsetof(WatchData, draw_debug),
@@ -225,50 +199,6 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, center_circle_outline),
   offsetof(WatchData, bg_scheme_override),
 };
-
-// Group 2 (4 fields): cloud/visibility readout + its gradient colors.
-static const uint16_t WEATHER_CLOUD_BLOB_OFFSETS[] = {
-  offsetof(WatchData, cloud_cover_pct),
-  offsetof(WatchData, vis_score_pct),
-  offsetof(WatchData, cloud_cover_color),
-  offsetof(WatchData, vis_score_color),
-};
-
-// Group 3 (14 fields): the main weather readout (condition + temps + UV/rain/humidity/wind,
-// each with its gradient color).
-static const uint16_t WEATHER_MAIN_BLOB_OFFSETS[] = {
-  offsetof(WatchData, weather_condition),
-  offsetof(WatchData, current_temp_color),
-  offsetof(WatchData, temp_high_color),
-  offsetof(WatchData, temp_low_color),
-  offsetof(WatchData, feels_like_color),
-  offsetof(WatchData, uv_index_x10),
-  offsetof(WatchData, uv_index_current_x10),
-  offsetof(WatchData, rain_chance_pct),
-  offsetof(WatchData, humidity_pct),
-  offsetof(WatchData, uv_daily_color),
-  offsetof(WatchData, uv_current_color),
-  offsetof(WatchData, rain_chance_color),
-  offsetof(WatchData, humidity_color),
-  offsetof(WatchData, wind_speed_color),
-};
-
-// Group 4 (5 fields): Saturn/Moon/meteor status.
-static const uint16_t ASTRO_BLOB_OFFSETS[] = {
-  offsetof(WatchData, saturn_ring_open_pct),
-  offsetof(WatchData, moon_phase_pct),
-  offsetof(WatchData, moon_waxing),
-  offsetof(WatchData, meteor_intensity),
-  offsetof(WatchData, meteor_color),
-};
-
-// Copy a bounded C-string field.
-static void apply_cstring(DictionaryIterator *iter, uint8_t key_index, char *dst, uint16_t cap) {
-  Tuple *t = dict_find(iter, MESSAGE_KEY_MESSAGE_TYPE + key_index);
-  if (!t) return;
-  strncpy(dst, t->value->cstring, cap - 1);
-  dst[cap - 1] = '\0';
-}
 
 // Consolidated settings fields use fixed wire layouts.
 // HANDS, MARKER_RINGS, and EDGE_LINE_COLOR_MODE use fixed byte layouts;
@@ -331,16 +261,11 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
   // The track position is a snapshot; remember when it was taken so the watch can keep it moving.
   if (dict_find(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_MEDIA_INFO)) d->media_stamp = time(NULL);
   apply_scattered_u8_blob(iter, d, MK_SETTINGS_U8_BLOB, SETTINGS_BLOB_OFFSETS, NELEM(SETTINGS_BLOB_OFFSETS));
-
   // Feature layout and values are recomputed for every decoded message.
   changes |= COMMS_CHANGE_FEATURES;
 
   if (!d->valid) return changes;
   d->error_code = 0;
-
-  apply_scattered_u8_blob(iter, d, MK_WEATHER_CLOUD_U8_BLOB, WEATHER_CLOUD_BLOB_OFFSETS, NELEM(WEATHER_CLOUD_BLOB_OFFSETS));
-  apply_scattered_u8_blob(iter, d, MK_WEATHER_MAIN_U8_BLOB, WEATHER_MAIN_BLOB_OFFSETS, NELEM(WEATHER_MAIN_BLOB_OFFSETS));
-  apply_scattered_u8_blob(iter, d, MK_ASTRO_U8_BLOB, ASTRO_BLOB_OFFSETS, NELEM(ASTRO_BLOB_OFFSETS));
 
   if ((t = dict_find(iter, base + MK_WEATHER_ERROR_CODE))) {
     d->weather_error_code = t->value->uint8;
@@ -352,40 +277,6 @@ CommsChangeFlags comms_decoder_apply(DictionaryIterator *iter, WatchData *data) 
     }
   }
 
-  // Forecast temperatures use a +50 byte offset; 255 means unavailable.
-  // 15 entries: 0-5 are the next 1-6 hours, 6-8 the next 1-3 days, 9-14 the
-  // hours 7-12 ahead (see FORECAST_SLOT_COUNT in watch_data.h).
-  if ((t = dict_find(iter, base + MK_FORECAST_TEMP_C))) {
-    uint8_t *raw = t->value->data;
-    int n = t->length;
-    if (n > FORECAST_SLOT_COUNT) n = FORECAST_SLOT_COUNT;
-    for (int i = 0; i < n; i++) {
-      d->forecast_temp_c[i] = (raw[i] == 255) ? -128 : ((int16_t)raw[i] - 50);
-    }
-  }
-
   apply_blob_fields(iter, d, BLOB_FIELD_MAP_VALID, NELEM(BLOB_FIELD_MAP_VALID));
-  apply_cstring(iter, MK_LOCATION_NAME, d->location_name, sizeof(d->location_name));
-  apply_cstring(iter, MK_METEOR_SHOWER_NAME, d->meteor_shower_name, sizeof(d->meteor_shower_name));
-  apply_cstring(iter, MK_METEOR_DISPLAY, d->meteor_display, sizeof(d->meteor_display));
-  apply_cstring(iter, MK_MOON_PHASE_DISPLAY, d->moon_phase_display, sizeof(d->moon_phase_display));
-  apply_cstring(iter, MK_SATURN_RINGS_DISPLAY, d->saturn_rings_display, sizeof(d->saturn_rings_display));
-  apply_cstring(iter, MK_AURORA_KP_DISPLAY, d->aurora_kp_display, sizeof(d->aurora_kp_display));
-  apply_cstring(iter, MK_CURRENT_TEMP_DISPLAY, d->current_temp_display, sizeof(d->current_temp_display));
-  apply_cstring(iter, MK_TEMP_HIGH_DISPLAY, d->temp_high_display, sizeof(d->temp_high_display));
-  apply_cstring(iter, MK_TEMP_LOW_DISPLAY, d->temp_low_display, sizeof(d->temp_low_display));
-  apply_cstring(iter, MK_FEELS_LIKE_DISPLAY, d->feels_like_display, sizeof(d->feels_like_display));
-  apply_cstring(iter, MK_UV_DAILY_DISPLAY, d->uv_daily_display, sizeof(d->uv_daily_display));
-  apply_cstring(iter, MK_UV_CURRENT_DISPLAY, d->uv_current_display, sizeof(d->uv_current_display));
-  apply_cstring(iter, MK_RAIN_CHANCE_DISPLAY, d->rain_chance_display, sizeof(d->rain_chance_display));
-  apply_cstring(iter, MK_HUMIDITY_DISPLAY, d->humidity_display, sizeof(d->humidity_display));
-  apply_cstring(iter, MK_WIND_SPEED_DISPLAY, d->wind_speed_display, sizeof(d->wind_speed_display));
-  apply_cstring(iter, MK_CLOUD_COVER_DISPLAY, d->cloud_cover_display, sizeof(d->cloud_cover_display));
-  apply_cstring(iter, MK_VIS_SCORE_DISPLAY, d->vis_score_display, sizeof(d->vis_score_display));
-  apply_cstring(iter, MK_ALTITUDE_DISPLAY, d->altitude_display, sizeof(d->altitude_display));
-  apply_cstring(iter, MK_DEW_POINT_DISPLAY, d->dew_point_display, sizeof(d->dew_point_display));
-  apply_cstring(iter, MK_PRESSURE_DISPLAY, d->pressure_display, sizeof(d->pressure_display));
-  apply_cstring(iter, MK_AQI_DISPLAY, d->aqi_display, sizeof(d->aqi_display));
-  for (int i = 0; i < FORECAST_SLOT_COUNT; i++) d->forecast_temp_display[i][5] = '\0'; // a slot is always terminated
   return changes;
 }

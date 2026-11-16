@@ -2,7 +2,7 @@
 #include "./feature_icon_assets.h"
 #include "../platform/platform_bw.h"
 
-// One row per weather category (see feature_icons_weather_category()).
+// One row per weather category (category computed on the phone, see weather-normalize.js weatherIconCategory).
 // This table -- not a switch/case per style -- is what
 // feature_weather_icons_draw_with_outline() below loads from, so adding a
 // category or a style never grows the code, only the data.

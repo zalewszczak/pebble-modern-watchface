@@ -50,7 +50,6 @@ function applyFirstRunPreferences() {
   preferences.capture(5000, function (prefs) {
     if (!firstRun.applyPreferences(prefs, pluginManager)) return;
     sendFlatDict({});
-    messageEncoder.resendUnitDisplays();
     refreshAndSend(false, false);
   });
 }
@@ -64,9 +63,9 @@ setInterval(function () { if (bgImageSync.cycleChanged()) { sendFlatDict({}); bg
 
 Pebble.addEventListener('ready', function () {
   console.log('modern: PKJS ready, capabilities OK, starting first refresh');
-  pluginManager.init(function (bytes) { enqueueFlatDict({ PLUGIN_TEXTS: bytes }); });
+  pluginManager.init(function () { messageEncoder.sendFeatureLayout(); });
   borderData.init(function (bytes) { enqueueFlatDict({ BORDER_DATA: bytes }); });
-  phoneMedia.init(function (dict) { enqueueFlatDict(dict); }, function (art) { enqueueFlatDict({ MEDIA_ART: art }); });
+  phoneMedia.init(function (dict) { enqueueFlatDict(dict); messageEncoder.sendFeatureLayout(); }, function (art) { enqueueFlatDict({ MEDIA_ART: art }); });
   pluginBg.apply();
   applyFirstRunPreferences();
   serveScheduledStyle();
@@ -355,11 +354,6 @@ Pebble.addEventListener('webviewclosed', function (e) {
   applySettingsObject(settings);
 });
 
-function unitSettingsSignature() {
-  return [getSetting('CONFIG_TEMP_UNIT', 'C'), getSetting('CONFIG_WIND_SPEED_UNIT', 'kmh'),
-    getSetting('CONFIG_ALTITUDE_UNIT', '0'), getSetting('CONFIG_AQI_UNIT', '0')].join('|');
-}
-
 function applySettingsObject(settings) {
 
   if (settings.CONFIG_SEND_FULL_KEYSET) {
@@ -393,7 +387,6 @@ function applySettingsObject(settings) {
   }
 
   firstRun.markDone();
-  var unitsBefore = unitSettingsSignature();
   var weatherSourceBefore = getSetting('CONFIG_WEATHER_SOURCE', 'plugin');
 
   setSetting('CONFIG_AUTO_LOC', settings.CONFIG_AUTO_LOC ? 'true' : 'false');
@@ -616,7 +609,6 @@ function applySettingsObject(settings) {
 
   borderData.sync();
   sendFlatDict({});
-  if (unitSettingsSignature() !== unitsBefore) messageEncoder.resendUnitDisplays();
   pluginBg.apply();
   bgImageSync.syncIfNeeded();
 

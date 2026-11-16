@@ -37,20 +37,6 @@ void feature_draw_moon_phase(GContext *ctx, GRect bounds, GPoint center, int16_t
   graphics_context_set_stroke_width(ctx, 1);
   graphics_draw_circle(ctx, center, radius);
 }
-
-const char *feature_moon_phase_short_name(uint8_t pct, bool waxing) {
-  if (pct <= 2) return "New";
-  if (pct >= 98) return "Full";
-  if (waxing) {
-    if (pct < 48) return "WxCr";
-    if (pct <= 52) return "1stQ";
-    return "WxGb";
-  }
-  if (pct > 52) return "WnGb";
-  if (pct >= 48) return "3rdQ";
-  return "WnCr";
-}
-
 uint8_t feature_count_visible_planets(const WatchData *d, time_t now) {
   if (watch_ui_is_daylight(d, now)) return 0;
   uint8_t count = 0;
@@ -60,18 +46,4 @@ uint8_t feature_count_visible_planets(const WatchData *d, time_t now) {
     if (now >= rise - PLANET_RISE_SET_MARGIN_S && now <= set + PLANET_RISE_SET_MARGIN_S) count++;
   }
   return count;
-}
-
-const char *feature_weather_short_condition_text(uint8_t weather_condition, uint8_t cloud_pct) {
-  switch (weather_condition) {
-    case 1: return "Fog";
-    case 2: return "Rain";
-    case 3: return "Snow";
-    case 4: return "Storm";
-    default:
-      if (cloud_pct < 20) return "Sunny";
-      if (cloud_pct < 60) return "P.Cloudy";
-      if (cloud_pct < 90) return "Cloudy";
-      return "Overcast";
-  }
 }

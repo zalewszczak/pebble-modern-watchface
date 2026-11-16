@@ -5,31 +5,15 @@ var settingsCodecs = require('../settings/settings-codecs');
 var scheduledStyle = require('../scheduled-style');
 var platform = require('../platform');
 var clampFontId = settingsCodecs.clampFontId;
-var tempUnitCode = settingsCodecs.tempUnitCode;
-var windSpeedUnitCode = settingsCodecs.windSpeedUnitCode;
 var showSecondsCode = settingsCodecs.showSecondsCode;
 var customColorByte = settingsCodecs.customColorByte;
 var customBgByte = settingsCodecs.customBgByte;
-var formatTempDisplay = require('../weather/weather-normalize').formatTempDisplay;
-var apparentTempC = require('../weather/weather-normalize').apparentTempC;
 var tempGradientColorByte = require('../weather/weather-normalize').tempGradientColorByte;
-var formatUvDisplay = require('../weather/weather-normalize').formatUvDisplay;
-var uvGradientColorByte = require('../weather/weather-normalize').uvGradientColorByte;
-var formatPercentDisplay = require('../weather/weather-normalize').formatPercentDisplay;
-var percentGradientColorByte = require('../weather/weather-normalize').percentGradientColorByte;
-var overcastGrayColorByte = require('../weather/weather-normalize').overcastGrayColorByte;
-var formatWindSpeedDisplay = require('../weather/weather-normalize').formatWindSpeedDisplay;
-var windSpeedGradientColorByte = require('../weather/weather-normalize').windSpeedGradientColorByte;
-var formatPressureDisplay = require('../weather/weather-normalize').formatPressureDisplay;
-var pressureGradientColorByte = require('../weather/weather-normalize').pressureGradientColorByte;
-var formatAqiDisplay = require('../weather/weather-normalize').formatAqiDisplay;
-var aqiGradientColorByte = require('../weather/weather-normalize').aqiGradientColorByte;
-var formatAltitudeDisplay = require('../weather/weather-normalize').formatAltitudeDisplay;
-var altitudeGradientColorByte = require('../weather/weather-normalize').altitudeGradientColorByte;
 var weatherIconCategory = require('../weather/weather-normalize').weatherIconCategory;
 var weatherConditionColorByte = require('../weather/weather-normalize').weatherConditionColorByte;
-var featureDisplay = require('../astronomy/feature-display');
 var phoneMedia = require('../plugins/phone-media');
+var phoneSlots = require('./phone-slots');
+var messageSchema = require('./message-schema');
 var primitiveIds = require('../config/primitive-ids-generated');
 var primitiveIdSequenceForContent = require('../config/primitive-decompose').primitiveIdSequenceForContent;
 var primitiveAuxSequenceForContent = require('../config/primitive-decompose').primitiveAuxSequenceForContent;
@@ -43,15 +27,12 @@ var nightCustomBgByte = settingsCodecs.nightCustomBgByte;
 var nightCustomTextByte = settingsCodecs.nightCustomTextByte;
 var nightCustomAccentByte = settingsCodecs.nightCustomAccentByte;
 var weatherIconStyleCode = settingsCodecs.weatherIconStyleCode;
-var aqiUnitCode = settingsCodecs.aqiUnitCode;
-var altitudeUnitCode = settingsCodecs.altitudeUnitCode;
 var shakeSecondsCode = settingsCodecs.shakeSecondsCode;
 var shadowTranslucentCode = settingsCodecs.shadowTranslucentCode;
 var shadowAngleCode = settingsCodecs.shadowAngleCode;
 var bigAnalogMarkerStyleCode = settingsCodecs.bigAnalogMarkerStyleCode;
 var bitmapMarkerTransparentCode = settingsCodecs.bitmapMarkerTransparentCode;
 var bitmapMarkerInvertCode = settingsCodecs.bitmapMarkerInvertCode;
-var pluginManager = require('../plugins/plugin-manager');
 var borderData = require('../border/border-data');
 var borderWeatherModeCode = settingsCodecs.borderWeatherModeCode;
 var borderWeatherPxCode = settingsCodecs.borderWeatherPxCode;
@@ -205,27 +186,18 @@ function toU8(v) { return ((v % 256) + 256) % 256; }
 var PLANET_ORDER = ['mercury', 'venus', 'mars', 'jupiter', 'saturn'];
 
 function astroFieldsDict(astro) {
-  var moonPhase = astro.moonPhase, riseSet = astro.riseSet, meteorShower = astro.meteorShower;
+  var riseSet = astro.riseSet;
   var planetRiseArr = [], planetSetArr = [];
   PLANET_ORDER.forEach(function (name) {
     planetRiseArr.push(toEpoch(riseSet[name].rise));
     planetSetArr.push(toEpoch(riseSet[name].set));
   });
-  var meteorIntensity = meteorShower ? meteorShower.intensity : 0;
   return {
     'PLANET_RISE': i32ArrayToBytes(planetRiseArr),
     'PLANET_SET': i32ArrayToBytes(planetSetArr),
     'SUN_RISE': toEpoch(riseSet.sun.rise),
     'SUN_SET': toEpoch(riseSet.sun.set),
-    'SUN_RISE_TOMORROW': toEpoch(astro.sunRiseTomorrow),
-    'METEOR_SHOWER_NAME': meteorShower ? meteorShower.name : '',
-    'MOON_PHASE_DISPLAY': featureDisplay.formatMoonPhaseDisplay(moonPhase.illuminatedPct, moonPhase.waxing),
-    'METEOR_DISPLAY': featureDisplay.formatMeteorDisplay(meteorIntensity, meteorShower ? meteorShower.name : ''),
-    'SATURN_RINGS_DISPLAY': featureDisplay.formatSaturnRingsDisplay(astro.saturnRingOpenPct),
-    'ASTRO_U8_BLOB': [
-      astro.saturnRingOpenPct, moonPhase.illuminatedPct, moonPhase.waxing ? 1 : 0,
-      meteorIntensity, featureDisplay.meteorGradientColorByte(meteorIntensity)
-    ]
+    'SUN_RISE_TOMORROW': toEpoch(astro.sunRiseTomorrow)
   };
 }
 
@@ -344,16 +316,38 @@ function colorsBytes() {
   ];
 }
 
-// The 15 forecast temperature strings travel as ONE blob of fixed 6-byte slots (NUL padded, so a slot
-// holds at most 5 characters): one tuple header instead of fifteen, and 14 fewer message keys.
-var FORECAST_DISPLAY_SLOT = 6;
-function forecastDisplayBlob(temps, unitCode) {
-  var out = [];
-  for (var i = 0; i < 15; i++) {
-    var txt = String(formatTempDisplay(i < temps.length ? temps[i] : null, unitCode) || '').slice(0, FORECAST_DISPLAY_SLOT - 1);
-    for (var j = 0; j < FORECAST_DISPLAY_SLOT; j++) out.push(j < txt.length ? txt.charCodeAt(j) & 127 : 0);
-  }
-  return out;
+// The logical corner + edge sequences (what the settings describe), before phone-owned values become slots.
+function logicalLayout() {
+  var cornerCustomPrimsSettings = [
+    getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
+    getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
+    getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),
+    getSetting('CONFIG_CORNER_BR_CUSTOM_PRIMS', '')
+  ].map(parseCustomPrimsSetting);
+  var cornerFeatureIds = cornerContentBytes();
+  var cornerIds = cornerFeatureIds.reduce(function (acc, contentId, idx) {
+    var custom = cornerCustomPrimsSettings[idx];
+    return acc.concat(custom.ids.length ? normalizePrimitiveSequence(custom.ids) : primitiveIdSequenceForContent(contentId));
+  }, []);
+  var cornerAux = cornerFeatureIds.reduce(function (acc, contentId, idx) {
+    var custom = cornerCustomPrimsSettings[idx];
+    return acc.concat(custom.ids.length ? normalizePrimitiveAux(custom.aux) : primitiveAuxSequenceForContent(contentId));
+  }, []);
+  return { cornerIds: cornerIds, cornerAux: cornerAux, edgeIds: edgeLinePrimitiveIdsBytes(), edgeAux: edgeLinePrimitiveAuxBytes() };
+}
+
+// Layout + slot table. Always sent together: the slot numbers in the layout index into the table.
+function populateFeatureFields(dict) {
+  var lay = logicalLayout();
+  // Phone battery / music: subscribe only while a feature uses them (decided on the logical ids).
+  phoneMedia.setNeeds(phoneMedia.needsFromPrimitiveIds(lay.cornerIds.concat(lay.edgeIds), primitiveIds));
+  var all = phoneSlots.compile(lay.cornerIds.concat(lay.edgeIds), lay.cornerAux.concat(lay.edgeAux));
+  dict['CORNER_PRIMITIVE_IDS'] = all.ids.slice(0, lay.cornerIds.length);
+  dict['CORNER_PRIMITIVE_AUX'] = all.aux.slice(0, lay.cornerAux.length);
+  dict['EDGE_LINE_PRIMITIVE_IDS'] = all.ids.slice(lay.cornerIds.length);
+  dict['EDGE_LINE_PRIMITIVE_AUX'] = all.aux.slice(lay.cornerAux.length);
+  dict['PHONE_SLOTS'] = all.bytes;
+  phoneMedia.fill(dict);
 }
 
 function populateSettingsFields(dict) {
@@ -368,20 +362,17 @@ function populateSettingsFields(dict) {
   dict['MARKER_TEXT'] = markerTextBytes();
   dict['HANDS'] = handsBytes();
   dict['EDGE_LINE_COLOR_MODE'] = edgeLinesBytes();
-  dict['EDGE_LINE_PRIMITIVE_IDS'] = edgeLinePrimitiveIdsBytes();
-  dict['EDGE_LINE_PRIMITIVE_AUX'] = edgeLinePrimitiveAuxBytes();
   dict['BG_ANIM_MODE'] = bgAnimModeCode();
   dict['SHAKE_ANIM_MODE'] = shakeAnimModeCode();
   dict['CORNER_COLOR_MODE'] = cornerColorModeBytes();
   dict['SHAKE_ONLY_MASK'] = shakeOnlyMaskCode();
-  dict['PLUGIN_TEXTS'] = pluginManager.textsBytes();
   dict['BORDER_DATA'] = borderData.bytes();
   dict['SETTINGS_U8_BLOB'] = [
-    tempUnitCode(), windSpeedUnitCode(), shakeSecondsCode(), startupClockAnimModeCode(),
+    shakeSecondsCode(), startupClockAnimModeCode(),
     outlineEnabledCode(), cornerFontCode(), centerCircleRadiusCode(), centerCircleColorCode(),
     customHourInnerThicknessCode(), customSecInnerThicknessCode(), hourlyVibeModeCode(),
     hourlyVibeIntervalMinCode(), hourlyVibePatternCode(), hourlyVibeDaysMaskCode(),
-    weatherIconStyleCode(), aqiUnitCode(), altitudeUnitCode(),
+    weatherIconStyleCode(),
     batterySaverEnabledCode(), bitmapMarkerTransparentCode(), drawDebugCode(),
     hourlyVibeOverrideQuietCode(),
     bgImageSync.modeCode(), bgImageSync.presetCode(),
@@ -393,25 +384,7 @@ function populateSettingsFields(dict) {
     settingsCodecs.centerCircleOutlineCode(),
     bgImageSync.schemeOverrideCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
   ];
-  var cornerCustomPrimsSettings = [
-    getSetting('CONFIG_CORNER_TL_CUSTOM_PRIMS', ''),
-    getSetting('CONFIG_CORNER_TR_CUSTOM_PRIMS', ''),
-    getSetting('CONFIG_CORNER_BL_CUSTOM_PRIMS', ''),
-    getSetting('CONFIG_CORNER_BR_CUSTOM_PRIMS', '')
-  ].map(parseCustomPrimsSetting);
-  var cornerFeatureIds = cornerContentBytes();
-  dict['CORNER_PRIMITIVE_IDS'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
-    var custom = cornerCustomPrimsSettings[idx];
-    return acc.concat(custom.ids.length ? normalizePrimitiveSequence(custom.ids) : primitiveIdSequenceForContent(contentId));
-  }, []);
-  dict['CORNER_PRIMITIVE_AUX'] = cornerFeatureIds.reduce(function (acc, contentId, idx) {
-    var custom = cornerCustomPrimsSettings[idx];
-    return acc.concat(custom.ids.length ? normalizePrimitiveAux(custom.aux) : primitiveAuxSequenceForContent(contentId));
-  }, []);
-  // Phone battery / music: subscribe only while a feature uses them, and send what is known.
-  phoneMedia.setNeeds(phoneMedia.needsFromPrimitiveIds(
-    dict['CORNER_PRIMITIVE_IDS'].concat(dict['EDGE_LINE_PRIMITIVE_IDS']), primitiveIds));
-  phoneMedia.fill(dict);
+  populateFeatureFields(dict);
   dict['DAILY_STEP_GOAL'] = dailyStepGoalValue();
   dict['HOURLY_VIBE_START_MIN'] = hourlyVibeStartMinCode();
   dict['HOURLY_VIBE_END_MIN'] = hourlyVibeEndMinCode();
@@ -428,8 +401,17 @@ function buildFullKeysetDict() {
     }
   } catch (e) {
   }
+  dropUnknownKeys(dict);
   populateSettingsFields(dict);
   return dict;
+}
+
+// A dictionary cached by an older version can hold keys this version no longer has; sending one would fail
+// the whole chunk.
+function dropUnknownKeys(dict) {
+  Object.keys(dict).forEach(function (k) {
+    if (messageSchema.KEY_TYPE_MAP[k] === undefined && k !== 'MESSAGE_TYPE') delete dict[k];
+  });
 }
 
 function sendFlatDict(dict) {
@@ -460,6 +442,7 @@ function sendFlatDict(dict) {
 }
 
 function sendInvalid(errorCode) {
+  phoneSlots.applyInvalid(errorCode);
   sendFlatDict({ 'DATA_VALID': 0, 'ERROR_CODE': errorCode || 0 });
 }
 
@@ -470,203 +453,63 @@ function issFieldsDict(issPos, issErrorCode) {
   };
 }
 
-function extraWeatherFieldsDict(extra) {
-  extra = extra || {};
-  var dict = {
-    'ALTITUDE_M': (typeof extra.altitudeMeters === 'number') ? Math.round(extra.altitudeMeters) : -32000
-  };
-  if (typeof extra.altitudeMeters === 'number') {
-    dict['ALTITUDE_DISPLAY'] = formatAltitudeDisplay(extra.altitudeMeters, altitudeUnitCode());
-    dict['ALTITUDE_COLOR'] = altitudeGradientColorByte(extra.altitudeMeters);
-  }
-  if (typeof extra.windDirDeg === 'number') dict['WIND_DIR_DEG'] = Math.round(extra.windDirDeg);
-  if (typeof extra.dewPointC === 'number') {
-    dict['DEW_POINT_C'] = Math.round(extra.dewPointC);
-    dict['DEW_POINT_DISPLAY'] = formatTempDisplay(extra.dewPointC, tempUnitCode());
-  }
-  if (typeof extra.pressureHpa === 'number') {
-    dict['PRESSURE_HPA'] = Math.round(extra.pressureHpa);
-    dict['PRESSURE_TREND'] = extra.pressureTrend || 0;
-    dict['PRESSURE_DISPLAY'] = formatPressureDisplay(extra.pressureHpa);
-    dict['PRESSURE_COLOR'] = pressureGradientColorByte(extra.pressureHpa);
-  }
-  if (typeof extra.aqiUs === 'number') dict['AQI_US'] = extra.aqiUs;
-  if (typeof extra.aqiEu === 'number') dict['AQI_EU'] = extra.aqiEu;
-  if (typeof extra.aqiUs === 'number' || typeof extra.aqiEu === 'number') {
-    var useEu = aqiUnitCode() === 1;
-    var aqiValue = useEu ? extra.aqiEu : extra.aqiUs;
-    if (typeof aqiValue === 'number') {
-      dict['AQI_DISPLAY'] = formatAqiDisplay(aqiValue);
-      dict['AQI_COLOR'] = aqiGradientColorByte(aqiValue, aqiUnitCode());
-    }
-  }
-  if (typeof extra.auroraKpX10 === 'number') {
-    dict['AURORA_KP_X10'] = extra.auroraKpX10;
-    dict['AURORA_KP_DISPLAY'] = featureDisplay.formatAuroraKpDisplay(extra.auroraKpX10);
-    dict['AURORA_KP_COLOR'] = featureDisplay.auroraGradientColorByte(extra.auroraKpX10);
-  }
-  dict['AURORA_ERROR_CODE'] = extra.auroraErrorCode || 0;
-  if (extra.forecastTempC) {
-    dict['FORECAST_TEMP_C'] = extra.forecastTempC.map(function (c) {
-      return (typeof c === 'number') ? Math.max(0, Math.min(255, Math.round(c) + 50)) : 255;
-    });
-    var forecastUnitCode = tempUnitCode();
-    var forecastColorBytes = [];
-    extra.forecastTempC.forEach(function (c) { forecastColorBytes.push(tempGradientColorByte(c)); });
-    dict['FORECAST_TEMP_DISPLAY'] = forecastDisplayBlob(extra.forecastTempC, forecastUnitCode);
-    dict['FORECAST_TEMP_COLORS'] = forecastColorBytes;
-  }
-  if (extra.forecastWx) {
-    // The border ring is built from these on the phone (border/border-data.js); the watch gets only the finished ring.
-    borderData.setWeather({
-      forecastTempC: extra.forecastTempC,
-      forecastWx: extra.forecastWx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
-      forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; })
-    }, extra.forecastTempC ? extra.forecastTempC.map(function (c) { return tempGradientColorByte(c); }) : []);
-  }
-  if (extra.forecastCondition) {
-    dict['FORECAST_CONDITION'] = extra.forecastCondition.map(function (c) {
-      return (typeof c === 'number') ? c : 0;
-    });
-    dict['FORECAST_ICON_CATEGORIES'] = extra.forecastCondition.map(function (c) {
-      return weatherIconCategory(typeof c === 'number' ? c : 0, 50);
-    });
-  }
-  return dict;
+// Phone-side extras only feed the border ring now; their text values live in the phone slots.
+function applyExtraWeather(extra) {
+  if (!extra || !extra.forecastWx) return;
+  // The border ring is built from these on the phone (border/border-data.js); the watch gets only the finished ring.
+  borderData.setWeather({
+    forecastTempC: extra.forecastTempC,
+    forecastWx: extra.forecastWx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
+    forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; })
+  }, extra.forecastTempC ? extra.forecastTempC.map(function (c) { return tempGradientColorByte(c); }) : []);
 }
 
 function buildWeatherDict(d) {
   var w = d.weather;
-  var weatherCondition = w.condition, weatherTempC = w.tempC, tempHighC = w.tempHighC, tempLowC = w.tempLowC;
-  var uvIndexMax = w.uvIndexMax, uvIndexCurrent = w.uvIndexCurrent, rainChancePct = w.rainChancePct;
-  var humidityPct = w.humidityPct, windSpeedKmh = w.windSpeedKmh;
+  var weatherCondition = w.condition;
   var haveCloudData = (typeof w.currentCloudPct === 'number') || d.headlineSources > 0;
   var displayCloudPct = (typeof w.currentCloudPct === 'number') ? w.currentCloudPct : (d.headlineCloud || 0);
   var dict = {
     'DATA_VALID': 1,
-    'LOCATION_NAME': d.locationName || '',
     'WEATHER_ERROR_CODE': d.weatherErrorCode || 0
   };
-  if (haveCloudData) {
-    dict['WEATHER_CLOUD_U8_BLOB'] = [
-      displayCloudPct, 100 - displayCloudPct,
-      overcastGrayColorByte(displayCloudPct), overcastGrayColorByte(displayCloudPct)
-    ];
-    dict['CLOUD_COVER_DISPLAY'] = formatPercentDisplay(displayCloudPct);
-    dict['VIS_SCORE_DISPLAY'] = formatPercentDisplay(100 - displayCloudPct);
-  }
   if (d.weatherOk) {
-    dict['WEATHER_MAIN_U8_BLOB'] = [
-      weatherCondition || 0,
-      tempGradientColorByte(weatherTempC), tempGradientColorByte(tempHighC), tempGradientColorByte(tempLowC),
-      tempGradientColorByte(apparentTempC(weatherTempC, windSpeedKmh, humidityPct)),
-      (typeof uvIndexMax === 'number') ? Math.round(Math.max(0, Math.min(25.5, uvIndexMax)) * 10) : 0,
-      (typeof uvIndexCurrent === 'number') ? Math.round(Math.max(0, Math.min(25.5, uvIndexCurrent)) * 10) : 0,
-      (typeof rainChancePct === 'number') ? Math.round(rainChancePct) : 0,
-      (typeof humidityPct === 'number') ? Math.round(humidityPct) : 0,
-      uvGradientColorByte(uvIndexMax), uvGradientColorByte(uvIndexCurrent),
-      percentGradientColorByte(rainChancePct), percentGradientColorByte(humidityPct),
-      windSpeedGradientColorByte(windSpeedKmh)
-    ];
+    // The weather condition icon is still drawn by the watch (it needs the watch's day/night), so its
+    // category and colour travel as they always did; every text value is in the phone slots.
     if (haveCloudData) {
       dict['WEATHER_ICON_CATEGORY'] = weatherIconCategory(weatherCondition || 0, displayCloudPct);
-      dict['WEATHER_ICON_COLOR'] = weatherConditionColorByte(weatherCondition || 0, displayCloudPct, rainChancePct);
+      dict['WEATHER_ICON_COLOR'] = weatherConditionColorByte(weatherCondition || 0, displayCloudPct, w.rainChancePct);
     }
-    dict['WEATHER_TEMP_C'] = (typeof weatherTempC === 'number') ? Math.round(weatherTempC) : 0;
-    dict['CURRENT_TEMP_DISPLAY'] = formatTempDisplay(weatherTempC, tempUnitCode());
-    dict['WEATHER_TEMP_HIGH_C'] = (typeof tempHighC === 'number') ? Math.round(tempHighC) : 0;
-    dict['WEATHER_TEMP_LOW_C'] = (typeof tempLowC === 'number') ? Math.round(tempLowC) : 0;
-    dict['TEMP_HIGH_DISPLAY'] = formatTempDisplay(tempHighC, tempUnitCode());
-    dict['TEMP_LOW_DISPLAY'] = formatTempDisplay(tempLowC, tempUnitCode());
-    dict['FEELS_LIKE_DISPLAY'] = formatTempDisplay(apparentTempC(weatherTempC, windSpeedKmh, humidityPct), tempUnitCode());
-    dict['WIND_SPEED_KMH'] = (typeof windSpeedKmh === 'number') ? Math.round(windSpeedKmh) : 0;
-    dict['UV_DAILY_DISPLAY'] = formatUvDisplay(uvIndexMax);
-    dict['UV_CURRENT_DISPLAY'] = formatUvDisplay(uvIndexCurrent);
-    dict['RAIN_CHANCE_DISPLAY'] = formatPercentDisplay(rainChancePct);
-    dict['HUMIDITY_DISPLAY'] = formatPercentDisplay(humidityPct);
-    dict['WIND_SPEED_DISPLAY'] = formatWindSpeedDisplay(windSpeedKmh, windSpeedUnitCode());
     dict['WEATHER_WX_NOW'] = (typeof w.wxNow === 'number' && w.wxNow >= 0 && w.wxNow <= 9) ? w.wxNow : 0;
     dict['WEATHER_LAST_UPDATE'] = Math.floor(Date.now() / 1000);
   }
   return dict;
 }
 
-var UNIT_INPUTS_KEY = 'LAST_UNIT_INPUTS';
-function rememberUnitInputs(d) {
-  try {
-    var w = d.weather || {}, e = d.extraWeather || {};
-    localStorage.setItem(UNIT_INPUTS_KEY, JSON.stringify({
-      ok: !!d.weatherOk, tempC: w.tempC, highC: w.tempHighC, lowC: w.tempLowC, humidity: w.humidityPct, windKmh: w.windSpeedKmh,
-      dewC: e.dewPointC, altM: e.altitudeMeters, forecastTempC: e.forecastTempC, aqiUs: e.aqiUs, aqiEu: e.aqiEu
-    }));
-  } catch (err) { }
-}
-function unitDisplayDict() {
-  var raw = null;
-  try { raw = JSON.parse(localStorage.getItem(UNIT_INPUTS_KEY)); } catch (err) { return null; }
-  if (!raw || typeof raw !== 'object') return null;
-  var dict = {}, tempUnit = tempUnitCode();
-  if (raw.ok) {
-    dict['CURRENT_TEMP_DISPLAY'] = formatTempDisplay(raw.tempC, tempUnit);
-    dict['TEMP_HIGH_DISPLAY'] = formatTempDisplay(raw.highC, tempUnit);
-    dict['TEMP_LOW_DISPLAY'] = formatTempDisplay(raw.lowC, tempUnit);
-    dict['FEELS_LIKE_DISPLAY'] = formatTempDisplay(apparentTempC(raw.tempC, raw.windKmh, raw.humidity), tempUnit);
-    dict['WIND_SPEED_DISPLAY'] = formatWindSpeedDisplay(raw.windKmh, windSpeedUnitCode());
-  }
-  if (typeof raw.dewC === 'number') dict['DEW_POINT_DISPLAY'] = formatTempDisplay(raw.dewC, tempUnit);
-  if (typeof raw.altM === 'number') dict['ALTITUDE_DISPLAY'] = formatAltitudeDisplay(raw.altM, altitudeUnitCode());
-  if (Array.isArray(raw.forecastTempC)) {
-    dict['FORECAST_TEMP_DISPLAY'] = forecastDisplayBlob(raw.forecastTempC, tempUnit);
-  }
-  if (typeof raw.aqiUs === 'number' || typeof raw.aqiEu === 'number') {
-    var aqiUnit = aqiUnitCode();
-    var aqiValue = aqiUnit === 1 ? raw.aqiEu : raw.aqiUs;
-    if (typeof aqiValue === 'number') {
-      dict['AQI_DISPLAY'] = formatAqiDisplay(aqiValue);
-      dict['AQI_COLOR'] = aqiGradientColorByte(aqiValue, aqiUnit);
-    }
-  }
-  return Object.keys(dict).length ? dict : null;
-}
-function resendUnitDisplays() {
-  var dict = unitDisplayDict();
-  if (!dict) return false;
-  try {
-    var cached = JSON.parse(localStorage.getItem('LAST_FULL_COMPUTED_DICT'));
-    if (cached && typeof cached === 'object') {
-      Object.keys(dict).forEach(function (k) { cached[k] = dict[k]; });
-      localStorage.setItem('LAST_FULL_COMPUTED_DICT', JSON.stringify(cached));
-    }
-  } catch (err) { }
-  enqueueFlatDict(dict);
-  return true;
-}
-
 function sendWeatherData(d) {
-  rememberUnitInputs(d);
+  phoneSlots.applyWeather(d);
+  applyExtraWeather(d.extraWeather);
   var dict = buildWeatherDict(d);
-  [astroFieldsDict(d.astro), extraWeatherFieldsDict(d.extraWeather), issFieldsDict(d.issPos, d.issErrorCode)]
+  [astroFieldsDict(d.astro), issFieldsDict(d.issPos, d.issErrorCode)]
     .forEach(function (part) { Object.keys(part).forEach(function (k) { dict[k] = part[k]; }); });
   sendFlatDict(dict);
 }
 
 function sendFakeWeather(v) {
+  phoneSlots.applyFake(v);
   var weather = {
-    condition: v.WEATHER_CONDITION, tempC: v.WEATHER_TEMP_C, tempHighC: v.WEATHER_TEMP_HIGH_C,
-    tempLowC: v.WEATHER_TEMP_LOW_C, uvIndexMax: v.UV_INDEX_X10 / 10, uvIndexCurrent: v.UV_INDEX_CURRENT_X10 / 10,
-    rainChancePct: v.RAIN_CHANCE_PCT, humidityPct: v.HUMIDITY_PCT, windSpeedKmh: v.WIND_SPEED_KMH,
-    currentCloudPct: v.CLOUD_COVER
+    condition: v.WEATHER_CONDITION, tempC: v.WEATHER_TEMP_C, rainChancePct: v.RAIN_CHANCE_PCT, currentCloudPct: v.CLOUD_COVER
   };
-  var dict = buildWeatherDict({ weather: weather, weatherOk: true, weatherErrorCode: 0, headlineSources: 0, headlineCloud: 0, locationName: '' });
-  delete dict['LOCATION_NAME'];
-  dict['DATA_VALID'] = 1;
-  var extra = extraWeatherFieldsDict({
-    windDirDeg: v.WIND_DIR_DEG, dewPointC: v.DEW_POINT_C, pressureHpa: v.PRESSURE_HPA,
-    pressureTrend: v.PRESSURE_TREND, aqiUs: v.AQI_US, aqiEu: v.AQI_EU
-  });
-  delete extra['AURORA_ERROR_CODE'];
-  delete extra['ALTITUDE_M'];
-  Object.keys(extra).forEach(function (k) { dict[k] = extra[k]; });
+  var dict = buildWeatherDict({ weather: weather, weatherOk: true, weatherErrorCode: 0, headlineSources: 0, headlineCloud: 0 });
+  populateFeatureFields(dict);
+  enqueueFlatDict(dict);
+}
+
+// Re-sends the layout and slot table from the data already known (plugin text, phone battery and music
+// changed, or a unit setting was edited).
+function sendFeatureLayout() {
+  var dict = {};
+  populateFeatureFields(dict);
   enqueueFlatDict(dict);
 }
 
@@ -675,6 +518,6 @@ module.exports = {
   sendInvalid: sendInvalid,
   sendWeatherData: sendWeatherData,
   sendFakeWeather: sendFakeWeather,
-  resendUnitDisplays: resendUnitDisplays,
+  sendFeatureLayout: sendFeatureLayout,
   buildFullKeysetDict: buildFullKeysetDict
 };

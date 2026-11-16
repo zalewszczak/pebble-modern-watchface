@@ -5,19 +5,11 @@
 PrimitiveSource primitive_catalogue_source_for(PrimitiveId id) {
   // Compass values come from the watch's live sensor.
   if (id == PRIM_COMPASS_ICON || id == PRIM_COMPASS_DIR_TEXT) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
-  // High/low labels are constant watch-side glyphs.
-  if (id == PRIM_LABEL_HIGH_PREFIX || id == PRIM_LABEL_LOW_PREFIX) return PRIMITIVE_SOURCE_WATCH_RUNTIME;
-  // Builder additions (appended after the original catalogue): bare values
-  // and unit symbols derived from PKJS-supplied data change only when PKJS
-  // pushes; the planet-based ones depend on the watch's own clock.
+  // Phone slots (and the music state/art icons) change only when PKJS pushes. The planet-based builder
+  // values depend on the watch's own clock.
   switch (id) {
-    case PRIM_FEELS_LIKE_VALUE: case PRIM_UV_DAILY_VALUE: case PRIM_UV_CURRENT_VALUE:
-    case PRIM_PRESSURE_VALUE: case PRIM_AQI_VALUE: case PRIM_ALTITUDE_VALUE:
-    case PRIM_SATURN_RINGS_VALUE: case PRIM_AURORA_KP_VALUE:
-    case PRIM_TEMP_UNIT_TEXT: case PRIM_WIND_UNIT_TEXT: case PRIM_PRESSURE_UNIT_TEXT:
-    case PRIM_ALTITUDE_UNIT_TEXT: case PRIM_PLUGIN_TEXT:
-    case PRIM_PHONE_ICON: case PRIM_PHONE_BATTERY_TEXT: case PRIM_MEDIA_STATE_ICON:
-    case PRIM_MEDIA_ART_ICON: case PRIM_MEDIA_TITLE_TEXT:
+    case PRIM_PHONE_SLOT:
+    case PRIM_MEDIA_STATE_ICON: case PRIM_MEDIA_ART_ICON:
       return PRIMITIVE_SOURCE_PKJS_VALUE;
     case PRIM_PLANETS_VISIBLE_VALUE: case PRIM_NEXT_PLANET_NAME: case PRIM_NEXT_PLANET_TIME:
       return PRIMITIVE_SOURCE_WATCH_RUNTIME;
@@ -39,7 +31,7 @@ PrimitiveRefreshClass primitive_catalogue_refresh_class_for(PrimitiveId id) {
   if (primitive_catalogue_source_for(id) == PRIMITIVE_SOURCE_PKJS_VALUE) return PRIMITIVE_REFRESH_PKJS_VALUE;
 
   switch (id) {
-    case PRIM_LABEL_HIGH_PREFIX: case PRIM_LABEL_LOW_PREFIX: case PRIM_LABEL_WK_PREFIX:
+    case PRIM_LABEL_WK_PREFIX:
       return PRIMITIVE_REFRESH_STATIC; // never changes, no refresh needed at all
     case PRIM_SECOND: case PRIM_SECOND_PAD: case PRIM_SECOND_TENS: case PRIM_SECOND_ONES:
     case PRIM_TIME_HMS:

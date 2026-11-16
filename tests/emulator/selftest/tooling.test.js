@@ -107,7 +107,9 @@ test('the fixed date makes the phone data identical on every run (sunrise, moon,
 test('datasets change the data sent', function () {
   var rain = Object.assign.apply(null, [{}].concat(captureFor('env-charging-rain', 'emery').messages));
   var mild = Object.assign.apply(null, [{}].concat(captureFor('style-1', 'emery').messages));
-  assert.notStrictEqual(rain.WEATHER_TEMP_C, mild.WEATHER_TEMP_C);
+  // Temperatures are phone-slot text now; the weather icon's category/colour still differ between the two datasets.
+  var sig = function (m) { return JSON.stringify([m.WEATHER_ICON_CATEGORY, m.WEATHER_ICON_COLOR, m.PHONE_SLOTS]); };
+  assert.notStrictEqual(sig(rain), sig(mild));
   assert.throws(function () { require('../lib/datasets').resolve('nope'); }, /unknown dataset/);
 });
 

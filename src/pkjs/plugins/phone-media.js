@@ -9,7 +9,6 @@ var pluginImage = require('../bg-image/plugin-image');
 var permissions = require('../settings/permissions');
 
 var ART = platform.bw ? 12 : 16;           // album art edge in pixels, same as the watch's PL_ICON_DRAW
-var TEXT_LEN = 20;                          // bytes per text field on the watch, NUL included
 var POS_DRIFT_PUSH_S = 4;                   // push a position update when the watch's own estimate is this far off
 var DEBOUNCE_MS = 600;
 
@@ -39,37 +38,13 @@ function text(p) {
 }
 function bool(p) { return (p && p.boolean && typeof p.boolean.value === 'boolean') ? p.boolean.value : null; }
 
-function utf8Fit(str, maxBytes) {
-  var out = [];
-  str = String(str || '').replace(/\s+/g, ' ').trim();
-  for (var i = 0; i < str.length; i++) {
-    var c = str.charCodeAt(i);
-    if (c >= 0xD800 && c <= 0xDBFF) { i++; c = 63; }
-    var enc;
-    if (c < 0x80) enc = [c];
-    else if (c < 0x800) enc = [0xC0 | (c >> 6), 0x80 | (c & 63)];
-    else enc = [0xE0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)];
-    if (out.length + enc.length > maxBytes) break;
-    out = out.concat(enc);
-  }
-  return out;
-}
-function textBlock(s) {
-  var b = utf8Fit(s, TEXT_LEN - 1);
-  while (b.length < TEXT_LEN) b.push(0);
-  return b;
-}
-
 // ---- wire blocks ------------------------------------------------------------------------------------------------
-
-function phoneBytes() { return [phone.pct & 255, phone.charging ? 1 : 0]; }
 
 function infoBytes() {
   var pos = Math.max(0, Math.min(65535, Math.round(music.pos)));
   var dur = Math.max(0, Math.min(65535, Math.round(music.dur)));
   return [music.state & 255, pos & 255, pos >> 8, dur & 255, dur >> 8];
 }
-function textBytes() { return textBlock(music.title).concat(textBlock(music.artist)); }
 function artBytes() {
   var out = music.art ? music.art.slice() : [];
   while (out.length < ART * ART) out.push(0);
@@ -129,11 +104,11 @@ function findImage(props) {
 function pushNow() {
   timer = null;
   if (!pushFn) return;
+  // Phone battery and the track title are slot text now: the callback re-sends the layout and slot table
+  // together with whatever this dict holds (the playback position snapshot).
   var dict = {};
-  if (needs.phone) dict.PHONE_BATTERY = phoneBytes();
   if (needs.music) {
     dict.MEDIA_INFO = infoBytes();
-    dict.MEDIA_TEXT = textBytes();
     music.sentAt = Date.now(); music.sentPos = music.pos; music.sentState = music.state; music.sentTitle = music.title;
   }
   try { pushFn(dict); } catch (e) { console.log('modern: phone/media push failed - ' + e.message); }
@@ -291,17 +266,20 @@ function needsFromPrimitiveIds(ids, PRIM) {
 function init(pushCb, artCb) { pushFn = pushCb; artFn = artCb; }
 
 function fill(dict) {
-  if (needs.phone) dict['PHONE_BATTERY'] = phoneBytes();
   if (needs.music) {
     dict['MEDIA_INFO'] = infoBytes();
-    dict['MEDIA_TEXT'] = textBytes();
     dict['MEDIA_ART'] = artBytes();
   }
 }
 
+// What the phone slots need: battery state and the track text, as the phone last reported them.
+function phoneState() { return { pct: needs.phone ? phone.pct : 255, charging: needs.phone ? phone.charging : 0 }; }
+function musicText() { return { state: needs.music ? music.state : 0, title: needs.music ? music.title : '', artist: needs.music ? music.artist : '' }; }
+
 module.exports = {
   ART: ART,
   init: init, setNeeds: setNeeds, needsFromPrimitiveIds: needsFromPrimitiveIds, fill: fill,
+  phoneState: phoneState, musicText: musicText,
   status: function () { return { phone: phoneStatus, music: musicStatus }; },
   // exposed for tests
   _tinyArt: tinyArt, _onMusic: onMusic, _onPhone: onPhone
