@@ -34,20 +34,20 @@ void feature_layout_recompute(FeaturesState *state) {
   // Round and B&W were seeded from the emery values scaled to their screens; edit them to the measured margins.
 #if defined(PBL_BW)
   static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
-    {  3, { 28, 27, 30, 28 } }, // Modern
-    {  4, { 27, 24, 27, 23 } }, // Shadow
-    {  5, { 32, 31, 19, 14 } }, // Tally
-    {  6, { 34, 32, 32, 32 } }, // Bell
-    {  7, { 32, 29, 21, 18 } }, // Fancy
-    { 11, { 28, 28, 30, 28 } }, // Rays
-    { 12, { 27, 27, 26, 25 } }, // Heavy
-    { 13, { 28, 28, 25, 25 } }, // Classy
-    { 14, { 28, 28, 28, 27 } }, // Modern P
-    { 15, { 30, 30, 28, 28 } }, // Squared
-    { 16, { 27, 27, 27, 25 } }, // Maurice
-    { 17, { 29, 29, 28, 27 } }, // Quickie
-    { 18, { 29, 29, 28, 27 } }, // Speed
-    { 19, { 28, 28, 28, 28 } }, // Roman
+    {  3, { 28, 27, 28, 28 } }, // Modern
+    {  4, { 31, 28, 27, 27 } }, // Shadow
+    {  5, { 42, 41, 19, 21 } }, // Tally
+    {  6, { 42, 40, 36, 37 } }, // Bell
+    {  7, { 40, 40, 25, 25 } }, // Fancy
+    { 11, { 33, 32, 26, 26 } }, // Rays
+    { 12, { 35, 33, 33, 33 } }, // Heavy
+    { 13, { 38, 38, 25, 25 } }, // Classy
+    { 14, { 33, 32, 28, 27 } }, // Modern P
+    { 15, { 30, 28, 28, 28 } }, // Squared
+    { 16, { 30, 30, 31, 31 } }, // Maurice
+    { 17, { 31, 30, 34, 35 } }, // Quickie
+    { 18, { 42, 42, 22, 22 } }, // Speed
+    { 19, { 27, 27, 26, 26 } }, // Roman
   };
 #elif defined(PBL_ROUND)
   static const BitmapMarginRecord BITMAP_STYLE_MARGINS[] = {
