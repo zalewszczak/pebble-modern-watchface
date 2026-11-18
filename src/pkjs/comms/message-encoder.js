@@ -259,12 +259,10 @@ function edgeLinesBytes() {
     settingsCodecs.bottomMiddleLine1ColorModeCode(), settingsCodecs.bottomMiddleLine2ColorModeCode(),
     settingsCodecs.middleLeftLine1ColorModeCode(), settingsCodecs.middleLeftLine2ColorModeCode(),
     settingsCodecs.middleRightLine1ColorModeCode(), settingsCodecs.middleRightLine2ColorModeCode()
-  ].map(function (m, i) { return platform.bw && i >= 4 ? 0 : bwMode(m); });
+  ].map(bwMode);
 }
 function edgeCustomPrims() {
-  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting).map(function (c, i) {
-    return platform.bw && i >= 4 ? { ids: [], aux: [] } : c;
-  });
+  return settingsCodecs.edgeCustomPrimsStrings().map(parseCustomPrimsSetting);
 }
 function edgeFeatureCodesRaw() {
   return [
@@ -272,7 +270,7 @@ function edgeFeatureCodesRaw() {
     settingsCodecs.bottomMiddleLine1ContentCode(), settingsCodecs.bottomMiddleLine2ContentCode(),
     settingsCodecs.middleLeftLine1ContentCode(), settingsCodecs.middleLeftLine2ContentCode(),
     settingsCodecs.middleRightLine1ContentCode(), settingsCodecs.middleRightLine2ContentCode()
-  ].map(function (c, i) { return platform.bw && i >= 4 ? 0 : c; });
+  ];
 }
 function primitiveTightMask() {
   var mask = 0;

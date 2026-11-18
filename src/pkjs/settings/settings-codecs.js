@@ -1,6 +1,7 @@
 // Converts saved CONFIG_* settings into validated numeric values and byte
 var settings = require('./settings');
 var platform = require('../platform');
+var slotAvailability = require('./slot-availability');
 var getSetting = settings.getSetting;
 var presetsLookups = require('../presets-lookups');
 var MAX_FEATURES = presetsLookups.MAX_FEATURES;
@@ -235,18 +236,8 @@ function dualContextSetting(baseKey, fallback) {
   return getSetting(baseKey + '_ANALOG', getSetting(baseKey, fallback));
 }
 function analogEdgeAvailability() {
-  var markerStyle = storedMarkerStyleId();
   var override = getSetting('CONFIG_BITMAP_CORNER_OVERRIDE', 'false') === 'true';
-  if (markerStyle < 3 || markerStyle === 5 || markerStyle >= 8) {
-    return { upper: true, bottom: true, left: true, right: true };
-  }
-  if (markerStyle === 7) {
-    return { upper: true, bottom: true, left: true, right: true };
-  }
-  if (markerStyle === 3 || markerStyle === 4 || markerStyle === 6) {
-    return { upper: true, bottom: true, left: override, right: override };
-  }
-  return { upper: true, bottom: override, left: override, right: override };
+  return slotAvailability.computeSlotAvailability(storedMarkerStyleId(), override, { round: !!platform.round, bw: !!platform.bw });
 }
 function dualContextVisible(edgeKey) {
   return analogEdgeAvailability()[edgeKey];

@@ -10,8 +10,8 @@
 
 // Internal primitive-only feature-layer data model shared by layout and drawing
 
-// B&W watches (flint, diorite) keep the left/right edge slots in the enum (wire bit positions
-// must not move) but never activate them: a 144 px screen has no room for them next to the dial.
+// B&W watches (flint, diorite) have the left/right edge slots too. Whether the phone lets them be
+// used depends on the dial design (see computeSlotAvailability in the settings page).
 //
 // Round watches have no corners, so they carry only the eight edge-line slots
 // (the four corner slots are the last four enum values below, which is why the

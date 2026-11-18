@@ -3,6 +3,7 @@ var presetsLookups = require('../presets-lookups');
 var CORNER_CATEGORIES = presetsLookups.CORNER_CATEGORIES;
 var EXAMPLE_STYLE_COUNT = 9;
 var platform = require('../platform');
+var slotAvailability = require('../settings/slot-availability');
 var EXAMPLE_STYLE_IMAGES = platform.shapeImages(require('../data/generated/example-style-images'));
 var EXAMPLE_STYLE_PRESETS = require('../example-style-presets');
 
@@ -38,20 +39,8 @@ function deriveConfigState(current) {
   var isBitmapMarkerStyle = (markerStyleNum >= 3 && markerStyleNum <= 7) || (markerStyleNum >= 11 && markerStyleNum <= 19);
   if (markerStyleNum >= 11) markerStyleNum = 7;
   var bitmapCornerOverride = !!current.bitmapCornerOverride;
-  var edgeAvail;
-  if (!isBitmapMarkerStyle) {
-    edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: false };
-  } else if (markerStyleNum === 3 || markerStyleNum === 4 || markerStyleNum === 6) {
-    edgeAvail = { upper: true, bottom: true, left: bitmapCornerOverride, right: bitmapCornerOverride, cornersGrayed: !bitmapCornerOverride };
-  } else if (markerStyleNum === 5) {
-    edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: false };
-  } else if (markerStyleNum === 7) {
-    edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: !bitmapCornerOverride };
-  } else {
-    edgeAvail = { upper: true, bottom: bitmapCornerOverride, left: bitmapCornerOverride, right: bitmapCornerOverride, cornersGrayed: !bitmapCornerOverride };
-  }
-  if (platform.round) edgeAvail = { upper: true, bottom: true, left: true, right: true, cornersGrayed: true };
-  if (platform.bw) { edgeAvail.left = false; edgeAvail.right = false; } // B&W: no side slots
+  var rawMarkerStyle = parseInt(current.bigAnalogMarkerStyle || '3', 10);
+  var edgeAvail = slotAvailability.computeSlotAvailability(rawMarkerStyle, bitmapCornerOverride, { round: !!platform.round, bw: !!platform.bw });
   function hexFromPackedByte(byte) {
     var b = parseInt(byte, 10);
     if (isNaN(b)) return '#000000';

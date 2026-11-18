@@ -15,6 +15,7 @@ var sendWeatherData = messageEncoder.sendWeatherData;
 var sendFlatDict = messageEncoder.sendFlatDict;
 
 var refreshTimer = null;
+var locationTimer = null;
 var lastBatterySaverPhase = 0;
 var lastHourlyRefreshHourKey = null;
 var batterySaverHourlyTimer = null;
@@ -124,17 +125,35 @@ function markRefreshDone(lat, lon) {
   setSetting('CACHE_LAST_FETCH_LON', String(lon));
 }
 
+function updateIntervalMins() {
+  var mins = parseInt(getSetting('CONFIG_UPDATE_MINS', '60'), 10);
+  if (isNaN(mins) || mins < 5) mins = 60;
+  return Math.min(mins, 180);
+}
+
+function locationTriggerKm() {
+  var km = parseInt(getSetting('CONFIG_LOC_TRIGGER_KM', '10'), 10);
+  if (isNaN(km) || km < 10) km = 10;
+  return Math.min(km, 200);
+}
+
+// Moving far enough triggers a refresh before the interval is up. With "Refresh early when my location changes"
+// off this is left to the interval alone, except for a manually set location: changing it is a deliberate act.
+function locationTriggerActive() {
+  var autoLoc = getSetting('CONFIG_AUTO_LOC', 'true') !== 'false';
+  return !autoLoc || getSetting('CONFIG_LOC_TRIGGER_ENABLED', 'true') !== 'false';
+}
+
 function shouldSkipRefresh(lat, lon) {
   var lastTs = parseInt(getSetting('CACHE_LAST_FETCH_TS', '0'), 10);
   var lastLat = parseFloat(getSetting('CACHE_LAST_FETCH_LAT', ''));
   var lastLon = parseFloat(getSetting('CACHE_LAST_FETCH_LON', ''));
   if (!lastTs || isNaN(lastLat) || isNaN(lastLon)) return false;
 
-  var mins = parseInt(getSetting('CONFIG_UPDATE_MINS', '20'), 10);
-  if (isNaN(mins) || mins < 5) mins = 20;
-  if (Date.now() - lastTs >= mins * 60000) return false;
+  if (Date.now() - lastTs >= updateIntervalMins() * 60000) return false;
+  if (!locationTriggerActive()) return true;
 
-  return haversineKm(lat, lon, lastLat, lastLon) < 10;
+  return haversineKm(lat, lon, lastLat, lastLon) < locationTriggerKm();
 }
 
 function resendLastFullData() {
@@ -215,14 +234,14 @@ function refreshAndSend(force, resendOnSkip) {
 
     if (!force && shouldSkipRefresh(lat, lon)) {
       if (!resendOnSkip) {
-        console.log('modern: fetched recently and location unchanged (<10km) - nothing to do');
+        console.log('modern: fetched recently and location has not changed enough - nothing to do');
         return;
       }
       if (resendLastFullData()) {
-        console.log('modern: fetched recently and location unchanged (<10km) - resent last known data to the watch instead of refetching');
+        console.log('modern: fetched recently and location has not changed enough - resent last known data to the watch instead of refetching');
         return;
       }
-      console.log('modern: fetched recently and location unchanged (<10km), but nothing cached to resend - fetching after all');
+      console.log('modern: fetched recently and location has not changed enough, but nothing cached to resend - fetching after all');
     }
 
     var now = getEffectiveNow();
@@ -305,12 +324,43 @@ function refreshAndSend(force, resendOnSkip) {
 
 function scheduleRefresh() {
   if (refreshTimer) clearInterval(refreshTimer);
-  var mins = parseInt(getSetting('CONFIG_UPDATE_MINS', '20'), 10);
-  if (isNaN(mins) || mins < 5) mins = 20;
+  var mins = updateIntervalMins();
   refreshTimer = setInterval(function () {
     if (lastBatterySaverPhase !== 0) return;
     refreshAndSend(false, false);
   }, mins * 60000);
+  scheduleLocationCheck();
+}
+
+// Periodic "did the user travel far?" check (automatic location + the trigger switched on). It only looks at
+// the position; the refresh itself goes through refreshAndSend, which applies the distance rule again.
+function checkLocationChange() {
+  if (lastBatterySaverPhase !== 0) return;
+  if (getSetting('CONFIG_AUTO_LOC', 'true') === 'false' || getSetting('CONFIG_LOC_TRIGGER_ENABLED', 'true') === 'false') return;
+  var lastLat = parseFloat(getSetting('CACHE_LAST_FETCH_LAT', ''));
+  var lastLon = parseFloat(getSetting('CACHE_LAST_FETCH_LON', ''));
+  if (isNaN(lastLat) || isNaN(lastLon) || !navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    function (pos) {
+      permissions.mark('location', false);
+      var km = haversineKm(pos.coords.latitude, pos.coords.longitude, lastLat, lastLon);
+      if (km >= locationTriggerKm()) {
+        console.log('modern: moved ' + Math.round(km) + ' km since the last refresh - refreshing');
+        refreshAndSend(false, false);
+      }
+    },
+    function (err) { if (err && err.code === 1) permissions.mark('location', true); },
+    { timeout: 15000, maximumAge: 120000, enableHighAccuracy: false }
+  );
+}
+
+function scheduleLocationCheck() {
+  if (locationTimer) clearInterval(locationTimer);
+  locationTimer = null;
+  if (getSetting('CONFIG_AUTO_LOC', 'true') === 'false' || getSetting('CONFIG_LOC_TRIGGER_ENABLED', 'true') === 'false') return;
+  var mins = parseInt(getSetting('CONFIG_LOC_CHECK_MINS', '15'), 10);
+  if (isNaN(mins) || mins < 5) mins = 15;
+  locationTimer = setInterval(checkLocationChange, Math.min(mins, 120) * 60000);
 }
 
 function startBatterySaverHourlyCheck() {

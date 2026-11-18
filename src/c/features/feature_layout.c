@@ -180,7 +180,6 @@ void feature_layout_recompute(FeaturesState *state) {
       };
     }
 
-#ifndef PBL_BW // no left/right edge slots on a 144 px screen (they stay inactive)
     has_line2 = primitive_sequence_enabled(d->edge_line_primitive_ids[5]);
     line1_offset = has_line2 ? -(CORNER_ROW_H / 2) : 0;
     state->slots[SLOT_LEFT_L1] = (FeatureSlot){
@@ -218,9 +217,6 @@ void feature_layout_recompute(FeaturesState *state) {
         .needs_second_refresh = primitive_sequence_needs_second_refresh(d->edge_line_primitive_ids[7]),
       };
     }
-#else
-    (void)dyn_left_inset; (void)dyn_right_inset;
-#endif // PBL_BW
   }
 
 #ifndef PBL_ROUND

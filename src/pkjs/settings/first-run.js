@@ -1,6 +1,7 @@
 // first start of the watchface
 var settings = require('./settings');
 var setSetting = settings.setSetting;
+var getRaw = settings.getRaw;
 var preferences = require('../plugins/preferences');
 
 var STATE_KEY = 'FIRST_RUN_STATE';
@@ -39,7 +40,7 @@ function setState(v) {
 
 function settingsAlreadySaved() {
   try {
-    return SAVED_PROBE_KEYS.some(function (k) { var v = localStorage.getItem(k); return v !== null && v !== undefined; });
+    return SAVED_PROBE_KEYS.some(function (k) { var v = getRaw(k); return v !== null && v !== undefined; });
   } catch (e) { return true; }
 }
 

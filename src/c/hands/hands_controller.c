@@ -2,6 +2,7 @@
 #include "./hands_controller.h"
 #include "./hand_layer.h"
 #include "../input/input.h"
+#include "../power/battery_saver.h"
 #include "../data/watch_ui.h"
 #include "../features/feature_controller.h"
 #include "../timing/hourly_vibration.h"
@@ -86,7 +87,10 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
   // Without a visible second hand the hour and minute hands sit on whole minutes: the angle does not depend on the
   // seconds, so any redraw within the same minute (a message, a battery change, a seconds-based complication)
   // draws exactly the same picture. With the second hand shown they keep their second-precise angles.
-  const int hands_sec = s_data->show_seconds ? t->tm_sec : 0;
+  // In battery saver sleep the second hand is not drawn at all: it would not move anyway (no second ticks) and
+  // it could cover the complications, so the hands then behave as if "show seconds" were off.
+  const bool show_second_hand = s_data->show_seconds && battery_saver_phase() == BATTERY_SAVER_AWAKE;
+  const int hands_sec = show_second_hand ? t->tm_sec : 0;
 
   int32_t hour_angle = (int32_t)(((uint32_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
 
@@ -143,7 +147,7 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
 
   hand_layer_draw(ctx, center, hour_angle, &hour_cfg, hour_main, accent_color, hour_bg, s_data->shadow_translucent, s_data->shadow_angle_deg, hour_length_scale_1000, thick_outline);
   hand_layer_draw(ctx, center, min_angle, &min_cfg, min_main, accent_color, min_bg, s_data->shadow_translucent, s_data->shadow_angle_deg, min_length_scale_1000, thick_outline);
-  if (s_data->show_seconds) {
+  if (show_second_hand) {
     hand_layer_draw(ctx, center, sec_angle, &sec_cfg, main_color, accent_color, bg, s_data->shadow_translucent, s_data->shadow_angle_deg, sec_length_scale_1000, thick_outline);
   }
 

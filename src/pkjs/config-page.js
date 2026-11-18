@@ -1,5 +1,5 @@
 // config-page.js -- builds the settings webview HTML for the classic
-var APP_VERSION = "4.0.8-beta";
+var APP_VERSION = "4.0.7-beta";
 
 var PRESETS_LOOKUPS = require('./presets-lookups');
 var FONT_LOOKUP = PRESETS_LOOKUPS.FONT_LOOKUP;
@@ -1373,16 +1373,42 @@ configPresetSchedule.modalHtml +
 '      <label for="batterySaverEnabled" style="margin:0;">Preserve battery when watch is not in use</label>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-batterySaverEnabled\')">?</button>' +
 '    </div>' +
-'    <div class="help" id="help-batterySaverEnabled" style="display:none;">Reduces updates after long periods without interaction to save battery.</div>' +
+'    <div class="help" id="help-batterySaverEnabled" style="display:none;">After 2 hours without interaction the watch shows "Zzz" and cuts down its updates (the second hand is not drawn); after 4 hours it shows "Zzzzzzz" and updates even less. Shake the watch to leave battery saver, it wakes up immediately.</div>' +
 '    <div class="slider-row">' +
 '      <div class="field-label-row"><label for="updateMins">Refresh interval <span class="val" id="updateMinsVal">' + esc(current.updateMins) + ' min</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-updateMins\')">?</button></div>' +
 '      <div class="slider-with-buttons">' +
 '      <button type="button" class="slider-step-btn" onclick="stepSlider(\'updateMins\', -5)">&minus;</button>' +
-'        <input type="range" id="updateMins" min="5" max="60" step="5" value="' + esc(current.updateMins) + '" oninput="document.getElementById(\'updateMinsVal\').textContent = this.value + \' min\';">' +
+'        <input type="range" id="updateMins" min="5" max="180" step="5" value="' + esc(current.updateMins) + '" oninput="document.getElementById(\'updateMinsVal\').textContent = formatMinutes(this.value);">' +
 '      <button type="button" class="slider-step-btn" onclick="stepSlider(\'updateMins\', 5)">+</button>' +
 '      </div>' +
 '    </div>' +
-'    <div class="help" id="help-updateMins" style="display:none;">Sets the minimum time between automatic data refreshes. A significant location change can trigger an earlier refresh.</div>' +
+'    <div class="help" id="help-updateMins" style="display:none;">Sets the time between automatic data refreshes (5 minutes to 3 hours). A significant location change can trigger an earlier refresh, see below.</div>' +
+'    <div class="checkbox-row" style="margin-top:12px;">' +
+'      <input type="checkbox" id="locTriggerEnabled" ' + (current.locTriggerEnabled ? 'checked' : '') + ' onchange="onLocTriggerChange()">' +
+'      <label for="locTriggerEnabled" style="margin:0;">Refresh early when my location changes</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-locTrigger\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-locTrigger" style="display:none;">When on, the phone looks at your position regularly (see "Check location every") and refreshes right away once you are further from the last refresh point than the distance below. When off, only the refresh interval decides. This applies to automatic location only.</div>' +
+'    <div id="locTriggerOptions" style="' + (current.locTriggerEnabled ? '' : 'display:none;') + '">' +
+'    <div class="slider-row">' +
+'      <div class="field-label-row"><label for="locTriggerKm">Significant location change <span class="val" id="locTriggerKmVal">' + esc(current.locTriggerKm) + ' km</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-locTriggerKm\')">?</button></div>' +
+'      <div class="slider-with-buttons">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'locTriggerKm\', -10)">&minus;</button>' +
+'        <input type="range" id="locTriggerKm" min="10" max="200" step="10" value="' + esc(current.locTriggerKm) + '" oninput="document.getElementById(\'locTriggerKmVal\').textContent = this.value + \' km\';">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'locTriggerKm\', 10)">+</button>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="help-locTriggerKm" style="display:none;">How far you must move from the place of the last refresh (10 to 200 km) to trigger a new refresh before the interval is up.</div>' +
+'    <div class="slider-row">' +
+'      <div class="field-label-row"><label for="locCheckMins">Check location every <span class="val" id="locCheckMinsVal">' + esc(current.locCheckMins) + ' min</span></label><button type="button" class="help-btn" onclick="toggleHelp(\'help-locCheckMins\')">?</button></div>' +
+'      <div class="slider-with-buttons">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'locCheckMins\', -5)">&minus;</button>' +
+'        <input type="range" id="locCheckMins" min="5" max="120" step="5" value="' + esc(current.locCheckMins) + '" oninput="document.getElementById(\'locCheckMinsVal\').textContent = formatMinutes(this.value);">' +
+'      <button type="button" class="slider-step-btn" onclick="stepSlider(\'locCheckMins\', 5)">+</button>' +
+'      </div>' +
+'    </div>' +
+'    <div class="help" id="help-locCheckMins" style="display:none;">How often the phone looks at your position to see whether you moved far enough. Shorter checks notice a trip sooner but use more phone battery. The checks pause while the watch is in battery saver.</div>' +
+'    </div>' +
 '    <div class="field-label-row">' +
 '      <button type="button" class="secondary-btn" onclick="save(true)">Force refresh now</button>' +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-forceRefresh\')">?</button>' +
@@ -2109,25 +2135,11 @@ configPlugins.pluginScript(current) +
 '};' +
 'var CURRENT_SLOT_KEY = null;' +
 'var SLOT_EDITOR_DRAFT_COLOR = 0;' +
+'var computeSlotAvailabilityPure = ' + require('./settings/slot-availability').computeSlotAvailability.toString() + ';' +
 'function computeSlotAvailability() {' +
 '  var markerStyle = parseInt(document.getElementById("bigAnalogMarkerStyle").value, 10);' +
 '  var override = document.getElementById("bitmapCornerOverride").checked;' +
-'  if (markerStyle >= 11) markerStyle = 7;' +
-'  var avail = { upper: false, bottom: false, left: false, right: false, cornersGrayed: false };' +
-'    if (!isBitmapMarkerStyleId(markerStyle) && markerStyle !== 7) {' +
-'      avail.upper = avail.bottom = avail.left = avail.right = true;' +
-'    } else if (markerStyle === 3 || markerStyle === 4 || markerStyle === 6) {' +
-'      avail.upper = avail.bottom = true; avail.left = avail.right = override; avail.cornersGrayed = !override;' +
-'    } else if (markerStyle === 5) {' +
-'      avail.upper = avail.bottom = avail.left = avail.right = true;' +
-'    } else if (markerStyle === 7) {' +
-'      avail.upper = avail.bottom = avail.left = avail.right = true; avail.cornersGrayed = !override;' +
-'    } else {' +
-'      avail.upper = true; avail.bottom = avail.left = avail.right = override; avail.cornersGrayed = !override;' +
-'    }' +
-'  if (SCREEN_ROUND) { avail.upper = avail.bottom = avail.left = avail.right = true; avail.cornersGrayed = true; }' +
-'  if (SCREEN_BW) { avail.left = avail.right = false; }' +
-'  return avail;' +
+'  return computeSlotAvailabilityPure(markerStyle, override, { round: SCREEN_ROUND, bw: SCREEN_BW });' +
 '}' +
 'function slotIconLabels(text) {' +
 '  return String(text).replace(/\\([A-Za-z+]{1,12}\\)/g, "(i)");' +
@@ -2338,6 +2350,16 @@ configPlugins.pluginScript(current) +
 '}' +
 'function toggleSectionIntro(el) {' +
 '  el.classList.toggle("expanded");' +
+'}' +
+'function formatMinutes(v) {' +
+'  var n = parseInt(v, 10);' +
+'  if (isNaN(n)) return String(v);' +
+'  if (n < 60) return n + " min";' +
+'  var h = Math.floor(n / 60), m = n % 60;' +
+'  return h + " h" + (m ? " " + m + " min" : "");' +
+'}' +
+'function onLocTriggerChange() {' +
+'  document.getElementById("locTriggerOptions").style.display = document.getElementById("locTriggerEnabled").checked ? "" : "none";' +
 '}' +
 'function stepSlider(id, delta) {' +
 '  var el = document.getElementById(id);' +
@@ -3869,7 +3891,7 @@ require('./config/config-runtime') +
 'function computeUpdatesSubheader() {' +
 '  var mins = document.getElementById("updateMins").value;' +
 '  var saver = document.getElementById("batterySaverEnabled").checked;' +
-'  return mins + " minute interval, battery preserver " + (saver ? "on" : "off");' +
+'  return formatMinutes(mins) + " interval, battery preserver " + (saver ? "on" : "off");' +
 '}' +
 'function formatTestDateTime(val) {' +
 '  if (!val) return null;' +

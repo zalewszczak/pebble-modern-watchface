@@ -99,7 +99,10 @@ function buildCurrent() {
     lon: getSetting('CONFIG_LON', ''),
     locationName: getSetting('CONFIG_LOCATION_NAME', ''),
     owmKey: getSetting('CONFIG_OWM_KEY', ''),
-    updateMins: getSetting('CONFIG_UPDATE_MINS', '20'),
+    updateMins: getSetting('CONFIG_UPDATE_MINS', '60'),
+    locTriggerEnabled: getSetting('CONFIG_LOC_TRIGGER_ENABLED', 'true') !== 'false',
+    locTriggerKm: getSetting('CONFIG_LOC_TRIGGER_KM', '10'),
+    locCheckMins: getSetting('CONFIG_LOC_CHECK_MINS', '15'),
     tempUnit: getSetting('CONFIG_TEMP_UNIT', 'C'),
     windSpeedUnit: getSetting('CONFIG_WIND_SPEED_UNIT', 'kmh'),
     showSeconds: getSetting('CONFIG_SHOW_SECONDS', 'false') === 'true',
@@ -394,7 +397,10 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_LON', settings.CONFIG_LON || '');
   setSetting('CONFIG_LOCATION_NAME', settings.CONFIG_LOCATION_NAME || '');
   setSetting('CONFIG_OWM_KEY', settings.CONFIG_OWM_KEY || '');
-  setSetting('CONFIG_UPDATE_MINS', settings.CONFIG_UPDATE_MINS || '20');
+  setSetting('CONFIG_UPDATE_MINS', settings.CONFIG_UPDATE_MINS || '60');
+  setSetting('CONFIG_LOC_TRIGGER_ENABLED', settings.CONFIG_LOC_TRIGGER_ENABLED === false ? 'false' : 'true');
+  setSetting('CONFIG_LOC_TRIGGER_KM', settings.CONFIG_LOC_TRIGGER_KM || '10');
+  setSetting('CONFIG_LOC_CHECK_MINS', settings.CONFIG_LOC_CHECK_MINS || '15');
   setSetting('CONFIG_TEMP_UNIT', (settings.CONFIG_TEMP_UNIT === 'F' || settings.CONFIG_TEMP_UNIT === 'K') ? settings.CONFIG_TEMP_UNIT : 'C');
   setSetting('CONFIG_WIND_SPEED_UNIT', settings.CONFIG_WIND_SPEED_UNIT || 'kmh');
   setSetting('CONFIG_SHOW_SECONDS', settings.CONFIG_SHOW_SECONDS ? 'true' : 'false');

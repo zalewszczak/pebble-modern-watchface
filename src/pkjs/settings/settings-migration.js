@@ -1,4 +1,5 @@
 // Runs once during PKJS startup to migrate saved settings and cached data.
+var settings = require('./settings');
 var SETTINGS_KEY_SCHEMA_VERSION = 4;
 (function migrateSettingsKeySchema() {
   try {
@@ -7,18 +8,18 @@ var SETTINGS_KEY_SCHEMA_VERSION = 4;
     localStorage.removeItem('LAST_FULL_COMPUTED_DICT');
 
     if (isNaN(stored) || stored < 3) {
-      if (localStorage.getItem('CONFIG_BIG_ANALOG_MARKER_STYLE') === '0') {
-        localStorage.setItem('CONFIG_BIG_ANALOG_MARKER_STYLE', '10');
+      if (settings.getRaw('CONFIG_BIG_ANALOG_MARKER_STYLE') === '0') {
+        settings.setSetting('CONFIG_BIG_ANALOG_MARKER_STYLE', '10');
       }
       for (var n = 1; n <= 6; n++) {
         var key = 'CONFIG_PRESET_' + n + '_JSON';
         try {
-          var raw = localStorage.getItem(key);
+          var raw = settings.getRaw(key);
           if (!raw) continue;
           var snapshot = JSON.parse(raw);
           if (snapshot && snapshot.bigAnalogMarkerStyle === '0') {
             snapshot.bigAnalogMarkerStyle = '10';
-            localStorage.setItem(key, JSON.stringify(snapshot));
+            settings.setSetting(key, JSON.stringify(snapshot));
           }
         } catch (e2) { }
       }

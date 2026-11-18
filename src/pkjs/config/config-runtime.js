@@ -2,7 +2,8 @@
 module.exports =
 'function collectSettings(forceRefresh) {' +
 '  var mins = parseInt(document.getElementById("updateMins").value, 10);' +
-'  if (isNaN(mins) || mins < 5) mins = 20;' +
+'  if (isNaN(mins) || mins < 5) mins = 60;' +
+'  if (mins > 180) mins = 180;' +
 '  var showSecondsVal = document.getElementById("showSeconds").checked;' +
 '  var avail = computeSlotAvailability();' +
 '  function dualCtxVal(base, field, ctx) {' +
@@ -16,6 +17,9 @@ module.exports =
 '    CONFIG_LOCATION_NAME: document.getElementById("locationName").value,' +
 '    CONFIG_OWM_KEY: document.getElementById("owmKey").value,' +
 '    CONFIG_UPDATE_MINS: mins,' +
+'    CONFIG_LOC_TRIGGER_ENABLED: document.getElementById("locTriggerEnabled").checked,' +
+'    CONFIG_LOC_TRIGGER_KM: document.getElementById("locTriggerKm").value,' +
+'    CONFIG_LOC_CHECK_MINS: document.getElementById("locCheckMins").value,' +
 '    CONFIG_TEMP_UNIT: document.getElementById("tempUnit").value,' +
 '    CONFIG_WIND_SPEED_UNIT: document.getElementById("windSpeedUnit").value,' +
 '    CONFIG_AQI_UNIT: document.getElementById("aqiUnit").value,' +
