@@ -104,6 +104,7 @@ var textMarkerModalHtml = configMarkers.textMarkerModalHtml;
 var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOptionsHtml;
 
 var configBackground = require('./config/config-background');
+var configBattery = require('./config/config-battery');
 var configPlugins = require('./config/config-plugins');
 var configBorder = require('./config/config-border');
 var configHands = require('./config/config-hands');
@@ -298,6 +299,7 @@ configPresetSchedule.css +
 '  .about-btn-logo { display: block; width: 22px; height: 22px; border-radius: 4px; fill: currentColor; color: #000; }' +
 '  @media (prefers-color-scheme: dark) { .about-btn-logo { color: #fff; } }' +
 '  .about-btn:active { background: var(--border-light); transform: scale(0.96); }' +
+configBattery.css(!(platform.bw || current.liveMode)) +
 '  .donate-btn { padding: 6px 10px; font-size: 13px; font-weight: 700; color: #6b5a72; background: linear-gradient(135deg, #ffd6e0, #ffe8c2, #eaf6c8, #c8ecec, #d6d6f5, #ffd6e0); background-size: 300% 300%; animation: donateGradientShift 18s ease-in-out infinite; border: none; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }' +
 '  @keyframes donateGradientShift { 0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; } }' +
 '  .donate-btn:active { filter: brightness(0.94); }' +
@@ -602,6 +604,7 @@ configPresetSchedule.css +
 (current.liveMode ? '' : '      <button type="button" class="back-btn" onclick="goBack()">&lsaquo; Back</button>') +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
+'      ' + configBattery.buttonHtml(platform.bw || current.liveMode) +
 '    </div>' +
 (current.liveMode ? '' : '    <div class="top-bar-title">Modern Watchface' + (platform.bw ? '' : ' Preview') + '</div>') +
 ((platform.bw || current.liveMode) ? '' : '    <div class="top-bar-desc">Look, this preview—it’s very good, believe me, but it’s not 100% perfect yet. Nobody knows watch screens better than me, and right now, it’s not reflecting 1:1. We have a couple of tiny bugs, very small bugs, highly overrated bugs that are hard to fix, frankly. But I’m working on it hard, harder than anyone else, total dedication! Many people are saying it’s already the best preview they’ve ever seen. Thank you for your attention to this matter!</div>') +
@@ -626,6 +629,8 @@ configPresetSchedule.css +
 '    <button type="button" class="about-ok-btn" onclick="closeAboutModal()">OK</button>' +
 '  </div>' +
 '</div>' +
+
+configBattery.modalHtml() +
 
 '<div class="modal-overlay" id="slotEditModal" onclick="if (event.target === this) closeSlotEditor();">' +
 '  <div class="modal-box">' +
@@ -2069,6 +2074,7 @@ configBorder.borderScript() +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
 'var PRIM_PLUGIN_TEXT_ID = ' + primitiveIds.PRIM_PLUGIN_TEXT + ';' +
 configPlugins.pluginScript(current) +
+'\n' + configBattery.script(platform, primitiveTransportSequences) + '\n' +
 'var COMPOSER_MAX = ' + (platform.bw ? 8 : 10) + ';' +
 '\n' + composerClientSource + '\n' +
 'function primitiveDecompositionText(contentId, forPreview) {' +
