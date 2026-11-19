@@ -1166,21 +1166,21 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "0",
       "Width": "7",
-      "Length": "38",
+      "Length": "42",
       "BackOffset": "0",
       "Color": "1"
     },
     "min": {
       "Style": "0",
       "Width": "7",
-      "Length": "56",
+      "Length": "62",
       "BackOffset": "0",
       "Color": "0"
     },
     "sec": {
       "Style": "0",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "0",
       "Color": "0"
     },
@@ -1198,7 +1198,7 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "5",
       "Width": "5",
-      "Length": "42",
+      "Length": "46",
       "BackOffset": "0",
       "MiddleOffset": "13",
       "SecondaryWidth": "1",
@@ -1207,7 +1207,7 @@ var HAND_PRESETS_LEGACY = {
     "min": {
       "Style": "5",
       "Width": "5",
-      "Length": "54",
+      "Length": "59",
       "BackOffset": "0",
       "MiddleOffset": "13",
       "SecondaryWidth": "1",
@@ -1216,7 +1216,7 @@ var HAND_PRESETS_LEGACY = {
     "sec": {
       "Style": "2",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "0",
       "Color": "0"
     },
@@ -1234,22 +1234,22 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "2",
       "Width": "4",
-      "Length": "34",
-      "BackOffset": "7",
+      "Length": "43",
+      "BackOffset": "8",
       "Color": "0"
     },
     "min": {
       "Style": "2",
       "Width": "4",
-      "Length": "52",
-      "BackOffset": "7",
+      "Length": "65",
+      "BackOffset": "8",
       "Color": "0"
     },
     "sec": {
       "Style": "2",
       "Width": "1",
-      "Length": "57",
-      "BackOffset": "7",
+      "Length": "65",
+      "BackOffset": "8",
       "Color": "1"
     },
     "centerCircle": {
@@ -1266,21 +1266,21 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "2",
       "Width": "7",
-      "Length": "34",
+      "Length": "37",
       "BackOffset": "7",
       "Color": "0"
     },
     "min": {
       "Style": "2",
       "Width": "7",
-      "Length": "52",
+      "Length": "57",
       "BackOffset": "7",
       "Color": "0"
     },
     "sec": {
       "Style": "6",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "10",
       "MiddleOffset": "3",
       "SecondaryWidth": "11",
@@ -1300,21 +1300,21 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "1",
       "Width": "8",
-      "Length": "34",
+      "Length": "37",
       "BackOffset": "0",
       "Color": "0"
     },
     "min": {
       "Style": "1",
       "Width": "8",
-      "Length": "52",
+      "Length": "57",
       "BackOffset": "0",
       "Color": "0"
     },
     "sec": {
       "Style": "0",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "0",
       "Color": "1"
     },
@@ -1332,7 +1332,7 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "3",
       "Width": "7",
-      "Length": "34",
+      "Length": "37",
       "BackOffset": "3",
       "MiddleOffset": "7",
       "Color": "0"
@@ -1340,7 +1340,7 @@ var HAND_PRESETS_LEGACY = {
     "min": {
       "Style": "3",
       "Width": "5",
-      "Length": "52",
+      "Length": "57",
       "BackOffset": "3",
       "MiddleOffset": "9",
       "Color": "0"
@@ -1348,7 +1348,7 @@ var HAND_PRESETS_LEGACY = {
     "sec": {
       "Style": "1",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "4",
       "Color": "1"
     },
@@ -1365,36 +1365,38 @@ var HAND_PRESETS_LEGACY = {
     "title": "Bell",
     "hour": {
       "Style": "4",
-      "Width": "7",
-      "Length": "41",
+      "Width": "10",
+      "Length": "61",
       "BackOffset": "-20",
-      "MiddleOffset": "27",
-      "SecondaryWidth": "9",
+      "MiddleOffset": "40",
+      "SecondaryWidth": "18",
       "Color": "0"
     },
     "min": {
       "Style": "4",
-      "Width": "5",
-      "Length": "52",
+      "Width": "8",
+      "Length": "78",
       "BackOffset": "-21",
-      "MiddleOffset": "27",
-      "SecondaryWidth": "5",
+      "MiddleOffset": "60",
+      "SecondaryWidth": "8",
       "Color": "0"
     },
     "sec": {
       "Style": "7",
-      "Width": "5",
-      "Length": "57",
+      "Width": "7",
+      "Length": "85",
       "BackOffset": "0",
+      "MiddleOffset": "0",
+      "SecondaryWidth": "6",
       "Color": "1"
     },
     "centerCircle": {
-      "Radius": "3",
-      "Color": "1"
+      "Radius": "4",
+      "Color": "0"
     },
     "shadow": {
       "Translucent": "true",
-      "Angle": "135"
+      "Angle": "120"
     }
   },
   "8": {
@@ -1402,7 +1404,7 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "8",
       "Width": "7",
-      "Length": "34",
+      "Length": "37",
       "BackOffset": "0",
       "MiddleOffset": "3",
       "Color": "0"
@@ -1410,7 +1412,7 @@ var HAND_PRESETS_LEGACY = {
     "min": {
       "Style": "8",
       "Width": "5",
-      "Length": "52",
+      "Length": "57",
       "BackOffset": "0",
       "MiddleOffset": "5",
       "Color": "0"
@@ -1418,7 +1420,7 @@ var HAND_PRESETS_LEGACY = {
     "sec": {
       "Style": "1",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "4",
       "Color": "1"
     },
@@ -1436,7 +1438,7 @@ var HAND_PRESETS_LEGACY = {
     "hour": {
       "Style": "10",
       "Width": "3",
-      "Length": "34",
+      "Length": "37",
       "BackOffset": "0",
       "MiddleOffset": "5",
       "SecondaryWidth": "8",
@@ -1445,7 +1447,7 @@ var HAND_PRESETS_LEGACY = {
     "min": {
       "Style": "10",
       "Width": "2",
-      "Length": "52",
+      "Length": "57",
       "BackOffset": "0",
       "MiddleOffset": "7",
       "SecondaryWidth": "7",
@@ -1454,7 +1456,7 @@ var HAND_PRESETS_LEGACY = {
     "sec": {
       "Style": "10",
       "Width": "1",
-      "Length": "57",
+      "Length": "63",
       "BackOffset": "4",
       "MiddleOffset": "5",
       "SecondaryWidth": "11",
