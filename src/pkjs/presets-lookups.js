@@ -1158,6 +1158,319 @@ var HAND_PRESETS = {
   }
 };
 
+// Hand presets for the small B&W screens (diorite, flint): the table above with sizes (width, length, offsets,
+// secondary width, centre circle radius) scaled to about 2/3. Edit freely; the colour table is not affected.
+var HAND_PRESETS_LEGACY = {
+  "1": {
+    "title": "Pebble",
+    "hour": {
+      "Style": "0",
+      "Width": "7",
+      "Length": "38",
+      "BackOffset": "0",
+      "Color": "1"
+    },
+    "min": {
+      "Style": "0",
+      "Width": "7",
+      "Length": "56",
+      "BackOffset": "0",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "0",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "0",
+      "Color": "0"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "1"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "2": {
+    "title": "Fruit",
+    "hour": {
+      "Style": "5",
+      "Width": "5",
+      "Length": "42",
+      "BackOffset": "0",
+      "MiddleOffset": "13",
+      "SecondaryWidth": "1",
+      "Color": "1"
+    },
+    "min": {
+      "Style": "5",
+      "Width": "5",
+      "Length": "54",
+      "BackOffset": "0",
+      "MiddleOffset": "13",
+      "SecondaryWidth": "1",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "2",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "0",
+      "Color": "0"
+    },
+    "centerCircle": {
+      "Radius": "1",
+      "Color": "0"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "3": {
+    "title": "Modern",
+    "hour": {
+      "Style": "2",
+      "Width": "4",
+      "Length": "34",
+      "BackOffset": "7",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "2",
+      "Width": "4",
+      "Length": "52",
+      "BackOffset": "7",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "2",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "7",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "1"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "4": {
+    "title": "Swiss",
+    "hour": {
+      "Style": "2",
+      "Width": "7",
+      "Length": "34",
+      "BackOffset": "7",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "2",
+      "Width": "7",
+      "Length": "52",
+      "BackOffset": "7",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "6",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "10",
+      "MiddleOffset": "3",
+      "SecondaryWidth": "11",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "2",
+      "Color": "1"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "5": {
+    "title": "Pointy",
+    "hour": {
+      "Style": "1",
+      "Width": "8",
+      "Length": "34",
+      "BackOffset": "0",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "1",
+      "Width": "8",
+      "Length": "52",
+      "BackOffset": "0",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "0",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "0",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "0"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "6": {
+    "title": "Classy",
+    "hour": {
+      "Style": "3",
+      "Width": "7",
+      "Length": "34",
+      "BackOffset": "3",
+      "MiddleOffset": "7",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "3",
+      "Width": "5",
+      "Length": "52",
+      "BackOffset": "3",
+      "MiddleOffset": "9",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "1",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "4",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "0"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "135"
+    }
+  },
+  "7": {
+    "title": "Bell",
+    "hour": {
+      "Style": "4",
+      "Width": "7",
+      "Length": "41",
+      "BackOffset": "-20",
+      "MiddleOffset": "27",
+      "SecondaryWidth": "9",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "4",
+      "Width": "5",
+      "Length": "52",
+      "BackOffset": "-21",
+      "MiddleOffset": "27",
+      "SecondaryWidth": "5",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "7",
+      "Width": "5",
+      "Length": "57",
+      "BackOffset": "0",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "1"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "135"
+    }
+  },
+  "8": {
+    "title": "Leafs",
+    "hour": {
+      "Style": "8",
+      "Width": "7",
+      "Length": "34",
+      "BackOffset": "0",
+      "MiddleOffset": "3",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "8",
+      "Width": "5",
+      "Length": "52",
+      "BackOffset": "0",
+      "MiddleOffset": "5",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "1",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "4",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "0"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "120"
+    }
+  },
+  "9": {
+    "title": "Funky",
+    "hour": {
+      "Style": "10",
+      "Width": "3",
+      "Length": "34",
+      "BackOffset": "0",
+      "MiddleOffset": "5",
+      "SecondaryWidth": "8",
+      "Color": "0"
+    },
+    "min": {
+      "Style": "10",
+      "Width": "2",
+      "Length": "52",
+      "BackOffset": "0",
+      "MiddleOffset": "7",
+      "SecondaryWidth": "7",
+      "Color": "0"
+    },
+    "sec": {
+      "Style": "10",
+      "Width": "1",
+      "Length": "57",
+      "BackOffset": "4",
+      "MiddleOffset": "5",
+      "SecondaryWidth": "11",
+      "Color": "1"
+    },
+    "centerCircle": {
+      "Radius": "3",
+      "Color": "1"
+    },
+    "shadow": {
+      "Translucent": "true",
+      "Angle": "150"
+    }
+  }
+};
+
 // Pebble Round 2 (gabbro) has no heart-rate sensor: the heart-rate complications (ids 1 and 100) are
 // not offered there (and the watch build has no code for them).
 if (platform.round) {
@@ -1330,6 +1643,7 @@ module.exports = {
   CORNER_CATEGORIES: CORNER_CATEGORIES,
   MAX_FEATURES: MAX_FEATURES,
   HAND_PRESETS: HAND_PRESETS,
+  HAND_PRESETS_LEGACY: HAND_PRESETS_LEGACY,
   MARKER_STYLE_HOUR_PRESETS: MARKER_STYLE_HOUR_PRESETS,
   MARKER_STYLE_SECOND_PRESETS: MARKER_STYLE_SECOND_PRESETS,
   MARKER_STYLE_TEXT_PRESETS: MARKER_STYLE_TEXT_PRESETS,
