@@ -2069,7 +2069,7 @@ configBorder.borderScript() +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
 'var PRIM_PLUGIN_TEXT_ID = ' + primitiveIds.PRIM_PLUGIN_TEXT + ';' +
 configPlugins.pluginScript(current) +
-'var COMPOSER_MAX = 10;' +
+'var COMPOSER_MAX = ' + (platform.bw ? 8 : 10) + ';' +
 '\n' + composerClientSource + '\n' +
 'function primitiveDecompositionText(contentId, forPreview) {' +
 '  var idNum = parseInt(contentId, 10);' +
@@ -2198,7 +2198,7 @@ configPlugins.pluginScript(current) +
 '  renderSlotEditPreview();' +
 '}' +
 'function onSlotEditContentChange() {' +
-'  pluginResolveContentSelect(document.getElementById("slotEditContent"));' +
+'  pluginResolveContentSelect(document.getElementById("slotEditContent"));' +'  pluginSyncLine(document.getElementById("slotEditContent"));' +
 '  var contentVal = document.getElementById("slotEditContent").value;' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
 '  slotEditOddUpdate();' +
@@ -2254,7 +2254,7 @@ configPlugins.pluginScript(current) +
 '  updateCategoryButtonActive(categoryId);' +
 '  var contentSelect = document.getElementById("slotEditContent");' +
 '  contentSelect.innerHTML = categoryItemOptionsHtml(categoryId, contentVal);' +
-'  contentSelect.disabled = slotEditContentDisabled(categoryId);' +
+'  contentSelect.disabled = slotEditContentDisabled(categoryId);' +'  pluginSyncLine(contentSelect);' +
 '  slotEditCategoryHelpUpdate(categoryId);' +
 '  setSlotEditorColorGroupVisibility(contentVal);' +
 '  renderSlotEditPrimitiveStrip(contentVal);' +

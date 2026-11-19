@@ -5,7 +5,8 @@ var getSetting = settings.getSetting;
 var setSetting = settings.setSetting;
 
 var SLOT_COUNT = 12;
-var TEXT_LEN = 16;
+var TEXT_LEN = 16;           // characters one complication line shows (15 + the watch's terminator)
+var LONG_TEXT_MAX = 96;      // longest plugin text kept on the phone; it is cut into TEXT_LEN - 1 character lines
 var SLOTS_KEY = 'CONFIG_PLUGIN_SLOTS';
 var TEXT_SHAPES = ['shortText', 'numericValue', 'timestamp', 'boolean', 'longText'];
 
@@ -100,9 +101,38 @@ function textFromPayloads(payloads) {
 }
 
 // The 12 plugin texts as plain strings (whitespace collapsed); the phone slots carry them to the watch.
+// Splits text into lines of at most `width` characters at word boundaries (a word longer than a line is cut).
+function wrapLines(text, width) {
+  var words = String(text || '').replace(/\s+/g, ' ').trim().split(' '), lines = [], cur = '';
+  words.forEach(function (w) {
+    while (w.length > width) {
+      if (cur) { lines.push(cur); cur = ''; }
+      lines.push(w.slice(0, width));
+      w = w.slice(width);
+    }
+    if (!w) return;
+    if (!cur) cur = w;
+    else if (cur.length + 1 + w.length <= width) cur += ' ' + w;
+    else { lines.push(cur); cur = w; }
+  });
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+// Slots whose key ends in ~2 / ~3 show the 2nd / 3rd line of the same text instead of the first, so one long
+// text (a plugin's longText, a headline ...) can be spread over several complications.
+function partOfKey(key) {
+  var m = /~(\d)$/.exec(String(key || ''));
+  return m ? Math.max(1, parseInt(m[1], 10)) : 1;
+}
+
 function texts() {
   var out = [];
-  for (var s = 0; s < SLOT_COUNT; s++) out.push(String(slotTexts[s] || '').replace(/\s+/g, ' ').trim().slice(0, TEXT_LEN - 1));
+  for (var s = 0; s < SLOT_COUNT; s++) {
+    var raw = String(slotTexts[s] || '');
+    if (slotKeys[s] && slotKeys[s].indexOf('text|') === 0) { out.push(raw.replace(/\s+/g, ' ').trim().slice(0, TEXT_LEN - 1)); continue; }
+    out.push(wrapLines(raw, TEXT_LEN - 1)[partOfKey(slotKeys[s]) - 1] || (partOfKey(slotKeys[s]) > 1 ? ' ' : '--'));
+  }
   return out;
 }
 
@@ -116,6 +146,7 @@ function schedulePush() {
 }
 
 function setText(slot, text) {
+  text = String(text || '').slice(0, LONG_TEXT_MAX);
   if (slotTexts[slot] === text) return;
   slotTexts[slot] = text;
   schedulePush();
@@ -124,7 +155,7 @@ function setText(slot, text) {
 function parseKey(key) {
   var p = String(key).split('|');
   if (p.length < 4) return null;
-  var property = p.slice(3).join('|');
+  var property = p.slice(3).join('|').replace(/~\d$/, '');
   var index = 0;
   var m = /^(.*)#(\d+)$/.exec(property);
   if (m) { property = m[1]; index = parseInt(m[2], 10); }
@@ -211,6 +242,8 @@ function init(pushFnArg) {
 module.exports = {
   SLOT_COUNT: SLOT_COUNT,
   TEXT_LEN: TEXT_LEN,
+  wrapLines: wrapLines,
+  partOfKey: partOfKey,
   hasApi: hasApi,
   status: status,
   readCatalogue: readCatalogue,

@@ -9,14 +9,15 @@
 #include "./primitive_ids.h"
 
 #include "../../platform/platform_bw.h"
-// Maximum primitives in one feature: 10 on the colour watches, 6 on the B&W ones (the wire format
-// still carries 10; the watch keeps the first 6 to save about 1.9 KB of RAM across the 12 slots).
+// Maximum primitives in one feature: 10 on the colour watches, 8 on the B&W ones (the wire format
+// still carries 10; the watch keeps the first 8 to save about 1 KB of RAM across the 12 slots).
 #define PRIMITIVE_FEATURE_MAX PL_PRIMITIVE_FEATURE_MAX
 
 typedef struct {
-  PrimitiveId id;
-  PrimitiveKind kind;
-  PrimitiveRefreshClass refresh_class;
+  // Stored as bytes (the enums would take 4 bytes each): ids are single wire bytes, the others have a handful of values.
+  uint8_t id;                    // PrimitiveId
+  uint8_t kind;                  // PrimitiveKind
+  uint8_t refresh_class;         // PrimitiveRefreshClass
 
   // Payload -- exactly one of these is meaningful, selected by `kind`.
   char text[20];        // PRIMITIVE_KIND_TEXT

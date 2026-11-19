@@ -51,9 +51,11 @@ function pluginScript(current) {
 'function pluginKeyParts(key) {\n' +
 '  var p = String(key || "").split("|");\n' +
 '  if (p.length < 4) return null;\n' +
-'  var prop = p.slice(3).join("|"), idx = 0, m = /^(.*)#([0-9]+)$/.exec(prop);\n' +
+'  var prop = p.slice(3).join("|"), idx = 0, part = 1, pm = /^(.*)~([0-9])$/.exec(prop);\n' +
+'  if (pm) { prop = pm[1]; part = parseInt(pm[2], 10); }\n' +
+'  var m = /^(.*)#([0-9]+)$/.exec(prop);\n' +
 '  if (m) { prop = m[1]; idx = parseInt(m[2], 10); }\n' +
-'  return { plugin: p[0], category: p[1], item: p[2], property: prop, index: idx };\n' +
+'  return { plugin: p[0], category: p[1], item: p[2], property: prop, index: idx, part: part };\n' +
 '}\n' +
 'function pluginSourceByKey(key) {\n' +
 '  var kp = pluginKeyParts(key);\n' +
@@ -64,9 +66,10 @@ function pluginScript(current) {
 '  }\n' +
 '  return null;\n' +
 '}\n' +
+'function pluginSourceSplits(src) { return src.shapes.indexOf("longText") !== -1 || src.shapes.indexOf("shortText") !== -1; }\n' +
 'function pluginIndexSuffix(key) {\n' +
 '  var kp = pluginKeyParts(key);\n' +
-'  return (kp && kp.index > 0) ? " #" + (kp.index + 1) : "";\n' +
+'  return kp ? ((kp.index > 0 ? " #" + (kp.index + 1) : "") + (kp.part > 1 ? " (line " + kp.part + ")" : "")) : "";\n' +
 '}\n' +
 'function pluginHumanize(s) { return String(s || "").replace(/[_-]+/g, " ").replace(/^\\s*[a-z]/, function (c) { return c.toUpperCase(); }); }\n' +
 'function pluginSlotOf(key) { return PLUGIN_SLOTS.indexOf(key); }\n' +
@@ -136,7 +139,8 @@ function pluginScript(current) {
 '  var src = key ? pluginSourceByKey(key) : null;\n' +
 '  return src ? pluginProvKey(src) : "";\n' +
 '}\n' +
-'function pluginDataLabel(src) { return src.category + " / " + src.item + ": " + src.label; }\n' +
+'function pluginDataLabel(src) { return src.item + ": " + src.label; }\n' +
+
 'function pluginProvSelect(dataSel) {\n' +
 '  var id = dataSel.id + "Prov";\n' +
 '  var prov = document.getElementById(id);\n' +
@@ -171,32 +175,101 @@ function pluginScript(current) {
 '}\n' +
 'function pluginHideProvider(dataSel) {\n' +
 '  var prov = document.getElementById(dataSel.id + "Prov");\n' +
-'  if (prov) prov.style.display = "none";\n' +
+'  if (prov) prov.style.display = "none";\n' +'  var ln = document.getElementById(dataSel.id + "Line");\n' +
+'  if (ln) ln.style.display = "none";\n' +
+
 '}\n' +
-'function pluginParamOptions(providerKey) {\n' +
+'var PLUGIN_LINE = {};\n' +
+'function pluginBaseKey(key) { return String(key || "").replace(/~[0-9]$/, ""); }\n' +
+'function pluginPartOfKey(key) { var m = /~([0-9])$/.exec(String(key || "")); return m ? parseInt(m[1], 10) : 1; }\n' +
+'function pluginLineOf(dataSelId, baseKey) { return PLUGIN_LINE[dataSelId + "|" + baseKey] || 1; }\n' +
+'function pluginNoteWanted(dataSelId, wanted, content) {\n' +
+'  if (wanted == null || !/^[0-9]+$/.test(String(wanted))) return;\n' +
+'  var slot = parseInt(wanted, 10) - (content ? PLUGIN_CONTENT_FIRST : 0);\n' +
+'  var key = PLUGIN_SLOTS[slot];\n' +
+'  if (key && key.indexOf("text|") !== 0) PLUGIN_LINE[dataSelId + "|" + pluginBaseKey(key)] = pluginPartOfKey(key);\n' +
+'}\n' +
+'function pluginOptValue(dataSelId, baseKey, i, content) {\n' +
+'  var part = pluginLineOf(dataSelId, baseKey);\n' +
+'  var slot = pluginSlotOf(part > 1 ? baseKey + "~" + part : baseKey);\n' +
+'  if (slot >= 0) return String(content ? PLUGIN_CONTENT_FIRST + slot : slot);\n' +
+'  if (i >= 0) return (content ? "plug:" : "c") + i + (part > 1 ? "~" + part : "");\n' +
+'  var bslot = pluginSlotOf(baseKey);\n' +
+'  return bslot >= 0 ? String(content ? PLUGIN_CONTENT_FIRST + bslot : bslot) : null;\n' +
+'}\n' +
+'function pluginMarkPartSlots(seen, baseKey) {\n' +
+'  for (var part = 1; part <= 3; part++) { var ps = pluginSlotOf(part > 1 ? baseKey + "~" + part : baseKey); if (ps >= 0) seen[ps] = true; }\n' +
+'}\n' +
+'function pluginLineSelect(dataSel) {\n' +
+'  var id = dataSel.id + "Line";\n' +
+'  var line = document.getElementById(id);\n' +
+'  if (!line) {\n' +
+'    line = document.createElement("select");\n' +
+'    line.id = id;\n' +
+'    line.style.cssText = dataSel.style.cssText || "";\n' +
+'    if (dataSel.parentNode && dataSel.parentNode.className.indexOf("composer-row") >= 0) line.style.flex = "1 1 100%";\n' +
+'    else line.style.marginTop = "6px";\n' +
+'    line.innerHTML = "<option value=\\"1\\">Show line 1 of the text</option><option value=\\"2\\">Show line 2 of the text</option><option value=\\"3\\">Show line 3 of the text</option>";\n' +
+'    line.style.display = "none";\n' +
+'    line.onchange = function () { pluginLineChanged(dataSel); };\n' +
+'    dataSel.parentNode.insertBefore(line, dataSel.nextSibling);\n' +
+'  }\n' +
+'  return line;\n' +
+'}\n' +
+'function pluginBaseKeyOfValue(dataSel) {\n' +
+'  var v = String(dataSel.value || ""), content = dataSel.id === "slotEditContent", m;\n' +
+'  if (/^[0-9]+$/.test(v)) {\n' +
+'    var key = PLUGIN_SLOTS[parseInt(v, 10) - (content ? PLUGIN_CONTENT_FIRST : 0)];\n' +
+'    return (key && key.indexOf("text|") !== 0) ? pluginBaseKey(key) : "";\n' +
+'  }\n' +
+'  m = /^(?:plug:|c)([0-9]+)/.exec(v);\n' +
+'  var src = m ? PLUGIN_INFO.sources[parseInt(m[1], 10)] : null;\n' +
+'  return src ? src.key : "";\n' +
+'}\n' +
+'function pluginSyncLine(dataSel) {\n' +
+'  var line = pluginLineSelect(dataSel);\n' +
+'  var base = dataSel.style.display === "none" || dataSel.disabled ? "" : pluginBaseKeyOfValue(dataSel);\n' +
+'  var src = base ? pluginSourceByKey(base) : null;\n' +
+'  if (!src || !pluginSourceSplits(src)) { line.style.display = "none"; return; }\n' +
+'  line.style.display = "";\n' +
+'  line.value = String(pluginLineOf(dataSel.id, base));\n' +
+'}\n' +
+'function pluginLineChanged(dataSel) {\n' +
+'  var line = pluginLineSelect(dataSel), content = dataSel.id === "slotEditContent";\n' +
+'  var base = pluginBaseKeyOfValue(dataSel);\n' +
+'  if (!base) return;\n' +
+'  var part = parseInt(line.value, 10) || 1;\n' +
+'  var slot = pluginAllocSlot(part > 1 ? base + "~" + part : base);\n' +
+'  if (slot < 0) { alert(pluginUnavailableText()); line.value = String(pluginLineOf(dataSel.id, base)); return; }\n' +
+'  PLUGIN_LINE[dataSel.id + "|" + base] = part;\n' +
+'  if (dataSel.selectedIndex >= 0) dataSel.options[dataSel.selectedIndex].value = String(content ? PLUGIN_CONTENT_FIRST + slot : slot);\n' +
+'  if (dataSel.onchange) dataSel.onchange();\n' +
+'}\n' +
+'function pluginParamOptions(providerKey, dataSelId) {\n' +
 '  var out = [], seen = {};\n' +
 '  PLUGIN_INFO.sources.forEach(function (src, i) {\n' +
-'    var slot = pluginSlotOf(src.key);\n' +
-'    if (slot >= 0) seen[slot] = true;\n' +
+'    pluginMarkPartSlots(seen, src.key);\n' +
 '    if (providerKey && pluginProvKey(src) !== providerKey) return;\n' +
-'    out.push({ value: slot >= 0 ? String(slot) : "c" + i, label: pluginDataLabel(src) });\n' +
+'    out.push({ value: pluginOptValue(dataSelId, src.key, i, false), label: pluginDataLabel(src) });\n' +
 '  });\n' +
 '  for (var s = 0; s < PLUGIN_SLOT_COUNT; s++) {\n' +
 '    var skey = PLUGIN_SLOTS[s];\n' +
-'    if (!skey || seen[s] || skey.indexOf("text|") === 0) continue;\n' +
+'    if (!skey || seen[s] || skey.indexOf("text|") === 0 || pluginPartOfKey(skey) > 1) continue;\n' +
 '    var ssrc = pluginSourceByKey(skey);\n' +
-'    if (ssrc) { if (!providerKey || pluginProvKey(ssrc) === providerKey) out.push({ value: String(s), label: pluginDataLabel(ssrc) + pluginIndexSuffix(skey) }); }\n' +
+'    if (ssrc) { if (!providerKey || pluginProvKey(ssrc) === providerKey) out.push({ value: pluginOptValue(dataSelId, skey, -1, false) || String(s), label: pluginDataLabel(ssrc) + pluginIndexSuffix(skey) }); }\n' +
 '    else if (!providerKey) out.push({ value: String(s), label: "(unavailable) " + skey.split("|").slice(1).join("/") });\n' +
 '  }\n' +
 '  return out;\n' +
 '}\n' +
 'function pluginRefillData(dataSel, wantedValue) {\n' +
 '  var cur = PLUGIN_PROV[dataSel.id] || "";\n' +
-'  var popts = pluginParamOptions(cur);\n' +
+'  pluginNoteWanted(dataSel.id, wantedValue, false);\n' +
+'  var popts = pluginParamOptions(cur, dataSel.id);\n' +
 '  dataSel.innerHTML = popts.length ? popts.map(function (o) {\n' +
 '    return "<option value=\\"" + o.value + "\\">" + esc(o.label) + "</option>";\n' +
 '  }).join("") : "<option value=\\"\\">" + esc(pluginUnavailableText()) + "</option>";\n' +
 '  if (wantedValue != null) dataSel.value = wantedValue;\n' +
+'  pluginSyncLine(dataSel);\n' +
 '}\n' +
 'function pluginFillComposerSelect(dataSel, wantedValue) {\n' +
 '  var wantedKey = "";\n' +
@@ -206,8 +279,9 @@ function pluginScript(current) {
 '}\n' +
 'function pluginAuxFromValue(value) {\n' +
 '  if (value && value.charAt(0) === "c") {\n' +
-'    var src = PLUGIN_INFO.sources[parseInt(value.slice(1), 10)];\n' +
-'    return src ? pluginAllocSlot(src.key) : -1;\n' +
+'    var cparts = value.slice(1).split("~");\n' +
+'    var src = PLUGIN_INFO.sources[parseInt(cparts[0], 10)];\n' +
+'    return src ? pluginAllocSlot(src.key + (cparts[1] ? "~" + cparts[1] : "")) : -1;\n' +
 '  }\n' +
 '  var n = parseInt(value, 10);\n' +
 '  return isNaN(n) ? -1 : n;\n' +
@@ -218,23 +292,23 @@ function pluginScript(current) {
 '    if (dataSel) pluginHideProvider(dataSel);\n' +
 '    return "<option value=\\"0\\">" + esc(PLUGIN_INFO.status !== "ok" ? "Plugins are not enabled" : "No plugin data available") + "</option>";\n' +
 '  }\n' +
+'  pluginNoteWanted("slotEditContent", selectedContentId, true);\n' +
 '  var sel = parseInt(selectedContentId, 10) - PLUGIN_CONTENT_FIRST;\n' +
 '  var wantKey = (sel >= 0 && sel < PLUGIN_SLOT_COUNT) ? pluginProviderOfSlot(sel) : "";\n' +
 '  var provKey = dataSel ? pluginFillProvider(dataSel, wantKey) : wantKey;\n' +
 '  var html = "", seen = {};\n' +
 '  PLUGIN_INFO.sources.forEach(function (src, i) {\n' +
-'    var slot = pluginSlotOf(src.key);\n' +
-'    if (slot >= 0) seen[slot] = true;\n' +
+'    pluginMarkPartSlots(seen, src.key);\n' +
 '    if (pluginProvKey(src) !== provKey) return;\n' +
-'    var value = slot >= 0 ? String(PLUGIN_CONTENT_FIRST + slot) : "plug:" + i;\n' +
+'    var value = pluginOptValue("slotEditContent", src.key, i, true);\n' +
 '    html += "<option value=\\"" + value + "\\"" + (String(selectedContentId) === value ? " selected" : "") + ">" + esc(pluginDataLabel(src)) + "</option>";\n' +
 '  });\n' +
 '  for (var xs = 0; xs < PLUGIN_SLOT_COUNT; xs++) {\n' +
 '    var xkey = PLUGIN_SLOTS[xs];\n' +
-'    if (!xkey || seen[xs] || xkey.indexOf("text|") === 0) continue;\n' +
+'    if (!xkey || seen[xs] || xkey.indexOf("text|") === 0 || pluginPartOfKey(xkey) > 1) continue;\n' +
 '    var xsrc = pluginSourceByKey(xkey);\n' +
 '    if (!xsrc || pluginProvKey(xsrc) !== provKey) continue;\n' +
-'    var xval = String(PLUGIN_CONTENT_FIRST + xs);\n' +
+'    var xval = pluginOptValue("slotEditContent", xkey, -1, true) || String(PLUGIN_CONTENT_FIRST + xs);\n' +
 '    html += "<option value=\\"" + xval + "\\"" + (String(selectedContentId) === xval ? " selected" : "") + ">" + esc(pluginDataLabel(xsrc) + pluginIndexSuffix(xkey)) + "</option>";\n' +
 '  }\n' +
 '  if (sel >= 0 && sel < PLUGIN_SLOT_COUNT && !pluginProviderOfSlot(sel)) html = "<option value=\\"" + selectedContentId + "\\" selected>(unavailable) " + esc(PLUGIN_SLOTS[sel] || "") + "</option>" + html;\n' +
@@ -248,8 +322,9 @@ function pluginScript(current) {
 'function pluginResolveContentSelect(sel) {\n' +
 '  var v = sel.value;\n' +
 '  if (v.indexOf("plug:") !== 0) return;\n' +
-'  var src = PLUGIN_INFO.sources[parseInt(v.slice(5), 10)];\n' +
-'  var slot = src ? pluginAllocSlot(src.key) : -1;\n' +
+'  var vparts = v.slice(5).split("~");\n' +
+'  var src = PLUGIN_INFO.sources[parseInt(vparts[0], 10)];\n' +
+'  var slot = src ? pluginAllocSlot(src.key + (vparts[1] ? "~" + vparts[1] : "")) : -1;\n' +
 '  if (slot < 0) { alert(pluginUnavailableText()); sel.innerHTML = "<option value=\\"0\\">None</option>"; return; }\n' +
 '  sel.options[sel.selectedIndex].value = String(PLUGIN_CONTENT_FIRST + slot);\n' +
 '}\n' +

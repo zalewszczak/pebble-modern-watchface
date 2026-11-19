@@ -55,8 +55,10 @@ static inline GColor bw_color(GColor c) { return bw_color_is_white(c) ? GColorWh
 #define PL_BITMAP_MARGIN_Y(v) (((v) * 37) / 50)  // ... y 168/228
 #define PL_DEFAULT_UPPER_OFFSET 18    // custom-ring layout fallbacks (emery 24 / 20)
 #define PL_DEFAULT_BOTTOM_SHIFT 15
-// Feature items per slot: the wire format carries 10, the watch keeps the first 6 (RAM).
-#define PL_PRIMITIVE_FEATURE_MAX 6
+// Feature items per slot: the wire format carries 10, the watch keeps the first 8 (RAM). 8 is what the
+// longest predefined complication (weather icon + all temps) needs; each extra item costs about 0.5 KB
+// over the 12 slots.
+#define PL_PRIMITIVE_FEATURE_MAX 8
 #define PL_PROGRESS_BAR_W 21          // media progress bar width              (emery 28)
 
 #else

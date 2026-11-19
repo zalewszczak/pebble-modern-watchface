@@ -346,7 +346,7 @@ rule(PRIM.PRIM_AURORA_KP_VALUE, auroraRule(false, true));
 rule(PRIM.PRIM_PLUGIN_TEXT, function (c, aux) {
   if (aux >= 12) return null;
   var t = c.plugins && c.plugins[aux];
-  return T(t ? t : '--', WHITE, MAIN);
+  return T(t ? t : '--', WHITE, MAIN); // a blank (' ') is a later line of a long text that has run out: draws nothing
 });
 function phoneRule(isIcon) {
   return function (c) {

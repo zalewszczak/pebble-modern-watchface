@@ -217,8 +217,7 @@ function backgroundModalHtml() {
   return '' +
 '<div class="modal-overlay" id="bgEditorModal">' +
 '  <div class="modal-box">' +
-'    <div class="modal-title">Custom background</div>' +
-'    <div class="modal-scroll-body">' +
+'    <div id="bgEdPinned">' +
 '      <div id="bgEdStage"><canvas id="bgEdCanvas" width="' + BG_W + '" height="' + BG_H + '"></canvas>' +
 '        <div id="bgEdPlaceholder">Choose an image to start</div></div>' +
 '      <div class="bg-ed-row">' +
@@ -227,11 +226,8 @@ function backgroundModalHtml() {
 '      </div>' +
 '      <input type="file" id="bgEdFile" accept="image/jpeg,image/png,image/webp,image/gif,image/bmp,.jpg,.jpeg,.png,.webp,.gif,.bmp" style="display:none;" onchange="bgEdFileChosen(this)">' +
 '      <div class="help" id="bgEdMsg"></div>' +
-'      <div class="bg-ed-row">' +
-'        <input type="url" id="bgEdUrl" placeholder="...or paste an image web address" autocapitalize="off" autocorrect="off" spellcheck="false" style="flex:1; min-width:0;">' +
-'        <button type="button" class="marker-edit-btn" style="flex:0 0 auto;" onclick="bgEdLoadUrl()">Load</button>' +
-'      </div>' +
-'      <div class="help">If the photo picker misbehaves (for example with "Take photo"), pick from your library only, or load a picture from a web address (the site has to allow it; an image you can open in the browser usually works). You can also paste an image.</div>' +
+'    </div>' +
+'    <div class="modal-scroll-body">' +
 '      <label for="bgEdZoom">Zoom <span class="val" id="bgEdZoomVal">100%</span></label>' +
 '      <input type="range" id="bgEdZoom" min="100" max="400" step="1" value="100" disabled oninput="bgEdZoomSlider(this.value)">' +
 '      <div class="help">Drag to move the image, pinch or scroll to zoom.</div>' +
@@ -925,21 +921,6 @@ var CLIENT_BODY =
 '  };\n' +
 '  img.src = url;\n' +
 '}\n' +
-'function bgEdLoadUrl() {\n' +
-'  var inp = bgEl("bgEdUrl");\n' +
-'  var u = inp ? inp.value.replace(/^\\s+|\\s+$/g, "") : "";\n' +
-'  if (!u) { bgEdMessage("Type or paste the web address of an image first."); return; }\n' +
-'  if (!window.fetch) { bgEdMessage("This browser cannot load images from a web address."); return; }\n' +
-'  bgEdMessage("Downloading image...");\n' +
-'  fetch(u, { mode: "cors" }).then(function (r) {\n' +
-'    if (!r.ok) throw new Error("HTTP " + r.status);\n' +
-'    return r.blob();\n' +
-'  }).then(function (b) {\n' +
-'    bgEdLoadFile(b);\n' +
-'  }).catch(function () {\n' +
-'    bgEdMessage("Could not download that image (the site may not allow it). Save it to your photos and pick it from the library instead.");\n' +
-'  });\n' +
-'}\n' +
 'function bgEdPaste(e) {\n' +
 '  if (!bgEd.open) return;\n' +
 '  var items = e.clipboardData && e.clipboardData.items;\n' +
@@ -1055,7 +1036,7 @@ var CSS_TEXT =
 '  .bg-slot-actions button { flex: 1; padding: 4px 2px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--btn-bg); color: var(--text); }\n' +
 '  .bg-tile-empty { font-size: 28px; font-weight: 300; color: var(--text-faint); display: flex; align-items: center; justify-content: center; }\n' +
 '  .bg-subtitle { margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--text-strong); }\n' +
-'  #bgEdStage { position: relative; width: 100%; max-width: 240px; margin: 0 auto; aspect-ratio: ' + BG_W + ' / ' + BG_H + '; background: #222; border-radius: 6px; overflow: hidden; }\n' +
+'  #bgEdStage { position: relative; width: 100%; max-width: 168px; margin: 0 auto; aspect-ratio: ' + BG_W + ' / ' + BG_H + '; background: #222; border-radius: 6px; overflow: hidden; }\n' +
 '  #bgEdCanvas { display: block; width: 100%; height: 100%; touch-action: none; image-rendering: pixelated; cursor: grab; }\n' +
 '  #bgEdPlaceholder { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 12px; color: #bbb; font-size: 13px; pointer-events: none; }\n' +
 '  .bg-ed-row { display: flex; gap: 8px; margin-top: 10px; }\n' +
@@ -1067,7 +1048,8 @@ var CSS_TEXT =
 '  .bg-prev-row { display: flex; gap: 10px; align-items: flex-start; }\n' +
 '  .bg-prev-col { flex: 1 1 0; min-width: 0; text-align: center; }\n' +
 '  .bg-prev-col canvas { width: 100%; height: auto; display: block; image-rendering: pixelated; background: #1b1b1b; border: 1px solid rgba(128,128,128,.4); box-sizing: border-box; }\n' +
-'  #bgEditorModal .modal-box { overflow-y: auto; }\n' +
+'  #bgEditorModal .modal-box { height: 92vh; max-height: 92vh; }\n' +
+'  #bgEdPinned { flex: 0 0 auto; padding-bottom: 6px; }\n' +
 '  #bgEditorModal label { display: block; margin-top: 12px; }\n';
 
 function backgroundCss() { return CSS_TEXT; }

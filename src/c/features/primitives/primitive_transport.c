@@ -13,7 +13,7 @@ bool primitive_transport_try_build(PrimitiveFeature *out, const uint8_t *primiti
   if (primitive_ids[0] == PRIM_ID_NONE) return false; // not sent for this slot
 
   int n = 0;
-  // Sequences longer than PRIMITIVE_FEATURE_MAX (6 on the B&W watches) are cut off.
+  // Sequences longer than PRIMITIVE_FEATURE_MAX (8 on the B&W watches) are cut off.
   for (int i = 0; i < PRIMITIVE_FEATURE_MAX; i++) {
     PrimitiveId id = (PrimitiveId)primitive_ids[i];
     if (id == PRIM_ID_NONE) break;
