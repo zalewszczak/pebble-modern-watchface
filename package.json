@@ -12,7 +12,10 @@
     "health",
     "steps",
     "moon",
-    "zalew"
+    "zalew",
+    "plugin",
+    "plugins",
+    "live"
   ],
   "private": true,
   "pebble": {
