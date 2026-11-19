@@ -227,7 +227,7 @@ function estimateBatteryUsage(s, env) {
   if (shakeSecs <= 0) shakeSecs = 3;           // the watch treats 0 as "default"
   shakeSecs = Math.min(shakeSecs, 30);
   var animMode = parseInt(s.CONFIG_SHAKE_ANIM_MODE, 10);
-  var smooth = animMode === 1 || animMode === 3;
+  var smooth = (animMode === 1 || animMode === 3) && secondHand;   // the watch ignores smooth seconds while the second hand is off
   var shakeTrans = on(s.CONFIG_SHAKE_HANDS_TRANSLUCENT);
   if (smooth) add('shake_smooth', 'Smooth second hand on shake', shakeSecs * K.SHAKE_SMOOTH_PER_S,
       shakeSecs + ' s of 30 frames per second after each shake.', STAR_SHAKE);

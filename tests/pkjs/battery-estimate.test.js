@@ -73,3 +73,10 @@ test('seconds always carry at least 60% of the total', () => {
   const c = run({ CONFIG_SHOW_SECONDS: 'true' });
   assert.ok(row(c, 'seconds').pct >= 59.99);
 });
+
+test('smooth second hand on shake costs nothing while the second hand is off', () => {
+  const off = run({ CONFIG_SHAKE_ANIM_MODE: '1' });
+  assert.ok(!row(off, 'shake_smooth'));
+  const on = run({ CONFIG_SHAKE_ANIM_MODE: '1', CONFIG_SHOW_SECONDS: 'true' });
+  assert.ok(row(on, 'shake_smooth'));
+});
