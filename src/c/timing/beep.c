@@ -3,11 +3,11 @@
 #ifdef PBL_SPEAKER
 
 // A7 = 3.52 kHz: the shrill pitch of the classic Casio time signal / alarm. Tune these to taste.
-#define BEEP_MIDI_NOTE 105
-#define BEEP_VOLUME    80 // 0-100
+#define BEEP_MIDI_NOTE 107
+#define BEEP_VOLUME    50 // 0-100
 #define BEEP_SHORT_MS  110
 #define BEEP_LONG_MS   650
-#define BEEP_GAP_MS    90
+#define BEEP_GAP_MS    80
 
 #define BEEP_NOTE(ms) { .midi_note = BEEP_MIDI_NOTE, .waveform = SpeakerWaveformSquare, .duration_ms = (ms) }
 
