@@ -79,8 +79,14 @@ function segmentedHtml(id, list, selected, fallback, helpId) {
     '<input type="hidden" id="' + id + '" value="' + sel + '">';
 }
 
-function pluginSourceLabel(src) {
-  return String(src.pluginName || 'Plugin') + ' - ' + src.category + ' / ' + src.item + ': ' + src.label;
+// "MET Norway Weather - Condition": plugin name + image label. The category / item part is only added
+// when two sources of the same plugin would otherwise look identical.
+function pluginSourceLabel(src, all) {
+  var base = String(src.pluginName || 'Plugin') + ' - ' + src.label;
+  var clash = (all || []).some(function (o) {
+    return o !== src && String(o.pluginName || 'Plugin') + ' - ' + o.label === base;
+  });
+  return clash ? base + ' (' + src.item + ')' : base;
 }
 
 function pluginSourceOptions(current) {
@@ -91,7 +97,7 @@ function pluginSourceOptions(current) {
   list.forEach(function (src) {
     var sel = src.key === stored || (!stored && !found && src === list[0]);
     if (src.key === stored) found = true;
-    opts += '<option value="' + esc(src.key) + '"' + (sel ? ' selected' : '') + '>' + esc(pluginSourceLabel(src)) + '</option>';
+    opts += '<option value="' + esc(src.key) + '"' + (sel ? ' selected' : '') + '>' + esc(pluginSourceLabel(src, list)) + '</option>';
   });
   if (stored && !found) opts += '<option value="' + esc(stored) + '" selected>Selected source (not available now)</option>';
   if (!opts) opts = '<option value="">No plugin provides images</option>';
@@ -144,6 +150,10 @@ function backgroundSectionHtml(current) {
 '      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
 (pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
 '    </div>' +
+'    <div id="weatherBgStyleBox" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
+'      <label for="weatherBgStyle">Style</label>' +
+'      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
+'    </div>' +
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
@@ -155,6 +165,15 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and complications stay easy to read.</div>' +
+'    <div id="bgCycleRow" style="margin-top:10px;' + (isOn(current) ? '' : 'display:none;') + '">' +
+'      <div class="field-label-row"><label for="bgCycle">Cycle through my images</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgCycle\')">?</button></div>' +
+'      <select id="bgCycle">' +
+'        <option value="0"' + (cycleVal(current) === '0' ? ' selected' : '') + '>Off (always the selected image)</option>' +
+'        <option value="1"' + (cycleVal(current) === '1' ? ' selected' : '') + '>Random one at every start</option>' +
+'        <option value="2"' + (cycleVal(current) === '2' ? ' selected' : '') + '>A different one each day</option>' +
+'      </select>' +
+'      <div class="help" id="help-bgCycle" style="display:none;">Works while one of "My images" is selected and at least two of your own images are stored. The watchface then picks among all your own images: randomly each time it starts, or a different one every day (switching at midnight).</div>' +
+'    </div>' +
 '    <div id="pluginBgChecks" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="checkbox-row" style="margin-top:10px;">' +
 '        <input type="checkbox" id="pluginBgAutoScheme" ' + (current && current.pluginBgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
@@ -172,8 +191,6 @@ function backgroundSectionHtml(current) {
 '    </div>' +
 '    <div id="weatherBgPanel" style="' + (isWeatherOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
-'      <label for="weatherBgStyle">Style</label>' +
-'      <select id="weatherBgStyle" onchange="bgRefresh()">' + weatherStyleOptions(current) + '</select>' +
 '      ' + weatherThumbImgs() +
 '    </div>' +
 '    <div id="pluginBgPanel" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
@@ -203,15 +220,6 @@ function backgroundSectionHtml(current) {
 (platform.bw ? '' : '      <div class="bg-subtitle">Predefined</div>' + presetHtml + '      <div class="bg-subtitle">My images</div>') +
 '      <div class="example-style-grid" id="bgSlotGrid"></div>' +
 '      <div class="help" style="margin-top:8px;">Tap a slot to add a photo. Images are converted to 64 colors and sent to the watch on Save.</div>' +
-'      <div id="bgCycleRow" style="margin-top:10px;">' +
-'        <div class="field-label-row"><label for="bgCycle">Cycle through my images</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgCycle\')">?</button></div>' +
-'        <select id="bgCycle">' +
-'          <option value="0"' + (cycleVal(current) === '0' ? ' selected' : '') + '>Off (always the selected image)</option>' +
-'          <option value="1"' + (cycleVal(current) === '1' ? ' selected' : '') + '>Random one at every start</option>' +
-'          <option value="2"' + (cycleVal(current) === '2' ? ' selected' : '') + '>A different one each day</option>' +
-'        </select>' +
-'        <div class="help" id="help-bgCycle" style="display:none;">Works while one of "My images" is selected and at least two of your own images are stored. The watchface then picks among all your own images: randomly each time it starts, or a different one every day (switching at midnight).</div>' +
-'      </div>' +
 '    </div>';
 }
 
@@ -247,6 +255,7 @@ function backgroundModalHtml() {
 '        <option value="bw">Black &amp; white</option>' +
 '        <option value="sepia">Sepia</option>' +
 '        <option value="vivid">Vivid colors</option>' +
+'        <option value="soft">Soft colors</option>' +
 '      </select>' +
 (platform.round ? (
 '      <div class="checkbox-row" style="margin-top:12px;"><input type="checkbox" id="bgEdFisheye" onchange="bgEdOptionsChanged()"><label for="bgEdFisheye" style="margin:0;">Fisheye lens (180&deg; look, black round edge)</label></div>' +
@@ -358,6 +367,9 @@ var CLIENT_BODY =
 '      var g2 = 0.349 * r + 0.686 * g + 0.168 * b;\n' +
 '      var b2 = 0.272 * r + 0.534 * g + 0.131 * b;\n' +
 '      r = r2; g = g2; b = b2;\n' +
+'    } else if (style === "soft") {\n' +
+'      var ys = 0.299 * r + 0.587 * g + 0.114 * b;\n' +
+'      r = ys + (r - ys) * 0.6; g = ys + (g - ys) * 0.6; b = ys + (b - ys) * 0.6;\n' +
 '    } else if (style === "vivid") {\n' +
 '      var y = 0.299 * r + 0.587 * g + 0.114 * b;\n' +
 '      r = (y + (r - y) * 1.5 - 128) * 1.1 + 128;\n' +
@@ -570,6 +582,10 @@ var CLIENT_BODY =
 '  var trow = bgEl("bgTranslucentRow");\n' +
 '  if (trow) trow.style.display = bmode === 0 ? "none" : "";\n' +
 '  if (panel) panel.style.display = (box && box.checked) ? "" : "none";\n' +
+'  var wsty = bgEl("weatherBgStyleBox");\n' +
+'  if (wsty) wsty.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
+'  var crow = bgEl("bgCycleRow");\n' +
+'  if (crow) crow.style.display = (box && box.checked) ? "" : "none";\n' +
 '  var sel = bgParseSource();\n' +
 '  for (var i = 0; i < BG_PRESET_NUMBERS.length; i++) {\n' +
 '    var n = BG_PRESET_NUMBERS[i];\n' +

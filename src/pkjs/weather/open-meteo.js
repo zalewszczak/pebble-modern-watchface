@@ -3,6 +3,8 @@ var xhrGetJSON = require('./http').xhrGetJSON;
 var conditionFromWmoCode = require('./weather-normalize').conditionFromWmoCode;
 var weatherDetailClass = require('./weather-normalize').weatherDetailClass;
 
+var BORDER_HOURS = 37;
+
 function fetchOpenMeteo(lat, lon, fromDate, toDate, cb) {
   var url = 'https://api.open-meteo.com/v1/forecast' +
             '?latitude=' + encodeURIComponent(lat) +
@@ -144,12 +146,15 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         }
       }
 
-      // Hours 1..16 ahead for the border ring: the ring is rebuilt every hour from this forecast, so with a long
-      // refresh interval it needs 12 hours plus the hours that pass between two refreshes (up to 3 h, plus the
-      // part-hour) to keep every sector filled.
-      var borderHourly = { tempC: [], wx: [], rain: [] };
-      for (var bh = 0; bh < 16; bh++) {
-        var bIdx = nowIdx + 1 + bh;
+      // 36 hourly values for the border ring, with the absolute time of the first one. The ring is rebuilt every
+      // hour from this forecast and every sector is looked up by its own clock time, so the ring stays complete
+      // for 24 hours after the last successful refresh (long refresh interval, phone asleep, failed fetch).
+      // It starts one hour before the nearest forecast hour, so the hour that contains "now" is always in there
+      // (the nearest hour is the next one when the fetch happens after :30).
+      var bStart = Math.max(0, nowIdx - 1);
+      var borderHourly = { start: hourlyTimes[bStart] || null, tempC: [], wx: [], rain: [] };
+      for (var bh = 0; bh < BORDER_HOURS; bh++) {
+        var bIdx = bStart + bh;
         borderHourly.tempC.push(hourlyTemps && typeof hourlyTemps[bIdx] === 'number' ? Math.round(hourlyTemps[bIdx]) : null);
         var bCloud = (hourlyCloud && typeof hourlyCloud[bIdx] === 'number') ? hourlyCloud[bIdx] : 0;
         borderHourly.wx.push(hourlyCodes && hourlyCodes.length > bIdx ? weatherDetailClass(hourlyCodes[bIdx], bCloud) : weatherDetailClass(-1, bCloud));

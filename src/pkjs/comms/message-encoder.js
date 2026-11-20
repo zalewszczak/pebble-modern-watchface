@@ -147,6 +147,8 @@ var hourlyVibeModeCode = settingsCodecs.hourlyVibeModeCode;
 var hourlyVibeIntervalMinCode = settingsCodecs.hourlyVibeIntervalMinCode;
 var hourlyVibePatternCode = settingsCodecs.hourlyVibePatternCode;
 var btLostVibeCode = settingsCodecs.btLostVibeCode;
+var hourlyVibeSoundCode = settingsCodecs.hourlyVibeSoundCode;
+var btLostBeepCode = settingsCodecs.btLostBeepCode;
 var minutesSinceMidnight = settingsCodecs.minutesSinceMidnight;
 var hourlyVibeStartMinCode = settingsCodecs.hourlyVibeStartMinCode;
 var hourlyVibeEndMinCode = settingsCodecs.hourlyVibeEndMinCode;
@@ -338,7 +340,7 @@ function logicalLayout() {
 function populateFeatureFields(dict) {
   var lay = logicalLayout();
   // Phone battery / music: subscribe only while a feature uses them (decided on the logical ids).
-  phoneMedia.setNeeds(phoneMedia.needsFromPrimitiveIds(lay.cornerIds.concat(lay.edgeIds), primitiveIds));
+  phoneMedia.setNeeds(phoneMedia.needsFromPrimitiveIds(lay.cornerIds.concat(lay.edgeIds), primitiveIds, lay.cornerAux.concat(lay.edgeAux)));
   var all = phoneSlots.compile(lay.cornerIds.concat(lay.edgeIds), lay.cornerAux.concat(lay.edgeAux));
   dict['CORNER_PRIMITIVE_IDS'] = all.ids.slice(0, lay.cornerIds.length);
   dict['CORNER_PRIMITIVE_AUX'] = all.aux.slice(0, lay.cornerAux.length);
@@ -380,7 +382,8 @@ function populateSettingsFields(dict) {
     bitmapMarkerInvertCode(),
     bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode(),
     settingsCodecs.centerCircleOutlineCode(),
-    bgImageSync.schemeOverrideCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
+    bgImageSync.schemeOverrideCode(),
+    hourlyVibeSoundCode(), btLostBeepCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
   ];
   populateFeatureFields(dict);
   dict['DAILY_STEP_GOAL'] = dailyStepGoalValue();
@@ -460,6 +463,7 @@ function applyExtraWeather(extra) {
     forecastWx: extra.forecastWx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
     forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; }),
     borderHourly: extra.borderHourly ? {
+      start: extra.borderHourly.start,
       tempC: extra.borderHourly.tempC,
       wx: extra.borderHourly.wx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
       rain: extra.borderHourly.rain,

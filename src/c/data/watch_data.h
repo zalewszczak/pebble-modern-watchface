@@ -205,7 +205,9 @@ typedef struct {
   // Hourly vibration schedule.
   uint8_t hourly_vibe_mode; // 0=off, 1=hourly, 2=interval.
   uint8_t hourly_vibe_interval_min; // interval for mode 2.
-  uint8_t hourly_vibe_pattern; // 0=short, 1=double, 2=long.
+  uint8_t hourly_vibe_pattern; // 0=short, 1=double, 2=long, 3=off.
+  uint8_t hourly_vibe_sound;   // beep with the hourly indication: 0=off, 1=short, 2=long, 3=double (needs a speaker).
+  uint8_t bt_lost_beep;        // beep when the phone connection is lost: 0=off, 1=short, 2=long, 3=double (needs a speaker).
   uint8_t bt_lost_vibe;        // vibrate when the phone connection is lost: 0=off, 1=short, 2=double, 3=long.
   uint16_t hourly_vibe_start_min; // start minute of day.
   uint16_t hourly_vibe_end_min; // end minute; equal means all day.

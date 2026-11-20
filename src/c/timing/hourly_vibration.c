@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "./hourly_vibration.h"
+#include "./beep.h"
 
 #define VIBE_FLASH_DURATION_MS 10000
 #define VIBE_FLASH_STEP_MS 1000
@@ -27,9 +28,12 @@ static bool time_in_range(int minute_of_day) {
   return minute_of_day >= start || minute_of_day <= end;
 }
 
-// Unknown vibration patterns fall back to the original short pulse.
+// Vibration (pattern 3 = off) and/or beep. Unknown vibration patterns fall back to the original short pulse.
 static void trigger_vibration(void) {
+  beep_play(s_data->hourly_vibe_sound);
   switch (s_data->hourly_vibe_pattern) {
+    case 3:
+      break;
     case 1:
       vibes_double_pulse();
       break;

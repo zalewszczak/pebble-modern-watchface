@@ -191,7 +191,7 @@ test('units, location, plugin text', () => {
   assert.strictEqual(one(PRIM.PRIM_LOCATION_NAME, ctx()).text, 'Unknown');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 0).text, 'Hello');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 1).text, '--');
-  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [12], c).ids[0], 0);
+  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [15], c).ids[0], 0);
 });
 
 test('phone battery and music title', () => {
@@ -257,4 +257,34 @@ test('snapshot: a refresh without weather keeps the old numbers; an invalid mess
   slots.applyWeather({ weatherOk: false, weather: {}, headlineSources: 0 });
   assert.strictEqual(slots.snapshot().errorCode, 0);
   slots.reset();
+});
+
+test('calendar complications are plugin-text slots 12-14', () => {
+  const at = (h, m) => new Date(2026, 10, 20, h, m).getTime();
+  const ev = { start: at(13, 30), end: at(14, 45), title: 'Meeting' };
+  const c = ctx({ calendar: { state: 'ok', event: ev } });
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 12).text, '13:30');
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 13).text, 'Meeting');
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 14).text, '14:45');
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, ctx({ calendar: { state: 'ok', event: null } }), 13).text, 'No events');
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, ctx({ calendar: { state: 'waiting', event: null } }), 13).text, 'N/A');
+  const seq = require('../../src/pkjs/config/primitive-decompose');
+  assert.deepStrictEqual(seq.primitiveIdSequenceForContent(237).slice(0, 3), [PRIM.PRIM_PLUGIN_TEXT, PRIM.PRIM_SPACE, PRIM.PRIM_PLUGIN_TEXT]);
+  assert.deepStrictEqual(seq.primitiveAuxSequenceForContent(238).slice(0, 3), [12, 0, 14]);
+});
+
+test('calendar source picks the next unfinished timed event within 24 h', () => {
+  const cal = require('../../src/pkjs/border/calendar-source');
+  const now = Date.now(), H = 3600000;
+  cal._setList([
+    { id: 'a', start: now - 3 * H, end: now - 2 * H, allDay: false, title: 'past' },
+    { id: 'b', start: now - 1 * H, end: now + 1 * H, allDay: false, title: 'ongoing' },
+    { id: 'c', start: now, end: now + 24 * H, allDay: true, title: 'all day' },
+    { id: 'd', start: now + 2 * H, end: now + 3 * H, allDay: false, title: 'later' },
+    { id: 'e', start: now + 30 * H, end: now + 31 * H, allDay: false, title: 'far' }
+  ]);
+  assert.strictEqual(cal.nextEvent(now).title, 'ongoing');
+  assert.strictEqual(cal.nextEvent(now + 90 * 60000).title, 'later');
+  assert.strictEqual(cal.nextEvent(now + 4 * H), null);
+  cal._setList([]);
 });

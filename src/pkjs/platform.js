@@ -18,6 +18,16 @@ function detect() {
 var name = detect();
 var round = name === 'gabbro';
 var bw = name === 'flint' || name === 'diorite';
+// Watches with a built-in speaker (PBL_SPEAKER in the Pebble SDK): Pebble Time 2 and Pebble 2 Duo.
+var speaker = name === 'emery' || name === 'flint';
+
+// Human readable name of the connected watch for the About popup.
+var LABELS = { emery: 'Pebble Time 2', gabbro: 'Pebble Round 2', flint: 'Pebble 2 Duo', diorite: 'Pebble 2',
+  basalt: 'Pebble Time', chalk: 'Pebble Time Round', aplite: 'Pebble' };
+function labelOf(n) {
+  var cap = String(n || 'emery').replace(/^[a-z]/, function (c) { return c.toUpperCase(); });
+  return LABELS[n] ? LABELS[n] + ' / ' + cap : cap;
+}
 
 // Generated image tables are { <id>: dataUri, round: { <id>: dataUri }, bw: { <id>: dataUri } }.
 // Returns the table for the active shape (round or B&W art over square art), without the nested keys.
@@ -55,6 +65,8 @@ module.exports = {
   name: name,
   round: round,
   bw: bw,
+  speaker: speaker,
+  label: labelOf(name),
   bwByte: bwByte,
   bwFont: bwFont,
   BW_FONT_IDS: BW_FONT_IDS,

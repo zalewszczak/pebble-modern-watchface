@@ -7,12 +7,14 @@
 var platform = require('../platform');
 var pluginImage = require('../bg-image/plugin-image');
 var permissions = require('../settings/permissions');
+var calendar = require('../border/calendar-source');
 
 var ART = platform.bw ? 12 : 16;           // album art edge in pixels, same as the watch's PL_ICON_DRAW
 var POS_DRIFT_PUSH_S = 4;                   // push a position update when the watch's own estimate is this far off
 var DEBOUNCE_MS = 600;
 
-var needs = { phone: false, music: false };
+var needs = { phone: false, music: false, calendar: false };
+var calTimer = null;
 var phoneSub = null, musicSub = null;
 var pushFn = null, artFn = null;
 var timer = null;
@@ -247,18 +249,35 @@ function setNeeds(n) {
   if (!wantPhone && phoneSub) { drop(phoneSub); phoneSub = null; phone = { pct: 255, charging: 0 }; phoneStatus = { state: 'off', message: '' }; }
   if (wantMusic && !musicSub) subscribeMusic();
   if (!wantMusic && musicSub) { drop(musicSub); musicSub = null; musicStatus = { state: 'off', message: '', props: [] }; }
-  needs = { phone: wantPhone, music: wantMusic };
+  var wantCal = !!(n && n.calendar);
+  if (wantCal !== needs.calendar) {
+    calendar.addListener('slots', function () { schedulePush(); scheduleCalendarTick(); });
+    calendar.need('slots', wantCal);
+    if (!wantCal && calTimer) { clearTimeout(calTimer); calTimer = null; }
+  }
+  needs = { phone: wantPhone, music: wantMusic, calendar: wantCal };
+  if (wantCal) scheduleCalendarTick();
+}
+
+// The shown event changes when it ends (or one comes within 24 h), so re-send at the latest every hour.
+function scheduleCalendarTick() {
+  if (calTimer) clearTimeout(calTimer);
+  var now = Date.now(), ev = calendar.nextEvent(now);
+  var delay = ev && ev.end - now < 3600000 ? ev.end - now + 1000 : 3600000;
+  calTimer = setTimeout(function () { calTimer = null; if (needs.calendar) { schedulePush(); scheduleCalendarTick(); } }, Math.max(5000, delay));
 }
 
 // The primitive ids (corner + edge bytes as sent to the watch) decide what is needed.
-function needsFromPrimitiveIds(ids, PRIM) {
+function needsFromPrimitiveIds(ids, PRIM, aux) {
   var phoneIds = [PRIM.PRIM_PHONE_ICON, PRIM.PRIM_PHONE_BATTERY_TEXT];
   var musicIds = [PRIM.PRIM_MEDIA_STATE_ICON, PRIM.PRIM_MEDIA_ART_ICON, PRIM.PRIM_MEDIA_PROGRESS_BAR,
     PRIM.PRIM_MEDIA_TITLE_TEXT, PRIM.PRIM_MEDIA_ELAPSED_TEXT];
-  var n = { phone: false, music: false };
+  var n = { phone: false, music: false, calendar: false };
   for (var i = 0; i < ids.length; i++) {
     if (phoneIds.indexOf(ids[i]) >= 0) n.phone = true;
     if (musicIds.indexOf(ids[i]) >= 0) n.music = true;
+    // Calendar events travel as plugin-text slots 12-14.
+    if (ids[i] === PRIM.PRIM_PLUGIN_TEXT && aux && aux[i] >= 12 && aux[i] <= 14) n.calendar = true;
   }
   return n;
 }
@@ -274,12 +293,17 @@ function fill(dict) {
 
 // What the phone slots need: battery state and the track text, as the phone last reported them.
 function phoneState() { return { pct: needs.phone ? phone.pct : 255, charging: needs.phone ? phone.charging : 0 }; }
+// The event the calendar complications show: { state: calendar plugin state, event: {start, end, title} or null }.
+function calendarInfo() {
+  if (!needs.calendar) return { state: 'off', event: null };
+  return { state: calendar.status().state, event: calendar.nextEvent(Date.now()) };
+}
 function musicText() { return { state: needs.music ? music.state : 0, title: needs.music ? music.title : '', artist: needs.music ? music.artist : '' }; }
 
 module.exports = {
   ART: ART,
   init: init, setNeeds: setNeeds, needsFromPrimitiveIds: needsFromPrimitiveIds, fill: fill,
-  phoneState: phoneState, musicText: musicText,
+  phoneState: phoneState, musicText: musicText, calendarInfo: calendarInfo,
   status: function () { return { phone: phoneStatus, music: musicStatus }; },
   // exposed for tests
   _tinyArt: tinyArt, _onMusic: onMusic, _onPhone: onPhone

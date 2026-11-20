@@ -23,6 +23,13 @@ var SECTION_META = configTemplate.SECTION_META;
 var sectionLegendHtml = configTemplate.sectionLegendHtml;
 var subsectionLegendHtml = configTemplate.subsectionLegendHtml;
 var verticalButtonGroupHtml = configTemplate.verticalButtonGroupHtml;
+// Beep choices (values match BEEP_* in src/c/timing/beep.h).
+var BEEP_OPTIONS = [
+  { value: '0', label: 'Off' },
+  { value: '1', label: 'Short beep' },
+  { value: '2', label: 'Long beep' },
+  { value: '3', label: 'Double beep' }
+];
 var modeButtonGroupHtml = configTemplate.modeButtonGroupHtml;
 var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
@@ -180,7 +187,7 @@ directWebfontStyle() +
 '  @media (prefers-color-scheme: dark) {' +
 '    :root { --page-bg: #1c1c1e; --card-bg: #2c2c2e; --text: #f2f2f2; --text-strong: #e5e5e5; --text-muted: #aaa; --text-faint: #999; --text-faint2: #bbb; --text-disabled: #777; --border: #48484a; --border-light: #3a3a3c; --border-lighter: #545456; --btn-bg: #3a3a3c; }' +
 '  }' +
-'  body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 16px 20px 90px; background: var(--page-bg); color: var(--text); }' +
+'  body { font-family: -apple-system, Helvetica, Arial, sans-serif; margin: 0; padding: 16px 14px 90px; background: var(--page-bg); color: var(--text); }' +
 '  html, body { touch-action: manipulation; }' +
 '  /* Full-screen startup loader */' +
 '  #startupLoader { position: fixed; inset: 0; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: var(--page-bg); color: var(--text); opacity: 1; transition: opacity 360ms ease; }' +
@@ -287,7 +294,7 @@ configPresetSchedule.css +
 '  .color-preset-trigger-text { display: flex; flex-direction: column; min-width: 0; }' +
 '  .color-preset-chevron { font-size: 24px; font-weight: 700; opacity: 0.5; flex-shrink: 0; }' +
 '  .secondary-btn:active { background: var(--border-lighter); }' +
-'  .save-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--page-bg); box-shadow: 0 -2px 6px rgba(0,0,0,0.1); }' +
+'  .save-bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--page-bg); box-shadow: 0 -2px 6px rgba(0,0,0,0.1); }' +
 '  .save-bar button { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; color: #fff; background: #ff9200; border: none; border-radius: 8px; }' +
 '  .save-bar button:active { background: #e08300; }' +
 '  #topBar { position: fixed; top: 0; left: 0; right: 0; max-height: 25vh; overflow: hidden; background: var(--page-bg); box-shadow: 0 2px 6px rgba(0,0,0,0.12); display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; padding-top: calc(10px + env(safe-area-inset-top, 0px)); box-sizing: border-box; z-index: 50; }' +
@@ -622,7 +629,7 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 '    <div class="about-info">' +
 '      <div class="about-info-row"><div class="about-info-label">Version</div><div class="about-info-value">' + APP_VERSION + '</div></div>' +
 '      <div class="about-info-row"><div class="about-info-label">Creator</div><div class="about-info-value">Łukasz Zalewski</div></div>' +
-'      <div class="about-info-row"><div class="about-info-label">Platform</div><div class="about-info-value">Pebble Time 2 / Emery</div></div>' +
+'      <div class="about-info-row"><div class="about-info-label">Platform</div><div class="about-info-value">' + esc(platform.label) + '</div></div>' +
 '    </div>' +
 '    <div class="about-description">Find out more about the project on github, feel free to contribute as well.</div>' +
 '    <a class="about-source" href="#" onclick="event.preventDefault(); Pebble.openUrl(\'https://github.com/zalewszczak/pebble-modern-watchface\'); return false;">Source code on GitHub</a>' +
@@ -1229,10 +1236,10 @@ configPresetSchedule.modalHtml +
 '      <div class="field-label-row"><label>Startup clock animation</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-startupClockAnim\')">?</button></div>' +
       verticalButtonGroupHtml('startupClockAnimModeGroup', 'startupClockAnimMode', [
         { value: '0', label: 'Off' },
-        { value: '1', label: 'Animate clock' }
+        { value: '1', label: 'Animate clock (hands grow from the centre and swing to the current time)' }
       ], current.startupClockAnimMode || '1') +
 '    </div>' +
-'    <div class="help" id="help-startupClockAnim" style="display:none;">Choose how the clock appears when the watchface starts.</div>' +
+'    <div class="help" id="help-startupClockAnim" style="display:none;">When the watchface starts the hands grow out of the centre and swing to the current time (about 1.4 seconds, played once per start). Off shows the hands in place right away.</div>' +
 
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label>Animate indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
@@ -1429,11 +1436,11 @@ configPresetSchedule.modalHtml +
 '  </fieldset>' +
 
 '  <fieldset>' +
-    sectionLegendHtml('other', 'Other') +
+    sectionLegendHtml('other', 'Notifications') +
 '    <div class="section-body" id="section-other" style="display:none;">' +
 '    <div class="subsection"></div>' +
 
-'    <label>Hourly vibrations</label>' +
+'    <label>Hourly indications</label>' +
       verticalButtonGroupHtml('hourlyVibeModeGroup', 'hourlyVibeMode', [
         { value: '0', label: 'Off' },
         { value: '1', label: 'On full hours' },
@@ -1453,10 +1460,17 @@ configPresetSchedule.modalHtml +
 
 '    <label style="margin-top:12px;">Vibration</label>' +
       verticalButtonGroupHtml('hourlyVibePatternGroup', 'hourlyVibePattern', [
+        { value: '3', label: 'Off' },
         { value: '0', label: 'Short' },
         { value: '1', label: 'Double' },
         { value: '2', label: 'Long' }
       ], current.hourlyVibePattern || '0') +
+
+(platform.speaker ? (
+'    <div class="field-label-row"><label style="margin-top:12px;">Sound</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeSound\')">?</button></div>' +
+      verticalButtonGroupHtml('hourlyVibeSoundGroup', 'hourlyVibeSound', BEEP_OPTIONS, current.hourlyVibeSound || '0') +
+'    <div class="help" id="help-hourlyVibeSound" style="display:none;">A high-pitched beep like the time signal of an old digital watch, played together with the vibration. Needs a watch with a speaker. It stays silent during Quiet Time (the watch does not let apps override that) and when the watch sound is muted.</div>'
+) : '    <input type="hidden" id="hourlyVibeSound" value="' + esc(current.hourlyVibeSound || '0') + '">') +
 
 '    <div class="field-label-row"><label style="margin-top:12px;" for="hourlyVibeStartTime">Start time</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeTimeRange\')">?</button></div>' +
 '    <input type="time" id="hourlyVibeStartTime" value="' + esc(current.hourlyVibeStartTime || '00:00') + '" onchange="onHourlyVibeTimeChange(\'hourlyVibeStartTime\')">' +
@@ -1491,6 +1505,12 @@ configPresetSchedule.modalHtml +
         { value: '3', label: 'Long' }
       ], current.btLostVibe || '0') +
 '    <div class="help" id="help-btLostVibe" style="display:none;">Vibrates once when the watch loses its connection to the phone. Nothing happens when the connection comes back.</div>' +
+
+(platform.speaker ? (
+'    <div class="field-label-row"><label style="margin-top:16px;">Beep when Bluetooth connection is lost</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-btLostBeep\')">?</button></div>' +
+      verticalButtonGroupHtml('btLostBeepGroup', 'btLostBeep', BEEP_OPTIONS, current.btLostBeep || '0') +
+'    <div class="help" id="help-btLostBeep" style="display:none;">Beeps once when the watch loses its connection to the phone. Needs a watch with a speaker; silent during Quiet Time.</div>'
+) : '    <input type="hidden" id="btLostBeep" value="' + esc(current.btLostBeep || '0') + '">') +
 
 '    </div>' +
 '  </fieldset>' +
@@ -2119,11 +2139,17 @@ configPlugins.pluginScript(current, platform.suffix) +
 'function categoryItemOptionsHtml(categoryId, selectedContentId) {' +
 '  if (categoryId === "plugins") return pluginItemOptionsHtml(selectedContentId);' +
 '  var items = findCategory(categoryId).items;' +
-'  var html = "";' +
+'  var html = "", group = null;' +
 '  for (var i = 0; i < items.length; i++) {' +
 '    if (items[i].oddOf) continue;' +
+'    if (items[i].group !== group) {' +
+'      if (group !== null) html += "</optgroup>";' +
+'      group = items[i].group;' +
+'      if (group) html += "<optgroup label=\\"" + group + "\\">";' +
+'    }' +
 '    html += "<option value=\\"" + items[i].id + "\\"" + (String(selectedContentId) === String(items[i].id) ? " selected" : "") + ">" + items[i].label + "</option>";' +
 '  }' +
+'  if (group) html += "</optgroup>";' +
 '  return html;' +
 '}' +
 'var SLOT_DEFS = {' +
@@ -3892,9 +3918,9 @@ require('./config/config-runtime') +
 '}' +
 'function computeOtherSubheader() {' +
 '  var mode = document.getElementById("hourlyVibeMode").value;' +
-'  if (mode === "0") return "Hourly vibrations off";' +
+'  if (mode === "0") return "Hourly indications off";' +
 '  var when = mode === "1" ? "on full hours" : (document.getElementById("hourlyVibeIntervalMin").value + " min interval");' +
-'  return "Hourly vibrations: " + when;' +
+'  return "Hourly indications: " + when;' +
 '}' +
 'function computeUpdatesSubheader() {' +
 '  var mins = document.getElementById("updateMins").value;' +

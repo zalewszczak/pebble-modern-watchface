@@ -12,7 +12,7 @@
 // can show two calendars or a half-density tint. On the B&W watches c0 holds a pattern level instead of a
 // colour: 0 empty, 1 sparse dots, 2 checkerboard, 3 dense, 4 solid (c1 unused).
 //
-// Sources: 1 = weather forecast (next 12 hours; the phone keeps 16 so a long refresh interval leaves no gap), 2 = calendar (current hour + the next 11).
+// Sources: 1 = weather forecast (next 12 hours; the phone keeps 36 hourly values so a long refresh interval or a missed refresh leaves no gap), 2 = calendar (current hour + the next 11).
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var platform = require('../platform');
@@ -20,6 +20,7 @@ var calendar = require('./calendar-source');
 
 var MAX_BYTES = 80;
 var WX_CACHE_KEY = 'BORDER_WX_CACHE';
+var HR_MAX = 40; // hourly forecast entries kept for the ring
 
 // ---- colours --------------------------------------------------------------------------------------------
 function q(v) { v = v >> 6; return v < 0 ? 0 : (v > 3 ? 3 : v); }
@@ -123,7 +124,9 @@ function setWeather(extra, tempColors) {
   };
   var bh = extra.borderHourly;
   if (bh && bh.tempC && bh.tempC.length > 12) {
-    wxCache.hr = { temp: bh.tempC.slice(0, 16), wx: bh.wx.slice(0, 16), rain: bh.rain.slice(0, 16), tempColor: (bh.tempColor || []).slice(0, 16) };
+    // `start` = time of the first entry; entry i is the forecast for start + i hours.
+    wxCache.hr = { start: typeof bh.start === 'number' ? bh.start : null,
+      temp: bh.tempC.slice(0, HR_MAX), wx: bh.wx.slice(0, HR_MAX), rain: bh.rain.slice(0, HR_MAX), tempColor: (bh.tempColor || []).slice(0, HR_MAX) };
   }
   try { localStorage.setItem(WX_CACHE_KEY, JSON.stringify(wxCache)); } catch (e) { }
 }
@@ -148,7 +151,30 @@ function buildWeather(now) {
   var nl = (style === 4 && !platform.bw) ? 3 : 1, layers = [], l;
   for (l = 0; l < nl; l++) layers.push(emptyLayer());
   var hour12 = now.getHours() % 12;
-  // The forecast is "h hours from the moment it was fetched"; shift by the whole hours passed since, so a
+  var hrNow = c.hr || null;
+  if (hrNow && typeof hrNow.start === 'number') {
+    // Every sector is looked up by its own clock time in the hourly forecast, so an old forecast simply
+    // loses its oldest hours (sector h = forecast for the start of the current hour + h).
+    var h0 = new Date(now.getTime()); h0.setMinutes(0, 0, 0);
+    var HOUR = 3600000;
+    for (var k = 1; k <= 12; k++) {
+      var i = Math.round((h0.getTime() + k * HOUR - hrNow.start) / HOUR), sc = (hour12 + k) % 12;
+      if (i < 0 || i >= hrNow.temp.length) continue;
+      var t2 = hrNow.temp[i];
+      if (typeof t2 !== 'number') continue;
+      var wx2 = hrNow.wx[i] || 0, rain2 = hrNow.rain[i] || 0;
+      if (platform.bw) layers[0][sc] = [style === 1 ? WX_LEVEL[wx2 > 9 ? 0 : wx2] : rainLevel(rain2), 0];
+      else if (style === 4) {
+        layers[0][sc] = fillTemperature(t2, scheme, hrNow.tempColor[i]);
+        layers[1][sc] = fillConditions(wx2, scheme);
+        layers[2][sc] = fillRain(rain2, scheme);
+      } else if (style === 1) layers[0][sc] = fillConditions(wx2, scheme);
+      else if (style === 2) layers[0][sc] = fillTemperature(t2, scheme, hrNow.tempColor[i]);
+      else layers[0][sc] = fillRain(rain2, scheme);
+    }
+    return encode(layers);
+  }
+  // Older cache without absolute times: the forecast is "h hours from the moment it was fetched"; shift by the whole hours passed since, so a
   // forecast that is a few hours old still lands on the right sectors (the far end becomes transparent).
   var age = c.ts ? Math.max(0, Math.floor(now.getTime() / 3600000) - Math.floor(c.ts / 3600000)) : 0;
   // With the 16-hour forecast (hr) a refresh interval of up to 3 h still fills all 12 sectors; an older cache
@@ -264,7 +290,7 @@ function init(push) {
   sync();
 }
 // Subscribes to the calendar plugin only while the ring shows the calendar.
-function sync() { if (source() === 2) calendar.start(); else calendar.stop(); }
+function sync() { calendar.need('border', source() === 2); }
 
 module.exports = {
   bytes: bytes, setWeather: setWeather, init: init, sync: sync, source: source,

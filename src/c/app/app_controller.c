@@ -16,6 +16,7 @@
 #include "../features/primitives/primitive_ids.h"
 #include "../hands/hands_controller.h"
 #include "../timing/hourly_vibration.h"
+#include "../timing/beep.h"
 #include "./layout_controller.h"
 #include "./watchface_ui.h"
 #include "../timing/feature_refresh.h"
@@ -96,6 +97,7 @@ static void app_connection_handler(bool connected) {
       case 3: vibes_long_pulse(); break;
       default: break;
     }
+    beep_play(s_data.bt_lost_beep);
   }
 }
 

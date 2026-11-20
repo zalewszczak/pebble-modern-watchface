@@ -627,7 +627,7 @@ var CORNER_CATEGORIES = [
       },
       {
         "id": 93,
-        "label": "Weather in 1 days",
+        "label": "Weather in 1 day",
         "preview": "(1d) 24C"
       },
       {
@@ -738,9 +738,9 @@ var CORNER_CATEGORIES = [
   },
   {
     "id": "phone",
-    "label": "Phone & music",
+    "label": "Phone, music & calendar",
     "icon": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"7\" y=\"2.5\" width=\"10\" height=\"19\" rx=\"2\"/><line x1=\"11\" y1=\"18.5\" x2=\"13\" y2=\"18.5\"/></svg>",
-    "note": "Music complications work only on Android (a limit of the Pebble app's music plugin). Phone battery works on both Android and iOS (iOS reports it in 5% steps). Both need plugins switched on in the Pebble app.",
+    "note": "Music complications work only on Android (a limit of the Pebble app's music plugin). Phone battery works on both Android and iOS (iOS reports it in 5% steps). Calendar complications show the next event that has not ended yet (24 h clock, all-day events skipped). All of them need plugins switched on in the Pebble app.",
     "items": [
       {
         "id": 226,
@@ -852,6 +852,88 @@ var CORNER_CATEGORIES = [
     ]
   }
 ];
+
+// Calendar events (Pebble calendar plugin), appended to the phone category.
+CORNER_CATEGORIES.filter(function (c) { return c.id === 'phone'; })[0].items.push(
+  { id: 237, label: 'Calendar: Event time: name', preview: '13:30 Meeting' },
+  { id: 238, label: 'Calendar: Event start - end times', preview: '13:30-14:45' },
+  { id: 239, label: 'Calendar: Event name', preview: 'Meeting' }
+);
+
+// Order of the "Content" dropdown: groups, each with its small heading, in the order shown. Items missing from a
+// list keep their relative order after the listed ones (under the last group), so a new item can never vanish.
+var CONTENT_GROUPS = {
+  utilities: [
+    ['Battery', [10, 228, 17]],
+    ['Bluetooth', [20, 78]],
+    ['Quiet Time', [108, 109]],
+    ['Combined status', [102, 103, 112, 113]],
+    ['Location & sensors', [13, 38, 85]]
+  ],
+  health: [
+    ['Heart & activity', [1, 2, 3, 110, 111]],
+    ['Sleep', [39, 40, 41, 42, 43]]
+  ],
+  date: [
+    ['Day & weekday', [12, 22, 23, 24]],
+    ['Month', [21, 25, 26]],
+    ['Numeric dates', [27, 28, 29, 30, 98, 99]],
+    ['Week', [19]]
+  ],
+  time: [
+    ['Clock', [18, 63, 86]],
+    ['Hours', [64, 65, 66]],
+    ['Minutes', [67, 68]],
+    ['Seconds', [69, 70, 71, 72]]
+  ],
+  timezone: [
+    ['Americas', [61, 60, 59, 58, 57, 56, 62]],
+    ['Europe & Africa', [44, 45, 46, 47]],
+    ['Asia', [48, 49, 50, 51, 52, 53]],
+    ['Pacific', [54, 55]]
+  ],
+  weather: [
+    ['Now', [5, 73, 77, 31, 32, 76]],
+    ['Today', [4, 74, 75, 7, 6, 107]],
+    ['Atmosphere', [8, 37, 34, 9, 35, 14, 15, 36]],
+    ['Forecast: next hours', [87, 88, 89, 90, 91, 92]],
+    ['Forecast: next days', [93, 94, 95]]
+  ],
+  astro: [
+    ['Sun & Moon', [16, 11]],
+    ['Planets', [79, 82, 81]],
+    ['Sky events', [80, 83, 84]]
+  ],
+  wide: [
+    ['Health', [100, 101, 104]],
+    ['Date & sun', [105, 106]],
+    ['Weather', [96, 97]],
+    ['Status', [118]]
+  ],
+  phone: [
+    ['Phone', [226, 227]],
+    ['Calendar', [237, 238, 239]],
+    ['Music (Android only)', [220, 221, 222, 223, 224, 225]]
+  ]
+};
+CORNER_CATEGORIES.forEach(function (cat) {
+  var groups = CONTENT_GROUPS[cat.id];
+  if (!groups) return;
+  var byId = {}, placed = {}, out = [];
+  cat.items.forEach(function (it) { byId[it.id] = it; });
+  groups.forEach(function (g) {
+    g[1].forEach(function (id) {
+      var it = byId[id];
+      if (!it) return;
+      it.group = g[0]; placed[id] = true; out.push(it);
+      // "odd state only" variants ride along with their base item (they are not listed in the dropdown).
+      cat.items.forEach(function (o) { if (o.oddOf === id && !placed[o.id]) { placed[o.id] = true; out.push(o); } });
+    });
+  });
+  var lastGroup = groups[groups.length - 1][0];
+  cat.items.forEach(function (it) { if (!placed[it.id]) { if (!it.oddOf) it.group = lastGroup; out.push(it); } });
+  cat.items = out;
+});
 
 var MAX_FEATURES = CORNER_CATEGORIES.reduce(function (max, cat) {
   return cat.items.reduce(function (m, item) { return Math.max(m, item.id); }, max);

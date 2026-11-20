@@ -344,6 +344,7 @@ rule(PRIM.PRIM_AURORA_KP_VALUE, auroraRule(false, true));
 
 // Plugin text, phone battery, music title -----------------------------------------------------------------------
 rule(PRIM.PRIM_PLUGIN_TEXT, function (c, aux) {
+  if (aux >= CAL_START && aux <= CAL_END) return calendarText(c, aux);
   if (aux >= 12) return null;
   var t = c.plugins && c.plugins[aux];
   return T(t ? t : '--', WHITE, MAIN); // a blank (' ') is a later line of a long text that has run out: draws nothing
@@ -364,6 +365,24 @@ rule(PRIM.PRIM_MEDIA_TITLE_TEXT, function (c, aux) { // aux 0 = title, 1 = artis
   var t = aux ? m.artist : m.title;
   return T(t ? t : (m.state ? '--' : 'No music'), WHITE, MAIN);
 });
+
+// Calendar (Pebble calendar plugin): the first event that has not ended yet, 24 h clock like the other times.
+function hhmm(ms) {
+  var d = new Date(ms);
+  return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+// Virtual plugin-text slots above the 12 real ones carry the calendar event, so no extra primitive is needed:
+// aux 12 = start time, 13 = event name, 14 = end time (content 237-239 combine them, see primitive-decompose.js).
+var CAL_START = 12, CAL_NAME = 13, CAL_END = 14;
+function calendarText(c, aux) {
+  var cal = c.calendar || { state: 'off', event: null };
+  if (cal.state !== 'ok') return na(false);
+  var e = cal.event;
+  if (!e) return T(aux === CAL_NAME ? 'No events' : '--', WHITE, MAIN);
+  if (aux === CAL_START) return T(hhmm(e.start), WHITE, MAIN);
+  if (aux === CAL_END) return T(hhmm(e.end), WHITE, MAIN);
+  return T(e.title || 'Event', WHITE, MAIN);
+}
 
 // ---- encoding ---------------------------------------------------------------------------------------------------
 
@@ -402,7 +421,8 @@ function liveContext() {
     u: { temp: codecs.tempUnitCode(), wind: codecs.windSpeedUnitCode(), aqi: codecs.aqiUnitCode(), alt: codecs.altitudeUnitCode() },
     plugins: pluginManager.texts(),
     phone: phoneMedia.phoneState(),
-    music: phoneMedia.musicText()
+    music: phoneMedia.musicText(),
+    calendar: phoneMedia.calendarInfo()
   };
 }
 

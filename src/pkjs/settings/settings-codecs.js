@@ -344,7 +344,11 @@ function drawDebugCode() { return getSetting('CONFIG_DRAW_DEBUG', 'false') === '
 function hourlyVibeModeCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_MODE', '0'), 0, 2, 0); }
 function hourlyVibeIntervalMinCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_INTERVAL_MIN', '30'), 1, 180, 30); }
 function btLostVibeCode() { return clampInt(getSetting('CONFIG_BT_LOST_VIBE', '0'), 0, 3, 0); }
-function hourlyVibePatternCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_PATTERN', '0'), 0, 2, 0); }
+// Vibration pattern: 0=short, 1=double, 2=long, 3=off (3 keeps the values stored before "Off" existed valid).
+function hourlyVibePatternCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_PATTERN', '0'), 0, 3, 0); }
+// Beeps (watches with a speaker): 0=off, 1=short, 2=long, 3=double.
+function hourlyVibeSoundCode() { return clampInt(getSetting('CONFIG_HOURLY_VIBE_SOUND', '0'), 0, 3, 0); }
+function btLostBeepCode() { return clampInt(getSetting('CONFIG_BT_LOST_BEEP', '0'), 0, 3, 0); }
 function minutesSinceMidnight(hhmm) {
   var parts = String(hhmm || '00:00').split(':');
   var h = clampInt(parts[0], 0, 23, 0), m = clampInt(parts[1], 0, 59, 0);
@@ -601,6 +605,8 @@ module.exports = {
   hourlyVibeIntervalMinCode: hourlyVibeIntervalMinCode,
   hourlyVibePatternCode: hourlyVibePatternCode,
   btLostVibeCode: btLostVibeCode,
+  hourlyVibeSoundCode: hourlyVibeSoundCode,
+  btLostBeepCode: btLostBeepCode,
   minutesSinceMidnight: minutesSinceMidnight,
   hourlyVibeStartMinCode: hourlyVibeStartMinCode,
   hourlyVibeEndMinCode: hourlyVibeEndMinCode,

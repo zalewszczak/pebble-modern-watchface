@@ -10,7 +10,8 @@ var HOUR_MS = 3600000;
 var sub = null;
 var list = [];
 var state = { state: 'off', message: '', events: 0, props: [] };
-var onChange = null;
+var listeners = {};   // name -> function; each user of the calendar (border ring, complications) has its own
+var owners = {};      // name -> true while that user needs the subscription
 var pushTimer = null;
 
 function hasApi() {
@@ -90,9 +91,11 @@ function parse(instances) {
 }
 
 function notify() {
-  if (!onChange) return;
   if (pushTimer) clearTimeout(pushTimer);
-  pushTimer = setTimeout(function () { pushTimer = null; try { onChange(); } catch (e) { } }, 800);
+  pushTimer = setTimeout(function () {
+    pushTimer = null;
+    Object.keys(listeners).forEach(function (k) { try { listeners[k](); } catch (e) { } });
+  }, 800);
 }
 
 function start() {
@@ -133,7 +136,28 @@ function stop() {
   state = { state: 'off', message: '', events: 0, props: [] };
 }
 
+// The subscription lives while at least one user needs it (the border ring and the calendar complications share it).
+function need(owner, wanted) {
+  if (wanted) owners[owner] = true; else delete owners[owner];
+  if (Object.keys(owners).length) start(); else stop();
+}
+
+// The event to show in a complication: the first event that has not ended yet and starts within `horizonMs`
+// (default 24 h). All-day events are skipped. Returns null when there is none.
+function nextEvent(nowMs, horizonMs) {
+  var limit = nowMs + (horizonMs || 24 * HOUR_MS), best = null;
+  list.forEach(function (e) {
+    if (e.allDay || e.end <= nowMs || e.start >= limit) return;
+    if (!best || e.start < best.start || (e.start === best.start && e.end < best.end)) best = e;
+  });
+  return best;
+}
+
 module.exports = {
-  start: start, stop: stop, events: function () { return list; }, status: function () { return state; },
-  setOnChange: function (fn) { onChange = fn; }
+  start: start, stop: stop, need: need, nextEvent: nextEvent,
+  events: function () { return list; }, status: function () { return state; },
+  setOnChange: function (fn) { listeners.border = fn; },
+  addListener: function (name, fn) { listeners[name] = fn; },
+  // exposed for tests
+  _parse: parse, _setList: function (l, st) { list = l; state = st || { state: 'ok', message: '', events: l.length, props: [] }; }
 };
