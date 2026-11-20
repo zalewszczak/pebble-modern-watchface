@@ -62,7 +62,7 @@ function isPluginOn(current) {
 
 // Plugin picture processing options: [value, button label]
 var PLUGIN_DITHERS = [['none', 'NONE'], ['fs', 'FL-ST'], ['atkinson', 'ATK'], ['bayer4', '4x4'], ['bayer8', '8x8']];
-var PLUGIN_COLORS = [['neutral', 'NORMAL'], ['vivid', 'VIVID'], ['bw', 'B&amp;W'], ['sepia', 'SEPIA']];
+var PLUGIN_COLORS = [['neutral', 'NORMAL'], ['vivid', 'VIVID'], ['soft', 'SOFT'], ['bw', 'B&amp;W'], ['sepia', 'SEPIA']];
 var PLUGIN_FITS = [['fill', 'FILL'], ['full', 'FIT'], ['75', '75%'], ['50', '50%'], ['center', 'NONE']];
 
 // A row of segmented buttons that behaves like a dropdown: a hidden input keeps the value (read by the
@@ -139,6 +139,11 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgMode\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bgMode" style="display:none;"><b>IMAGE</b> = ' + (platform.bw ? 'your own photo' : 'a predefined image or your own photo') + ', <b>WEATHER</b> = a graphic matching the current weather, automatic night mode is used together with the night colors, <b>PLUGIN</b> = a picture supplied by a Pebble plugin.</div>' +
+'    <div id="pluginBgSourceBox" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
+'      <label for="pluginBgSource">Image source</label>' +
+'      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
+(pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
+'    </div>' +
 '    <div style="display:none;">' +
 '      <input type="checkbox" id="useCustomBg" ' + (isOn(current) ? 'checked' : '') + '>' +
 '      <input type="checkbox" id="useWeatherBg" ' + (isWeatherOn(current) ? 'checked' : '') + '>' +
@@ -173,15 +178,12 @@ function backgroundSectionHtml(current) {
 '    </div>' +
 '    <div id="pluginBgPanel" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
-'      <label for="pluginBgSource">Image source</label>' +
-'      <select id="pluginBgSource" onchange="bgRefresh()"' + (pluginSrc.any ? '' : ' disabled') + '>' + pluginSrc.html + '</select>' +
-(pluginSrc.message ? '      <div class="help" style="color:#d9822b;">' + esc(pluginSrc.message) + '</div>' : '') +
 '      <label>Dithering</label>' +
 '      ' + segmentedHtml('pluginBgDither', PLUGIN_DITHERS, String((current && current.pluginBgDither) || ''), 'fs', 'help-pluginBgDither') +
 '      <div class="help" id="help-pluginBgDither" style="display:none;"><b>NONE</b> = every pixel snaps to the nearest of the 64 colors (flat, may show bands). <b>FL-ST</b> = Floyd&ndash;Steinberg error diffusion, smooth and the best for photos. <b>ATK</b> = Atkinson, lighter with cleaner highlights and higher contrast. <b>4x4</b> / <b>8x8</b> = ordered Bayer patterns: a regular texture that does not shimmer between updates, 8x8 gives finer gradients.</div>' +
 '      <label>Color processing</label>' +
 '      ' + segmentedHtml('pluginBgColor', PLUGIN_COLORS, String((current && current.pluginBgColor) || ''), 'neutral', 'help-pluginBgColor') +
-'      <div class="help" id="help-pluginBgColor" style="display:none;"><b>NORMAL</b> = the colors as the plugin sends them. <b>VIVID</b> = stronger saturation and contrast. <b>B&amp;W</b> = grayscale. <b>SEPIA</b> = warm brown monochrome.</div>' +
+'      <div class="help" id="help-pluginBgColor" style="display:none;"><b>NORMAL</b> = the colors as the plugin sends them. <b>VIVID</b> = stronger saturation and contrast. <b>SOFT</b> = colors desaturated a bit, so the picture is less intrusive next to the other elements. <b>B&amp;W</b> = grayscale. <b>SEPIA</b> = warm brown monochrome.</div>' +
 '      <label>Screen filling</label>' +
 '      ' + segmentedHtml('pluginBgFit', PLUGIN_FITS, String((current && current.pluginBgFit) || ''), 'fill', 'help-pluginBgFit') +
 '      <div class="help" id="help-pluginBgFit" style="display:none;"><b>FILL</b> = scaled so the whole screen is covered (edges may be cropped). <b>FIT</b> = scaled so the full picture is visible (space around it shows the background color). <b>75%</b> / <b>50%</b> = scaled to that part of the screen, centered. <b>NONE</b> = original size, centered, not scaled.</div>' +
@@ -558,6 +560,8 @@ var CLIENT_BODY =
 '  var pbox = bgEl("usePluginBg"), ppanel = bgEl("pluginBgPanel");\n' +
 '  if (wpanel) wpanel.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
 '  if (ppanel) ppanel.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
+'  var psrc = bgEl("pluginBgSourceBox");\n' +
+'  if (psrc) psrc.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
 '  var pchecks = bgEl("pluginBgChecks");\n' +
 '  if (pchecks) pchecks.style.display = (pbox && pbox.checked) ? "" : "none";\n' +
 '  var bmode = (wbox && wbox.checked) ? 2 : ((box && box.checked) ? 1 : ((pbox && pbox.checked) ? 3 : 0));\n' +

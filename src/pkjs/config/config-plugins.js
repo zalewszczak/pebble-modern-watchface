@@ -9,6 +9,37 @@ function catalogueOf(current) {
   return c;
 }
 
+// The 12 plugin slots are shared by every platform (a Time 2, a Round 2 and a B&W watch each have their own
+// complications, but one slot table). Which slots the OTHER platforms' saved settings still point at: the page only
+// sees the current platform's fields, so without this the cleanup that frees unused slots wiped the slot keys the
+// other platforms use and their plugin complications showed dashes after switching back.
+var PRIM_PLUGIN_TEXT = require('./primitive-ids-generated').PRIM_PLUGIN_TEXT;
+function otherPlatformSlotsInUse(suffix) {
+  var used = [], i;
+  for (i = 0; i < 12; i++) used.push(false);
+  try {
+    var n = localStorage.length;
+    if (typeof n !== 'number' || typeof localStorage.key !== 'function') return used;
+    for (var k = 0; k < n; k++) {
+      var key = localStorage.key(k) || '';
+      if (key.indexOf('CONFIG_') !== 0) continue;
+      var owner = /_R$/.test(key) ? '_R' : (/_BW$/.test(key) ? '_BW' : '');
+      if (owner === (suffix || '')) continue;
+      var base = key.replace(/_(R|BW)$/, ''), v = localStorage.getItem(key);
+      if (/_CUSTOM_PRIMS$/.test(base)) {
+        String(v || '').split(',').forEach(function (entry) {
+          var parts = entry.split(':'), id = parseInt(parts[0], 10), aux = parseInt(parts[1], 10);
+          if (id === PRIM_PLUGIN_TEXT && aux >= 0 && aux < 12) used[aux] = true;
+        });
+      } else if (/(_CONTENT|_SHAKE|CORNER_(TL|TR|BL|BR))$/.test(base)) {
+        var c = parseInt(v, 10);
+        if (c >= 200 && c < 212) used[c - 200] = true;
+      }
+    }
+  } catch (e) { }
+  return used;
+}
+
 function weatherSourceHtml(current) {
   var cat = catalogueOf(current);
   var ok = cat.status === 'ok';
@@ -32,7 +63,7 @@ function weatherSourceHtml(current) {
 (ok ? '' : '    <div class="help" id="pluginNotice" style="margin-top:6px; color:#d9822b;">' + esc(cat.message || 'Plugins are not enabled.') + ' Weather uses Open-Meteo.</div>');
 }
 
-function pluginScript(current) {
+function pluginScript(current, platformSuffix) {
   var cat = catalogueOf(current);
   var slots = [];
   for (var i = 0; i < 12; i++) slots.push(typeof (current.pluginSlots || [])[i] === 'string' ? current.pluginSlots[i] : '');
@@ -40,6 +71,7 @@ function pluginScript(current) {
 'var PLUGIN_INFO = ' + JSON.stringify({ status: cat.status, message: cat.message || '', sources: cat.sources || [] }) + ';\n' +
 'var PLUGIN_SLOTS = ' + JSON.stringify(slots) + ';\n' +
 'var PLUGIN_CONTENT_FIRST = 200, PLUGIN_SLOT_COUNT = 12;\n' +
+'var PLUGIN_OTHER_USED = ' + JSON.stringify(otherPlatformSlotsInUse(platformSuffix)) + ';\n' +
 'var MEDIA_STATUS = ' + JSON.stringify(current.mediaStatus || {}).replace(/</g, '\\u003c') + ';\n' +
 'var LIVE_MODE = ' + (current.liveMode ? 'true' : 'false') + ';\n' +
 'var PREFERENCES = ' + JSON.stringify(current.preferences || { available: false, units: null, complications: null }).replace(/</g, '\\u003c') + ';\n' +
@@ -93,6 +125,7 @@ function pluginScript(current) {
 '}\n' +
 'function pluginSlotsInUse() {\n' +
 '  var used = {};\n' +
+'  for (var oi = 0; oi < PLUGIN_SLOT_COUNT; oi++) if (PLUGIN_OTHER_USED[oi]) used[oi] = true;\n' +
 '  var els = document.querySelectorAll("input, select");\n' +
 '  for (var i = 0; i < els.length; i++) {\n' +
 '    var id = els[i].id || "";\n' +
@@ -443,4 +476,4 @@ function pluginScript(current) {
 '';
 }
 
-module.exports = { weatherSourceHtml: weatherSourceHtml, pluginScript: pluginScript };
+module.exports = { weatherSourceHtml: weatherSourceHtml, pluginScript: pluginScript, otherPlatformSlotsInUse: otherPlatformSlotsInUse };

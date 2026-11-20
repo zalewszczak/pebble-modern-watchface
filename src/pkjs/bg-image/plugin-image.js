@@ -6,7 +6,7 @@ var SCREEN_W = platform.w;
 var SCREEN_H = platform.h;
 
 var DITHERS = ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'];
-var COLORS = ['neutral', 'vivid', 'bw', 'sepia'];
+var COLORS = ['neutral', 'vivid', 'soft', 'bw', 'sepia'];
 var FITS = ['fill', 'full', '75', '50', 'center'];
 var DEFAULT_OPTIONS = { dither: 'fs', color: 'neutral', fit: 'fill' };
 
@@ -239,7 +239,7 @@ function clamp255(v) { return v < 0 ? 0 : (v > 255 ? 255 : v); }
 
 function applyColor(f, n, style) {
   if (platform.bw) style = 'bw'; // 1-bit screen: colour styles are meaningless
-  if (style !== 'bw' && style !== 'sepia' && style !== 'vivid') return;
+  if (style !== 'bw' && style !== 'sepia' && style !== 'vivid' && style !== 'soft') return;
   for (var i = 0; i < n; i++) {
     var q = i * 3;
     var r = f[q], g = f[q + 1], b = f[q + 2];
@@ -250,6 +250,10 @@ function applyColor(f, n, style) {
       var g2 = 0.349 * r + 0.686 * g + 0.168 * b;
       var b2 = 0.272 * r + 0.534 * g + 0.131 * b;
       r = r2; g = g2; b = b2;
+    } else if (style === 'soft') {
+      // Less saturated (about two thirds of the colour), so the picture is less intrusive next to the text and indices.
+      var ys = 0.299 * r + 0.587 * g + 0.114 * b;
+      r = ys + (r - ys) * 0.6; g = ys + (g - ys) * 0.6; b = ys + (b - ys) * 0.6;
     } else {
       var y = 0.299 * r + 0.587 * g + 0.114 * b;
       r = (y + (r - y) * 1.5 - 128) * 1.1 + 128;

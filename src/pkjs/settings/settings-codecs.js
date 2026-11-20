@@ -376,7 +376,7 @@ function borderWeatherPxCode() {
 }
 function bgAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_BG_ANIM_MODE', '0'), 10);
-  return (v === 1 || v === 2) ? 1 : 0;
+  return (v === 1 || v === 2) ? v : 0;
 }
 function shakeAnimModeCode() {
   var v = parseInt(getSetting('CONFIG_SHAKE_ANIM_MODE', '0'), 10);

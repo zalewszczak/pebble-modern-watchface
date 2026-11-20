@@ -22,6 +22,7 @@ typedef enum {
   F_TIME,       // d->FIELD = (time_t)t->value->int32;
   // Invalid values fall back to 0 for bounded byte settings.
   F_U8_MAX1,    // d->FIELD = (v <= 1) ? v : 0;
+  F_U8_MAX2,    // d->FIELD = (v <= 2) ? v : 0;
 } SimpleFieldType;
 
 // Change flags are stored as (bit index + 1) in the high nibble.
@@ -59,7 +60,7 @@ static const SimpleFieldMapping SIMPLE_FIELD_MAP[] = {
   { MK_NEXT_STYLE_CHECK, F_TIME, offsetof(WatchData, next_style_check) },
   { MK_SHOW_SECONDS, F_BOOL, offsetof(WatchData, show_seconds) },
   { MK_SHAKE_ONLY_MASK, F_U16, offsetof(WatchData, shake_only_mask) },
-  { MK_BG_ANIM_MODE, F_U8_MAX1, offsetof(WatchData, bg_anim_mode) },
+  { MK_BG_ANIM_MODE, F_U8_MAX2, offsetof(WatchData, bg_anim_mode) },
   { MK_SHAKE_ANIM_MODE, F_U8_MAX1, offsetof(WatchData, shake_anim_mode) },
   { MK_SHADOW_TRANSLUCENT, F_BOOL, offsetof(WatchData, shadow_translucent) },
   { MK_SHADOW_ANGLE, F_U16, offsetof(WatchData, shadow_angle_deg) },
@@ -87,6 +88,11 @@ static uint32_t apply_simple_fields(DictionaryIterator *iter, WatchData *d,
       case F_U16:  *(uint16_t *)dst = st->value->uint16; break;
       case F_U32:  *(uint32_t *)dst = st->value->uint32; break;
       case F_TIME: *(time_t *)dst = (time_t)st->value->int32; break;
+      case F_U8_MAX2: {
+        uint8_t v = st->value->uint8;
+        *dst = (v <= 2) ? v : 0;
+        break;
+      }
       default: { // F_U8_MAX1
         uint8_t v = st->value->uint8;
         *dst = (v <= 1) ? v : 0;

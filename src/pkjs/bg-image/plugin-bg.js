@@ -105,12 +105,29 @@ function getOutput() {
 
 // What the watch should do with its color scheme: 0 = follow sunrise/sunset as usual, 1 = use the
 // day colors (bright picture), 2 = use the night colors (dark picture).
+// The verdict is sticky: while the option is on it is kept (and saved, so it survives a restart of the phone
+// app) even when there is momentarily no picture to measure - right after a settings save, a source change,
+// a restart, or a plugin update without an image. Dropping it then made the watch fall back to the normal
+// sunrise/sunset scheme until the next picture arrived. Only switching the option (or the background) off
+// returns 0.
+var NIGHT_KEY = 'PLUGIN_BG_LAST_NIGHT';
+function loadNight() {
+  try { var v = localStorage.getItem(NIGHT_KEY); return v === '1' ? true : (v === '0' ? false : null); } catch (e) { return null; }
+}
+function saveNight(v) {
+  try { if (v === null) localStorage.removeItem(NIGHT_KEY); else localStorage.setItem(NIGHT_KEY, v ? '1' : '0'); } catch (e) { }
+}
 function schemeOverride() {
-  if (!enabled() || !autoScheme() || !s_out || typeof s_out.luma !== 'number') { s_lastNight = null; return 0; }
-  var l = s_out.luma;
-  if (s_lastNight === null) s_lastNight = l < LUMA_THRESHOLD;
-  else if (s_lastNight && l > LUMA_THRESHOLD + LUMA_HYSTERESIS) s_lastNight = false;
-  else if (!s_lastNight && l < LUMA_THRESHOLD - LUMA_HYSTERESIS) s_lastNight = true;
+  if (!enabled() || !autoScheme()) { if (s_lastNight !== null) { s_lastNight = null; saveNight(null); } return 0; }
+  if (s_lastNight === null) s_lastNight = loadNight();
+  if (s_out && typeof s_out.luma === 'number') {
+    var l = s_out.luma, before = s_lastNight;
+    if (s_lastNight === null) s_lastNight = l < LUMA_THRESHOLD;
+    else if (s_lastNight && l > LUMA_THRESHOLD + LUMA_HYSTERESIS) s_lastNight = false;
+    else if (!s_lastNight && l < LUMA_THRESHOLD - LUMA_HYSTERESIS) s_lastNight = true;
+    if (s_lastNight !== before) saveNight(s_lastNight);
+  }
+  if (s_lastNight === null) return 0; // never measured yet
   return s_lastNight ? 2 : 1;
 }
 

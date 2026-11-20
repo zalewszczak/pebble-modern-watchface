@@ -1238,7 +1238,8 @@ configPresetSchedule.modalHtml +
 '      <div class="field-label-row"><label>Animate indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
       verticalButtonGroupHtml('bgAnimModeGroup', 'bgAnimMode', [
         { value: '0', label: 'Off' },
-        { value: '1', label: 'Indices (hour indices animate in; seconds draw normally)' }
+        { value: '1', label: 'Indices (hour indices animate in; seconds draw normally)' },
+        { value: '2', label: 'Indices + seconds (hour indices animate in, the second marks then appear one by one from 0 to 60)' }
       ], current.bgAnimMode || '0') +
 '    </div>' +
 '    <div class="help" id="help-bgAnimMode" style="display:none;">Choose whether the indices animate in when the watchface appears.</div>' +
@@ -2073,7 +2074,7 @@ configBorder.borderScript() +
 'var PRIMITIVE_PREVIEW_TEXT = ' + JSON.stringify(primitivePreviewText) + ';' +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
 'var PRIM_PLUGIN_TEXT_ID = ' + primitiveIds.PRIM_PLUGIN_TEXT + ';' +
-configPlugins.pluginScript(current) +
+configPlugins.pluginScript(current, platform.suffix) +
 '\n' + configBattery.script(platform, primitiveTransportSequences) + '\n' +
 'var COMPOSER_MAX = ' + (platform.bw ? 8 : 10) + ';' +
 '\n' + composerClientSource + '\n' +
@@ -3855,6 +3856,7 @@ require('./config/config-runtime') +
 '  var parts = [];' +
 '  if (document.getElementById("startupClockAnimMode").value === "1") parts.push("animated clock on start");' +
 '  if (document.getElementById("bgAnimMode").value === "1") parts.push("indices on start");' +
+'  if (document.getElementById("bgAnimMode").value === "2") parts.push("indices and seconds on start");' +
 '  if (document.getElementById("shakeAnimMode").value === "1") parts.push("smooth second hand on shake");' +
 '  if (document.getElementById("shakeHandsTranslucent").checked) parts.push("semi-transparent hands on shake");' +
 '  if (!parts.length) return "No animations active";' +

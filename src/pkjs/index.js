@@ -439,7 +439,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_USE_PLUGIN_BG', (settings.CONFIG_USE_PLUGIN_BG && !require('./platform').bw) ? 'true' : 'false');
   setSetting('CONFIG_PLUGIN_BG_SOURCE', settings.CONFIG_PLUGIN_BG_SOURCE || '');
   setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
-  setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
+  setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'soft', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
   setSetting('CONFIG_PLUGIN_BG_FIT', ['fill', 'full', '75', '50', 'center'].indexOf(settings.CONFIG_PLUGIN_BG_FIT) >= 0 ? settings.CONFIG_PLUGIN_BG_FIT : 'fill');
   setSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', settings.CONFIG_PLUGIN_BG_AUTO_SCHEME ? 'true' : 'false');
   setSetting('CONFIG_PLUGIN_BG_CACHE', settings.CONFIG_PLUGIN_BG_CACHE ? 'true' : 'false');

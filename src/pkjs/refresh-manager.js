@@ -309,7 +309,8 @@ function refreshAndSend(force, resendOnSkip) {
                     auroraKpX10: (typeof aurora.kp === 'number') ? Math.round(aurora.kp * 10) : null,
                     auroraErrorCode: auroraErrorCode,
                     forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition,
-                    forecastWx: snapshot.forecastWx, forecastRainPct: snapshot.forecastRainPct
+                    forecastWx: snapshot.forecastWx, forecastRainPct: snapshot.forecastRainPct,
+                    borderHourly: snapshot.borderHourly
                   }
                 });
                 markRefreshDone(lat, lon);

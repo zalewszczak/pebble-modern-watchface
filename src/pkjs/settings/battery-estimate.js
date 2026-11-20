@@ -18,6 +18,11 @@
 function estimateBatteryUsage(s, env) {
   // ---- tunable constants (all points are "per day of typical use") ------------------------------------
   var K = {
+    LIFE_BASE: 110,             // battery life model: reduction = raw / (raw + LIFE_BASE). Calibrated so that a second hand
+                                // (about 150 points) cuts battery life by roughly 55-60%, and a very heavy configuration
+                                // approaches 80%; it can never reach 100% (an empty battery in no time).
+    SAVER_OFF: 14,              // battery saver off: about 6 idle night hours a day (2 h after the last shake, then rest)
+                                // keep ticking, refreshing and checking the location for nothing: roughly 12% of battery life
     SECONDS_BASE: 150,          // redraw every second instead of every minute: 60x the frames, so by far the biggest item
     SECONDS_COMPLICATION: 130,   // only a complication needs the tick: the second hand itself is not drawn
     SECONDS_MIN_SHARE: 0.6,     // redrawing 60x as often carries every other drawing cost 60x too, so seconds is never below this share of the total
@@ -62,6 +67,7 @@ function estimateBatteryUsage(s, env) {
   var STAR_IMAGE = 'This varies with how often the image changes.';
   var STAR_SHAKE = 'This depends on how you use the watch: more shakes mean more battery use.';
   var STAR_EVENTS = 'This depends on how often the data changes.';
+  var STAR_NIGHT = 'This depends on how many hours the watch sits unused each day (typically overnight).';
   var STAR_TRAVEL = 'This depends on how much you travel.';
   var STAR_LAUNCH = 'This depends on how often the watchface restarts (for example after using another app).';
 
@@ -302,6 +308,9 @@ function estimateBatteryUsage(s, env) {
   if (parseInt(s.CONFIG_BT_LOST_VIBE, 10) > 0) add('bt_vibe', 'Vibration when Bluetooth drops', K.BT_LOST_VIBE,
       'A pulse and a one-minute flashing Bluetooth icon each time the phone connection is lost.', STAR_EVENTS);
 
+  if (!saver) add('no_saver', 'Battery saver is off', K.SAVER_OFF,
+      'Overnight the watch keeps drawing, refreshing and checking the location for nothing; with the saver on it rests after 2 hours without a shake.', STAR_NIGHT);
+
   // ---- totals -------------------------------------------------------------------------------------------
   if (secondsLive) {
     var others = 0, secRow = null;
@@ -315,9 +324,11 @@ function estimateBatteryUsage(s, env) {
   var total = Math.min(100, raw);
   var scale = raw > 100 ? 100 / raw : 1;
   rows.forEach(function (r) { r.pct = r.raw * scale; });
+  var reduction = 100 * raw / (raw + K.LIFE_BASE);          // estimated cut of battery life, in percent
+  rows.forEach(function (r) { r.cut = raw > 0 ? reduction * r.raw / raw : 0; });
   var segments = total < 20 ? 5 : (total < 40 ? 4 : (total < 60 ? 3 : (total < 80 ? 2 : 1)));
   var labels = { 5: 'very low', 4: 'low', 3: 'medium', 2: 'high', 1: 'very high' };
-  return { raw: raw, total: total, scale: scale, segments: segments, label: labels[segments], rows: rows, saver: saver, secondsLive: secondsLive };
+  return { raw: raw, reduction: reduction, total: total, scale: scale, segments: segments, label: labels[segments], rows: rows, saver: saver, secondsLive: secondsLive };
 }
 
 // Which primitives are text, icons or spacers, and which ones carry extra cost, from the generated
@@ -336,7 +347,7 @@ function primitiveKinds(PRIM) {
     if (/^PRIM_(TIME_HMS|SECOND|SECOND_PAD|SECOND_TENS|SECOND_ONES)$/.test(name)) tag = 'seconds';
     else if (name === 'PRIM_COMPASS_DIR_TEXT') tag = 'compass';
     else if (name === 'PRIM_HEART_RATE_VALUE') tag = 'hr';
-    else if (name === 'PRIM_STEPS_VALUE' || name === 'PRIM_STEP_GOAL_PCT') tag = 'steps';
+    else if (name === 'PRIM_STEPS_VALUE' || name === 'PRIM_STEP_GOAL_PCT' || /^PRIM_CALORIES_(ACTIVE_)?VALUE$/.test(name)) tag = 'steps';
     else if (/^PRIM_(SLEEP_|BED_TIME_TEXT|WAKE_TIME)/.test(name) && !/ICON$/.test(name)) tag = 'sleep';
     else if (name === 'PRIM_PLUGIN_TEXT') tag = 'plugin';
     else if (name === 'PRIM_PHONE_BATTERY_TEXT' || name === 'PRIM_PHONE_ICON') tag = 'phone';

@@ -204,5 +204,10 @@ typedef enum {
   // watch no longer resolves them and PKJS never sends them. See docs/COMPLICATIONS_REPORT.md.
   PRIM_PHONE_SLOT,
 
+  // Calories (kcal, from the Pebble health service; ids appended so earlier numbers stay stable).
+  PRIM_CALORIES_ICON,           // flame glyph
+  PRIM_CALORIES_VALUE,          // total burned today: resting + active (content 110)
+  PRIM_CALORIES_ACTIVE_VALUE,   // active calories only (content 111)
+
   PRIM_ID_COUNT,
 } PrimitiveId;

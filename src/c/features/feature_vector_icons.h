@@ -18,3 +18,5 @@ void feature_vector_icons_media_art(GContext *ctx, GPoint top_left, int size, co
 // Progress bar `width` x 5; pct 0-100, unknown = dashed track.
 void feature_vector_icons_progress_bar(GContext *ctx, GPoint top_left, int width, int pct, bool unknown, GColor color);
 void feature_vector_icons_mountain(GContext *ctx, GPoint top_left, GColor color);
+// Flame glyph (calories), about 12x14 px.
+void feature_vector_icons_flame(GContext *ctx, GPoint top_left, GColor color);

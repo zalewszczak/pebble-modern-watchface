@@ -206,6 +206,17 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
       feature_vector_icons_mountain(ctx, pos, color);
       return;
     }
+    case 38: { // calories flame glyph
+      GPoint pos = GPoint(icon_x, box_y + (row_height - 14) / 2);
+      if (do_outline) {
+        for (int i = 0; i < offs_n; i++) {
+          feature_vector_icons_flame(ctx, GPoint(pos.x + offs[i].x, pos.y + offs[i].y), outline_color);
+        }
+      }
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_flame(ctx, pos, color);
+      return;
+    }
     case 13: { // bluetooth -- own case rather than the generic STYLED_ICONS
                // bucket above: that bucket draws each bitmap right-anchored.
                // icon_flag = phone disconnected. Simple/Hollow already turn red
@@ -310,7 +321,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
 // On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
 // vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their
 // pixel size and so keep their width.
-static const uint8_t s_icon_plus_gap_width[38] = {
+static const uint8_t s_icon_plus_gap_width[39] = {
   [1] = PL_ICON_PX(15), [2] = PL_ICON_PX(15), [3] = 13, [4] = 21,
   [5] = PL_ICON_PX(15), [6] = PL_ICON_PX(15), [7] = PL_ICON_PX(15), [8] = PL_ICON_PX(15),
   [9] = PL_ICON_PX(15), [10] = PL_ICON_PX(15),
@@ -331,9 +342,11 @@ static const uint8_t s_icon_plus_gap_width[38] = {
   // Blank stand-ins for the "odd state" icons (35 = battery 3, 36 = Bluetooth 13, 37 = Quiet Time 29): they
   // draw nothing (draw switch default) but reserve the real icon's width, so nothing shifts when it appears.
   [35] = 13, [36] = PL_ICON_PX(15), [37] = PL_ICON_PX(20),
+  // Calories flame (vector, 12 px wide + 5 px gap).
+  [38] = 17,
 };
 
 int16_t feature_icons_plus_gap_width(int icon_kind) {
-  if ((unsigned)icon_kind >= 38u) return 0;
+  if ((unsigned)icon_kind >= 39u) return 0;
   return s_icon_plus_gap_width[icon_kind];
 }

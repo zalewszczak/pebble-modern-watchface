@@ -126,13 +126,13 @@ function script(platform, primitiveSequences) {
 '  box.className = box.className.replace(/ ?batt-lvl-\\d/, "") + " batt-lvl-" + est.segments;\n' +
 '  document.getElementById("battHeadIcon").innerHTML = battIconSvg(est.segments);\n' +
 '  document.getElementById("battHeadTitle").textContent = "Battery usage: " + est.label;\n' +
-'  document.getElementById("battHeadSub").textContent = "Estimated load " + Math.round(est.total) + "% of the scale" + (est.saver ? " (battery saver on)" : "");\n' +
+'  document.getElementById("battHeadSub").textContent = "Estimated reduction of battery life: " + Math.round(est.reduction) + "%" + (est.saver ? " (battery saver on)" : "");\n' +
 '  var stars = [], html = "";\n' +
 '  est.rows.forEach(function (r) {\n' +
-'    if (r.pct < 0.05) return;\n' +
+'    if (r.cut < 0.05) return;\n' +
 '    var mark = "";\n' +
 '    if (r.star) { var idx = stars.indexOf(r.star); if (idx < 0) { stars.push(r.star); idx = stars.length - 1; } mark = " " + new Array(idx + 2).join("*"); }\n' +
-'    html += \'<div class="batt-row"><div class="batt-row-top"><span>\' + esc(r.label) + mark + \'</span><span class="batt-row-pct">\' + battPct(r.pct) + \'%</span></div>\' +\n' +
+'    html += \'<div class="batt-row"><div class="batt-row-top"><span>\' + esc(r.label) + mark + \'</span><span class="batt-row-pct">\' + \'&minus;\' + battPct(r.cut) + \'%</span></div>\' +\n' +
 '      \'<div class="batt-bar"><span style="width:\' + Math.max(2, Math.min(100, r.pct)) + \'%"></span></div>\' +\n' +
 '      \'<div class="batt-row-why">\' + esc(r.why) + \'</div></div>\';\n' +
 '  });\n' +
@@ -140,7 +140,7 @@ function script(platform, primitiveSequences) {
 '  document.getElementById("battRows").innerHTML = html;\n' +
 '  var foot = "";\n' +
 '  stars.forEach(function (t, i) { foot += "<p>" + new Array(i + 2).join("*") + " " + esc(t) + "</p>"; });\n' +
-'  foot += "<p>A relative estimate from your settings, not a measurement. " + (est.scale < 1 ? "The total is above 100, so every item is scaled down to fit. " : "") + "Items are listed from the most to the least demanding.</p>";\n' +
+'  foot += "<p>A relative estimate from your settings, not a measurement. " + (est.scale < 1 ? "" : "") + "The percentages show how much shorter the battery lasts than without that item, and add up to the total above. Items are listed from the most to the least demanding.</p>";\n' +
 '  document.getElementById("battFoot").innerHTML = foot;\n' +
 '  document.getElementById("batteryModal").className = "modal-overlay open";\n' +
 '}\n' +

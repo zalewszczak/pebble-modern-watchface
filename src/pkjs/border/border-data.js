@@ -12,7 +12,7 @@
 // can show two calendars or a half-density tint. On the B&W watches c0 holds a pattern level instead of a
 // colour: 0 empty, 1 sparse dots, 2 checkerboard, 3 dense, 4 solid (c1 unused).
 //
-// Sources: 1 = weather forecast (next 12 hours), 2 = calendar (current hour + the next 11).
+// Sources: 1 = weather forecast (next 12 hours; the phone keeps 16 so a long refresh interval leaves no gap), 2 = calendar (current hour + the next 11).
 var settings = require('../settings/settings');
 var getSetting = settings.getSetting;
 var platform = require('../platform');
@@ -121,6 +121,10 @@ function setWeather(extra, tempColors) {
     rain: (extra.forecastRainPct || []).slice(0, 15),
     tempColor: (tempColors || []).slice(0, 15)
   };
+  var bh = extra.borderHourly;
+  if (bh && bh.tempC && bh.tempC.length > 12) {
+    wxCache.hr = { temp: bh.tempC.slice(0, 16), wx: bh.wx.slice(0, 16), rain: bh.rain.slice(0, 16), tempColor: (bh.tempColor || []).slice(0, 16) };
+  }
   try { localStorage.setItem(WX_CACHE_KEY, JSON.stringify(wxCache)); } catch (e) { }
 }
 
@@ -147,21 +151,25 @@ function buildWeather(now) {
   // The forecast is "h hours from the moment it was fetched"; shift by the whole hours passed since, so a
   // forecast that is a few hours old still lands on the right sectors (the far end becomes transparent).
   var age = c.ts ? Math.max(0, Math.floor(now.getTime() / 3600000) - Math.floor(c.ts / 3600000)) : 0;
-  if (age > 12) return [0];
+  // With the 16-hour forecast (hr) a refresh interval of up to 3 h still fills all 12 sectors; an older cache
+  // (or a weather source without hourly data) only has the 12 slot values.
+  var hr = c.hr || null, reach = hr ? hr.temp.length : 12;
+  if (age >= reach) return [0];
   for (var h = 1; h <= 12; h++) {
-    var slot = slotForHour(h + age), sec = (hour12 + h) % 12;
-    if (h + age > 12) continue;
-    var t = c.temp[slot];
+    var ahead = h + age, sec = (hour12 + h) % 12;
+    if (ahead > reach) continue;
+    var slot = hr ? ahead - 1 : slotForHour(ahead), src = hr || c;
+    var t = src.temp[slot];
     if (typeof t !== 'number') continue; // no data: stays transparent
-    var wx = c.wx[slot] || 0, rain = c.rain[slot] || 0;
+    var wx = src.wx[slot] || 0, rain = src.rain[slot] || 0;
     if (platform.bw) {
       layers[0][sec] = [style === 1 ? WX_LEVEL[wx > 9 ? 0 : wx] : rainLevel(rain), 0];
     } else if (style === 4) {
-      layers[0][sec] = fillTemperature(t, scheme, c.tempColor[slot]);
+      layers[0][sec] = fillTemperature(t, scheme, src.tempColor[slot]);
       layers[1][sec] = fillConditions(wx, scheme);
       layers[2][sec] = fillRain(rain, scheme);
     } else if (style === 1) layers[0][sec] = fillConditions(wx, scheme);
-    else if (style === 2) layers[0][sec] = fillTemperature(t, scheme, c.tempColor[slot]);
+    else if (style === 2) layers[0][sec] = fillTemperature(t, scheme, src.tempColor[slot]);
     else layers[0][sec] = fillRain(rain, scheme);
   }
   return encode(layers);

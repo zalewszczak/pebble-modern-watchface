@@ -152,7 +152,8 @@ int32_t marker_anim_mark_progress_1000_raw(int mark_index, int marks, int32_t ov
 
 static void draw_marker_ring(GContext *ctx, GPoint center, GRect screen, const MarkerRingConfig *cfg,
                               int marks, int skip_step, GColor main_color, GColor accent_color, GColor bg_color,
-                              bool anim_active, int32_t anim_overall_progress_1000, uint8_t inner_thickness) {
+                              bool anim_active, int32_t anim_overall_progress_1000, uint8_t inner_thickness,
+                              int32_t reveal_progress_1000) {
   if (cfg->thickness == 0) return;
   GColor color = marker_ring_color(cfg->color, main_color, accent_color, bg_color);
   uint8_t inner_pct = cfg->inner_border_pct, outer_pct = cfg->outer_border_pct;
@@ -175,6 +176,8 @@ static void draw_marker_ring(GContext *ctx, GPoint center, GRect screen, const M
 
   for (int i = 0; i < marks; i++) {
     if (skip_step > 0 && i % skip_step == 0) continue;
+    // Build-up: the marks appear one after another, from the 0 s mark round to the 60 s mark.
+    if (reveal_progress_1000 >= 0 && ((int32_t)i * 1000) / marks > reveal_progress_1000) break;
 
     // Strictly mask with 0xFFFF to fix missing rotated markers
     int32_t angle = (((int32_t)i * TRIG_MAX_ANGLE) / marks) & 0xFFFF;
@@ -250,16 +253,17 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
     return;
   }
 
+  if (part == MARKER_DRAW_BASE_BARE) return; // the second ring is built up by the animation frames
   if (part != MARKER_DRAW_HOUR) {
     // Second ring first so the hour ring's marks draw on top at shared positions.
     draw_marker_ring(ctx, center, screen, &d->custom_second_marker, 60, 5, main_color, accent_color, bg_color, false, 0,
-                     d->custom_second_marker_inner_thickness);
+                     d->custom_second_marker_inner_thickness, part == MARKER_DRAW_HOUR_BUILD ? anim_progress_1000 : -1);
   }
   if (part == MARKER_DRAW_BASE) return;
 
   const MarkerRingConfig *hour_cfg = &d->custom_hour_marker;
   draw_marker_ring(ctx, center, screen, hour_cfg, 12, 0, main_color, accent_color, bg_color, anim_active, anim_progress_1000,
-                   d->custom_hour_marker_inner_thickness);
+                   d->custom_hour_marker_inner_thickness, -1);
 
   marker_text_draw(ctx, center, screen, &state->text_font_slot, &d->marker_text, hour_cfg, &d->custom_second_marker, main_color, draw_debug);
 }

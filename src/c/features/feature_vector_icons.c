@@ -98,6 +98,29 @@ void feature_vector_icons_compass_sleep(GContext *ctx, GPoint top_left, GColor c
 
 
 
+void feature_vector_icons_flame(GContext *ctx, GPoint top_left, GColor color) {
+  graphics_context_set_fill_color(ctx, color);
+  GPoint pts[12] = {
+    GPoint(top_left.x + 6, top_left.y + 0),
+    GPoint(top_left.x + 8, top_left.y + 3),
+    GPoint(top_left.x + 11, top_left.y + 7),
+    GPoint(top_left.x + 11, top_left.y + 10),
+    GPoint(top_left.x + 9, top_left.y + 13),
+    GPoint(top_left.x + 6, top_left.y + 14),
+    GPoint(top_left.x + 3, top_left.y + 13),
+    GPoint(top_left.x + 1, top_left.y + 10),
+    GPoint(top_left.x + 1, top_left.y + 7),
+    GPoint(top_left.x + 3, top_left.y + 5),
+    GPoint(top_left.x + 4, top_left.y + 8),
+    GPoint(top_left.x + 5, top_left.y + 4),
+  };
+  GPathInfo info = { .num_points = 12, .points = pts };
+  GPath *path = gpath_create(&info);
+  if (!path) return;
+  gpath_draw_filled(ctx, path);
+  gpath_destroy(path);
+}
+
 void feature_vector_icons_mountain(GContext *ctx, GPoint top_left, GColor color) {
   graphics_context_set_fill_color(ctx, color);
   GPoint peak1[3] = {

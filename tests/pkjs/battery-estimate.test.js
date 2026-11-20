@@ -80,3 +80,22 @@ test('smooth second hand on shake costs nothing while the second hand is off', (
   const on = run({ CONFIG_SHAKE_ANIM_MODE: '1', CONFIG_SHOW_SECONDS: 'true' });
   assert.ok(row(on, 'shake_smooth'));
 });
+
+test('battery saver off adds a penalty of roughly 12% of battery life', () => {
+  const on = run({ CONFIG_BATTERY_SAVER_ENABLED: 'true' });
+  const off = run({ CONFIG_BATTERY_SAVER_ENABLED: 'false' });
+  assert.ok(!row(on, 'no_saver'));
+  assert.ok(row(off, 'no_saver'));
+  const d = off.reduction - on.reduction;
+  assert.ok(d > 9 && d < 15, String(d));
+});
+
+test('battery life reduction: seconds 50-65%, never reaches 100%, row cuts add up', () => {
+  const sec = run({ CONFIG_SHOW_SECONDS: 'true' });
+  assert.ok(sec.reduction > 50 && sec.reduction < 65, String(sec.reduction));
+  assert.ok(run().reduction < 15);
+  const sum = sec.rows.reduce((a, x) => a + x.cut, 0);
+  assert.ok(Math.abs(sum - sec.reduction) < 1e-6);
+  const huge = est({ CONFIG_SHOW_SECONDS: 'true', CONFIG_UPDATE_MINS: '5', CONFIG_OUTLINE_ENABLED: '2' }, ENV);
+  assert.ok(huge.reduction < 100);
+});

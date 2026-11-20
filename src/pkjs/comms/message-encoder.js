@@ -458,7 +458,13 @@ function applyExtraWeather(extra) {
   borderData.setWeather({
     forecastTempC: extra.forecastTempC,
     forecastWx: extra.forecastWx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
-    forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; })
+    forecastRainPct: (extra.forecastRainPct || []).map(function (c) { return (typeof c === 'number' && !isNaN(c)) ? Math.max(0, Math.min(100, Math.round(c))) : 0; }),
+    borderHourly: extra.borderHourly ? {
+      tempC: extra.borderHourly.tempC,
+      wx: extra.borderHourly.wx.map(function (c) { return (typeof c === 'number' && c >= 0 && c <= 9) ? c : 0; }),
+      rain: extra.borderHourly.rain,
+      tempColor: extra.borderHourly.tempC.map(function (c) { return typeof c === 'number' ? tempGradientColorByte(c) : 0; })
+    } : null
   }, extra.forecastTempC ? extra.forecastTempC.map(function (c) { return tempGradientColorByte(c); }) : []);
 }
 

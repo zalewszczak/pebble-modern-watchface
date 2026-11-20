@@ -30,6 +30,10 @@ typedef enum {
   MARKER_DRAW_ALL = 0,
   MARKER_DRAW_BASE,
   MARKER_DRAW_HOUR,
+  // Startup animation with the seconds build-up ("Indices + seconds"): the base holds no second marks
+  // (BASE_BARE), and every frame draws the marks revealed so far plus the animated hour ring (HOUR_BUILD).
+  MARKER_DRAW_BASE_BARE,
+  MARKER_DRAW_HOUR_BUILD,
 } MarkerDrawPart;
 
 void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GRect screen,

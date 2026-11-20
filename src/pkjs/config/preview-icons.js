@@ -2,6 +2,7 @@
 var PREVIEW_ICON_TOKENS = {
   hr: 'heart',
   steps: 'foot',
+  flame: '__flame', // drawn by the settings page itself (the watch draws it as a vector glyph)
   bt: 'bluetooth',
   quiet: 'quiet_time',
   spkr: 'quiet_time_muted',

@@ -85,11 +85,11 @@ static void dial_draw_static(GContext *ctx, DialState *state, GRect bounds, GPoi
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
   state->markers.draw_origin = origin;
   marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
-                    animating ? MARKER_DRAW_BASE : MARKER_DRAW_ALL, false, 0, d->draw_debug);
+                    animating ? (d->bg_anim_mode == 2 ? MARKER_DRAW_BASE_BARE : MARKER_DRAW_BASE) : MARKER_DRAW_ALL, false, 0, d->draw_debug);
 
 }
 
-// Launch animation frame. Only the hour ring moves, so everything else (background, image, border,
+// Launch animation frame. Only the hour ring moves (and, in mode 2, the second marks appear one by one), so everything else (background, image, border,
 // second ring) is drawn once into the cache and blitted; each frame then draws just the hour ring and
 // numerals on top. The cache carries a different signature than the normal one, so the full static
 // picture is rebuilt once when the animation ends.
@@ -99,7 +99,8 @@ static void dial_draw_animation_frame(Layer *layer, GContext *ctx, DialState *st
   int32_t progress_1000 = ((int32_t)state->anim_elapsed_ms * 1000) / DIAL_ANIMATION_DURATION_MS;
   if (progress_1000 > 1000) progress_1000 = 1000;
 
-  uint32_t sig = dial_static_signature(d, bounds.size, bg, main_color, accent_color, border, border_on) ^ 0x5bd1e995u;
+  uint32_t sig = dial_static_signature(d, bounds.size, bg, main_color, accent_color, border, border_on) ^
+                 (d->bg_anim_mode == 2 ? 0x2c9277b5u : 0x5bd1e995u);
   if (!sig) sig = 1u;
 
   if (!(dial_cache_valid(&state->cache, sig, bounds.size) && dial_cache_blit(ctx, &state->cache, origin))) {
@@ -114,7 +115,7 @@ static void dial_draw_animation_frame(Layer *layer, GContext *ctx, DialState *st
   (void)layer;
   GPoint center = GPoint(bounds.size.w / 2, bounds.size.h / 2);
   marker_layer_draw(ctx, &state->markers, center, bounds, d, main_color, accent_color, bg,
-                    MARKER_DRAW_HOUR, true, progress_1000, d->draw_debug);
+                    d->bg_anim_mode == 2 ? MARKER_DRAW_HOUR_BUILD : MARKER_DRAW_HOUR, true, progress_1000, d->draw_debug);
 }
 
 static void dial_draw_cached(Layer *layer, GContext *ctx, DialState *state, GRect bounds, GPoint origin,
@@ -122,7 +123,7 @@ static void dial_draw_cached(Layer *layer, GContext *ctx, DialState *state, GRec
                              const WeatherBorderLook *border_in, bool border_on) {
   const WeatherBorderLook border = *border_in;
   // The launch animation moves the indices every frame, so it cannot use the normal cache.
-  bool animating = state->anim_active && d->bg_anim_mode == 1;
+  bool animating = state->anim_active && d->bg_anim_mode >= 1;
   if (animating) {
     dial_draw_animation_frame(layer, ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on);
     return;

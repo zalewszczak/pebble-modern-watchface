@@ -144,6 +144,18 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         }
       }
 
+      // Hours 1..16 ahead for the border ring: the ring is rebuilt every hour from this forecast, so with a long
+      // refresh interval it needs 12 hours plus the hours that pass between two refreshes (up to 3 h, plus the
+      // part-hour) to keep every sector filled.
+      var borderHourly = { tempC: [], wx: [], rain: [] };
+      for (var bh = 0; bh < 16; bh++) {
+        var bIdx = nowIdx + 1 + bh;
+        borderHourly.tempC.push(hourlyTemps && typeof hourlyTemps[bIdx] === 'number' ? Math.round(hourlyTemps[bIdx]) : null);
+        var bCloud = (hourlyCloud && typeof hourlyCloud[bIdx] === 'number') ? hourlyCloud[bIdx] : 0;
+        borderHourly.wx.push(hourlyCodes && hourlyCodes.length > bIdx ? weatherDetailClass(hourlyCodes[bIdx], bCloud) : weatherDetailClass(-1, bCloud));
+        borderHourly.rain.push(hourlyRain && typeof hourlyRain[bIdx] === 'number' ? Math.max(0, Math.min(100, Math.round(hourlyRain[bIdx]))) : 0);
+      }
+
       var sunrise = null, sunset = null, tempHighC = null, tempLowC = null, uvIndexMax = null, rainChancePct = null;
       if (json.daily) {
         if (json.daily.sunrise && json.daily.sunrise[0]) sunrise = new Date(json.daily.sunrise[0]);
@@ -180,7 +192,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
         forecastTempC: forecastTempC, forecastCondition: forecastCondition,
-        forecastWx: forecastWx, forecastRainPct: forecastRainPct, wxNow: wxNow
+        forecastWx: forecastWx, forecastRainPct: forecastRainPct, borderHourly: borderHourly, wxNow: wxNow
       });
     } catch (e) {
       cb(e, emptyExtras);

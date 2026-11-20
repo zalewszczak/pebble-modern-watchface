@@ -208,6 +208,16 @@ var CORNER_CATEGORIES = [
         "preview": "68%"
       },
       {
+        "id": 110,
+        "label": "Calories burned today (resting + active)",
+        "preview": "(flame) 1840"
+      },
+      {
+        "id": 111,
+        "label": "Active calories today",
+        "preview": "(flame) 420"
+      },
+      {
         "id": 39,
         "label": "Sleep duration",
         "preview": "7h 32m"

@@ -30,7 +30,7 @@ var tokens = require(path.join(ROOT, 'src', 'pkjs', 'config', 'preview-icons.js'
 var STYLE_DIRS = { '0': 'simple', '1': 'hollow', '2': 'fullcolor' };
 
 var names = {};
-Object.keys(tokens).forEach(function (t) { names[tokens[t]] = true; });
+Object.keys(tokens).forEach(function (t) { if (tokens[t].indexOf('__') !== 0) names[tokens[t]] = true; }); // '__' names are drawn by the page itself
 // Full color art has no ink channel, so its outline pass borrows the hollow
 // silhouette (feature_icon_assets_draw_styled_with_outline) -- already covered
 // because every name is embedded for all three styles.

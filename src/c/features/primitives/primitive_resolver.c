@@ -335,6 +335,25 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       return true;
     }
 #endif
+    case PRIM_CALORIES_ICON:
+    case PRIM_CALORIES_VALUE:
+    case PRIM_CALORIES_ACTIVE_VALUE: {
+      // Total = resting + active kcal burned today; "N/A" when the health service has no data yet.
+      const bool have = feature_health_metric_available(HealthMetricActiveKCalories) ||
+                        feature_health_metric_available(HealthMetricRestingKCalories);
+      GColor c = have ? GColorOrange : GColorLightGray;
+      if (id == PRIM_CALORIES_ICON) { resolve_icon(out, 38, 0, false, c); return true; }
+      char kbuf[8];
+      if (!have) {
+        snprintf(kbuf, sizeof(kbuf), "N/A");
+      } else {
+        int32_t kcal = (int32_t)feature_health_sum_today(HealthMetricActiveKCalories);
+        if (id == PRIM_CALORIES_VALUE) kcal += (int32_t)feature_health_sum_today(HealthMetricRestingKCalories);
+        snprintf(kbuf, sizeof(kbuf), "%d", (int)kcal);
+      }
+      resolve_text(out, kbuf, c);
+      return true;
+    }
     case PRIM_STEPS_ICON:
     case PRIM_STEPS_VALUE:
     case PRIM_STEP_GOAL_PCT: {

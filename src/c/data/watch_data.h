@@ -93,7 +93,7 @@ typedef struct {
   // shown while the watch has been shaken, for shake_seconds.
   uint16_t shake_only_mask;
   uint8_t startup_clock_anim_mode; // 0=off, 1=hands sweep in on launch.
-  uint8_t bg_anim_mode;    // 0=off, 1=hour markers animate in on launch.
+  uint8_t bg_anim_mode;    // 0=off, 1=hour markers animate in on launch, 2=also the second marks appear one by one.
   uint8_t shake_anim_mode; // 0=off, 1=smooth second hand on shake.
 
   uint8_t outline_style;   // 0=none, 1=thin, 2=thick.

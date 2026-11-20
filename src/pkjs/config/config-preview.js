@@ -70,7 +70,9 @@ module.exports =
 'var PREVIEW_ICON_OUTLINE_THICK = [[-1,0],[1,0],[0,-1],[0,1],[-2,0],[2,0],[0,-2],[0,2],[1,1],[-1,1],[-1,-1],[1,-1]];' +
 'var PREVIEW_TINT_CACHE = {};' +
 
+'var PREVIEW_FLAME_URI = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'14\' viewBox=\'0 0 12 14\'><polygon fill=\'#000\' points=\'6,0 8,3 11,7 11,10 9,13 6,14 3,13 1,10 1,7 3,5 4,8 5,4\'/></svg>");' +
 'function previewIconSource(style, name) {' +
+'  if (name === "__flame") return PREVIEW_FLAME_URI;' +
 '  var set = (typeof PREVIEW_ICON_IMAGES !== "undefined") ? PREVIEW_ICON_IMAGES[style] : null;' +
 '  return set ? set[name] : null;' +
 '}' +
