@@ -499,6 +499,8 @@ function sendWeatherData(d) {
   phoneSlots.applyWeather(d);
   applyExtraWeather(d.extraWeather);
   var dict = buildWeatherDict(d);
+  // New forecast -> the border ring has to be rebuilt and sent too (it used to wait for the next settings send).
+  if (borderData.source() === 1) dict['BORDER_DATA'] = borderData.bytes();
   [astroFieldsDict(d.astro), issFieldsDict(d.issPos, d.issErrorCode)]
     .forEach(function (part) { Object.keys(part).forEach(function (k) { dict[k] = part[k]; }); });
   sendFlatDict(dict);

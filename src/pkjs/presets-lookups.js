@@ -862,6 +862,16 @@ CORNER_CATEGORIES.filter(function (c) { return c.id === 'phone'; })[0].items.pus
   { id: 239, label: 'Calendar: Event name', preview: 'Meeting' }
 );
 
+// Rain outlook (weather) and combined status icons with the hourly beep bell (utilities).
+CORNER_CATEGORIES.filter(function (c) { return c.id === 'weather'; })[0].items.push(
+  { id: 242, label: 'Rain outlook: icon + next rain', preview: '(rain) 30% in 3 hours' },
+  { id: 243, label: 'Rain outlook: next rain', preview: '30% in 3 hours' }
+);
+CORNER_CATEGORIES.filter(function (c) { return c.id === 'utilities'; })[0].items.push(
+  { id: 244, label: 'Battery + Bluetooth + Quiet Time + Hourly chimes (icons only)', preview: '(batt)(bt)(quiet)(bell)' },
+  { id: 245, label: 'Bluetooth + Quiet Time + Hourly chimes (icons only)', preview: '(bt)(quiet)(bell)' }
+);
+
 // Order of the "Content" dropdown: groups, each with its small heading, in the order shown. Items missing from a
 // list keep their relative order after the listed ones (under the last group), so a new item can never vanish.
 var CONTENT_GROUPS = {
@@ -869,7 +879,7 @@ var CONTENT_GROUPS = {
     ['Battery', [10, 228, 17]],
     ['Bluetooth', [20, 78]],
     ['Quiet Time', [108, 109]],
-    ['Combined status', [102, 103, 112, 113]],
+    ['Combined status', [102, 103, 112, 244, 245, 113]],
     ['Location & sensors', [13, 38, 85]]
   ],
   health: [
@@ -899,7 +909,8 @@ var CONTENT_GROUPS = {
     ['Today', [4, 74, 75, 7, 6, 107]],
     ['Atmosphere', [8, 37, 34, 9, 35, 14, 15, 36]],
     ['Forecast: next hours', [87, 88, 89, 90, 91, 92]],
-    ['Forecast: next days', [93, 94, 95]]
+    ['Forecast: next days', [93, 94, 95]],
+    ['Rain outlook', [242, 243]]
   ],
   astro: [
     ['Sun & Moon', [16, 11]],

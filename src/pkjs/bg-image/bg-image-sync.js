@@ -122,7 +122,21 @@ function presetCode() { var sel = selection(); s_lastCycleSlot = sel.slot || 0; 
 // 0 = sunrise/sunset as usual, 1 = day colors, 2 = night colors. Remembers what was last sent so a
 // new picture only triggers a settings push when the verdict actually changed.
 var s_sentScheme = 0;
-function wantedScheme() { return selection().mode === 4 ? pluginBg.schemeOverride() : 0; }
+// Own pictures: with "Day/night colors from picture brightness" the picture that is shown (the cycled one, if any)
+// picks the scheme: bright -> day colors, dark -> night colors.
+var CUSTOM_LUMA_THRESHOLD = 110;
+var s_lumaStamp = 0, s_luma = null;
+function customAutoScheme() { return getSetting('CONFIG_BG_AUTO_SCHEME', 'false') === 'true'; }
+function customSchemeOverride(sel) {
+  if (!customAutoScheme() || !sel.data) return 0;
+  if (s_lumaStamp !== sel.stamp) { s_lumaStamp = sel.stamp; s_luma = codec.slotLuma(sel.data); }
+  if (s_luma === null) return 0;
+  return s_luma < CUSTOM_LUMA_THRESHOLD ? 2 : 1;
+}
+function wantedScheme() {
+  var sel = selection();
+  return sel.mode === 4 ? pluginBg.schemeOverride() : (sel.mode === 2 ? customSchemeOverride(sel) : 0);
+}
 function schemeOverrideCode() { s_sentScheme = wantedScheme(); return s_sentScheme; }
 function schemeChanged() { return wantedScheme() !== s_sentScheme; }
 

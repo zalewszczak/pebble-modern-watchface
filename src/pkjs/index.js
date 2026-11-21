@@ -144,6 +144,7 @@ function buildCurrent() {
     pluginBgDither: getSetting('CONFIG_PLUGIN_BG_DITHER', 'fs'),
     pluginBgColor: getSetting('CONFIG_PLUGIN_BG_COLOR', 'neutral'),
     pluginBgFit: getSetting('CONFIG_PLUGIN_BG_FIT', 'fill'),
+    bgAutoScheme: getSetting('CONFIG_BG_AUTO_SCHEME', 'false') === 'true',
     pluginBgAutoScheme: getSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', 'false') === 'true',
     pluginBgCache: getSetting('CONFIG_PLUGIN_BG_CACHE', 'false') === 'true',
     borderSource: String(borderData.source()),
@@ -448,6 +449,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_PLUGIN_BG_DITHER', ['none', 'fs', 'atkinson', 'bayer4', 'bayer8'].indexOf(settings.CONFIG_PLUGIN_BG_DITHER) >= 0 ? settings.CONFIG_PLUGIN_BG_DITHER : 'fs');
   setSetting('CONFIG_PLUGIN_BG_COLOR', ['neutral', 'vivid', 'soft', 'bw', 'sepia'].indexOf(settings.CONFIG_PLUGIN_BG_COLOR) >= 0 ? settings.CONFIG_PLUGIN_BG_COLOR : 'neutral');
   setSetting('CONFIG_PLUGIN_BG_FIT', ['fill', 'full', '75', '50', 'center'].indexOf(settings.CONFIG_PLUGIN_BG_FIT) >= 0 ? settings.CONFIG_PLUGIN_BG_FIT : 'fill');
+  setSetting('CONFIG_BG_AUTO_SCHEME', settings.CONFIG_BG_AUTO_SCHEME ? 'true' : 'false');
   setSetting('CONFIG_PLUGIN_BG_AUTO_SCHEME', settings.CONFIG_PLUGIN_BG_AUTO_SCHEME ? 'true' : 'false');
   setSetting('CONFIG_PLUGIN_BG_CACHE', settings.CONFIG_PLUGIN_BG_CACHE ? 'true' : 'false');
   // CONFIG_BORDER_SOURCE: 0 off, 1 weather, 2 calendar. CONFIG_BORDER_WEATHER_MODE keeps the weather style (1-4) either way.

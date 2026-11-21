@@ -126,23 +126,7 @@ function composerClientBody() {
     document.getElementById("composerLeft").disabled = (sel <= 0);
     document.getElementById("composerRight").disabled = (sel < 0 || sel >= n - 1);
     document.getElementById("composerDelete").disabled = (sel < 0 || n <= 1);
-    var zoneRow = document.getElementById("composerSelZoneRow");
     var selPal = sel >= 0 ? composerFindPaletteItem(COMPOSER.items[sel].id, COMPOSER.items[sel].aux) : null;
-    if (selPal && selPal.param) {
-      zoneRow.style.display = "";
-      document.getElementById("composerSelZoneLabel").textContent = PARAM_ROW_LABEL[selPal.param] + " for selected";
-      composerFillParamSelect(document.getElementById("composerSelZone"), selPal.param, String(COMPOSER.items[sel].aux));
-      if (selPal.param !== "plugin") document.getElementById("composerSelZone").value = String(COMPOSER.items[sel].aux);
-    } else {
-      // no primitive selected (or one without a parameter): keep the row visible but disabled
-      zoneRow.style.display = "";
-      document.getElementById("composerSelZoneLabel").textContent = "Plugin data source for selected";
-      var offSel = document.getElementById("composerSelZone");
-      pluginHideProvider(offSel);
-      offSel.innerHTML = "<option value=\"\">-</option>";
-      offSel.disabled = true;
-    }
-    if (selPal && selPal.param) document.getElementById("composerSelZone").disabled = false;
     var txtRow = document.getElementById("composerSelTextRow");
     if (selPal && selPal.customText) {
       txtRow.style.display = "";
@@ -201,16 +185,6 @@ function composerClientBody() {
     if (s < 0) return;
     var v = document.getElementById("composerSelText").value.replace(/\s+/g, " ");
     PLUGIN_SLOTS[COMPOSER.items[s].aux] = "text|" + v;
-    composerRender();
-  }
-
-  function composerOnSelZoneChange() {
-    var s = COMPOSER.selected;
-    if (s < 0) return;
-    var selPal2 = composerFindPaletteItem(COMPOSER.items[s].id, COMPOSER.items[s].aux);
-    var newAux = composerParamValueToAux(selPal2 ? selPal2.param : "", document.getElementById("composerSelZone").value);
-    if (newAux < 0) { composerSetError(pluginUnavailableText()); composerRender(); return; }
-    COMPOSER.items[s].aux = newAux;
     composerRender();
   }
 

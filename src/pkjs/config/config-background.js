@@ -174,6 +174,15 @@ function backgroundSectionHtml(current) {
 '      </select>' +
 '      <div class="help" id="help-bgCycle" style="display:none;">Works while one of "My images" is selected and at least two of your own images are stored. The watchface then picks among all your own images: randomly each time it starts, or a different one every day (switching at midnight).</div>' +
 '    </div>' +
+'    <div id="bgAutoSchemeRow" style="margin-top:10px;">' +
+'      <div class="checkbox-row">' +
+'        <input type="checkbox" id="bgAutoScheme" ' + (current && current.bgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
+'        <label for="bgAutoScheme" style="margin:0;">Day/night colors from picture brightness</label>' +
+'        <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAutoScheme\')">?</button>' +
+'      </div>' +
+'      <div class="help" id="help-bgAutoScheme" style="display:none;">Works with "My images", also together with cycling through them. Bright pictures use the <b>day</b> colors and dark pictures use the <b>night</b> colors (instead of sunrise/sunset). Set a <b>white (light) background</b> in the day colors and a <b>dark background</b> in the night colors, with contrasting text.</div>' +
+'    </div>' +
+'    <div id="bgCustomSchemeWarn" class="help" style="display:none;color:#e07a00;font-weight:600;"></div>' +
 '    <div id="pluginBgChecks" style="' + (isPluginOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="checkbox-row" style="margin-top:10px;">' +
 '        <input type="checkbox" id="pluginBgAutoScheme" ' + (current && current.pluginBgAutoScheme ? 'checked' : '') + ' onchange="bgRefresh()">' +
@@ -595,6 +604,9 @@ var CLIENT_BODY =
 '  var sel = bgParseSource();\n' +
 '  var csel = bgEl("bgCycle");\n' +
 '  if (csel) csel.disabled = !(box && box.checked && sel.kind === "u");\n' +
+'  var asel = bgEl("bgAutoScheme"), arow = bgEl("bgAutoSchemeRow");\n' +
+'  if (asel) asel.disabled = !(box && box.checked && sel.kind === "u");\n' +
+'  if (arow) arow.style.opacity = (asel && asel.disabled) ? "0.5" : "";\n' +
 '  if (crow) crow.style.opacity = (csel && csel.disabled) ? "0.5" : "";\n' +
 '  var pbx = bgEl("bgPresetBox"), cbx = bgEl("bgCustomBox"), kg = bgEl("bgKindGroup");\n' +
 '  if (pbx) pbx.style.display = sel.kind === "p" ? "" : "none";\n' +
@@ -627,7 +639,16 @@ var CLIENT_BODY =
 '  var box = bgEl("useCustomBg");\n' +
 '  var html = "", title = "Plain background color";\n' +
 '  var pbox = bgEl("usePluginBg");\n' +
-'  if (pbox && pbox.checked && !(box && box.checked)) title = "Plugin background";\n' +
+'  var wbox0 = bgEl("useWeatherBg");\n' +
+'  if (pbox && pbox.checked && !(box && box.checked) && !(wbox0 && wbox0.checked)) {\n' +
+'    title = "Plugin background";\n' +
+'    var pcv = bgEl("pluginBgOutCanvas");\n' +
+'    if (pcv && pcv.width > 0 && PLUGIN_PREV.key) { try { html = \'<img src="\' + pcv.toDataURL("image/png") + \'" alt="">\'; } catch (e) {} }\n' +
+'    if (!html) html = PLUGIN_BG_ICON_SVG;\n' +
+'    setPreviewThumbnail("subsecpreview-background", html);\n' +
+'    setSubsubheaderText("background", title);\n' +
+'    return;\n' +
+'  }\n' +
 '  var wbox = bgEl("useWeatherBg");\n' +
 '  if (wbox && wbox.checked) {\n' +
 '    var wi = bgEl("weatherBgThumb-" + bgEl("weatherBgStyle").value);\n' +
@@ -646,6 +667,7 @@ var CLIENT_BODY =
 '  setSubsubheaderText("background", title);\n' +
 '}\n' +
 'var PLUGIN_PREV = { img: null, key: "" };\n' +
+'var PLUGIN_BG_ICON_SVG = \'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:100%;height:100%"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 9"/></svg>\';\n' +
 'function pluginPreviewUpdate() {\n' +
 '  var wrap = bgEl("pluginBgPreview"), none = bgEl("pluginBgPreviewNone"), panel = bgEl("pluginBgPanel");\n' +
 '  if (!wrap || (panel && panel.style.display === "none")) return;\n' +
@@ -680,6 +702,7 @@ var CLIENT_BODY =
 '  }\n' +
 '  octx.putImageData(od, 0, 0);\n' +
 '  bgEl("pluginBgOutLabel").textContent = "On the watch (" + r.w + "x" + r.h + ")";\n' +
+'  try { refreshBackgroundSubsectionPreview(); } catch (e) {}\n' +
 '}\n' +
 'function bgRefresh() {\n' +
 '  bgSyncUi();\n' +
@@ -692,16 +715,16 @@ var CLIENT_BODY =
 '  return ((b >> 4) & 3) * 3 + ((b >> 2) & 3) * 6 + (b & 3);\n' +
 '}\n' +
 'function bgSchemeWarn() {\n' +
-'  var box = bgEl("pluginBgAutoScheme"), warn = bgEl("pluginBgSchemeWarn");\n' +
-'  if (!warn) return;\n' +
+'  var box = bgEl("pluginBgAutoScheme"), warn = bgEl("pluginBgSchemeWarn"), cbox = bgEl("bgAutoScheme");\n' +
+'  var cwarn = bgEl("bgCustomSchemeWarn");\n' +
+'  if (!warn && !cwarn) return;\n' +
 '  var msgs = [];\n' +
-'  if (box && box.checked) {\n' +
+'  if ((box && box.checked) || (cbox && cbox.checked && !cbox.disabled)) {\n' +
 '    var d = bgEl("customBgValue"), n = bgEl("nightCustomBgValue");\n' +
 '    if (d && bgPackedLum(d.value) < 18) msgs.push("&#9888; The day colors background is dark: set a white (light) background for the day colors, or bright pictures will be hard to read.");\n' +
 '    if (n && bgPackedLum(n.value) > 10) msgs.push("&#9888; The night colors background is light: set a dark background for the night colors, or dark pictures will be hard to read.");\n' +
 '  }\n' +
-'  warn.innerHTML = msgs.join("<br>");\n' +
-'  warn.style.display = msgs.length ? "" : "none";\n' +
+'  [warn, cwarn].forEach(function (w) { if (w) { w.innerHTML = msgs.join("<br>"); w.style.display = msgs.length ? "" : "none"; } });\n' +
 '}\n' +
 'function bgInit() {\n' +
 '  var s = bgParseSource();\n' +

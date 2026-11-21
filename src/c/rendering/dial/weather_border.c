@@ -53,7 +53,7 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
   out->semi = d->border_weather_semi ? 1 : 0;
 
   const uint8_t *b = d->border_data;
-  const int layers = b[0];
+  const int layers = b[0] & 3;
   bool ok = layers >= 1 && layers <= WEATHER_BORDER_MAX_LAYERS;
 #ifdef PBL_BW
   out->layers = 1; // a pattern ring has one stripe; its levels are the first layer's c0
@@ -87,6 +87,21 @@ bool weather_border_compute(const WatchData *d, time_t now, WeatherBorderLook *o
     memset(out->c1, 0, sizeof(out->c1));
     make_placeholder(out, now);
     return true;
+  }
+  // Header byte: bit 2 = weather, bits 3-7 = local hour of day at build + 1 (0 = not stamped). Sectors whose hour has
+  // passed since the phone built the ring are blanked, so it never shows stale data between phone updates.
+  const int built = (b[0] >> 3) & 31;
+  if (built >= 1 && built <= 24) {
+    time_t tt = now;
+    const struct tm *lt = localtime(&tt);
+    const int elapsed = (lt->tm_hour - (built - 1) + 24) % 24;
+    const bool wx = (b[0] & 4) != 0;
+    for (int s = 0; s < 12; s++) {
+      const int j = (s - ((built - 1) % 12) + 12) % 12;
+      const int t = (wx && j == 0) ? 12 : j; // hours after the build hour this sector stands for
+      if (t >= elapsed) continue;
+      for (int l = 0; l < WEATHER_BORDER_MAX_LAYERS; l++) { out->c0[l][s] = 0; out->c1[l][s] = 0; }
+    }
   }
   s_wait_start = 0;
   out->state = WEATHER_BORDER_DATA;

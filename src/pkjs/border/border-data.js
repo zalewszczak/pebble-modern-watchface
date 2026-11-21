@@ -4,7 +4,10 @@
 // knows nothing about weather or calendars: it only draws the colours it is given.
 //
 // BORDER_DATA wire format (1 .. 79 bytes):
-//   byte 0        layers: 0 = no data (ring stays empty), 1..3 stripes (outermost first)
+//   byte 0        bits 0-1 layers: 0 = no data (ring stays empty), 1..3 stripes (outermost first)
+//                 bit 2    1 = weather (sector of the build hour holds the forecast 12 h ahead), 0 = calendar (it holds "now")
+//                 bits 3-7 local hour of day at build + 1 (0 = not stamped). The watch uses it to blank the sectors whose
+//                          hour has already passed, so the ring never shows stale data between phone updates.
 //   per layer:    12 bytes  c0[sector]        GColor8 byte, 0 = transparent
 //                  2 bytes  mask (LE)         bit s set -> sector s has its own second colour
 //                  n bytes  c1[s] for each set bit, ascending s   (otherwise c1 = c0)
@@ -84,9 +87,10 @@ function rainLevel(p) { return p < 5 ? 0 : (p < 30 ? 1 : (p < 60 ? 2 : (p < 85 ?
 // ---- wire format ----------------------------------------------------------------------------------------
 function emptyLayer() { var l = []; for (var s = 0; s < 12; s++) l.push([0, 0]); return l; }
 
-function encode(layers) {
+function encode(layers, isWeather, now) {
   if (!layers || !layers.length) return [0];
-  var out = [layers.length], mask, extra, s, l;
+  var stamp = ((now || new Date()).getHours() + 1) << 3;
+  var out = [layers.length | (isWeather ? 4 : 0) | stamp], mask, extra, s, l;
   for (l = 0; l < layers.length; l++) {
     mask = 0; extra = [];
     for (s = 0; s < 12; s++) out.push(layers[l][s][0] & 255);
@@ -172,7 +176,7 @@ function buildWeather(now) {
       else if (style === 2) layers[0][sc] = fillTemperature(t2, scheme, hrNow.tempColor[i]);
       else layers[0][sc] = fillRain(rain2, scheme);
     }
-    return encode(layers);
+    return encode(layers, true, now);
   }
   // Older cache without absolute times: the forecast is "h hours from the moment it was fetched"; shift by the whole hours passed since, so a
   // forecast that is a few hours old still lands on the right sectors (the far end becomes transparent).
@@ -198,7 +202,7 @@ function buildWeather(now) {
     else if (style === 2) layers[0][sec] = fillTemperature(t, scheme, src.tempColor[slot]);
     else layers[0][sec] = fillRain(rain, scheme);
   }
-  return encode(layers);
+  return encode(layers, true, now);
 }
 
 // ---- calendar -------------------------------------------------------------------------------------------
@@ -255,7 +259,7 @@ function buildCalendar(now) {
     var running = k === 0 && ev.some(function (e) { return e.start <= now.getTime() && e.end > now.getTime(); });
     layer[(hour12 + k) % 12] = calSector(mode, scheme, ev, running || (k > 0 && ev.some(function (e) { return e.start <= ws; })), nextId);
   }
-  return encode([layer]);
+  return encode([layer], false, now);
 }
 
 // ---- public ---------------------------------------------------------------------------------------------

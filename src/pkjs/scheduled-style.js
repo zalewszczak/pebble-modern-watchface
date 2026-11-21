@@ -79,6 +79,7 @@ var FIELD_MAP = {
   pluginBgDither: ['CONFIG_PLUGIN_BG_DITHER', 's'],
   pluginBgColor: ['CONFIG_PLUGIN_BG_COLOR', 's'],
   pluginBgFit: ['CONFIG_PLUGIN_BG_FIT', 's'],
+  bgAutoScheme: ['CONFIG_BG_AUTO_SCHEME', 'b'],
   pluginBgAutoScheme: ['CONFIG_PLUGIN_BG_AUTO_SCHEME', 'b'],
   pluginBgCache: ['CONFIG_PLUGIN_BG_CACHE', 'b'],
   borderSource: ['CONFIG_BORDER_SOURCE', 's'],

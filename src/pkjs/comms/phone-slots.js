@@ -35,7 +35,7 @@ function isNum(v) { return typeof v === 'number' && !isNaN(v); }
 // ---- snapshot of the last phone-side data (raw values; units are applied when the slots are built) ----------
 
 function emptySnap() {
-  return { errorCode: 0, loc: '', w: {}, x: {}, a: {}, fc: [], fcc: [], fcl: [], fcr: [] };
+  return { errorCode: 0, loc: '', w: {}, x: {}, a: {}, fc: [], fcc: [], fcl: [], fcr: [], rh: null };
 }
 var snap = emptySnap();
 (function load() {
@@ -48,6 +48,7 @@ var snap = emptySnap();
         ['w', 'x', 'a'].forEach(function (k) { if (p[k] && typeof p[k] === 'object') snap[k] = p[k]; });
         if (Array.isArray(p.fc)) snap.fc = p.fc;
         ['fcc', 'fcl', 'fcr'].forEach(function (k) { if (Array.isArray(p[k])) snap[k] = p[k]; });
+        if (p.rh && Array.isArray(p.rh.rain)) snap.rh = p.rh;
         if (typeof p.loc === 'string') snap.loc = p.loc;
         if (isNum(p.errorCode)) snap.errorCode = p.errorCode;
       }
@@ -88,6 +89,7 @@ function applyWeather(d) {
     if (Array.isArray(e.forecastCondition)) snap.fcc = e.forecastCondition.slice(0, 15);
     if (Array.isArray(e.forecastCloud)) snap.fcl = e.forecastCloud.slice(0, 15);
     if (Array.isArray(e.forecastRainPct)) snap.fcr = e.forecastRainPct.slice(0, 15);
+    if (e.rainHourly && Array.isArray(e.rainHourly.rain) && isNum(e.rainHourly.start)) snap.rh = { start: e.rainHourly.start, rain: e.rainHourly.rain.slice(0, 90) };
   }
   var a = d.astro;
   if (a) {
@@ -293,8 +295,30 @@ function forecastConditionIcon(c, i) {
   }
   return I(14, wn.weatherIconCategory(cond, cloud), wn.weatherConditionColorByte(cond, cloud, rain), night ? FLAG : 0);
 }
+// Rain outlook ("30% in 3 hours", "No rain for 2 days") from the hourly rain chance; shown by the forecast icon
+// primitive with aux 31 and the plugin-text primitive with aux 16, so no new primitive is needed.
+var RAIN_OUTLOOK_ICON = 31, RAIN_OUTLOOK_TEXT = 16, RAIN_MIN_PCT = 30;
+function rainOutlook(s) {
+  var rh = s.rh;
+  if (!rh || !isNum(rh.start) || !rh.rain.length) return null;
+  var first = Math.max(0, Math.floor((Date.now() - rh.start) / 3600000)); // the hour that contains "now"
+  var avail = 0, i;
+  for (i = first; i < rh.rain.length; i++) {
+    if (!isNum(rh.rain[i])) break;
+    avail++;
+    if (rh.rain[i] >= RAIN_MIN_PCT) {
+      var h = i - first, pct = rh.rain[i];
+      var when = h === 0 ? 'now' : (h < 48 ? 'in ' + h + (h === 1 ? ' hour' : ' hours') : 'in ' + Math.floor(h / 24) + ' days');
+      return { text: pct + '% ' + when, color: wn.percentGradientColorByte(pct) };
+    }
+  }
+  if (avail < 6) return null;
+  var days = Math.floor(avail / 24);
+  return { text: days >= 1 ? 'No rain for ' + days + (days === 1 ? ' day' : ' days') : 'No rain for ' + avail + ' h', color: wn.percentGradientColorByte(0) };
+}
 function forecastRule(isIcon) {
   return function (c, aux) {
+    if (isIcon && aux === RAIN_OUTLOOK_ICON) { var ro = rainOutlook(c.s); return ro ? I(5, 0, ro.color) : na(true, 5); }
     if (isIcon && aux >= 16 && aux <= 30) return forecastConditionIcon(c, aux - 16);
     if (aux >= 15) return null;
     var v = c.s.fc[aux];
@@ -366,6 +390,7 @@ rule(PRIM.PRIM_AURORA_KP_VALUE, auroraRule(false, true));
 rule(PRIM.PRIM_PLUGIN_TEXT, function (c, aux) {
   if (aux === CAL_ICON) return I(39, 0, WHITE, MAIN);
   if (aux >= CAL_START && aux <= CAL_END) return calendarText(c, aux);
+  if (aux === RAIN_OUTLOOK_TEXT) { var ro = rainOutlook(c.s); return ro ? T(ro.text, ro.color) : na(false); }
   if (aux >= 12) return null;
   var t = c.plugins && c.plugins[aux];
   return T(t ? t : '--', WHITE, MAIN); // a blank (' ') is a later line of a long text that has run out: draws nothing

@@ -191,7 +191,7 @@ test('units, location, plugin text', () => {
   assert.strictEqual(one(PRIM.PRIM_LOCATION_NAME, ctx()).text, 'Unknown');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 0).text, 'Hello');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 1).text, '--');
-  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [16], c).ids[0], 0);
+  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [17], c).ids[0], 0);
 });
 
 test('phone battery and music title', () => {
@@ -299,4 +299,19 @@ test('forecast complications carry a weather condition icon (offset icon, condit
   c.s.fc = [10, 11]; c.s.fcc = [0, 2]; c.s.fcl = [5, 90]; c.s.fcr = [0, 80];
   const r = one(PRIM.PRIM_FORECAST_OFFSET_ICON, c, 17);
   assert.deepStrictEqual([r.icon, r.kind, r.aux], [true, 14, 4]); // rain category
+});
+
+test('rain outlook text and icon', () => {
+  const start = Date.now() - 30 * 60000; // the first hour started 30 minutes ago
+  const mk = (rain) => ctx({ s: { errorCode: 0, loc: '', w: {}, x: {}, a: {}, fc: [], rh: { start, rain } } });
+  const rain = new Array(80).fill(5); rain[3] = 30;
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, mk(rain), 16).text, '30% in 3 hours');
+  const now = new Array(80).fill(5); now[0] = 60;
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, mk(now), 16).text, '60% now');
+  const dry = new Array(60).fill(0);
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, mk(dry), 16).text, 'No rain for 2 days');
+  const far = new Array(80).fill(0); far[50] = 40;
+  assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, mk(far), 16).text, '40% in 2 days');
+  const ic = one(PRIM.PRIM_FORECAST_OFFSET_ICON, mk(rain), 31);
+  assert.strictEqual(ic.icon, true);
 });

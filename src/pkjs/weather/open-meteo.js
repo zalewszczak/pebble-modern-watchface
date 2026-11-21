@@ -164,6 +164,12 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         borderHourly.rain.push(hourlyRain && typeof hourlyRain[bIdx] === 'number' ? Math.max(0, Math.min(100, Math.round(hourlyRain[bIdx]))) : 0);
       }
 
+      // Hourly rain chance from the hour that contains "now" (up to 4 days) for the "rain in N hours" complication.
+      var rainHourly = { start: hourlyTimes[nowIdx] || null, rain: [] };
+      for (var rh = nowIdx; rh < hourlyTimes.length && rainHourly.rain.length < 90; rh++) {
+        rainHourly.rain.push(hourlyRain && typeof hourlyRain[rh] === 'number' ? Math.max(0, Math.min(100, Math.round(hourlyRain[rh]))) : null);
+      }
+
       var sunrise = null, sunset = null, tempHighC = null, tempLowC = null, uvIndexMax = null, rainChancePct = null;
       if (json.daily) {
         if (json.daily.sunrise && json.daily.sunrise[0]) sunrise = new Date(json.daily.sunrise[0]);
@@ -202,7 +208,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
         forecastTempC: forecastTempC, forecastCondition: forecastCondition, forecastCloud: forecastCloud,
-        forecastWx: forecastWx, forecastRainPct: forecastRainPct, borderHourly: borderHourly, wxNow: wxNow
+        forecastWx: forecastWx, forecastRainPct: forecastRainPct, borderHourly: borderHourly, rainHourly: rainHourly, wxNow: wxNow
       });
     } catch (e) {
       cb(e, emptyExtras);

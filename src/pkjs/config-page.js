@@ -676,10 +676,6 @@ configBattery.modalHtml() +
 '          <button type="button" class="composer-btn composer-btn-grow" id="composerRight" onclick="composerMove(1)">&rarr;</button>' +
 '          <span class="composer-count" id="composerCount"></span>' +
 '        </div>' +
-'        <div class="composer-row" id="composerSelZoneRow" style="display:none;">' +
-'          <label style="margin:0; flex:1 1 100%;" id="composerSelZoneLabel">Zone for selected</label>' +
-'          <select id="composerSelZone" onchange="composerOnSelZoneChange()" style="flex:1 1 100%;"></select>' +
-'        </div>' +
 '        <div class="composer-row" id="composerSelTextRow" style="display:none;">' +
 '          <label style="margin:0; flex:1 1 100%;">Text for selected</label>' +
 '          <input type="text" id="composerSelText" maxlength="15" oninput="composerOnSelTextInput()" style="flex:1 1 100%;">' +
@@ -1252,11 +1248,11 @@ configPresetSchedule.modalHtml +
 '    <div class="help" id="help-startupClockAnim" style="display:none;"><b>Animate hands</b>: when the watchface starts the hands grow out of the centre and swing to the current time (about 1.4 seconds). <b>Animate complications</b>: the complications first show only their icons, then the text flips through letters and settles on its value. The two can be used together or on their own, and play once per start. Off shows everything in place right away.</div>' +
 
 '    <div class="subsection">' +
-'      <div class="field-label-row"><label>Animate indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
+'      <div class="field-label-row"><label>Animate hour indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
       verticalButtonGroupHtml('bgAnimModeGroup', 'bgAnimMode', [
         { value: '0', label: 'Off' },
-        { value: '1', label: 'Indices (hour indices animate in; seconds draw normally)' },
-        { value: '2', label: 'Indices + seconds (hour indices animate in, the second marks then appear one by one from 0 to 60)' }
+        { value: '1', label: 'Hour indices (hour indices animate in; seconds draw normally)' },
+        { value: '2', label: 'Hour and second indices (hour indices animate in, the second marks then appear one by one from 0 to 60)' }
       ], current.bgAnimMode || '0') +
 '    </div>' +
 '    <div class="help" id="help-bgAnimMode" style="display:none;">Choose whether the indices animate in when the watchface appears.</div>' +

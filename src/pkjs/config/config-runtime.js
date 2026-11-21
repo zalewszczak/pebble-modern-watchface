@@ -60,6 +60,7 @@ module.exports =
 '    CONFIG_PLUGIN_BG_DITHER: document.getElementById("pluginBgDither").value,' +
 '    CONFIG_PLUGIN_BG_COLOR: document.getElementById("pluginBgColor").value,' +
 '    CONFIG_PLUGIN_BG_FIT: document.getElementById("pluginBgFit").value,' +
+'    CONFIG_BG_AUTO_SCHEME: document.getElementById("bgAutoScheme") ? document.getElementById("bgAutoScheme").checked : false,' +
 '    CONFIG_PLUGIN_BG_AUTO_SCHEME: document.getElementById("pluginBgAutoScheme").checked,' +
 '    CONFIG_PLUGIN_BG_CACHE: document.getElementById("pluginBgCache").checked,' +
 '    CONFIG_BORDER_SOURCE: document.getElementById("borderSource").value,' +
