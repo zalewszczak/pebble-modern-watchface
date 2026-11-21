@@ -92,7 +92,7 @@ typedef struct {
   // Bit i set = feature slot i (feature_slot.h's slot enum order) is only
   // shown while the watch has been shaken, for shake_seconds.
   uint16_t shake_only_mask;
-  uint8_t startup_clock_anim_mode; // 0=off, 1=hands sweep in on launch.
+  uint8_t startup_clock_anim_mode; // Bit mask: 1=hands sweep in on launch, 2=complications flip in on launch, 0=off.
   uint8_t bg_anim_mode;    // 0=off, 1=hour markers animate in on launch, 2=also the second marks appear one by one.
   uint8_t shake_anim_mode; // 0=off, 1=smooth second hand on shake.
 
@@ -206,8 +206,9 @@ typedef struct {
   uint8_t hourly_vibe_mode; // 0=off, 1=hourly, 2=interval.
   uint8_t hourly_vibe_interval_min; // interval for mode 2.
   uint8_t hourly_vibe_pattern; // 0=short, 1=double, 2=long, 3=off.
-  uint8_t hourly_vibe_sound;   // beep with the hourly indication: 0=off, 1=short, 2=long, 3=double (needs a speaker).
-  uint8_t bt_lost_beep;        // beep when the phone connection is lost: 0=off, 1=short, 2=long, 3=double (needs a speaker).
+  uint8_t hourly_vibe_sound;   // beep with the hourly indication: a BeepKind id from timing/beep.h, 0 = off (needs a speaker).
+  uint8_t bt_lost_beep;        // beep when the phone connection is lost: a BeepKind id from timing/beep.h, 0 = off (needs a speaker).
+  uint8_t beep_volume;         // speaker volume of all beeps, 10-100 percent in steps of 10 (default 50).
   uint8_t bt_lost_vibe;        // vibrate when the phone connection is lost: 0=off, 1=short, 2=double, 3=long.
   uint16_t hourly_vibe_start_min; // start minute of day.
   uint16_t hourly_vibe_end_min; // end minute; equal means all day.

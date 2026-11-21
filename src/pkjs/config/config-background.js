@@ -165,7 +165,7 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and complications stay easy to read.</div>' +
-'    <div id="bgCycleRow" style="margin-top:10px;' + (isOn(current) ? '' : 'display:none;') + '">' +
+'    <div id="bgCycleRow" style="margin-top:10px;' + (isOn(current) && parseSource(current).charAt(0) === 'u' ? '' : 'display:none;') + '">' +
 '      <div class="field-label-row"><label for="bgCycle">Cycle through my images</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgCycle\')">?</button></div>' +
 '      <select id="bgCycle">' +
 '        <option value="0"' + (cycleVal(current) === '0' ? ' selected' : '') + '>Off (always the selected image)</option>' +
@@ -217,9 +217,16 @@ function backgroundSectionHtml(current) {
 '    <div id="bgPanel" style="' + (isOn(current) ? '' : 'display:none;') + '">' +
 '      <div class="bg-mem-warning" style="color:#e07a00;font-size:12px;line-height:1.4;margin:8px 0;">&#9888; Backgrounds need extra memory on the watch, which may run short if many other complications are enabled. If that happens you will just see a blank background and flash red BG Image ERR. Restarting the watchface sometimes clears it; otherwise disable some options until it works again.</div>' +
 '      <input type="hidden" id="bgSource" value="' + esc(parseSource(current)) + '">' +
-(platform.bw ? '' : '      <div class="bg-subtitle">Predefined</div>' + presetHtml + '      <div class="bg-subtitle">My images</div>') +
+(platform.bw ? '' :
+'      <div class="mode-btn-group" id="bgKindGroup">' +
+'        <button type="button" class="mode-btn' + (parseSource(current).charAt(0) === 'p' ? ' active' : '') + '" onclick="bgSetKind(\'p\')">PRELOADED</button>' +
+'        <button type="button" class="mode-btn' + (parseSource(current).charAt(0) === 'u' ? ' active' : '') + '" onclick="bgSetKind(\'u\')">CUSTOM</button>' +
+'      </div>' +
+'      <div id="bgPresetBox"' + (parseSource(current).charAt(0) === 'p' ? '' : ' style="display:none;"') + '>' + presetHtml + '</div>') +
+'    <div id="bgCustomBox"' + (!platform.bw && parseSource(current).charAt(0) === 'p' ? ' style="display:none;"' : '') + '>' +
 '      <div class="example-style-grid" id="bgSlotGrid"></div>' +
 '      <div class="help" style="margin-top:8px;">Tap a slot to add a photo. Images are converted to 64 colors and sent to the watch on Save.</div>' +
+'    </div>' +
 '    </div>';
 }
 
@@ -585,8 +592,12 @@ var CLIENT_BODY =
 '  var wsty = bgEl("weatherBgStyleBox");\n' +
 '  if (wsty) wsty.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
 '  var crow = bgEl("bgCycleRow");\n' +
-'  if (crow) crow.style.display = (box && box.checked) ? "" : "none";\n' +
 '  var sel = bgParseSource();\n' +
+'  if (crow) crow.style.display = (box && box.checked && sel.kind === "u") ? "" : "none";\n' +
+'  var pbx = bgEl("bgPresetBox"), cbx = bgEl("bgCustomBox"), kg = bgEl("bgKindGroup");\n' +
+'  if (pbx) pbx.style.display = sel.kind === "p" ? "" : "none";\n' +
+'  if (cbx && kg) cbx.style.display = sel.kind === "u" ? "" : "none";\n' +
+'  if (kg) { var kb = kg.getElementsByClassName("mode-btn"); for (var ki = 0; ki < kb.length; ki++) kb[ki].className = "mode-btn" + ((ki === 0) === (sel.kind === "p") ? " active" : ""); }\n' +
 '  for (var i = 0; i < BG_PRESET_NUMBERS.length; i++) {\n' +
 '    var n = BG_PRESET_NUMBERS[i];\n' +
 '    var b = bgEl("bgPresetBtn-" + n);\n' +
@@ -729,6 +740,20 @@ var CLIENT_BODY =
 '    if (pb) pb.checked = false;\n' +
 '    var ne = bgEl("nightEnabled");\n' +
 '    if (ne && !ne.checked) { ne.checked = true; try { onNightToggle(); } catch (e) {} }\n' +
+'  }\n' +
+'  bgRefresh();\n' +
+'}\n' +
+'var bgLastPreset = 0, bgLastSlot = 0;\n' +
+'function bgSetKind(kind) {\n' +
+'  var cur = bgParseSource();\n' +
+'  if (cur.kind === kind) return;\n' +
+'  if (cur.kind === "p") bgLastPreset = cur.n; else bgLastSlot = cur.n;\n' +
+'  if (kind === "p") {\n' +
+'    bgEl("bgSource").value = "p:" + (BG_PRESET_NUMBERS.indexOf(bgLastPreset) >= 0 ? bgLastPreset : (BG_PRESET_NUMBERS[0] || 1));\n' +
+'  } else {\n' +
+'    var pick = (bgLastSlot && bgSlotHas(bgLastSlot)) ? bgLastSlot : 0;\n' +
+'    for (var k = 1; !pick && k <= BG_SLOT_COUNT; k++) if (bgSlotHas(k)) pick = k;\n' +
+'    bgEl("bgSource").value = "u:" + (pick || 1);\n' +
 '  }\n' +
 '  bgRefresh();\n' +
 '}\n' +

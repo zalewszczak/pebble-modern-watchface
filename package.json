@@ -49,7 +49,6 @@
             "services.swpc.noaa.gov",
             "celestrak.org",
             "nominatim.openstreetmap.org",
-            "api.openweathermap.org",
             "fonts.googleapis.com",
             "fonts.gstatic.com",
             "fonts.cdnfonts.com",
@@ -112,7 +111,8 @@
       "BORDER_DATA",
       "MEDIA_INFO",
       "PHONE_SLOTS",
-      "MEDIA_ART"
+      "MEDIA_ART",
+      "BEEP_PREVIEW"
     ],
     "resources": {
       "media": [
@@ -726,6 +726,24 @@
         },
         {
           "type": "bitmap",
+          "name": "ICON_SIMPLE_BELL",
+          "file": "common/images/simple/bell.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BELL_OFF",
+          "file": "common/images/simple/bell_off.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "ICON_SIMPLE_ISS",
           "file": "common/images/simple/iss.png",
           "targetPlatforms": [
@@ -1014,6 +1032,24 @@
         },
         {
           "type": "bitmap",
+          "name": "ICON_HOLLOW_BELL",
+          "file": "common/images/hollow/bell.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BELL_OFF",
+          "file": "common/images/hollow/bell_off.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "ICON_HOLLOW_ISS",
           "file": "common/images/hollow/iss.png",
           "targetPlatforms": [
@@ -1295,6 +1331,24 @@
           "type": "bitmap",
           "name": "ICON_FULLCOLOR_QUIET_TIME_MUTED",
           "file": "common/images/fullcolor/quiet_time_muted.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FULLCOLOR_BELL",
+          "file": "common/images/fullcolor/bell.png",
+          "targetPlatforms": [
+            "emery",
+            "gabbro"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_FULLCOLOR_BELL_OFF",
+          "file": "common/images/fullcolor/bell_off.png",
           "targetPlatforms": [
             "emery",
             "gabbro"
@@ -1972,6 +2026,26 @@
         },
         {
           "type": "bitmap",
+          "name": "ICON_SIMPLE_BELL",
+          "file": "legacy/images/simple/bell.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_SIMPLE_BELL_OFF",
+          "file": "legacy/images/simple/bell_off.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
           "name": "ICON_SIMPLE_ISS",
           "file": "legacy/images/simple/iss.png",
           "memoryFormat": "1BitPalette",
@@ -2284,6 +2358,26 @@
           "type": "bitmap",
           "name": "ICON_HOLLOW_QUIET_TIME_MUTED",
           "file": "legacy/images/hollow/quiet_time_muted.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BELL",
+          "file": "legacy/images/hollow/bell.png",
+          "memoryFormat": "1BitPalette",
+          "targetPlatforms": [
+            "flint",
+            "diorite"
+          ]
+        },
+        {
+          "type": "bitmap",
+          "name": "ICON_HOLLOW_BELL_OFF",
+          "file": "legacy/images/hollow/bell_off.png",
           "memoryFormat": "1BitPalette",
           "targetPlatforms": [
             "flint",

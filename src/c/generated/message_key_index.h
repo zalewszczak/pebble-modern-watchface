@@ -57,3 +57,4 @@
 #define MK_MEDIA_INFO 49
 #define MK_PHONE_SLOTS 50
 #define MK_MEDIA_ART 51
+#define MK_BEEP_PREVIEW 52

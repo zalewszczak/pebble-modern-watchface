@@ -89,8 +89,11 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
   // draws exactly the same picture. With the second hand shown they keep their second-precise angles.
   // In battery saver sleep the second hand is not drawn at all: it would not move anyway (no second ticks) and
   // it could cover the complications, so the hands then behave as if "show seconds" were off.
-  const bool show_second_hand = s_data->show_seconds && battery_saver_phase() == BATTERY_SAVER_AWAKE;
-  const int hands_sec = show_second_hand ? t->tm_sec : 0;
+  const bool awake = battery_saver_phase() == BATTERY_SAVER_AWAKE;
+  const bool smooth_shake = awake && input_shake_animation_active() && s_data->shake_anim_mode == 1;
+  // With the second hand switched off, the smooth-seconds shake effect shows it for the length of the animation only.
+  const bool show_second_hand = (s_data->show_seconds && awake) || smooth_shake;
+  const int hands_sec = (s_data->show_seconds && awake) ? t->tm_sec : 0;
 
   int32_t hour_angle = (int32_t)(((uint32_t)((t->tm_hour % 12) * 3600 + t->tm_min * 60 + hands_sec) * TRIG_MAX_ANGLE) / (12 * 3600));
 
@@ -99,7 +102,7 @@ static void hands_controller_update_proc(Layer *layer, GContext *ctx) {
   int32_t sec_angle;
   // Shake modes that request smooth seconds use the sub-second timestamp.
 
-  if (input_shake_animation_active() && s_data->show_seconds && s_data->shake_anim_mode == 1) {
+  if (smooth_shake) {
 
     time_t smooth_now;
     uint16_t smooth_ms;
@@ -199,7 +202,7 @@ void hands_controller_destroy_layer(Layer *layer) {
 }
 
 void hands_controller_start_startup_animation(void) {
-  if (s_startup_clock_anim_played || !s_data || s_data->startup_clock_anim_mode == 0) return;
+  if (s_startup_clock_anim_played || !s_data || !(s_data->startup_clock_anim_mode & 1)) return;
   s_startup_clock_anim_played = true;
   s_startup_clock_anim_active = true;
   s_startup_anim_elapsed_ms = 0;

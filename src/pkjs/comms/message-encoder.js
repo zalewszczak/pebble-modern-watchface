@@ -149,6 +149,7 @@ var hourlyVibePatternCode = settingsCodecs.hourlyVibePatternCode;
 var btLostVibeCode = settingsCodecs.btLostVibeCode;
 var hourlyVibeSoundCode = settingsCodecs.hourlyVibeSoundCode;
 var btLostBeepCode = settingsCodecs.btLostBeepCode;
+var beepVolumeCode = settingsCodecs.beepVolumeCode;
 var minutesSinceMidnight = settingsCodecs.minutesSinceMidnight;
 var hourlyVibeStartMinCode = settingsCodecs.hourlyVibeStartMinCode;
 var hourlyVibeEndMinCode = settingsCodecs.hourlyVibeEndMinCode;
@@ -383,7 +384,7 @@ function populateSettingsFields(dict) {
     bgTranslucentCode(), shakeHandsTranslucentCode(), btLostVibeCode(),
     settingsCodecs.centerCircleOutlineCode(),
     bgImageSync.schemeOverrideCode(),
-    hourlyVibeSoundCode(), btLostBeepCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
+    hourlyVibeSoundCode(), btLostBeepCode(), beepVolumeCode() // keep last: matches the order of SETTINGS_BLOB_OFFSETS in comms_decoder.c
   ];
   populateFeatureFields(dict);
   dict['DAILY_STEP_GOAL'] = dailyStepGoalValue();
@@ -503,6 +504,12 @@ function sendWeatherData(d) {
   sendFlatDict(dict);
 }
 
+// Makes the watch play a sound at the given volume (the "Play" button next to the sound pickers).
+function sendBeepPreview(sound, volume) {
+  var v = Math.max(10, Math.min(100, Math.round(volume / 10) * 10));
+  enqueueFlatDict({ BEEP_PREVIEW: [sound & 255, v] });
+}
+
 function sendFakeWeather(v) {
   phoneSlots.applyFake(v);
   var weather = {
@@ -526,6 +533,7 @@ module.exports = {
   sendInvalid: sendInvalid,
   sendWeatherData: sendWeatherData,
   sendFakeWeather: sendFakeWeather,
+  sendBeepPreview: sendBeepPreview,
   sendFeatureLayout: sendFeatureLayout,
   buildFullKeysetDict: buildFullKeysetDict
 };

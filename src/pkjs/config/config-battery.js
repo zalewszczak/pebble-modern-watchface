@@ -132,7 +132,7 @@ function script(platform, primitiveSequences) {
 '    if (r.cut < 0.05) return;\n' +
 '    var mark = "";\n' +
 '    if (r.star) { var idx = stars.indexOf(r.star); if (idx < 0) { stars.push(r.star); idx = stars.length - 1; } mark = " " + new Array(idx + 2).join("*"); }\n' +
-'    html += \'<div class="batt-row"><div class="batt-row-top"><span>\' + esc(r.label) + mark + \'</span><span class="batt-row-pct">\' + \'&minus;\' + battPct(r.cut) + \'%</span></div>\' +\n' +
+'    html += \'<div class="batt-row"><div class="batt-row-top"><span>\' + esc(r.label) + mark + \'</span><span class="batt-row-pct">\' + battPct(r.cut) + \'%</span></div>\' +\n' +
 '      \'<div class="batt-bar"><span style="width:\' + Math.max(2, Math.min(100, r.pct)) + \'%"></span></div>\' +\n' +
 '      \'<div class="batt-row-why">\' + esc(r.why) + \'</div></div>\';\n' +
 '  });\n' +

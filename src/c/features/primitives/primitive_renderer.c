@@ -2,6 +2,7 @@
 #include "../feature_slot.h"
 #include "../feature_render.h"
 #include "../feature_icons.h"
+#include "./startup_flip.h"
 
 static const char *spacer_glyph(PrimitiveKind kind) {
   switch (kind) {
@@ -37,6 +38,11 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
     const PrimitiveInstance *p = &feature->items[i];
     if (!is_text_like(p->kind)) continue;
     const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
+    char flip[24];
+    if (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) {
+      text = startup_flip_text(text, flip, sizeof(flip), (uint8_t)(box_y + i));
+      if (!text) continue;
+    }
     GRect box = text_box_for(p, box_x, box_y, row_height, font_h, font_offset);
     feature_render_draw_text_outline_only(ctx, text, font, box, GTextOverflowModeTrailingEllipsis,
                                           GTextAlignmentLeft, p->color, effective_outline_style);
@@ -52,6 +58,11 @@ void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y
       continue;
     }
     const char *text = (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) ? p->text : spacer_glyph(p->kind);
+    char flip[24];
+    if (p->kind == PRIMITIVE_KIND_TEXT || p->kind == PRIMITIVE_KIND_PUNCT) {
+      text = startup_flip_text(text, flip, sizeof(flip), (uint8_t)(box_y + i));
+      if (!text) continue;
+    }
     GRect box = text_box_for(p, box_x, box_y, row_height, font_h, font_offset);
     feature_render_draw_text_content_only(ctx, text, font, box, GTextOverflowModeTrailingEllipsis,
                                           GTextAlignmentLeft, p->color);

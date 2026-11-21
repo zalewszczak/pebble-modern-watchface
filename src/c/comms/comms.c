@@ -1,5 +1,6 @@
 #include <pebble.h>
 #include "./comms.h"
+#include "../timing/beep.h"
 #include "./comms_decoder.h"
 #include "../generated/message_key_index.h"
 #include "../rendering/dial/bg_image_store.h"
@@ -200,6 +201,12 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
 
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
+  // Sound preview from the settings page: { sound id, volume }. Plays it and changes nothing else.
+  Tuple *preview = dict_find(iter, MESSAGE_KEY_MESSAGE_TYPE + MK_BEEP_PREVIEW);
+  if (preview && preview->length >= 2) {
+    beep_play(preview->value->data[0], preview->value->data[1]);
+    return;
+  }
   if (handle_bg_image_message(iter)) return;
   WatchData *d = s_data;
   CommsChangeFlags changes = comms_decoder_apply(iter, d);

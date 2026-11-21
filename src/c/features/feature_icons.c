@@ -70,6 +70,7 @@ static const IconResourceSet BLUETOOTH_ICON_SET = ICON_SET(BLUETOOTH);
 // 2-state styled icons -- [0] is the "off"/inactive look, [1] the
 // "on"/active one; icon_flag picks which.
 static const IconResourceSet QUIET_TIME_ICON_SET[2] = { ICON_SET(QUIET_TIME), ICON_SET(QUIET_TIME_MUTED) };
+static const IconResourceSet BELL_ICON_SET[2] = { ICON_SET(BELL), ICON_SET(BELL_OFF) };
 static const IconResourceSet SUN_TIME_ICON_SET[2] = { ICON_SET(SUN_TIME_SET), ICON_SET(SUN_TIME_RISE) };
 #undef ICON_SET
 
@@ -206,6 +207,25 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
       feature_vector_icons_mountain(ctx, pos, color);
       return;
     }
+    case 40: { // hourly beep bell -- bell / crossed-out bell (icon_flag: true = off or muted).
+               // Styled images (resources/images/<style>/bell.png and bell_off.png).
+      GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2);
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_icon_assets_draw_styled_with_outline(ctx, pos, &BELL_ICON_SET[icon_flag ? 1 : 0], icon_style,
+                                                   outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
+      return;
+    }
+    case 39: { // calendar page
+      GPoint pos = GPoint(icon_x, box_y + (row_height - 13) / 2);
+      if (do_outline) {
+        for (int i = 0; i < offs_n; i++) {
+          feature_vector_icons_calendar(ctx, GPoint(pos.x + offs[i].x, pos.y + offs[i].y), outline_color);
+        }
+      }
+      draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
+      feature_vector_icons_calendar(ctx, pos, color);
+      return;
+    }
     case 38: { // calories flame glyph
       GPoint pos = GPoint(icon_x, box_y + (row_height - 14) / 2);
       if (do_outline) {
@@ -321,7 +341,7 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
 // On B&W watches the bitmap icons are 3/4 the size, so their widths scale (PL_ICON_PX); the
 // vector-drawn ones (battery 3, moon 4, pressure 15, wind 16, altitude 17, compass 27) keep their
 // pixel size and so keep their width.
-static const uint8_t s_icon_plus_gap_width[39] = {
+static const uint8_t s_icon_plus_gap_width[42] = {
   [1] = PL_ICON_PX(15), [2] = PL_ICON_PX(15), [3] = 13, [4] = 21,
   [5] = PL_ICON_PX(15), [6] = PL_ICON_PX(15), [7] = PL_ICON_PX(15), [8] = PL_ICON_PX(15),
   [9] = PL_ICON_PX(15), [10] = PL_ICON_PX(15),
@@ -344,9 +364,13 @@ static const uint8_t s_icon_plus_gap_width[39] = {
   [35] = 13, [36] = PL_ICON_PX(15), [37] = PL_ICON_PX(20),
   // Calories flame (vector, 12 px wide + 5 px gap).
   [38] = 17,
+  // Calendar page (vector, 12 px wide + 5 px gap).
+  [39] = 17,
+  // Bell (40) and its blank odd-state stand-in (41).
+  [40] = PL_ICON_PX(20), [41] = PL_ICON_PX(20),
 };
 
 int16_t feature_icons_plus_gap_width(int icon_kind) {
-  if ((unsigned)icon_kind >= 39u) return 0;
+  if ((unsigned)icon_kind >= 42u) return 0;
   return s_icon_plus_gap_width[icon_kind];
 }

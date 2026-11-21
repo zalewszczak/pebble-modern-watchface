@@ -26,12 +26,12 @@ function otherPlatformSlotsInUse(suffix) {
       var owner = /_R$/.test(key) ? '_R' : (/_BW$/.test(key) ? '_BW' : '');
       if (owner === (suffix || '')) continue;
       var base = key.replace(/_(R|BW)$/, ''), v = localStorage.getItem(key);
-      if (/_CUSTOM_PRIMS$/.test(base)) {
+      if (/_CUSTOM_PRIMS(_ANALOG)?$/.test(base)) {
         String(v || '').split(',').forEach(function (entry) {
           var parts = entry.split(':'), id = parseInt(parts[0], 10), aux = parseInt(parts[1], 10);
           if (id === PRIM_PLUGIN_TEXT && aux >= 0 && aux < 12) used[aux] = true;
         });
-      } else if (/(_CONTENT|_SHAKE|CORNER_(TL|TR|BL|BR))$/.test(base)) {
+      } else if (/(_CONTENT|_CONTENT_ANALOG|_SHAKE|CORNER_(TL|TR|BL|BR))$/.test(base)) {
         var c = parseInt(v, 10);
         if (c >= 200 && c < 212) used[c - 200] = true;
       }
@@ -98,7 +98,7 @@ function pluginScript(current, platformSuffix) {
 '  }\n' +
 '  return null;\n' +
 '}\n' +
-'function pluginSourceSplits(src) { return src.shapes.indexOf("longText") !== -1 || src.shapes.indexOf("shortText") !== -1; }\n' +
+'function pluginSourceSplits(src) { return src.shapes.indexOf("longText") !== -1; }\n' +
 'function pluginIndexSuffix(key) {\n' +
 '  var kp = pluginKeyParts(key);\n' +
 '  return kp ? ((kp.index > 0 ? " #" + (kp.index + 1) : "") + (kp.part > 1 ? " (line " + kp.part + ")" : "")) : "";\n' +
@@ -132,7 +132,7 @@ function pluginScript(current, platformSuffix) {
 '    if (id.indexOf("CustomPrims") !== -1) {\n' +
 '      var items = composerParse(els[i].value);\n' +
 '      for (var j = 0; j < items.length; j++) if (items[j].id === PRIM_PLUGIN_TEXT_ID) used[items[j].aux] = true;\n' +
-'    } else if (/(Content|^corner(TL|TR|BL|BR))$/.test(id)) {\n' +
+'    } else if (/(Content|Shake|^corner(TL|TR|BL|BR))$/.test(id)) {\n' +
 '      var n = parseInt(els[i].value, 10);\n' +
 '      if (n >= PLUGIN_CONTENT_FIRST && n < PLUGIN_CONTENT_FIRST + PLUGIN_SLOT_COUNT) used[n - PLUGIN_CONTENT_FIRST] = true;\n' +
 '    }\n' +
@@ -158,7 +158,7 @@ function pluginScript(current, platformSuffix) {
 '}\n' +
 'var PLUGIN_PROV = {};\n' +
 'function pluginProvKey(src) { return src.plugin; }\n' +
-'function pluginProvLabel(src) { return src.pluginName + " – " + src.category; }\n' +
+'function pluginProvLabel(src) { return src.pluginName; }\n' +
 'function pluginProviders() {\n' +
 '  var out = [], seen = {};\n' +
 '  PLUGIN_INFO.sources.forEach(function (src) {\n' +

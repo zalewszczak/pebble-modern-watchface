@@ -3,12 +3,11 @@ var xhrGetJSON = require('./http').xhrGetJSON;
 var openMeteo = require('./open-meteo');
 var fetchOpenMeteo = openMeteo.fetchOpenMeteo;
 var getWeatherSnapshot = openMeteo.getWeatherSnapshot;
-var fetchOpenWeatherMap = require('./openweathermap').fetchOpenWeatherMap;
 var fetchAirQuality = require('./air-quality').fetchAirQuality;
 
-function getCloudOutlook(lat, lon, owmApiKey, fromDate, toDate, cb, onSourceResult) {
+function getCloudOutlook(lat, lon, fromDate, toDate, cb, onSourceResult) {
   var results = [];
-  var pending = owmApiKey ? 2 : 1;
+  var pending = 1;
 
   function finish() {
     pending--;
@@ -28,14 +27,6 @@ function getCloudOutlook(lat, lon, owmApiKey, fromDate, toDate, cb, onSourceResu
     if (!err) results.push(pct);
     finish();
   });
-
-  if (owmApiKey) {
-    fetchOpenWeatherMap(lat, lon, owmApiKey, fromDate, toDate, function (err, pct) {
-      if (onSourceResult) onSourceResult('openweathermap', err);
-      if (!err) results.push(pct);
-      finish();
-    });
-  }
 }
 
 function fetchAuroraKp(cb) {

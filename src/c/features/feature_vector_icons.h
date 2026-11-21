@@ -20,3 +20,5 @@ void feature_vector_icons_progress_bar(GContext *ctx, GPoint top_left, int width
 void feature_vector_icons_mountain(GContext *ctx, GPoint top_left, GColor color);
 // Flame glyph (calories), about 12x14 px.
 void feature_vector_icons_flame(GContext *ctx, GPoint top_left, GColor color);
+// Plain calendar page, 12 x 13 px.
+void feature_vector_icons_calendar(GContext *ctx, GPoint top_left, GColor color);

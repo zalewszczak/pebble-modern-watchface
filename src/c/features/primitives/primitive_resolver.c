@@ -427,6 +427,19 @@ bool primitive_resolver_resolve(PrimitiveId id, uint8_t aux_in, const WatchData 
       out->force_color = true;
       return true;
     }
+    case PRIM_BELL_ICON:
+    case PRIM_BELL_ODD_ICON: {
+#ifdef PBL_SPEAKER
+      bool configured = data->hourly_vibe_mode != 0 && data->hourly_vibe_sound != 0;
+#else
+      bool configured = false; // no speaker: the sound option does nothing here
+#endif
+      bool muted = quiet_time_is_active(); // Quiet Time mutes the speaker for every app
+      if (id == PRIM_BELL_ODD_ICON && !configured) { resolve_icon(out, 41, 0, false, GColorWhite); return true; } // blank, keeps the width
+      bool crossed = !configured || muted;
+      resolve_icon(out, 40, 0, crossed, crossed ? GColorRed : GColorWhite);
+      return true;
+    }
     case PRIM_QUIET_TIME_ODD_ICON: {
       if (!quiet_time_is_active()) { resolve_icon(out, 37, 0, false, GColorWhite); return true; }
       resolve_icon(out, 29, 0, true, GColorRed);

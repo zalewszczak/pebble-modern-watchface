@@ -244,14 +244,33 @@ function composerClientBody() {
     var groupSel = document.getElementById("composerAddGroup");
     if (groupSel.getAttribute("data-built")) return;
     groupSel.setAttribute("data-built", "1");
-    groupSel.innerHTML = PRIMITIVE_PALETTE.map(function (g, gi) {
-      return "<option value=\"" + gi + "\">" + esc(g.group) + "</option>";
+    var SVG_OPEN = "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\">";
+    var GROUP_ICON = {
+      "Spacers": SVG_OPEN + "<path d=\"M4 9v6M20 9v6M4 12h16\"/></svg>",
+      "Text": SVG_OPEN + "<path d=\"M5 6V4h14v2M12 4v16M9 20h6\"/></svg>"
+    };
+    var GROUP_CAT = { "Date & time": "date", "Time zone": "timezone", "Clock": "time", "Weather": "weather", "Forecast": "weather", "Health & status": "health", "Astronomy": "astro", "Plugins": "plugins" };
+    function iconFor(name) {
+      if (GROUP_ICON[name]) return GROUP_ICON[name];
+      for (var c = 0; c < CORNER_CATEGORIES.length; c++) if (CORNER_CATEGORIES[c].id === GROUP_CAT[name]) return CORNER_CATEGORIES[c].icon;
+      return "";
+    }
+    document.getElementById("composerGroupList").innerHTML = PRIMITIVE_PALETTE.map(function (g, gi) {
+      return "<button type=\"button\" class=\"composer-group-btn\" data-group=\"" + gi + "\" onclick=\"composerSelectGroup(" + gi + ")\">" + iconFor(g.group) + "<span>" + esc(g.group) + "</span></button>";
     }).join("");
+    composerOnAddGroupChange();
+  }
+
+  function composerSelectGroup(gi) {
+    document.getElementById("composerAddGroup").value = String(gi);
     composerOnAddGroupChange();
   }
 
   function composerOnAddGroupChange() {
     var gi = parseInt(document.getElementById("composerAddGroup").value, 10) || 0;
+    var gbtns = document.getElementById("composerGroupList").getElementsByClassName("composer-group-btn");
+    for (var bi = 0; bi < gbtns.length; bi++) gbtns[bi].className = "composer-group-btn" + (bi === gi ? " active" : "");
+    document.getElementById("composerAddItem").style.display = PRIMITIVE_PALETTE[gi].items.length > 1 ? "" : "none";
     document.getElementById("composerAddItem").innerHTML = PRIMITIVE_PALETTE[gi].items.map(function (it) {
       return "<option value=\"" + (it.key ? "k:" + it.key : it.id) + "\">" + esc(it.label) + "</option>";
     }).join("");

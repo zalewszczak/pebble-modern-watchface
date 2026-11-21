@@ -189,7 +189,7 @@ static void shake_anim_timer_callback(void *data) {
     // Full frame rate only when something moves (smooth second hand);
     // translucent hands alone just need a redraw when the animation ends.
     uint32_t delay = SHAKE_ANIM_FRAME_MS;
-    if (s_data->shake_anim_mode == 0 || !s_data->show_seconds) {
+    if (s_data->shake_anim_mode == 0) {
       delay = remaining > 500 ? 500 : (uint32_t)remaining + 1;
     }
     s_shake_anim_timer = app_timer_register(delay, shake_anim_timer_callback, NULL);
@@ -221,8 +221,8 @@ static void maybe_start_shake_features(void) {
 }
 
 static void maybe_start_shake_animation(void) {
-  // Smooth seconds only move something when the second hand is shown.
-  bool smooth_seconds = s_data->shake_anim_mode != 0 && s_data->show_seconds;
+  // With the second hand off, smooth seconds show it for the duration of the animation.
+  bool smooth_seconds = s_data->shake_anim_mode != 0;
   if (!smooth_seconds && !s_data->shake_hands_translucent) return;
   s_shake_anim_active = true;
   s_shake_anim_start_ms = shake_now_ms();

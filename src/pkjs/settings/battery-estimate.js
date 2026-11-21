@@ -21,6 +21,8 @@ function estimateBatteryUsage(s, env) {
     LIFE_BASE: 110,             // battery life model: reduction = raw / (raw + LIFE_BASE). Calibrated so that a second hand
                                 // (about 150 points) cuts battery life by roughly 55-60%, and a very heavy configuration
                                 // approaches 80%; it can never reach 100% (an empty battery in no time).
+    SQUARE_FACTOR: 5 / 7,       // measured on emery, flint and diorite: extra redraws cost much less there than on the round
+                                // gabbro, so the same load cuts battery life by about 50% where gabbro shows about 70%
     SAVER_OFF: 14,              // battery saver off: about 6 idle night hours a day (2 h after the last shake, then rest)
                                 // keep ticking, refreshing and checking the location for nothing: roughly 12% of battery life
     SECONDS_BASE: 150,          // redraw every second instead of every minute: 60x the frames, so by far the biggest item
@@ -233,7 +235,7 @@ function estimateBatteryUsage(s, env) {
   if (shakeSecs <= 0) shakeSecs = 3;           // the watch treats 0 as "default"
   shakeSecs = Math.min(shakeSecs, 30);
   var animMode = parseInt(s.CONFIG_SHAKE_ANIM_MODE, 10);
-  var smooth = (animMode === 1 || animMode === 3) && secondHand;   // the watch ignores smooth seconds while the second hand is off
+  var smooth = (animMode === 1 || animMode === 3);   // with the second hand off it is shown only while the effect lasts
   var shakeTrans = on(s.CONFIG_SHAKE_HANDS_TRANSLUCENT);
   if (smooth) add('shake_smooth', 'Smooth second hand on shake', shakeSecs * K.SHAKE_SMOOTH_PER_S,
       shakeSecs + ' s of 30 frames per second after each shake.', STAR_SHAKE);
@@ -245,7 +247,10 @@ function estimateBatteryUsage(s, env) {
       'Each shake opens a ' + shakeSecs + ' s window with extra redraws.', STAR_SHAKE);
 
   // ---- launch animations --------------------------------------------------------------------------------
-  if (String(s.CONFIG_STARTUP_CLOCK_ANIM_MODE) === '1') add('startup_hands', 'Startup hand animation', K.STARTUP_HANDS,
+  var startupMode = parseInt(s.CONFIG_STARTUP_CLOCK_ANIM_MODE, 10) || 0;
+  if (startupMode & 2) add('startup_flip', 'Startup complication animation', K.STARTUP_HANDS,
+      'Text flips through letters for about 1.9 s at 20 frames per second.', STAR_LAUNCH);
+  if (startupMode & 1) add('startup_hands', 'Startup hand animation', K.STARTUP_HANDS,
       'The hands sweep in for 1.4 s at 25 frames per second.', STAR_LAUNCH);
   var markerStyle = parseInt(s.CONFIG_BIG_ANALOG_MARKER_STYLE, 10);
   var bitmapMarker = (markerStyle >= 3 && markerStyle <= 7) || (markerStyle >= 11 && markerStyle <= 19);
@@ -269,7 +274,6 @@ function estimateBatteryUsage(s, env) {
   if (contentIds[36] || hasPrim(env.aqiPrims || [])) { extras++; extraNames.push('air quality'); }
   if (contentIds[83] || hasPrim(env.issPrims || [])) { extras++; extraNames.push('ISS passes'); }
   if (contentIds[84] || hasPrim(env.auroraPrims || [])) { extras++; extraNames.push('aurora'); }
-  if (String(s.CONFIG_OWM_KEY || '') !== '') { extras++; extraNames.push('OpenWeatherMap'); }
   if (extras) add('refresh_extra', 'Extra downloads', refresh * K.EXTRA_SOURCE * extras,
       'Each refresh also downloads ' + extraNames.join(', ') + '.');
   var trigger = autoLoc && (s.CONFIG_LOC_TRIGGER_ENABLED === undefined ? true : on(s.CONFIG_LOC_TRIGGER_ENABLED));
@@ -321,10 +325,11 @@ function estimateBatteryUsage(s, env) {
   rows.sort(function (a, b) { return b.raw - a.raw; });
   var raw = 0;
   rows.forEach(function (r) { raw += r.raw; });
-  var total = Math.min(100, raw);
+  var platformFactor = env.round ? 1 : K.SQUARE_FACTOR;      // gabbro keeps the calibrated numbers
+  var total = Math.min(100, raw) * platformFactor;
   var scale = raw > 100 ? 100 / raw : 1;
   rows.forEach(function (r) { r.pct = r.raw * scale; });
-  var reduction = 100 * raw / (raw + K.LIFE_BASE);          // estimated cut of battery life, in percent
+  var reduction = 100 * raw / (raw + K.LIFE_BASE) * platformFactor; // estimated cut of battery life, in percent
   rows.forEach(function (r) { r.cut = raw > 0 ? reduction * r.raw / raw : 0; });
   var segments = total < 20 ? 5 : (total < 40 ? 4 : (total < 60 ? 3 : (total < 80 ? 2 : 1)));
   var labels = { 5: 'very low', 4: 'low', 3: 'medium', 2: 'high', 1: 'very high' };

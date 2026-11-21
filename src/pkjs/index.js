@@ -98,7 +98,6 @@ function buildCurrent() {
     lat: getSetting('CONFIG_LAT', ''),
     lon: getSetting('CONFIG_LON', ''),
     locationName: getSetting('CONFIG_LOCATION_NAME', ''),
-    owmKey: getSetting('CONFIG_OWM_KEY', ''),
     updateMins: getSetting('CONFIG_UPDATE_MINS', '60'),
     locTriggerEnabled: getSetting('CONFIG_LOC_TRIGGER_ENABLED', 'true') !== 'false',
     locTriggerKm: getSetting('CONFIG_LOC_TRIGGER_KM', '10'),
@@ -287,6 +286,7 @@ function buildCurrent() {
     btLostVibe: getSetting('CONFIG_BT_LOST_VIBE', '0'),
     hourlyVibeSound: getSetting('CONFIG_HOURLY_VIBE_SOUND', '0'),
     btLostBeep: getSetting('CONFIG_BT_LOST_BEEP', '0'),
+    beepVolume: getSetting('CONFIG_BEEP_VOLUME', '50'),
     hourlyVibeStartTime: getSetting('CONFIG_HOURLY_VIBE_START_TIME', '00:00'),
     hourlyVibeEndTime: getSetting('CONFIG_HOURLY_VIBE_END_TIME', '00:00'),
     hourlyVibeDaysMask: getSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', '127'),
@@ -376,6 +376,12 @@ function applySettingsObject(settings) {
     return;
   }
 
+  if (settings.CONFIG_PLAY_SOUND !== undefined) {
+    // "Play" button of the sound pickers: the watch plays it and nothing else changes.
+    messageEncoder.sendBeepPreview(parseInt(settings.CONFIG_PLAY_SOUND, 10) || 0, parseInt(settings.CONFIG_PLAY_VOLUME, 10) || 50);
+    return;
+  }
+
   if (settings.CONFIG_SEND_FAKE_WEATHER) {
     try {
       var fakeWeather = JSON.parse(settings.CONFIG_FAKE_WEATHER_DATA);
@@ -398,7 +404,6 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_LAT', settings.CONFIG_LAT || '');
   setSetting('CONFIG_LON', settings.CONFIG_LON || '');
   setSetting('CONFIG_LOCATION_NAME', settings.CONFIG_LOCATION_NAME || '');
-  setSetting('CONFIG_OWM_KEY', settings.CONFIG_OWM_KEY || '');
   setSetting('CONFIG_UPDATE_MINS', settings.CONFIG_UPDATE_MINS || '60');
   setSetting('CONFIG_LOC_TRIGGER_ENABLED', settings.CONFIG_LOC_TRIGGER_ENABLED === false ? 'false' : 'true');
   setSetting('CONFIG_LOC_TRIGGER_KM', settings.CONFIG_LOC_TRIGGER_KM || '10');
@@ -610,6 +615,7 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_BT_LOST_VIBE', settings.CONFIG_BT_LOST_VIBE || '0');
   setSetting('CONFIG_HOURLY_VIBE_SOUND', settings.CONFIG_HOURLY_VIBE_SOUND || '0');
   setSetting('CONFIG_BT_LOST_BEEP', settings.CONFIG_BT_LOST_BEEP || '0');
+  setSetting('CONFIG_BEEP_VOLUME', settings.CONFIG_BEEP_VOLUME || '50');
   setSetting('CONFIG_HOURLY_VIBE_START_TIME', settings.CONFIG_HOURLY_VIBE_START_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_END_TIME', settings.CONFIG_HOURLY_VIBE_END_TIME || '00:00');
   setSetting('CONFIG_HOURLY_VIBE_DAYS_MASK', settings.CONFIG_HOURLY_VIBE_DAYS_MASK || '127');

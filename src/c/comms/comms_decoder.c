@@ -206,6 +206,7 @@ static const uint16_t SETTINGS_BLOB_OFFSETS[] = {
   offsetof(WatchData, bg_scheme_override),
   offsetof(WatchData, hourly_vibe_sound),
   offsetof(WatchData, bt_lost_beep),
+  offsetof(WatchData, beep_volume),
 };
 
 // Consolidated settings fields use fixed wire layouts.

@@ -3,7 +3,8 @@ const assert = require('node:assert');
 const path = require('node:path');
 const { estimateBatteryUsage: est, primitiveKinds } = require(path.join(__dirname, '../../src/pkjs/settings/battery-estimate.js'));
 
-const ENV = { round: false, bw: false, avail: {}, primSeq: {}, primKind: {}, aqiPrims: [], issPrims: [], auroraPrims: [] };
+// The calibration below is the gabbro (round) one; the square watches scale it down (last test).
+const ENV = { round: true, bw: false, avail: {}, primSeq: {}, primKind: {}, aqiPrims: [], issPrims: [], auroraPrims: [] };
 const run = (s) => est(s || {}, ENV);
 const row = (r, id) => r.rows.find((x) => x.id === id);
 
@@ -74,11 +75,17 @@ test('seconds always carry at least 60% of the total', () => {
   assert.ok(row(c, 'seconds').pct >= 59.99);
 });
 
-test('smooth second hand on shake costs nothing while the second hand is off', () => {
+test('smooth second hand on shake with the second hand off only costs the animation time, not a live second hand', () => {
   const off = run({ CONFIG_SHAKE_ANIM_MODE: '1' });
-  assert.ok(!row(off, 'shake_smooth'));
-  const on = run({ CONFIG_SHAKE_ANIM_MODE: '1', CONFIG_SHOW_SECONDS: 'true' });
-  assert.ok(row(on, 'shake_smooth'));
+  assert.ok(row(off, 'shake_smooth'));
+  assert.ok(!row(off, 'seconds'));
+  assert.ok(!off.secondsLive);
+});
+
+test('startup complication animation is listed on its own', () => {
+  assert.ok(row(run({ CONFIG_STARTUP_CLOCK_ANIM_MODE: '2' }), 'startup_flip'));
+  assert.ok(!row(run({ CONFIG_STARTUP_CLOCK_ANIM_MODE: '2' }), 'startup_hands'));
+  assert.ok(row(run({ CONFIG_STARTUP_CLOCK_ANIM_MODE: '1' }), 'startup_hands'));
 });
 
 test('battery saver off adds a penalty of roughly 12% of battery life', () => {
@@ -98,4 +105,15 @@ test('battery life reduction: seconds 50-65%, never reaches 100%, row cuts add u
   assert.ok(Math.abs(sum - sec.reduction) < 1e-6);
   const huge = est({ CONFIG_SHOW_SECONDS: 'true', CONFIG_UPDATE_MINS: '5', CONFIG_OUTLINE_ENABLED: '2' }, ENV);
   assert.ok(huge.reduction < 100);
+});
+
+test('emery, flint and diorite show about 50% where gabbro shows about 70% for the same load', () => {
+  const heavy = { CONFIG_SHOW_SECONDS: 'true', CONFIG_BATTERY_SAVER_ENABLED: 'false', CONFIG_SHAKE_ANIM_MODE: '1' };
+  const round = est(heavy, ENV);
+  const square = est(heavy, Object.assign({}, ENV, { round: false }));
+  assert.ok(Math.abs(square.reduction / round.reduction - 5 / 7) < 1e-9);
+  assert.ok(square.reduction < round.reduction);
+  assert.ok(square.reduction > 35 && square.reduction < 60, String(square.reduction));
+  const sumCuts = square.rows.reduce((a, r) => a + r.cut, 0);
+  assert.ok(Math.abs(sumCuts - square.reduction) < 1e-6);
 });

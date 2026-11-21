@@ -2,6 +2,9 @@
 var settings = require('./settings/settings');
 var getSetting = settings.getSetting;
 var setSetting = settings.setSetting;
+var remapPresetPluginSlots = require('./settings/plugin-slot-remap').remapPresetPluginSlots;
+var PRIM_PLUGIN_TEXT = require('./config/primitive-ids-generated').PRIM_PLUGIN_TEXT;
+var otherPlatformSlotsInUse = require('./config/config-plugins').otherPlatformSlotsInUse;
 
 var SLOT_COUNT = 6;
 var DAY_MS = 24 * 60 * 60 * 1000;
@@ -185,6 +188,14 @@ function toStored(kind, v) {
 function applyPreset(preset) {
   var written = 0;
   var id;
+  // The slot table is shared by every platform: merge the style's plugin sources into it instead of replacing it.
+  if (preset && Object.prototype.toString.call(preset.__pluginSlots) === '[object Array]') {
+    var curSlots = [];
+    try { curSlots = JSON.parse(getSetting('CONFIG_PLUGIN_SLOTS', '[]')); } catch (e) { curSlots = []; }
+    var merged = remapPresetPluginSlots(preset, curSlots, otherPlatformSlotsInUse(require('./platform').suffix), PRIM_PLUGIN_TEXT);
+    preset = merged.preset;
+    preset.__pluginSlots = merged.slots;
+  }
   // Styles saved before the ring had a source (off / weather / calendar): weather style 1-4 meant weather, 0 off.
   if (preset && preset.borderSource === undefined && preset.borderWeatherMode !== undefined) {
     setSetting('CONFIG_BORDER_SOURCE', String(preset.borderWeatherMode) !== '0' ? '1' : '0');

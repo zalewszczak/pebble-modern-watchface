@@ -1,6 +1,7 @@
 #include <string.h>
 #include "./watch_defaults.h"
 #include "./watch_ui.h"
+#include "../timing/beep.h"
 #include "../features/primitives/primitive_ids.h"
 
 // Packed GColor8 values.
@@ -99,5 +100,6 @@ void watch_defaults_apply(WatchData *d) {
 
   d->hourly_vibe_interval_min = 30;
   d->hourly_vibe_days_mask = 127;
+  d->beep_volume = BEEP_VOLUME_DEFAULT;
   d->hourly_vibe_override_quiet = true;
 }

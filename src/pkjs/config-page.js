@@ -23,14 +23,16 @@ var SECTION_META = configTemplate.SECTION_META;
 var sectionLegendHtml = configTemplate.sectionLegendHtml;
 var subsectionLegendHtml = configTemplate.subsectionLegendHtml;
 var verticalButtonGroupHtml = configTemplate.verticalButtonGroupHtml;
-// Beep choices (values match BEEP_* in src/c/timing/beep.h).
-var BEEP_OPTIONS = [
-  { value: '0', label: 'Off' },
-  { value: '1', label: 'Short beep' },
-  { value: '2', label: 'Long beep' },
-  { value: '3', label: 'Double beep' }
-];
+var beepOptions = require('./config/beep-options');
 var modeButtonGroupHtml = configTemplate.modeButtonGroupHtml;
+// A sound <select> with a Play button that sends the choice to the watch.
+function beepSelectHtml(id, list, selected) {
+  var sel = (selected !== undefined && selected !== '' && beepOptions.isValid(list, parseInt(selected, 10))) ? selected : '0';
+  return '    <div style="display:flex; gap:8px; align-items:center;">' +
+    '<select id="' + id + '" style="flex:1; min-width:0;">' + beepOptions.optionsHtml(list, sel) + '</select>' +
+    '<button type="button" class="secondary-btn" style="width:auto; margin:0; padding:8px 14px;" onclick="previewBeep(\'' + id + '\')">&#9654; Play</button></div>' +
+    '    <div class="help" id="beepStatus-' + id + '" style="display:none;"></div>';
+}
 var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
 var platform = require('./platform');
@@ -91,6 +93,7 @@ PRESETS_LOOKUPS.CORNER_CATEGORIES.forEach(function (cat) {
     primitiveContentDecompositions[it.id] = primitiveDecomposeModule.primitiveChipsForContent(it.id);
   });
 });
+var pluginSlotRemap = require('./settings/plugin-slot-remap');
 var primitivePalette = primitiveDecomposeModule.PRIMITIVE_PALETTE;
 var primitiveTransportSequences = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_SEQUENCES;
 var primitiveTransportAux = primitiveDecomposeModule.PRIMITIVE_TRANSPORT_AUX;
@@ -154,6 +157,7 @@ function bwSchemeSelectHtml(night, current) {
 }
 
 function buildConfigHtml(current) {
+  var beepVolumePct = String(Math.max(10, Math.min(100, Math.round((parseInt(current.beepVolume, 10) || beepOptions.VOLUME_DEFAULT) / 10) * 10)));
   var configState = require('./config/config-state').deriveConfigState(current);
   var autoLocChecked = configState.autoLocChecked;
   var manualDisabled = configState.manualDisabled;
@@ -513,6 +517,11 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 '  .category-btn { width: 35px; height: 35px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; background: var(--btn-bg); border: none; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: 0; margin: 0; color: var(--text-strong); }' +
 '  .category-btn:last-child { border-right: none; }' +
 '  .category-btn.active { background: #ff9200; border-color: #ff9200; color: #fff; }' +
+'  .composer-group-list { display: flex; flex-direction: column; width: 100%; margin-top: 2px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }' +
+'  .composer-group-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; background: var(--btn-bg); border: none; border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px; text-align: left; cursor: pointer; box-sizing: border-box; }' +
+'  .composer-group-btn:last-child { border-bottom: none; }' +
+'  .composer-group-btn svg { width: 21px; height: 21px; flex: 0 0 auto; pointer-events: none; }' +
+'  .composer-group-btn.active { background: #ff9200; color: #fff; }' +
 '  .category-btn svg { width: 21px; height: 21px; pointer-events: none; }' +
 '  .font-category-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; flex: 0 0 auto; margin: 0 -16px 10px; padding: 0 16px; scrollbar-width: none; }' +
 '  .font-category-scroll::-webkit-scrollbar { display: none; }' +
@@ -682,8 +691,9 @@ configBattery.modalHtml() +
 '        </div>' +
 '        <label style="margin-top:12px;">Add from palette</label>' +
 '        <div class="composer-row" style="margin-top:4px;">' +
-'          <select id="composerAddGroup" onchange="composerOnAddGroupChange()" style="flex:1;"></select>' +
-'          <select id="composerAddItem" onchange="composerUpdateAddZoneVisibility()" style="flex:2;"></select>' +
+'          <div class="composer-group-list" id="composerGroupList"></div>' +
+'          <input type="hidden" id="composerAddGroup" value="0">' +
+'          <select id="composerAddItem" onchange="composerUpdateAddZoneVisibility()" style="flex:1 1 100%;"></select>' +
 '        </div>' +
 '        <div class="composer-row" id="composerAddZoneRow" style="display:none;">' +
 '          <label style="margin:0; flex:1 1 100%;" id="composerAddZoneLabel">Zone</label>' +
@@ -1234,12 +1244,17 @@ configPresetSchedule.modalHtml +
 '    <div class="section-body" id="section-animation" style="display:none;">' +
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label>Startup clock animation</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-startupClockAnim\')">?</button></div>' +
-      verticalButtonGroupHtml('startupClockAnimModeGroup', 'startupClockAnimMode', [
-        { value: '0', label: 'Off' },
-        { value: '1', label: 'Animate clock (hands grow from the centre and swing to the current time)' }
-      ], current.startupClockAnimMode || '1') +
+      (function () {
+        var sm = parseInt(current.startupClockAnimMode === undefined ? '1' : current.startupClockAnimMode, 10);
+        sm = isNaN(sm) ? 1 : (sm & 3);
+        return '<div class="mode-btn-group-vertical" id="startupClockAnimModeGroup">' +
+          '<button type="button" class="mode-btn-vertical' + (sm === 0 ? ' active' : '') + '" data-bit="0" onclick="startupAnimToggle(0)">Off</button>' +
+          '<button type="button" class="mode-btn-vertical' + (sm & 1 ? ' active' : '') + '" data-bit="1" onclick="startupAnimToggle(1)">Animate hands</button>' +
+          '<button type="button" class="mode-btn-vertical' + (sm & 2 ? ' active' : '') + '" data-bit="2" onclick="startupAnimToggle(2)">Animate complications</button>' +
+          '</div><input type="hidden" id="startupClockAnimMode" value="' + sm + '">';
+      })() +
 '    </div>' +
-'    <div class="help" id="help-startupClockAnim" style="display:none;">When the watchface starts the hands grow out of the centre and swing to the current time (about 1.4 seconds, played once per start). Off shows the hands in place right away.</div>' +
+'    <div class="help" id="help-startupClockAnim" style="display:none;"><b>Animate hands</b>: when the watchface starts the hands grow out of the centre and swing to the current time (about 1.4 seconds). <b>Animate complications</b>: the complications first show only their icons, then the text flips through letters and settles on its value. The two can be used together or on their own, and play once per start. Off shows everything in place right away.</div>' +
 
 '    <div class="subsection">' +
 '      <div class="field-label-row"><label>Animate indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
@@ -1311,10 +1326,8 @@ configPresetSchedule.modalHtml +
     sectionLegendHtml('weather', 'Weather') +
 '    <div class="section-body" id="section-weather" style="display:none;">' +
 '    <div class="subsection"></div>' +
-'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Cloud cover is always pulled from Open-Meteo (no signup needed). Optionally add an OpenWeatherMap API key to average in a second forecast.</div>' +
+'    <div class="help section-intro" onclick="toggleSectionIntro(this)">Cloud cover is pulled from Open-Meteo (no signup needed).</div>' +
     configPlugins.weatherSourceHtml(current) +
-'    <label for="owmKey">OpenWeatherMap API key (optional)</label>' +
-'    <input type="text" id="owmKey" placeholder="leave blank to skip" value="' + esc(current.owmKey) + '">' +
 
 '    <div class="field-label-row"><label style="margin-top:10px;">Temperature unit</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-tempUnit\')">?</button></div>' +
       modeButtonGroupHtml('tempUnitGroup', 'tempUnit', [
@@ -1467,10 +1480,16 @@ configPresetSchedule.modalHtml +
       ], current.hourlyVibePattern || '0') +
 
 (platform.speaker ? (
+'    <div class="field-label-row"><label style="margin-top:12px;" for="beepVolume">Beep volume <span class="val" id="beepVolumeVal">' + beepVolumePct + '%</span></label></div>' +
+'    <div class="slider-with-buttons">' +
+'    <button type="button" class="slider-step-btn" onclick="stepSlider(\'beepVolume\', -1)">&minus;</button>' +
+'    <input type="range" id="beepVolume" min="10" max="100" step="10" value="' + beepVolumePct + '" oninput="document.getElementById(\'beepVolumeVal\').textContent = this.value + \'%\';">' +
+'    <button type="button" class="slider-step-btn" onclick="stepSlider(\'beepVolume\', 1)">+</button>' +
+'    </div>' +
 '    <div class="field-label-row"><label style="margin-top:12px;">Sound</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeSound\')">?</button></div>' +
-      verticalButtonGroupHtml('hourlyVibeSoundGroup', 'hourlyVibeSound', BEEP_OPTIONS, current.hourlyVibeSound || '0') +
-'    <div class="help" id="help-hourlyVibeSound" style="display:none;">A high-pitched beep like the time signal of an old digital watch, played together with the vibration. Needs a watch with a speaker. It stays silent during Quiet Time (the watch does not let apps override that) and when the watch sound is muted.</div>'
-) : '    <input type="hidden" id="hourlyVibeSound" value="' + esc(current.hourlyVibeSound || '0') + '">') +
+      beepSelectHtml('hourlyVibeSound', beepOptions.HOURLY, current.hourlyVibeSound) +
+'    <div class="help" id="help-hourlyVibeSound" style="display:none;">Played together with the vibration, at the beep volume set above. Short, long and double beeps are high-pitched like the time signal of an old digital watch; "Hour in Morse code" counts the current hour in the same tone. Needs a watch with a speaker. It stays silent during Quiet Time (the watch does not let apps override that) and when the watch sound is muted. Use Play to hear a sound on the watch.</div>'
+) : '    <input type="hidden" id="hourlyVibeSound" value="' + esc(current.hourlyVibeSound || '0') + '"><input type="hidden" id="beepVolume" value="' + beepVolumePct + '">') +
 
 '    <div class="field-label-row"><label style="margin-top:12px;" for="hourlyVibeStartTime">Start time</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-hourlyVibeTimeRange\')">?</button></div>' +
 '    <input type="time" id="hourlyVibeStartTime" value="' + esc(current.hourlyVibeStartTime || '00:00') + '" onchange="onHourlyVibeTimeChange(\'hourlyVibeStartTime\')">' +
@@ -1508,7 +1527,7 @@ configPresetSchedule.modalHtml +
 
 (platform.speaker ? (
 '    <div class="field-label-row"><label style="margin-top:16px;">Beep when Bluetooth connection is lost</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-btLostBeep\')">?</button></div>' +
-      verticalButtonGroupHtml('btLostBeepGroup', 'btLostBeep', BEEP_OPTIONS, current.btLostBeep || '0') +
+      beepSelectHtml('btLostBeep', beepOptions.DISCONNECT, current.btLostBeep) +
 '    <div class="help" id="help-btLostBeep" style="display:none;">Beeps once when the watch loses its connection to the phone. Needs a watch with a speaker; silent during Quiet Time.</div>'
 ) : '    <input type="hidden" id="btLostBeep" value="' + esc(current.btLostBeep || '0') + '">') +
 
@@ -2094,6 +2113,7 @@ configBorder.borderScript() +
 'var PRIMITIVE_PREVIEW_TEXT = ' + JSON.stringify(primitivePreviewText) + ';' +
 'var PRIM_SPACE_ID = ' + primitiveIds.PRIM_SPACE + ';' +
 'var PRIM_PLUGIN_TEXT_ID = ' + primitiveIds.PRIM_PLUGIN_TEXT + ';' +
+pluginSlotRemap.remapPresetPluginSlots.toString().replace(/<\//g, '<\\/') + ';' +
 configPlugins.pluginScript(current, platform.suffix) +
 '\n' + configBattery.script(platform, primitiveTransportSequences) + '\n' +
 'var COMPOSER_MAX = ' + (platform.bw ? 8 : 10) + ';' +
@@ -2938,7 +2958,9 @@ configPlugins.pluginScript(current, platform.suffix) +
 '}' +
 'function applyStyleCornersJson(obj) {' +
 '  if (obj && Array.isArray(obj.__pluginSlots) && typeof PLUGIN_SLOTS !== "undefined") {' +
-'    for (var psi = 0; psi < PLUGIN_SLOT_COUNT; psi++) PLUGIN_SLOTS[psi] = typeof obj.__pluginSlots[psi] === "string" ? obj.__pluginSlots[psi] : "";' +
+'    var remapped = remapPresetPluginSlots(obj, PLUGIN_SLOTS, PLUGIN_OTHER_USED, PRIM_PLUGIN_TEXT_ID);' +
+'    for (var psi = 0; psi < PLUGIN_SLOT_COUNT; psi++) PLUGIN_SLOTS[psi] = remapped.slots[psi];' +
+'    obj = remapped.preset;' +
 '  }' +
 '  if (obj && obj.usePluginBg === undefined && (obj.useCustomBg !== undefined || obj.useWeatherBg !== undefined)) {' +
 '    var pbReset = document.getElementById("usePluginBg");' +
@@ -2958,6 +2980,7 @@ configPlugins.pluginScript(current, platform.suffix) +
 '    }' +
 '    if (el.type === "checkbox") el.checked = !!obj[id]; else el.value = obj[id];' +
 '  });' +
+'  startupAnimSync();' +
 '  selectVerticalOption("bgAnimModeGroup", "bgAnimMode", document.getElementById("bgAnimMode").value);' +
 '  selectVerticalOption("shakeAnimModeGroup", "shakeAnimMode", document.getElementById("shakeAnimMode").value);' +
 '  bgAfterStyleApplied();' +
@@ -3385,6 +3408,33 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 'function onCornerFontChange() {' +
 '  renderSlotPicker();' +
 '  updatePreview();' +
+'}' +
+'function previewBeep(id) {' +
+'  var sound = parseInt(document.getElementById(id).value, 10) || 0;' +
+'  var st = document.getElementById("beepStatus-" + id);' +
+'  function say(t) { if (st) { st.textContent = t; st.style.display = t ? "" : "none"; } }' +
+'  if (!sound) { say("Choose a sound first."); return; }' +
+'  if (!LIVE.active) { say("Playing on the watch works when the settings are open live from the Pebble app."); return; }' +
+'  var vol = parseInt(document.getElementById("beepVolume").value, 10) || 50;' +
+'  say("");' +
+'  phoneAction({ CONFIG_PLAY_SOUND: sound, CONFIG_PLAY_VOLUME: vol });' +
+'}' +
+'function startupAnimSync() {' +
+'  var v = parseInt(document.getElementById("startupClockAnimMode").value, 10) || 0;' +
+'  v &= 3;' +
+'  document.getElementById("startupClockAnimMode").value = String(v);' +
+'  var bs = document.getElementById("startupClockAnimModeGroup").getElementsByClassName("mode-btn-vertical");' +
+'  for (var i = 0; i < bs.length; i++) {' +
+'    var bit = parseInt(bs[i].getAttribute("data-bit"), 10);' +
+'    bs[i].className = "mode-btn-vertical" + ((bit === 0 ? v === 0 : (v & bit) !== 0) ? " active" : "");' +
+'  }' +
+'}' +
+'function startupAnimToggle(bit) {' +
+'  var el = document.getElementById("startupClockAnimMode");' +
+'  var v = parseInt(el.value, 10) || 0;' +
+'  el.value = String(bit === 0 ? 0 : (v ^ bit));' +
+'  startupAnimSync();' +
+'  if (typeof refreshAllSectionSubheaders === "function") refreshAllSectionSubheaders();' +
 '}' +
 'function selectVerticalOption(groupId, hiddenId, val) {' +
 '  var buttons = document.getElementById(groupId).getElementsByClassName("mode-btn-vertical");' +
@@ -3880,7 +3930,9 @@ require('./config/config-runtime') +
 '}' +
 'function computeAnimationSubheader() {' +
 '  var parts = [];' +
-'  if (document.getElementById("startupClockAnimMode").value === "1") parts.push("animated clock on start");' +
+'  var sam = parseInt(document.getElementById("startupClockAnimMode").value, 10) || 0;' +
+'  if (sam & 1) parts.push("animated hands on start");' +
+'  if (sam & 2) parts.push("animated complications on start");' +
 '  if (document.getElementById("bgAnimMode").value === "1") parts.push("indices on start");' +
 '  if (document.getElementById("bgAnimMode").value === "2") parts.push("indices and seconds on start");' +
 '  if (document.getElementById("shakeAnimMode").value === "1") parts.push("smooth second hand on shake");' +

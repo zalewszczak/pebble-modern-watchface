@@ -191,7 +191,7 @@ test('units, location, plugin text', () => {
   assert.strictEqual(one(PRIM.PRIM_LOCATION_NAME, ctx()).text, 'Unknown');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 0).text, 'Hello');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, c, 1).text, '--');
-  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [15], c).ids[0], 0);
+  assert.strictEqual(slots.compile([PRIM.PRIM_PLUGIN_TEXT], [16], c).ids[0], 0);
 });
 
 test('phone battery and music title', () => {
@@ -259,7 +259,7 @@ test('snapshot: a refresh without weather keeps the old numbers; an invalid mess
   slots.reset();
 });
 
-test('calendar complications are plugin-text slots 12-14', () => {
+test('calendar complications are plugin-text slots 12-15', () => {
   const at = (h, m) => new Date(2026, 10, 20, h, m).getTime();
   const ev = { start: at(13, 30), end: at(14, 45), title: 'Meeting' };
   const c = ctx({ calendar: { state: 'ok', event: ev } });
@@ -269,8 +269,10 @@ test('calendar complications are plugin-text slots 12-14', () => {
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, ctx({ calendar: { state: 'ok', event: null } }), 13).text, 'No events');
   assert.strictEqual(one(PRIM.PRIM_PLUGIN_TEXT, ctx({ calendar: { state: 'waiting', event: null } }), 13).text, 'N/A');
   const seq = require('../../src/pkjs/config/primitive-decompose');
-  assert.deepStrictEqual(seq.primitiveIdSequenceForContent(237).slice(0, 3), [PRIM.PRIM_PLUGIN_TEXT, PRIM.PRIM_SPACE, PRIM.PRIM_PLUGIN_TEXT]);
-  assert.deepStrictEqual(seq.primitiveAuxSequenceForContent(238).slice(0, 3), [12, 0, 14]);
+  const icon = one(PRIM.PRIM_PLUGIN_TEXT, c, 15);
+  assert.deepStrictEqual([icon.icon, icon.kind], [true, 39]);
+  assert.deepStrictEqual(seq.primitiveIdSequenceForContent(237).slice(0, 4), [PRIM.PRIM_PLUGIN_TEXT, PRIM.PRIM_PLUGIN_TEXT, PRIM.PRIM_SPACE, PRIM.PRIM_PLUGIN_TEXT]);
+  assert.deepStrictEqual(seq.primitiveAuxSequenceForContent(238).slice(0, 4), [15, 12, 0, 14]);
 });
 
 test('calendar source picks the next unfinished timed event within 24 h', () => {
@@ -287,4 +289,14 @@ test('calendar source picks the next unfinished timed event within 24 h', () => 
   assert.strictEqual(cal.nextEvent(now + 90 * 60000).title, 'later');
   assert.strictEqual(cal.nextEvent(now + 4 * H), null);
   cal._setList([]);
+});
+
+test('forecast complications carry a weather condition icon (offset icon, condition icon, temperature)', () => {
+  const seq = require('../../src/pkjs/config/primitive-decompose');
+  assert.deepStrictEqual(seq.primitiveIdSequenceForContent(88).slice(0, 3), [PRIM.PRIM_FORECAST_OFFSET_ICON, PRIM.PRIM_FORECAST_OFFSET_ICON, PRIM.PRIM_FORECAST_TEMP_TEXT]);
+  assert.deepStrictEqual(seq.primitiveAuxSequenceForContent(88).slice(0, 3), [1, 17, 1]);
+  const c = ctx({});
+  c.s.fc = [10, 11]; c.s.fcc = [0, 2]; c.s.fcl = [5, 90]; c.s.fcr = [0, 80];
+  const r = one(PRIM.PRIM_FORECAST_OFFSET_ICON, c, 17);
+  assert.deepStrictEqual([r.icon, r.kind, r.aux], [true, 14, 4]); // rain category
 });

@@ -277,7 +277,7 @@ function needsFromPrimitiveIds(ids, PRIM, aux) {
     if (phoneIds.indexOf(ids[i]) >= 0) n.phone = true;
     if (musicIds.indexOf(ids[i]) >= 0) n.music = true;
     // Calendar events travel as plugin-text slots 12-14.
-    if (ids[i] === PRIM.PRIM_PLUGIN_TEXT && aux && aux[i] >= 12 && aux[i] <= 14) n.calendar = true;
+    if (ids[i] === PRIM.PRIM_PLUGIN_TEXT && aux && aux[i] >= 12 && aux[i] <= 15) n.calendar = true;
   }
   return n;
 }

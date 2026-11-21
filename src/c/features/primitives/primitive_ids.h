@@ -209,5 +209,10 @@ typedef enum {
   PRIM_CALORIES_VALUE,          // total burned today: resting + active (content 110)
   PRIM_CALORIES_ACTIVE_VALUE,   // active calories only (content 111)
 
+  // Hourly beep status (bell). Shown while the sound is switched on; crossed out when the feature is off or
+  // the speaker is muted by Quiet Time. The odd-state variant stays blank while the feature is off.
+  PRIM_BELL_ICON,
+  PRIM_BELL_ODD_ICON,
+
   PRIM_ID_COUNT,
 } PrimitiveId;

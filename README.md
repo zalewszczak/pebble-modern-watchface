@@ -7,7 +7,7 @@ Modern is a configurable analog watchface for the Pebble Time 2 (`emery`). It co
 - **Custom analog dial:** independently configurable hour, minute, and optional second hands, including multiple hand shapes, dimensions, offsets, colors, outlines, translucency, hollow centres, shadows, and a configurable centre cap.
 - **Dial indices:** choose bitmap marker designs or procedural marker presets. Configure hour and second rings, marker text, Roman numerals, and bitmap blending options.
 - **Information features:** place readouts in the available corner and edge positions. Content includes date and time, time zones, battery and Bluetooth status, Pebble Quiet Time, health metrics, weather, air quality, and astronomical information. Individual feature slots support color and shake-only variants; custom primitive compositions are available for supported positions.
-- **Weather-aware appearance:** weather icons, current conditions, forecast values, optional weather-driven backgrounds, and a weather-responsive border. Weather sources include the Pebble app/plugin and Open-Meteo, with optional OpenWeatherMap data.
+- **Weather-aware appearance:** weather icons, current conditions, forecast values, optional weather-driven backgrounds, and a weather-responsive border. Weather sources include the Pebble app/plugin and Open-Meteo.
 - **Astronomy:** moon phase, sunrise and sunset, visible planets and rise times, meteor showers, Saturn ring angle, ISS passes, and aurora activity. Location is supplied automatically by phone GPS or entered manually.
 - **Personal styling:** day and optional night color schemes, color presets, custom and bundled backgrounds, weather backgrounds, and saved style presets.
 - **Animation and power controls:** startup and shake animations, optional feature reveal on shake, battery-saving behavior, configurable data refresh, hourly vibration reminders, and Bluetooth-loss vibration.
@@ -59,7 +59,7 @@ Save up to six named snapshots of the Style, Colors, and Features configuration.
 
 ### Weather
 
-Select the weather data source and units for temperature, wind speed, air quality, and altitude. Open-Meteo supplies cloud cover and forecast data; the Pebble app/plugin can provide selected current conditions, while OpenWeatherMap can optionally be configured with an API key as an additional source. The exact fields available depend on the selected source and its response.
+Select the weather data source and units for temperature, wind speed, air quality, and altitude. Open-Meteo supplies cloud cover and forecast data; the Pebble app/plugin can provide selected current conditions. The exact fields available depend on the selected source and its response.
 
 ### Location
 

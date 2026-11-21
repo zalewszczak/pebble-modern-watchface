@@ -281,14 +281,13 @@ function refreshAndSend(force, resendOnSkip) {
       (astroData.meteorShower ? ('; ' + astroData.meteorShower.name + ' intensity ' + astroData.meteorShower.intensity) : ''));
 
     var outlookTo = new Date(now.getTime() + 3 * 3600000);
-    var owmKey = getSetting('CONFIG_OWM_KEY', '');
 
     getLocationName(lat, lon, function (locationName) {
       weatherSource.getSnapshot(lat, lon, now, function (snapErr, snapshot) {
         var weatherCls = servicelog.recordAttempt('weather', snapErr);
         if (snapErr) console.log('modern: weather fetch failed - ' + snapErr.message);
 
-        weather.getCloudOutlook(lat, lon, owmKey || null, now, outlookTo, function (w) {
+        weather.getCloudOutlook(lat, lon, now, outlookTo, function (w) {
           var headlineCloud = (w.cloudCoverPct === 255) ? 0 : w.cloudCoverPct;
 
           fetchIssIfEnabled(lat, lon, function (issPos, issErrorCode) {
@@ -308,7 +307,7 @@ function refreshAndSend(force, resendOnSkip) {
                     aqiUs: aqi.aqiUs, aqiEu: aqi.aqiEu, altitudeMeters: altitudeMeters,
                     auroraKpX10: (typeof aurora.kp === 'number') ? Math.round(aurora.kp * 10) : null,
                     auroraErrorCode: auroraErrorCode,
-                    forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition,
+                    forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition, forecastCloud: snapshot.forecastCloud,
                     forecastWx: snapshot.forecastWx, forecastRainPct: snapshot.forecastRainPct,
                     borderHourly: snapshot.borderHourly
                   }

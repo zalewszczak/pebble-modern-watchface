@@ -6,6 +6,7 @@ var PREVIEW_ICON_TOKENS = {
   bt: 'bluetooth',
   quiet: 'quiet_time',
   spkr: 'quiet_time_muted',
+  bell: 'bell',
   rain: 'umbrella',
   humid: 'droplet',
   wind: 'wind',

@@ -30,7 +30,7 @@ static bool time_in_range(int minute_of_day) {
 
 // Vibration (pattern 3 = off) and/or beep. Unknown vibration patterns fall back to the original short pulse.
 static void trigger_vibration(void) {
-  beep_play(s_data->hourly_vibe_sound);
+  beep_play(s_data->hourly_vibe_sound, s_data->beep_volume);
   switch (s_data->hourly_vibe_pattern) {
     case 3:
       break;

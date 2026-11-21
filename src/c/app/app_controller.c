@@ -12,6 +12,7 @@
 #include "../rendering/status/status_label.h"
 #include "../features/feature_controller.h"
 #include "../features/features_layer.h"
+#include "../features/primitives/startup_flip.h"
 #include "../features/feature_icons.h"
 #include "../features/primitives/primitive_ids.h"
 #include "../hands/hands_controller.h"
@@ -97,7 +98,7 @@ static void app_connection_handler(bool connected) {
       case 3: vibes_long_pulse(); break;
       default: break;
     }
-    beep_play(s_data.bt_lost_beep);
+    beep_play(s_data.bt_lost_beep, s_data.beep_volume);
   }
 }
 
@@ -173,9 +174,11 @@ static void window_load(Window *window) {
   watchface_ui_refresh_status();
   hands_controller_start_startup_animation();
   dial_animation_start(&s_data, layout_controller_dial_layer());
+  startup_flip_start(&s_data, layout_controller_features_layer());
 }
 
 static void window_unload(Window *window) {
+  startup_flip_deinit();
   status_label_destroy();
   layout_controller_unload();
   feature_controller_unload_fonts();

@@ -121,6 +121,18 @@ void feature_vector_icons_flame(GContext *ctx, GPoint top_left, GColor color) {
   gpath_destroy(path);
 }
 
+void feature_vector_icons_calendar(GContext *ctx, GPoint top_left, GColor color) {
+  graphics_context_set_fill_color(ctx, color);
+  graphics_context_set_stroke_color(ctx, color);
+  graphics_context_set_stroke_width(ctx, 1);
+  graphics_draw_rect(ctx, GRect(top_left.x, top_left.y + 2, 12, 11));                 // page
+  graphics_fill_rect(ctx, GRect(top_left.x, top_left.y + 2, 12, 4), 0, GCornerNone);  // header band
+  graphics_fill_rect(ctx, GRect(top_left.x + 3, top_left.y, 2, 4), 0, GCornerNone);   // binder rings
+  graphics_fill_rect(ctx, GRect(top_left.x + 7, top_left.y, 2, 4), 0, GCornerNone);
+  graphics_fill_rect(ctx, GRect(top_left.x + 3, top_left.y + 8, 2, 2), 0, GCornerNone); // two day squares
+  graphics_fill_rect(ctx, GRect(top_left.x + 7, top_left.y + 8, 2, 2), 0, GCornerNone);
+}
+
 void feature_vector_icons_mountain(GContext *ctx, GPoint top_left, GColor color) {
   graphics_context_set_fill_color(ctx, color);
   GPoint peak1[3] = {

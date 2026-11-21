@@ -35,7 +35,7 @@ function isNum(v) { return typeof v === 'number' && !isNaN(v); }
 // ---- snapshot of the last phone-side data (raw values; units are applied when the slots are built) ----------
 
 function emptySnap() {
-  return { errorCode: 0, loc: '', w: {}, x: {}, a: {}, fc: [] };
+  return { errorCode: 0, loc: '', w: {}, x: {}, a: {}, fc: [], fcc: [], fcl: [], fcr: [] };
 }
 var snap = emptySnap();
 (function load() {
@@ -47,6 +47,7 @@ var snap = emptySnap();
         snap = emptySnap();
         ['w', 'x', 'a'].forEach(function (k) { if (p[k] && typeof p[k] === 'object') snap[k] = p[k]; });
         if (Array.isArray(p.fc)) snap.fc = p.fc;
+        ['fcc', 'fcl', 'fcr'].forEach(function (k) { if (Array.isArray(p[k])) snap[k] = p[k]; });
         if (typeof p.loc === 'string') snap.loc = p.loc;
         if (isNum(p.errorCode)) snap.errorCode = p.errorCode;
       }
@@ -84,6 +85,9 @@ function applyWeather(d) {
     setIfNum(snap.x, 'auroraKpX10', e.auroraKpX10);
     snap.x.auroraErr = e.auroraErrorCode || 0;
     if (Array.isArray(e.forecastTempC)) snap.fc = e.forecastTempC.map(function (c) { return isNum(c) ? Math.round(c) : null; });
+    if (Array.isArray(e.forecastCondition)) snap.fcc = e.forecastCondition.slice(0, 15);
+    if (Array.isArray(e.forecastCloud)) snap.fcl = e.forecastCloud.slice(0, 15);
+    if (Array.isArray(e.forecastRainPct)) snap.fcr = e.forecastRainPct.slice(0, 15);
   }
   var a = d.astro;
   if (a) {
@@ -274,8 +278,24 @@ rule(PRIM.PRIM_ALTITUDE_VALUE, function (c) {
 });
 
 // Forecast: aux selects 0-14 (six hours ahead, three days ahead, ...), same index space as before.
+// Hours ahead of each forecast slot (slots 6-8 are whole days, drawn with daytime art).
+var FORECAST_HOURS_AHEAD = [1, 2, 3, 4, 5, 6, 0, 0, 0, 7, 8, 9, 10, 11, 12];
+// aux 16-30 = the weather condition icon of forecast slot aux-16, in the same index space.
+function forecastConditionIcon(c, i) {
+  var v = c.s.fc[i], cond = c.s.fcc[i];
+  if (!isNum(v) || !isNum(cond)) return I(14, 0, GRAY, FORCE);
+  var cloud = isNum(c.s.fcl[i]) ? c.s.fcl[i] : 0;
+  var rain = isNum(c.s.fcr[i]) ? c.s.fcr[i] : 0;
+  var night = false;
+  if (FORECAST_HOURS_AHEAD[i] > 0) {
+    var h = new Date(Date.now() + FORECAST_HOURS_AHEAD[i] * 3600000).getHours();
+    night = h < 6 || h >= 20; // the phone has no sun times here: a plain day/night split is enough for the art
+  }
+  return I(14, wn.weatherIconCategory(cond, cloud), wn.weatherConditionColorByte(cond, cloud, rain), night ? FLAG : 0);
+}
 function forecastRule(isIcon) {
   return function (c, aux) {
+    if (isIcon && aux >= 16 && aux <= 30) return forecastConditionIcon(c, aux - 16);
     if (aux >= 15) return null;
     var v = c.s.fc[aux];
     if (!isNum(v)) return isIcon ? I(30, aux, GRAY, FORCE) : na(false);
@@ -344,6 +364,7 @@ rule(PRIM.PRIM_AURORA_KP_VALUE, auroraRule(false, true));
 
 // Plugin text, phone battery, music title -----------------------------------------------------------------------
 rule(PRIM.PRIM_PLUGIN_TEXT, function (c, aux) {
+  if (aux === CAL_ICON) return I(39, 0, WHITE, MAIN);
   if (aux >= CAL_START && aux <= CAL_END) return calendarText(c, aux);
   if (aux >= 12) return null;
   var t = c.plugins && c.plugins[aux];
@@ -372,8 +393,8 @@ function hhmm(ms) {
   return (d.getHours() < 10 ? '0' : '') + d.getHours() + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
 }
 // Virtual plugin-text slots above the 12 real ones carry the calendar event, so no extra primitive is needed:
-// aux 12 = start time, 13 = event name, 14 = end time (content 237-239 combine them, see primitive-decompose.js).
-var CAL_START = 12, CAL_NAME = 13, CAL_END = 14;
+// aux 12 = start time, 13 = event name, 14 = end time, 15 = calendar icon (content 237-239 combine them, see primitive-decompose.js).
+var CAL_START = 12, CAL_NAME = 13, CAL_END = 14, CAL_ICON = 15; // 15 = the calendar page icon
 function calendarText(c, aux) {
   var cal = c.calendar || { state: 'off', event: null };
   if (cal.state !== 'ok') return na(false);

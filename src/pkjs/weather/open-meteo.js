@@ -48,6 +48,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
     currentCloudPct: null, windDirDeg: null, dewPointC: null, pressureHpa: null, pressureTrend: 0,
     forecastTempC: [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null],
     forecastCondition: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    forecastCloud: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     forecastWx: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     wxNow: 0,
     forecastRainPct: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -126,6 +127,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
 
       var forecastTempC = [null, null, null, null, null, null, null, null, null, null, null, null, null, null, null];
       var forecastCondition = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+      var forecastCloud = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var forecastWx = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var forecastRainPct = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
       var hourlyRain = json.hourly.precipitation_probability;
@@ -138,6 +140,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
           forecastTempC[slot] = Math.round(hourlyTemps[fIdx]);
         }
         var fCloud = (hourlyCloud && typeof hourlyCloud[fIdx] === 'number') ? hourlyCloud[fIdx] : 0;
+        forecastCloud[slot] = Math.round(fCloud);
         if (hourlyCodes && hourlyCodes.length > fIdx) forecastWx[slot] = weatherDetailClass(hourlyCodes[fIdx], fCloud);
         else forecastWx[slot] = weatherDetailClass(-1, fCloud);
         if (hourlyRain && typeof hourlyRain[fIdx] === 'number') forecastRainPct[slot] = Math.max(0, Math.min(100, Math.round(hourlyRain[fIdx])));
@@ -185,6 +188,8 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
           }
           if (json.daily.weathercode && typeof json.daily.weathercode[dIdx] === 'number') {
             forecastCondition[6 + fd] = conditionFromWmoCode(json.daily.weathercode[dIdx]);
+            var dCode = json.daily.weathercode[dIdx];
+            forecastCloud[6 + fd] = dCode === 0 ? 10 : dCode === 1 ? 30 : dCode === 2 ? 55 : 90; // daily data has no cloud cover
           }
         }
       }
@@ -196,7 +201,7 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
         rainChancePct: rainChancePct, humidityPct: humidityPct, windSpeedKmh: windSpeedKmh,
         currentCloudPct: currentCloudPct, windDirDeg: windDirDeg, dewPointC: dewPointC,
         pressureHpa: pressureHpa, pressureTrend: pressureTrend,
-        forecastTempC: forecastTempC, forecastCondition: forecastCondition,
+        forecastTempC: forecastTempC, forecastCondition: forecastCondition, forecastCloud: forecastCloud,
         forecastWx: forecastWx, forecastRainPct: forecastRainPct, borderHourly: borderHourly, wxNow: wxNow
       });
     } catch (e) {

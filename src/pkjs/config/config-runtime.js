@@ -15,7 +15,6 @@ module.exports =
 '    CONFIG_LAT: document.getElementById("lat").value,' +
 '    CONFIG_LON: document.getElementById("lon").value,' +
 '    CONFIG_LOCATION_NAME: document.getElementById("locationName").value,' +
-'    CONFIG_OWM_KEY: document.getElementById("owmKey").value,' +
 '    CONFIG_UPDATE_MINS: mins,' +
 '    CONFIG_LOC_TRIGGER_ENABLED: document.getElementById("locTriggerEnabled").checked,' +
 '    CONFIG_LOC_TRIGGER_KM: document.getElementById("locTriggerKm").value,' +
@@ -225,6 +224,7 @@ module.exports =
 '    CONFIG_BT_LOST_VIBE: document.getElementById("btLostVibe").value,' +
 '    CONFIG_HOURLY_VIBE_SOUND: document.getElementById("hourlyVibeSound").value,' +
 '    CONFIG_BT_LOST_BEEP: document.getElementById("btLostBeep").value,' +
+'    CONFIG_BEEP_VOLUME: document.getElementById("beepVolume").value,' +
 '    CONFIG_HOURLY_VIBE_START_TIME: document.getElementById("hourlyVibeStartTime").value,' +
 '    CONFIG_HOURLY_VIBE_END_TIME: document.getElementById("hourlyVibeEndTime").value,' +
 '    CONFIG_HOURLY_VIBE_DAYS_MASK: document.getElementById("hourlyVibeDaysMask").value,' +
