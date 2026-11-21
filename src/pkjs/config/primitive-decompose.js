@@ -279,9 +279,7 @@ var PRIMITIVE_PALETTE = [
     { id: PRIM.PRIM_ALTITUDE_VALUE, label: 'Altitude' },
     { id: PRIM.PRIM_ALTITUDE_UNIT_TEXT, label: 'Altitude unit (m/ft)' },
     { id: PRIM.PRIM_WEATHER_REFRESH_ICON, label: 'Weather refresh icon' },
-    { id: PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT, label: 'Weather updated (time)' }
-  ]},
-  { group: 'Forecast', items: [
+    { id: PRIM.PRIM_WEATHER_LAST_UPDATE_SHORT_TEXT, label: 'Weather updated (time)' },
     { id: PRIM.PRIM_FORECAST_OFFSET_ICON, label: 'Forecast offset icon', param: 'forecast' },
     { id: PRIM.PRIM_FORECAST_TEMP_TEXT, label: 'Forecast temp', param: 'forecast' }
   ]},

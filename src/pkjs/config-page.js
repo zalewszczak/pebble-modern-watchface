@@ -517,11 +517,6 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 '  .category-btn { width: 35px; height: 35px; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; padding: 0; box-sizing: border-box; background: var(--btn-bg); border: none; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); border-radius: 0; margin: 0; color: var(--text-strong); }' +
 '  .category-btn:last-child { border-right: none; }' +
 '  .category-btn.active { background: #ff9200; border-color: #ff9200; color: #fff; }' +
-'  .composer-group-list { display: flex; flex-direction: column; width: 100%; margin-top: 2px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }' +
-'  .composer-group-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 10px; background: var(--btn-bg); border: none; border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px; text-align: left; cursor: pointer; box-sizing: border-box; }' +
-'  .composer-group-btn:last-child { border-bottom: none; }' +
-'  .composer-group-btn svg { width: 21px; height: 21px; flex: 0 0 auto; pointer-events: none; }' +
-'  .composer-group-btn.active { background: #ff9200; color: #fff; }' +
 '  .category-btn svg { width: 21px; height: 21px; pointer-events: none; }' +
 '  .font-category-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; flex: 0 0 auto; margin: 0 -16px 10px; padding: 0 16px; scrollbar-width: none; }' +
 '  .font-category-scroll::-webkit-scrollbar { display: none; }' +
@@ -691,7 +686,7 @@ configBattery.modalHtml() +
 '        </div>' +
 '        <label style="margin-top:12px;">Add from palette</label>' +
 '        <div class="composer-row" style="margin-top:4px;">' +
-'          <div class="composer-group-list" id="composerGroupList"></div>' +
+'          <div class="category-btn-group" id="composerGroupList" style="width:100%;"></div>' +
 '          <input type="hidden" id="composerAddGroup" value="0">' +
 '          <select id="composerAddItem" onchange="composerUpdateAddZoneVisibility()" style="flex:1 1 100%;"></select>' +
 '        </div>' +

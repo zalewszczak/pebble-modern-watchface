@@ -165,9 +165,9 @@ function backgroundSectionHtml(current) {
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bgTranslucent\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bgTranslucent" style="display:none;">Draws only every other pixel of the image (a checkerboard) and fills the rest with the background color, so the picture looks faded and the indices and complications stay easy to read.</div>' +
-'    <div id="bgCycleRow" style="margin-top:10px;' + (isOn(current) && parseSource(current).charAt(0) === 'u' ? '' : 'display:none;') + '">' +
+'    <div id="bgCycleRow" style="margin-top:10px;">' +
 '      <div class="field-label-row"><label for="bgCycle">Cycle through my images</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgCycle\')">?</button></div>' +
-'      <select id="bgCycle">' +
+'      <select id="bgCycle"' + (isOn(current) && parseSource(current).charAt(0) === 'u' ? '' : ' disabled') + '>' +
 '        <option value="0"' + (cycleVal(current) === '0' ? ' selected' : '') + '>Off (always the selected image)</option>' +
 '        <option value="1"' + (cycleVal(current) === '1' ? ' selected' : '') + '>Random one at every start</option>' +
 '        <option value="2"' + (cycleVal(current) === '2' ? ' selected' : '') + '>A different one each day</option>' +
@@ -593,7 +593,9 @@ var CLIENT_BODY =
 '  if (wsty) wsty.style.display = (wbox && wbox.checked) ? "" : "none";\n' +
 '  var crow = bgEl("bgCycleRow");\n' +
 '  var sel = bgParseSource();\n' +
-'  if (crow) crow.style.display = (box && box.checked && sel.kind === "u") ? "" : "none";\n' +
+'  var csel = bgEl("bgCycle");\n' +
+'  if (csel) csel.disabled = !(box && box.checked && sel.kind === "u");\n' +
+'  if (crow) crow.style.opacity = (csel && csel.disabled) ? "0.5" : "";\n' +
 '  var pbx = bgEl("bgPresetBox"), cbx = bgEl("bgCustomBox"), kg = bgEl("bgKindGroup");\n' +
 '  if (pbx) pbx.style.display = sel.kind === "p" ? "" : "none";\n' +
 '  if (cbx && kg) cbx.style.display = sel.kind === "u" ? "" : "none";\n' +

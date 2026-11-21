@@ -134,8 +134,15 @@ function composerClientBody() {
       composerFillParamSelect(document.getElementById("composerSelZone"), selPal.param, String(COMPOSER.items[sel].aux));
       if (selPal.param !== "plugin") document.getElementById("composerSelZone").value = String(COMPOSER.items[sel].aux);
     } else {
-      zoneRow.style.display = "none";
+      // no primitive selected (or one without a parameter): keep the row visible but disabled
+      zoneRow.style.display = "";
+      document.getElementById("composerSelZoneLabel").textContent = "Plugin data source for selected";
+      var offSel = document.getElementById("composerSelZone");
+      pluginHideProvider(offSel);
+      offSel.innerHTML = "<option value=\"\">-</option>";
+      offSel.disabled = true;
     }
+    if (selPal && selPal.param) document.getElementById("composerSelZone").disabled = false;
     var txtRow = document.getElementById("composerSelTextRow");
     if (selPal && selPal.customText) {
       txtRow.style.display = "";
@@ -249,14 +256,14 @@ function composerClientBody() {
       "Spacers": SVG_OPEN + "<path d=\"M4 9v6M20 9v6M4 12h16\"/></svg>",
       "Text": SVG_OPEN + "<path d=\"M5 6V4h14v2M12 4v16M9 20h6\"/></svg>"
     };
-    var GROUP_CAT = { "Date & time": "date", "Time zone": "timezone", "Clock": "time", "Weather": "weather", "Forecast": "weather", "Health & status": "health", "Astronomy": "astro", "Plugins": "plugins" };
+    var GROUP_CAT = { "Date & time": "date", "Time zone": "timezone", "Clock": "time", "Weather": "weather", "Health & status": "health", "Astronomy": "astro", "Plugins": "plugins" };
     function iconFor(name) {
       if (GROUP_ICON[name]) return GROUP_ICON[name];
       for (var c = 0; c < CORNER_CATEGORIES.length; c++) if (CORNER_CATEGORIES[c].id === GROUP_CAT[name]) return CORNER_CATEGORIES[c].icon;
       return "";
     }
     document.getElementById("composerGroupList").innerHTML = PRIMITIVE_PALETTE.map(function (g, gi) {
-      return "<button type=\"button\" class=\"composer-group-btn\" data-group=\"" + gi + "\" onclick=\"composerSelectGroup(" + gi + ")\">" + iconFor(g.group) + "<span>" + esc(g.group) + "</span></button>";
+      return "<button type=\"button\" class=\"category-btn composer-group-btn\" title=\"" + esc(g.group) + "\" aria-label=\"" + esc(g.group) + "\" data-group=\"" + gi + "\" onclick=\"composerSelectGroup(" + gi + ")\">" + iconFor(g.group) + "</button>";
     }).join("");
     composerOnAddGroupChange();
   }
@@ -269,7 +276,7 @@ function composerClientBody() {
   function composerOnAddGroupChange() {
     var gi = parseInt(document.getElementById("composerAddGroup").value, 10) || 0;
     var gbtns = document.getElementById("composerGroupList").getElementsByClassName("composer-group-btn");
-    for (var bi = 0; bi < gbtns.length; bi++) gbtns[bi].className = "composer-group-btn" + (bi === gi ? " active" : "");
+    for (var bi = 0; bi < gbtns.length; bi++) gbtns[bi].className = "category-btn composer-group-btn" + (bi === gi ? " active" : "");
     document.getElementById("composerAddItem").style.display = PRIMITIVE_PALETTE[gi].items.length > 1 ? "" : "none";
     document.getElementById("composerAddItem").innerHTML = PRIMITIVE_PALETTE[gi].items.map(function (it) {
       return "<option value=\"" + (it.key ? "k:" + it.key : it.id) + "\">" + esc(it.label) + "</option>";
