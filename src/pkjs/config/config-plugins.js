@@ -376,6 +376,7 @@ function pluginScript(current, platformSuffix) {
 '  if (p.weather && categoryId === "weather") msgs.push("The Pebble weather plugin was denied access. Allow it in the Pebble app (Settings > Plugins), otherwise the built-in weather source is used.");\n' +
 '  if (p.music && MUSIC_IDS[id]) msgs.push("Music access was denied for the Pebble music plugin, so this stays empty. Allow it in the Pebble app (Settings > Plugins). Music works on Android only.");\n' +
 '  if (p.calendar && CALENDAR_IDS[id]) msgs.push("Calendar access was denied for the Pebble calendar plugin, so this stays empty. Allow it in the Pebble app (Settings > Plugins).");\n' +
+'  if (id === "242" || id === "243") msgs.push("The rain outlook relies heavily on fresh forecast data: it is only recalculated when the phone sends a weather update. For accurate \\"in N hours\\" values set the weather update interval to at most 1 hour.");\n' +
 '  if (p.phone && PHONE_IDS[id]) msgs.push("The Pebble phone plugin was denied access, so the phone battery is unavailable. Allow it in the Pebble app (Settings > Plugins).");\n' +
 '  if (categoryId === "plugins") { var bad = []; for (k in p) if (k.indexOf("plugin:") === 0) bad.push(k.slice(7)); if (bad.length) msgs.push("Access was denied for: " + bad.join(", ") + ". Those slots show \\"No access\\" until you allow them in the Pebble app (Settings > Plugins)."); }\n' +
 '  return msgs;\n' +

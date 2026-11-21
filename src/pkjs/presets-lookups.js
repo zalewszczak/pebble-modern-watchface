@@ -869,7 +869,9 @@ CORNER_CATEGORIES.filter(function (c) { return c.id === 'weather'; })[0].items.p
 );
 CORNER_CATEGORIES.filter(function (c) { return c.id === 'utilities'; })[0].items.push(
   { id: 244, label: 'Battery + Bluetooth + Quiet Time + Hourly chimes (icons only)', preview: '(batt)(bt)(quiet)(bell)' },
-  { id: 245, label: 'Bluetooth + Quiet Time + Hourly chimes (icons only)', preview: '(bt)(quiet)(bell)' }
+  { id: 245, label: 'Bluetooth + Quiet Time + Hourly chimes (icons only)', preview: '(bt)(quiet)(bell)' },
+  { id: 246, label: 'Battery + Bluetooth + Quiet Time + Hourly chimes icons (odd states only)', preview: '(batt!)(bt!)(quiet!)(bell!)', oddOf: 244 },
+  { id: 247, label: 'Bluetooth + Quiet Time + Hourly chimes icons (odd states only)', preview: '(bt!)(quiet!)(bell!)', oddOf: 245 }
 );
 
 // Order of the "Content" dropdown: groups, each with its small heading, in the order shown. Items missing from a

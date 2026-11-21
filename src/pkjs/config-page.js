@@ -1251,8 +1251,8 @@ configPresetSchedule.modalHtml +
 '      <div class="field-label-row"><label>Animate hour indices on start</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-bgAnimMode\')">?</button></div>' +
       verticalButtonGroupHtml('bgAnimModeGroup', 'bgAnimMode', [
         { value: '0', label: 'Off' },
-        { value: '1', label: 'Hour indices (hour indices animate in; seconds draw normally)' },
-        { value: '2', label: 'Hour and second indices (hour indices animate in, the second marks then appear one by one from 0 to 60)' }
+        { value: '1', label: 'Hour indices' },
+        { value: '2', label: 'Hour and second indices' }
       ], current.bgAnimMode || '0') +
 '    </div>' +
 '    <div class="help" id="help-bgAnimMode" style="display:none;">Choose whether the indices animate in when the watchface appears.</div>' +

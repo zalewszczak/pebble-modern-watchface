@@ -15,14 +15,13 @@ static const uint8_t SND_LONG[] = { N(107, 650) };
 static const uint8_t SND_DOUBLE[] = { N(107, 110), N(0, 80), N(107, 110) };
 static const uint8_t SND_PHONE_RING[] = { N(91, 50), N(96, 50), N(91, 50), N(96, 50), N(91, 50), N(96, 50), N(91, 50), N(96, 50), N(0, 160), N(91, 50), N(96, 50), N(91, 50), N(96, 50), N(91, 50), N(96, 50), N(91, 50), N(96, 50) };
 static const uint8_t SND_GRANDFATHER[] = { N(76, 200), N(0, 80), N(72, 200), N(0, 80), N(67, 200), N(0, 80), N(60, 500) };
-static const uint8_t SND_BIG_BEN[] = { N(68, 220), N(66, 220), N(64, 220), N(59, 300), N(0, 60), N(52, 500) };
+static const uint8_t SND_BIG_BEN[] = { N(68, 420), N(66, 420), N(64, 420), N(59, 800) }; // the first four slow Westminster notes: G#-F#-E-B
 static const uint8_t SND_SUCCESS[] = { N(84, 90), N(88, 90), N(91, 90), N(96, 300) };
 static const uint8_t SND_SCIFI_COMMUNICATOR[] = { N(93, 60), N(0, 25), N(98, 60), N(0, 25), N(105, 60), N(0, 25), N(98, 150) };
 static const uint8_t SND_SCIFI_SCANNER[] = { N(72, 40), N(76, 40), N(79, 40), N(84, 40), N(88, 40), N(91, 40), N(96, 40), N(100, 40), N(103, 120) };
 static const uint8_t SND_DING_DONG[] = { N(96, 200), N(0, 30), N(88, 400) };
 static const uint8_t SND_WIND_CHIMES[] = { N(100, 80), N(0, 20), N(93, 80), N(0, 20), N(98, 80), N(0, 20), N(91, 80), N(0, 20), N(96, 80), N(0, 20), N(88, 260) };
 static const uint8_t SND_HARP[] = { N(72, 80), N(76, 80), N(79, 80), N(84, 80), N(88, 80), N(91, 80), N(96, 260) };
-static const uint8_t SND_CHURCH_BELL[] = { N(67, 350), N(0, 150), N(67, 350), N(0, 150), N(67, 600) };
 static const uint8_t SND_XYLOPHONE[] = { N(96, 60), N(0, 40), N(100, 60), N(0, 40), N(103, 60), N(0, 40), N(105, 60), N(0, 40), N(103, 60), N(0, 40), N(100, 160) };
 static const uint8_t SND_GONG[] = { N(48, 180), N(55, 700) };
 static const uint8_t SND_CLASSIC[] = { N(84, 190), N(0, 55), N(91, 300) };
@@ -31,7 +30,6 @@ static const uint8_t SND_ORBIT[] = { N(96, 150), N(0, 45), N(89, 210), N(0, 45),
 static const uint8_t SND_MOBILE[] = { N(88, 125), N(0, 30), N(91, 125), N(0, 30), N(96, 190), N(0, 30), N(91, 250) };
 static const uint8_t SND_PIXEL_QUEST[] = { N(84, 100), N(0, 25), N(91, 100), N(0, 25), N(96, 100), N(0, 25), N(103, 230), N(0, 40), N(100, 140) };
 static const uint8_t SND_COMMUNICATOR[] = { N(100, 120), N(0, 45), N(88, 260), N(0, 90), N(95, 120), N(0, 45), N(83, 320) };
-static const uint8_t SND_DOORBELL[] = { N(91, 260), N(0, 55), N(84, 430) };
 static const uint8_t SND_CONSOLE_POWERUP[] = { N(72, 100), N(0, 35), N(79, 100), N(0, 35), N(84, 100), N(0, 35), N(91, 160), N(0, 45), N(96, 260) };
 static const uint8_t SND_SCI_FI_SCANNER[] = { N(103, 100), N(0, 45), N(76, 170), N(0, 45), N(100, 100), N(0, 45), N(79, 170), N(0, 45), N(103, 260) };
 static const uint8_t SND_TV_IDENT[] = { N(79, 130), N(0, 35), N(88, 130), N(0, 35), N(96, 330) };
@@ -48,8 +46,6 @@ static const uint8_t SND_CUCKOO[] = { N(91, 210), N(0, 90), N(84, 320), N(0, 240
 static const uint8_t SND_SHIP_BELL[] = { N(79, 170), N(0, 65), N(79, 170), N(0, 260), N(79, 170), N(0, 65), N(79, 330) };
 static const uint8_t SND_SOS[] = { N(96, 110), N(0, 65), N(96, 110), N(0, 65), N(96, 110), N(0, 170), N(96, 330), N(0, 65), N(96, 330), N(0, 65), N(96, 330), N(0, 170), N(96, 110) };
 static const uint8_t SND_MUSIC_BOX[] = { N(100, 180), N(0, 65), N(96, 180), N(0, 65), N(91, 180), N(0, 65), N(88, 340) };
-static const uint8_t SND_GENTLE_ASCENT[] = { N(84, 150), N(0, 45), N(88, 230) };
-static const uint8_t SND_GENTLE_DESCENT[] = { N(91, 150), N(0, 45), N(86, 240) };
 
 typedef struct { const uint8_t *data; uint8_t pairs; } Sound;
 #define SND(name) { SND_##name, sizeof(SND_##name) / 2 }
@@ -68,7 +64,6 @@ static const Sound SOUNDS[] = {
   SND(DING_DONG),
   SND(WIND_CHIMES),
   SND(HARP),
-  SND(CHURCH_BELL),
   SND(XYLOPHONE),
   SND(GONG),
   SND(CLASSIC),
@@ -77,7 +72,6 @@ static const Sound SOUNDS[] = {
   SND(MOBILE),
   SND(PIXEL_QUEST),
   SND(COMMUNICATOR),
-  SND(DOORBELL),
   SND(CONSOLE_POWERUP),
   SND(SCI_FI_SCANNER),
   SND(TV_IDENT),
@@ -94,8 +88,6 @@ static const Sound SOUNDS[] = {
   SND(SHIP_BELL),
   SND(SOS),
   SND(MUSIC_BOX),
-  SND(GENTLE_ASCENT),
-  SND(GENTLE_DESCENT),
 };
 
 _Static_assert(sizeof(SOUNDS) / sizeof(SOUNDS[0]) == BEEP_KIND_COUNT - 1, "SOUNDS must match BeepKind");
