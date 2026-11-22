@@ -57,6 +57,6 @@ typedef enum {
 
 // Plays a sound through the watch speaker (Speaker API, SDK 4.9+) at `volume` percent (10-100). Every sound
 // starts with a 250 ms rest: the first note of an asynchronously played sequence otherwise stutters. Does nothing
-// on watches without a speaker (no PBL_SPEAKER), for BEEP_OFF or an unknown id, and while the system keeps the
-// speaker muted (Quiet Time; apps cannot override that).
+// on watches without a speaker (no PBL_SPEAKER), for BEEP_OFF or an unknown id, and always while Quiet Time is on
+// (checked here, so no caller can make a sound in Quiet Time; "vibrate during Quiet Time" only affects vibration).
 void beep_play(uint8_t kind, uint8_t volume);

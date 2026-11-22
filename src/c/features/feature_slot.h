@@ -3,6 +3,7 @@
 #include <pebble.h>
 #include "../data/watch_data.h"
 #include "./primitives/primitive_storage.h"
+#include "./feature_icon_atlas.h"
 #include "../platform/platform_bw.h"
 
 // Shared feature-row geometry used by both layout and rendering.
@@ -48,6 +49,10 @@ typedef struct FeatureSlot {
 typedef struct {
   WatchData *data;
   FeatureSlot slots[FEATURES_MAX_SLOTS];
+  // Per slot and item of its primitives: what icon was last drawn there, for the icon slide animation. Kept apart from
+  // the slots because those are rebuilt (memset / reassigned) on every refresh -- a change of icon is noticed by
+  // comparing with what this remembers.
+  IconAnim icon_anim[FEATURES_MAX_SLOTS][PRIMITIVE_FEATURE_MAX];
 } FeaturesState;
 
 enum {

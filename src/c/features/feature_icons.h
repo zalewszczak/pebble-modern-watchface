@@ -6,6 +6,7 @@
 #include <pebble.h>
 
 #include "../platform/platform_bw.h"
+#include "./feature_icon_atlas.h"
 
 #define FEATURE_ICON_WIDTH PL_ICON_W
 #define FEATURE_ICON_ROWS PL_ICON_ROWS
@@ -28,4 +29,5 @@ void feature_icons_draw_render_icon(GContext *ctx,
                                     int16_t row_height,
                                     uint8_t outline_style,
                                     uint8_t icon_style,
+                                    IconAnim *anim, // slide animation record of this icon position (may be NULL)
                                     bool draw_debug);

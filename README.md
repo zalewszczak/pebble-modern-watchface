@@ -243,3 +243,7 @@ See `round_support.md` for the full plan and status.
 - **Look:** colours reduce to black/white (text is forced to contrast with the background), backgrounds are 2-level, the weather border is a pattern ring (conditions / rain chance), no full-colour icon style, no left/right edge slots, max 6 items per slot, smaller icons and pills, B&W fonts.
 - **Phone side:** `platform.js` (`bw`, `bwByte`, `bwFont`), encoder/codecs reduce colours, the settings page hides unsupported options and previews in 1 bit.
 - **Unverified (check on emulator/hardware):** 1-bit framebuffer bit order (`BW_FB_LSB_FIRST` in `platform_bw.h`), 12 px vector icons, font vertical offsets, `PRIMITIVE_FEATURE_MAX` of 8.
+
+## Icon atlases
+
+Complication icons (all three icon styles, weather, bell, Quiet Time, Bluetooth, sleep, sky...) live in one atlas strip per style (`resources/{common,legacy}/images/atlas_<style>.png`) instead of one resource each. The single PNGs in `resources/*/images/<style>/` are still the editable art: after changing one, run `python3 scripts/generate-icon-atlas.py` (also part of `node scripts/generate-all.js`) and rebuild. New icons: add the PNG to every style folder, append its name to `CELLS` in the script, use `ICON_CELL_<NAME>` in `feature_icons.c`. Changing an icon on the watch slides the new one in through `feature_icon_atlas.c`.

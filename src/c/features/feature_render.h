@@ -20,7 +20,7 @@ void feature_render_draw_text_content_only(GContext *ctx, const char *text, GFon
                                            GColor color);
 
 
-void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *slot,
+void feature_render_draw_slot(GContext *ctx, GRect bounds, const FeatureSlot *slot, IconAnim *icon_anims,
                               GFont font, int16_t font_h, int16_t font_offset,
                               uint8_t outline_style, uint8_t icon_style,
                               bool draw_debug);

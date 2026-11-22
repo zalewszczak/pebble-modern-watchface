@@ -1,3 +1,4 @@
+#include <string.h>
 #include "./features_layer.h"
 #include "./feature_controller.h"
 #include "./feature_slot.h"
@@ -14,11 +15,13 @@ static void features_layer_update_proc(Layer *layer, GContext *ctx) {
   GFont font = feature_controller_font(state->data->corner_font);
   int16_t font_h = font_lookup_height(state->data->corner_font);
   int16_t font_offset = font_lookup_y_offset(state->data->corner_font);
+  icon_atlas_begin_paint();
   for (int i = 0; i < FEATURES_MAX_SLOTS; i++) {
-    feature_render_draw_slot(ctx, bounds, &state->slots[i], font, font_h, font_offset,
+    feature_render_draw_slot(ctx, bounds, &state->slots[i], state->icon_anim[i], font, font_h, font_offset,
                              state->data->outline_style, state->data->icon_style,
                              state->data->draw_debug);
   }
+  icon_atlas_end_paint(layer); // frees the icon atlases; schedules the next paint while an icon slides
 }
 
 Layer *features_layer_create(GRect frame) {
@@ -27,11 +30,13 @@ Layer *features_layer_create(GRect frame) {
   FeaturesState *state = (FeaturesState *)layer_get_data(layer);
   state->data = NULL;
   for (int i = 0; i < FEATURES_MAX_SLOTS; i++) state->slots[i].active = false;
+  memset(state->icon_anim, 0, sizeof(state->icon_anim));
   layer_set_update_proc(layer, features_layer_update_proc);
   return layer;
 }
 
 void features_layer_destroy(Layer *layer) {
+  icon_atlas_deinit();
   if (layer) layer_destroy(layer);
 }
 

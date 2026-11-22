@@ -132,6 +132,9 @@ static void build_morse_hour(void) {
 
 void beep_play(uint8_t kind, uint8_t volume) {
   if (kind == BEEP_OFF || kind >= BEEP_KIND_COUNT) return;
+  // Quiet Time: never make a sound. The system does not reliably keep the speaker muted for apps, so every
+  // caller (hourly beep, Bluetooth-lost beep, settings preview) is gated here, in one place.
+  if (quiet_time_is_active()) return;
   s_count = 0;
   add_note(0, LEAD_REST_MS);
   if (kind == BEEP_MORSE_HOUR) {

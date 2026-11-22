@@ -1,36 +1,18 @@
 #include "./feature_weather_icons.h"
-#include "./feature_icon_assets.h"
-#include "../platform/platform_bw.h"
+#include "./feature_icon_atlas.h"
 
-// One row per weather category (category computed on the phone, see weather-normalize.js weatherIconCategory).
-// This table -- not a switch/case per style -- is what
-// feature_weather_icons_draw_with_outline() below loads from, so adding a
-// category or a style never grows the code, only the data.
-static const IconResourceSet WEATHER_ICON_SETS_DAY[7] = {
-  [0] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_SUN, RESOURCE_ID_ICON_WEATHER_HOLLOW_SUN, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_SUN) },
-  [1] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_PARTLY_CLOUDY, RESOURCE_ID_ICON_WEATHER_HOLLOW_PARTLY_CLOUDY, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY) },
-  [2] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_CLOUDY_OVERCAST, RESOURCE_ID_ICON_WEATHER_HOLLOW_CLOUDY_OVERCAST, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_CLOUDY_OVERCAST) },
-  [3] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_FOG, RESOURCE_ID_ICON_WEATHER_HOLLOW_FOG, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_FOG) },
-  [4] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_RAIN, RESOURCE_ID_ICON_WEATHER_HOLLOW_RAIN, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_RAIN) },
-  [5] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_SNOW, RESOURCE_ID_ICON_WEATHER_HOLLOW_SNOW, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_SNOW) },
-  [6] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_STORM, RESOURCE_ID_ICON_WEATHER_HOLLOW_STORM, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_STORM) },
+// One cell per weather category (category computed on the phone, see weather-normalize.js weatherIconCategory),
+// in the icon atlases. This table -- not a switch/case per style -- is all a category or a style adds to the code.
+static const uint8_t WEATHER_CELLS_DAY[7] = {
+  ICON_CELL_WEATHER_SUN, ICON_CELL_WEATHER_PARTLY_CLOUDY, ICON_CELL_WEATHER_CLOUDY_OVERCAST, ICON_CELL_WEATHER_FOG,
+  ICON_CELL_WEATHER_RAIN, ICON_CELL_WEATHER_SNOW, ICON_CELL_WEATHER_STORM,
 };
 
-// Night variants for the 2 categories that actually look different in the
-// dark (clear sky -> moon, partly cloudy -> cloud + moon). Every other
-// category reuses its own day set at night too (see the `category <= 1`
-// check below) rather than duplicating rows here.
-static const IconResourceSet WEATHER_ICON_SETS_NIGHT[2] = {
-  [0] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_MOON, RESOURCE_ID_ICON_WEATHER_HOLLOW_MOON, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_MOON) },
-  [1] = { RESOURCE_ID_ICON_WEATHER_SIMPLE_PARTLY_CLOUDY_NIGHT, RESOURCE_ID_ICON_WEATHER_HOLLOW_PARTLY_CLOUDY_NIGHT, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_WEATHER_FULLCOLOR_PARTLY_CLOUDY_NIGHT) },
-};
+// Night variants for the 2 categories that actually look different in the dark (clear sky -> moon, partly cloudy ->
+// cloud + moon). Every other category reuses its own day cell at night too (see the `category <= 1` check below).
+static const uint8_t WEATHER_CELLS_NIGHT[2] = { ICON_CELL_WEATHER_MOON, ICON_CELL_WEATHER_PARTLY_CLOUDY_NIGHT };
 
-#define ICON_W PL_ICON_DRAW
-#define ICON_H PL_ICON_DRAW
-
-void feature_weather_icons_draw_with_outline(GContext *ctx, GPoint top_left, uint8_t category, bool is_night,
-                                             uint8_t style, uint8_t outline_style, GColor outline_color, GColor color) {
-  if (category >= 7) return;
-  const IconResourceSet *set = (is_night && category <= 1) ? &WEATHER_ICON_SETS_NIGHT[category] : &WEATHER_ICON_SETS_DAY[category];
-  feature_icon_assets_draw_styled_with_outline(ctx, top_left, set, style, outline_style, outline_color, color, ICON_W, ICON_H);
+uint8_t feature_weather_icons_cell(uint8_t category, bool is_night) {
+  if (category >= 7) return ICON_CELL_COUNT; // not drawn (icon_atlas_draw ignores it)
+  return (is_night && category <= 1) ? WEATHER_CELLS_NIGHT[category] : WEATHER_CELLS_DAY[category];
 }

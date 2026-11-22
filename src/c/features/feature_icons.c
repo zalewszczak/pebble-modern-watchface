@@ -1,5 +1,6 @@
 #include "./feature_icons.h"
 #include "./feature_icon_assets.h"
+#include "./feature_icon_atlas.h"
 #include "./feature_weather_icons.h"
 #include "./feature_forecast_offset_icons.h"
 #include "./feature_vector_icons.h"
@@ -35,44 +36,41 @@ static const uint8_t PEBBLE_ICON[62]     = { 0x00, 0x02, 0x04, 0x08, 0x00, 0x00,
   0xFB, 0xF7, 0xED, 0xF8, 0x80, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00,
   0x00, 0x00}; 
 
-// Every fixed-shape, right-anchored feature icon: kind, its 3-style resource
-// set, and its x_nudge (how far its right edge sits from icon_x -- unrelated
-// to icon style/size, purely per-glyph visual balance, unchanged from before).
-// This table plus feature_icon_assets_draw_styled_with_outline() is the
-// entire "generic icon loading" this style overhaul was about: adding an
-// icon or a style is a data row, never new drawing code.
-#define ICON_SET(NAME) { RESOURCE_ID_ICON_SIMPLE_##NAME, RESOURCE_ID_ICON_HOLLOW_##NAME, ICON_FULLCOLOR_ID(RESOURCE_ID_ICON_FULLCOLOR_##NAME) }
-static const struct { uint8_t kind; IconResourceSet set; int16_t x_nudge; } STYLED_ICONS[] = {
-  { 1,  ICON_SET(HEART),           PL_ICON_PX(12) },
-  { 2,  ICON_SET(FOOT),             PL_ICON_PX(6) },
-  { 5,  ICON_SET(UMBRELLA),        PL_ICON_PX(10) },
-  { 6,  ICON_SET(DROPLET),         PL_ICON_PX(10) },
-  { 7,  ICON_SET(WIND),            PL_ICON_PX(10) },
-  { 8,  ICON_SET(GPS_PIN),          PL_ICON_PX(6) },
-  { 9,  ICON_SET(EYE),              PL_ICON_PX(6) },
-  { 10, ICON_SET(CLOUD),            PL_ICON_PX(6) },
-  { 18, ICON_SET(BED_ARROW_IN),     PL_ICON_PX(6) },
-  { 19, ICON_SET(BED_ARROW_OUT),    PL_ICON_PX(6) },
-  { 20, ICON_SET(BED_CHECK),        PL_ICON_PX(6) },
-  { 21, ICON_SET(BED_CLOCK),        PL_ICON_PX(6) },
-  { 22, ICON_SET(BED_CHECK_CLOCK),  PL_ICON_PX(6) },
-  { 23, ICON_SET(PLANETS),          PL_ICON_PX(6) },
-  { 24, ICON_SET(SATURN_RING),      PL_ICON_PX(6) },
-  { 25, ICON_SET(ISS),              PL_ICON_PX(6) },
-  { 26, ICON_SET(AURORA),           PL_ICON_PX(6) },
-  { 28, ICON_SET(REFRESH),          PL_ICON_PX(6) },
+// Every fixed-shape, right-anchored feature icon: kind, its cell in the icon atlases (the same cell in the simple,
+// hollow and full color atlas, see feature_icon_atlas.h) and its x_nudge (how far its right edge sits from icon_x --
+// unrelated to icon style/size, purely per-glyph visual balance, unchanged from before).
+// This table plus icon_atlas_draw() is the entire "generic icon loading": adding an icon is a data row (and a cell
+// in scripts/generate-icon-atlas.py), never new drawing code.
+static const struct { uint8_t kind; uint8_t cell; int16_t x_nudge; } STYLED_ICONS[] = {
+  { 1,  ICON_CELL_HEART,           PL_ICON_PX(12) },
+  { 2,  ICON_CELL_FOOT,             PL_ICON_PX(6) },
+  { 5,  ICON_CELL_UMBRELLA,        PL_ICON_PX(10) },
+  { 6,  ICON_CELL_DROPLET,         PL_ICON_PX(10) },
+  { 7,  ICON_CELL_WIND,            PL_ICON_PX(10) },
+  { 8,  ICON_CELL_GPS_PIN,          PL_ICON_PX(6) },
+  { 9,  ICON_CELL_EYE,              PL_ICON_PX(6) },
+  { 10, ICON_CELL_CLOUD,            PL_ICON_PX(6) },
+  { 18, ICON_CELL_BED_ARROW_IN,     PL_ICON_PX(6) },
+  { 19, ICON_CELL_BED_ARROW_OUT,    PL_ICON_PX(6) },
+  { 20, ICON_CELL_BED_CHECK,        PL_ICON_PX(6) },
+  { 21, ICON_CELL_BED_CLOCK,        PL_ICON_PX(6) },
+  { 22, ICON_CELL_BED_CHECK_CLOCK,  PL_ICON_PX(6) },
+  { 23, ICON_CELL_PLANETS,          PL_ICON_PX(6) },
+  { 24, ICON_CELL_SATURN_RING,      PL_ICON_PX(6) },
+  { 25, ICON_CELL_ISS,              PL_ICON_PX(6) },
+  { 26, ICON_CELL_AURORA,           PL_ICON_PX(6) },
+  { 28, ICON_CELL_REFRESH,          PL_ICON_PX(6) },
 };
 
-// Left-anchored (not right-anchored like STYLED_ICONS above) single-state
-// styled icons.
-static const IconResourceSet BLUETOOTH_ICON_SET = ICON_SET(BLUETOOTH);
-
-// 2-state styled icons -- [0] is the "off"/inactive look, [1] the
-// "on"/active one; icon_flag picks which.
-static const IconResourceSet QUIET_TIME_ICON_SET[2] = { ICON_SET(QUIET_TIME), ICON_SET(QUIET_TIME_MUTED) };
-static const IconResourceSet BELL_ICON_SET[2] = { ICON_SET(BELL), ICON_SET(BELL_OFF) };
-static const IconResourceSet SUN_TIME_ICON_SET[2] = { ICON_SET(SUN_TIME_SET), ICON_SET(SUN_TIME_RISE) };
-#undef ICON_SET
+// Icon kinds drawn from the atlases besides the STYLED_ICONS table: sunrise/sunset 11, Bluetooth 13, weather 14,
+// Quiet Time 29, hourly bell 40.
+static bool is_atlas_kind(uint8_t kind) {
+  if (kind == 11 || kind == 13 || kind == 14 || kind == 29 || kind == 40) return true;
+  for (size_t i = 0; i < sizeof(STYLED_ICONS) / sizeof(STYLED_ICONS[0]); i++) {
+    if (STYLED_ICONS[i].kind == kind) return true;
+  }
+  return false;
+}
 
 // "Phone disconnected" flashing of the Bluetooth icon: app_controller.c toggles
 // this once a second while the connection is down; the icon is skipped (its
@@ -90,7 +88,10 @@ void feature_icons_set_media_art(const uint8_t *pixels) { s_media_art = pixels; 
 void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t icon_extra,
                                     bool icon_flag, GColor color, GColor color2,
                                     int16_t icon_x, int16_t box_y, int16_t row_height,
-                                    uint8_t outline_style, uint8_t icon_style, bool draw_debug) {
+                                    uint8_t outline_style, uint8_t icon_style, IconAnim *anim, bool draw_debug) {
+  // Something that is not an atlas icon (or nothing: the blank "odd state" stand-ins) is "nothing" to the slide
+  // animation, so an atlas icon replacing it slides in.
+  if (anim && !is_atlas_kind(icon_kind)) icon_atlas_set_blank(anim);
   GColor outline_color = feature_render_contrasting_outline_color(color);
   bool do_outline = outline_style != 0;
   const GPoint *offs = NULL; int offs_n = 0;
@@ -100,8 +101,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
     if (STYLED_ICONS[i].kind != icon_kind) continue;
     GPoint pos = GPoint(icon_x - ICON_WIDTH + STYLED_ICONS[i].x_nudge, box_y + (row_height - ICON_ROWS) / 2);
     draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
-    feature_icon_assets_draw_styled_with_outline(ctx, pos, &STYLED_ICONS[i].set, icon_style,
-                                                 outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
+    icon_atlas_draw(ctx, pos, STYLED_ICONS[i].cell, anim, icon_style,
+                    outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
     return;
   }
 
@@ -136,10 +137,9 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
     case 11: { // sunrise/sunset glyph -- a plain styled image (see resources/images/<style>/
                // sun_time_rise.png / sun_time_set.png), drawn the exact
       GPoint pos = GPoint(icon_x, box_y + (row_height - SUN_TIME_ICON_ROWS) / 2);
-      const IconResourceSet *set = &SUN_TIME_ICON_SET[icon_flag ? 1 : 0];
       draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
-      feature_icon_assets_draw_styled_with_outline(ctx, pos, set, icon_style,
-                                                   outline_style, outline_color, color, SUN_TIME_ICON_DRAW_W, SUN_TIME_ICON_DRAW_H);
+      icon_atlas_draw(ctx, pos, icon_flag ? ICON_CELL_SUN_TIME_RISE : ICON_CELL_SUN_TIME_SET, anim, icon_style,
+                      outline_style, outline_color, color, SUN_TIME_ICON_DRAW_W, SUN_TIME_ICON_DRAW_H);
       return;
     }
     case 12: { // Pebble battery logo
@@ -170,8 +170,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2 - 2);
       uint8_t category = (uint8_t)icon_extra;
       draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
-      feature_weather_icons_draw_with_outline(ctx, pos, category, icon_flag, icon_style,
-                                              outline_style, outline_color, color);
+      icon_atlas_draw(ctx, pos, feature_weather_icons_cell(category, icon_flag), anim, icon_style,
+                      outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
       return;
     }
     case 15: { // pressure trend chevron
@@ -211,8 +211,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
                // Styled images (resources/images/<style>/bell.png and bell_off.png).
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2);
       draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
-      feature_icon_assets_draw_styled_with_outline(ctx, pos, &BELL_ICON_SET[icon_flag ? 1 : 0], icon_style,
-                                                   outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
+      icon_atlas_draw(ctx, pos, icon_flag ? ICON_CELL_BELL_OFF : ICON_CELL_BELL, anim, icon_style,
+                      outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
       return;
     }
     case 39: { // calendar page
@@ -244,8 +244,8 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
                // red X across it instead.
       if (icon_flag && s_bt_flash_hidden) return; // flashing while disconnected
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2);
-      feature_icon_assets_draw_styled_with_outline(ctx, pos, &BLUETOOTH_ICON_SET, icon_style,
-                                                   outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
+      icon_atlas_draw(ctx, pos, ICON_CELL_BLUETOOTH, anim, icon_style,
+                      outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
       if (icon_flag && icon_style == 2) {
         GPoint a = GPoint(pos.x + 3, pos.y + 1), b = GPoint(pos.x + 12, pos.y + 10);
         GPoint c = GPoint(pos.x + 12, pos.y + 1), d = GPoint(pos.x + 3, pos.y + 10);
@@ -281,10 +281,9 @@ void feature_icons_draw_render_icon(GContext *ctx, uint8_t icon_kind, int16_t ic
                // Styled image (see resources/images/<style>/quiet_time.png /
                // quiet_time_muted.png).
       GPoint pos = GPoint(icon_x, box_y + (row_height - ICON_ROWS) / 2);
-      const IconResourceSet *set = &QUIET_TIME_ICON_SET[icon_flag ? 1 : 0];
       draw_debug_marker_point(ctx, draw_debug, pos, GColorMagenta);
-      feature_icon_assets_draw_styled_with_outline(ctx, pos, set, icon_style,
-                                                   outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
+      icon_atlas_draw(ctx, pos, icon_flag ? ICON_CELL_QUIET_TIME_MUTED : ICON_CELL_QUIET_TIME, anim, icon_style,
+                      outline_style, outline_color, color, ICON_DRAW_W, ICON_DRAW_H);
       return;
     }
     case 30: { // "+Xh"/"+X day" forecast-offset half-icon (see

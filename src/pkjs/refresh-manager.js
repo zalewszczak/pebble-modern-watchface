@@ -309,7 +309,8 @@ function refreshAndSend(force, resendOnSkip) {
                     auroraErrorCode: auroraErrorCode,
                     forecastTempC: snapshot.forecastTempC, forecastCondition: snapshot.forecastCondition, forecastCloud: snapshot.forecastCloud,
                     forecastWx: snapshot.forecastWx, forecastRainPct: snapshot.forecastRainPct,
-                    borderHourly: snapshot.borderHourly
+                    borderHourly: snapshot.borderHourly,
+                    rainHourly: snapshot.rainHourly // hourly rain chance for the rain outlook complication
                   }
                 });
                 markRefreshDone(lat, lon);

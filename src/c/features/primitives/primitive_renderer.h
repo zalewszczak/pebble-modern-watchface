@@ -7,10 +7,11 @@
 
 #include <pebble.h>
 #include "./primitive_storage.h"
+#include "../feature_icon_atlas.h"
 
 typedef struct FeatureSlot FeatureSlot; // feature_slot.h
 
 void primitive_renderer_draw_feature(GContext *ctx, int16_t box_x, int16_t box_y, int16_t row_height,
                                      const PrimitiveFeature *feature, const FeatureSlot *slot,
                                      GFont font, int16_t font_h, int16_t font_offset,
-                                     uint8_t outline_style, uint8_t icon_style, bool draw_debug);
+                                     uint8_t outline_style, uint8_t icon_style, IconAnim *icon_anims, bool draw_debug);

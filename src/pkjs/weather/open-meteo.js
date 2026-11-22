@@ -165,8 +165,10 @@ function getWeatherSnapshot(lat, lon, nowDate, cb) {
       }
 
       // Hourly rain chance from the hour that contains "now" (up to 4 days) for the "rain in N hours" complication.
-      var rainHourly = { start: hourlyTimes[nowIdx] || null, rain: [] };
-      for (var rh = nowIdx; rh < hourlyTimes.length && rainHourly.rain.length < 90; rh++) {
+      // nowIdx is the NEAREST forecast hour (the next one after :30), so step back to the hour that really contains "now".
+      var rainFrom = (hourlyTimes[nowIdx] > nowDate.getTime() && nowIdx > 0) ? nowIdx - 1 : nowIdx;
+      var rainHourly = { start: hourlyTimes[rainFrom] || null, rain: [] };
+      for (var rh = rainFrom; rh < hourlyTimes.length && rainHourly.rain.length < 90; rh++) {
         rainHourly.rain.push(hourlyRain && typeof hourlyRain[rh] === 'number' ? Math.max(0, Math.min(100, Math.round(hourlyRain[rh]))) : null);
       }
 
