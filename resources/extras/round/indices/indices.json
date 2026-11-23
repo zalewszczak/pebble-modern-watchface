@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "indices": {
+    "bebas_2_background.png": {
+      "name": "Bebas 2",
+      "description": "Bebas font based indices.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "bonbon_background.png": {
+      "name": "Bonbon",
+      "description": "Bonbon font based indices.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "Ingird_background.png": {
+      "name": "Ingrid",
+      "description": "Ingrid font based indices.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "modern_s2_background.png": {
+      "name": "Modern S2",
+      "description": "Modern variation.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "modern_wr_background2.png": {
+      "name": "Modern WR",
+      "description": "Modern variation.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "modern_wr2_background.png": {
+      "name": "Modern WR2",
+      "description": "Modern variation.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "roman_2_background.png": {
+      "name": "Roman 2",
+      "description": "Roman numeral based indices variant.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "roman_circles_2_background.png": {
+      "name": "Roman Circles 2",
+      "description": "Roman numeral based indices variant.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "roman_circles_background.png": {
+      "name": "Roman Circles",
+      "description": "Roman numeral based indices variant.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "segments_background.png": {
+      "name": "Segments",
+      "description": "Segments variant.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    },
+    "segments_L_background.png": {
+      "name": "Segments L",
+      "description": "Segments variant.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    }
+  }
+}
+

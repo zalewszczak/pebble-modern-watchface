@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "indices": {
+    "track_background.png": {
+      "name": "Track",
+      "description": "Track font based indices.",
+      "author": "zalew",
+      "link": "https://github.com/zalewszczak",
+      "license": "CC BY 4.0",
+      "added": "2026-11-23",
+      "tags": ["thin", "ticks"],
+      "margins": { "top": 38, "bottom": 37, "left": 42, "right": 39 }
+    }
+  }
+}
+
