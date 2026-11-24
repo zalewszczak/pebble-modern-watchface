@@ -31,6 +31,7 @@ var shakeSecondsCode = settingsCodecs.shakeSecondsCode;
 var shadowTranslucentCode = settingsCodecs.shadowTranslucentCode;
 var shadowAngleCode = settingsCodecs.shadowAngleCode;
 var bigAnalogMarkerStyleCode = settingsCodecs.bigAnalogMarkerStyleCode;
+var indexMarginsBytes = settingsCodecs.indexMarginsBytes;
 var bitmapMarkerTransparentCode = settingsCodecs.bitmapMarkerTransparentCode;
 var bitmapMarkerInvertCode = settingsCodecs.bitmapMarkerInvertCode;
 var borderData = require('../border/border-data');
@@ -358,6 +359,8 @@ function populateSettingsFields(dict) {
   dict['SHADOW_TRANSLUCENT'] = shadowTranslucentCode();
   dict['SHADOW_ANGLE'] = shadowAngleCode();
   dict['BIG_ANALOG_MARKER_STYLE'] = bigAnalogMarkerStyleCode();
+  dict['INDEX_MARGINS'] = indexMarginsBytes();
+  dict['MARKER_APPLY_TICK'] = parseInt(getSetting('CONFIG_MARKER_APPLY_TICK', '0'), 10) >>> 0;
   dict['DRAW_FEATURES_BENEATH_HANDS'] = drawFeaturesBeneathHandsCode();
   dict['MARKER_RINGS'] = markerRingsBytes();
   dict['MARKER_TEXT'] = markerTextBytes();

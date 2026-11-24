@@ -1,14 +1,15 @@
 #pragma once
 
 #include <pebble.h>
+#include "./marker_download.h"
 
 // Bitmap marker resource management is kept separate from procedural marker
 // geometry. The caller owns the state fields and this module owns the bitmap
 // resource/tint operations.
 // Bitmap marker styles: 3-7 (Modern, Shadow, Tally, Bell, Fancy) and 11-19 (the
-// Modern/Roman variants). 0-2, 8-10 are ring-based (see marker_layer.c).
+// Modern/Roman variants) and 20 (the downloaded set, marker_download.c). 0-2, 8-10 are ring-based (see marker_layer.c).
 static inline bool marker_style_is_bitmap(uint8_t style) {
-  return (style >= 3 && style <= 7) || (style >= 11 && style <= 19);
+  return (style >= 3 && style <= 7) || (style >= 11 && style <= 19) || style == MARKER_STYLE_DOWNLOADED;
 }
 void marker_bitmap_release(GBitmap **bitmap, uint8_t *bitmap_style, bool *bitmap_tinted);
 void marker_bitmap_ensure(GBitmap **bitmap, uint8_t *bitmap_style, bool *bitmap_tinted,

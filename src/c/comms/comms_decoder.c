@@ -61,6 +61,7 @@ static const SimpleFieldMapping SIMPLE_FIELD_MAP[] = {
   { MK_SHOW_SECONDS, F_BOOL, offsetof(WatchData, show_seconds) },
   { MK_SHAKE_ONLY_MASK, F_U16, offsetof(WatchData, shake_only_mask) },
   { MK_BG_ANIM_MODE, F_U8_MAX2, offsetof(WatchData, bg_anim_mode) },
+  { MK_MARKER_APPLY_TICK, F_U32, offsetof(WatchData, marker_apply_tick) },
   { MK_SHAKE_ANIM_MODE, F_U8_MAX1, offsetof(WatchData, shake_anim_mode) },
   { MK_SHADOW_TRANSLUCENT, F_BOOL, offsetof(WatchData, shadow_translucent) },
   { MK_SHADOW_ANGLE, F_U16, offsetof(WatchData, shadow_angle_deg) },
@@ -130,6 +131,7 @@ static const BlobFieldMapping BLOB_FIELD_MAP[] = {
   { MK_BORDER_DATA, 1, offsetof(WatchData, border_data), BORDER_DATA_MAX },
   { MK_MEDIA_INFO, 1, offsetof(WatchData, media_info), sizeof(((WatchData *)0)->media_info) },
   { MK_MEDIA_ART, 1, offsetof(WatchData, media_art), MEDIA_ART_MAX_BYTES },
+  { MK_INDEX_MARGINS, 1, offsetof(WatchData, index_margins), 5 },
 };
 
 // Applied only for valid payloads.

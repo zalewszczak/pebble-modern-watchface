@@ -51,6 +51,17 @@ void dial_animation_start(WatchData *data, Layer *dial_layer) {
   s_timer = app_timer_register(DIAL_ANIMATION_FRAME_MS, animation_timer_callback, NULL);
 }
 
+void dial_animation_replay(WatchData *data, Layer *dial_layer) {
+  if (!data || !dial_layer || marker_style_is_bitmap(data->big_analog_marker_style) || data->big_analog_marker_style == 0) return;
+  if (s_timer) { app_timer_cancel(s_timer); s_timer = NULL; }
+  s_played = true;
+  s_dial_layer = dial_layer;
+  s_elapsed_ms = 0;
+  s_start_ms = now_ms32();
+  dial_layer_set_animation(dial_layer, true, 0);
+  s_timer = app_timer_register(DIAL_ANIMATION_FRAME_MS, animation_timer_callback, NULL);
+}
+
 void dial_animation_deinit(void) {
   if (s_timer) {
     app_timer_cancel(s_timer);

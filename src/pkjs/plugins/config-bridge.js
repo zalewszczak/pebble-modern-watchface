@@ -37,6 +37,9 @@ function install(buildPage, applySettings, pluginManager, preferences) {
         case 'preferences':
           preferences.capture(3000, function (prefs) { reply({ preferences: prefs }); });
           break;
+        case 'fetch':
+          require('./github-fetch').fetchUrl(msg.url, !!msg.binary, reply);
+          break;
         default:
           reply({ ok: false, error: 'unknown message' });
       }

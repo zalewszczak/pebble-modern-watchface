@@ -73,8 +73,17 @@ module.exports =
 '    CONFIG_BORDER_WEATHER_SCHEME: document.getElementById("borderWeatherScheme").value,' +
 '    CONFIG_BORDER_WEATHER_SHAKE: document.getElementById("borderWeatherShake").checked,' +
 '    CONFIG_BORDER_WEATHER_SEMI: document.getElementById("borderWeatherSemi").checked,' +
+'    CONFIG_DL_LIBRARY_OPS: (typeof dlLibHasOps === "function" && dlLibHasOps()) ? { add: dlLibOps.add.slice(), remove: dlLibOps.remove.slice() } : null,' +
+'    CONFIG_MARKER_APPLY_TICK: (typeof markerApplyTick === "number") ? markerApplyTick : 0,' +
+'    CONFIG_USER_MARKER_PRESETS: (typeof userMarkerPresets === "object") ? userMarkerPresets : undefined,' +
+'    CONFIG_DL_INDEX_UPDATE: (typeof dlUpdate === "object" && dlUpdate) ? dlUpdate : null,' +
 '    CONFIG_BG_SLOT_UPDATES: (typeof bgSlotUpdates === "object" && bgSlotUpdates) ? bgSlotUpdates : {},' +
 '    CONFIG_BITMAP_CORNER_OVERRIDE: document.getElementById("bitmapCornerOverride").checked,' +
+'    CONFIG_INDEX_MARGIN_AUTO: document.getElementById("indexMarginAuto").checked,' +
+'    CONFIG_INDEX_MARGIN_TOP: document.getElementById("indexMarginTop").value,' +
+'    CONFIG_INDEX_MARGIN_BOTTOM: document.getElementById("indexMarginBottom").value,' +
+'    CONFIG_INDEX_MARGIN_LEFT: document.getElementById("indexMarginLeft").value,' +
+'    CONFIG_INDEX_MARGIN_RIGHT: document.getElementById("indexMarginRight").value,' +
 '    CONFIG_DRAW_FEATURES_BENEATH_HANDS: document.getElementById("drawFeaturesBeneathHands").checked,' +
 '    CONFIG_UPPER_MIDDLE_LINE1_CONTENT_ANALOG: dualCtxVal("upperMiddleLine1", "Content", "analog"),' +
 '    CONFIG_UPPER_MIDDLE_LINE1_COLOR_ANALOG: dualCtxVal("upperMiddleLine1", "Color", "analog"),' +
@@ -258,8 +267,11 @@ module.exports =
 '}' +
 'function liveJson(settings) {' +
 '  var copy = {};' +
-'  for (var k in settings) if (k !== "CONFIG_FORCE_REFRESH" && k !== "CONFIG_BG_SLOT_UPDATES") copy[k] = settings[k];' +
+'  for (var k in settings) if (k !== "CONFIG_FORCE_REFRESH" && k !== "CONFIG_BG_SLOT_UPDATES" && k !== "CONFIG_DL_INDEX_UPDATE" && k !== "CONFIG_DL_LIBRARY_OPS") copy[k] = settings[k];' +
 '  copy.__bg = Object.keys(settings.CONFIG_BG_SLOT_UPDATES || {}).join(",");' +
+'  var lib = settings.CONFIG_DL_LIBRARY_OPS;' +
+'  copy.__lib = lib ? lib.add.map(function (a) { return a.name; }).join(",") + "|" + lib.remove.join(",") : "";' +
+'  copy.__dl = settings.CONFIG_DL_INDEX_UPDATE ? (settings.CONFIG_DL_INDEX_UPDATE.name || "clear") : "";' +
 '  return JSON.stringify(copy);' +
 '}' +
 'function liveSend(settings, force) {' +
@@ -274,6 +286,8 @@ module.exports =
 '    if (reply && reply.ok === false) { liveStatus("Phone app reported an error", true); return; }' +
 '    LIVE.last = json;' +
 '    if (typeof bgSlotUpdates === "object") { for (var k in sentBg) delete bgSlotUpdates[k]; }' +
+'    if (settings.CONFIG_DL_LIBRARY_OPS && typeof dlLibOpsSent === "function") dlLibOpsSent(settings.CONFIG_DL_LIBRARY_OPS);' +
+'    if (settings.CONFIG_DL_INDEX_UPDATE && typeof dlUpdate !== "undefined" && dlUpdate === settings.CONFIG_DL_INDEX_UPDATE) dlUpdate = null;' +
 '    liveStatus(force ? "Sent to the watch" : "Live \u2013 changes are sent to the watch");' +
 '  }, function () {' +
 '    LIVE.busy = false;' +

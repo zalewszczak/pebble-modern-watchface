@@ -168,7 +168,7 @@ module.exports =
 '  ctx.imageSmoothingEnabled = prevSmooth;' +
 '}' +
 
-'function isBitmapMarkerStyleId(n) { return (n >= 3 && n <= 7) || (n >= 11 && n <= 19); }' +
+'function isBitmapMarkerStyleId(n) { return (n >= 3 && n <= 7) || (n >= 11 && n <= 19) || n === 20; }' +
 'function computeMiddleFeatureMargins(w, h) {' +
 '  var scale = w / BG_W;' +
 '  var margins = { top: 44 * scale, bottom: 40 * scale, left: 30 * scale, right: 30 * scale };' +

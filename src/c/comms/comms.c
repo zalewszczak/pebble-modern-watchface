@@ -1,3 +1,5 @@
+#include "../rendering/dial/marker_download.h"
+#include "../rendering/status/status_label.h"
 #include <pebble.h>
 #include "./comms.h"
 #include "../timing/beep.h"
@@ -199,6 +201,43 @@ static bool handle_bg_image_message(DictionaryIterator *iter) {
 
 #endif // PBL_BW
 
+
+// The "Downloaded" index image (slot MARKER_DL_SLOT of the BG_IMG messages, same BEGIN / INDEX+DATA / END shape, see
+// bg_image_store). The DATA/END messages carry no slot, so a transfer is followed from its BEGIN to its END.
+static bool handle_marker_image_message(DictionaryIterator *iter) {
+  const uint32_t base = MESSAGE_KEY_MESSAGE_TYPE;
+  Tuple *begin = dict_find(iter, base + MK_BG_IMG_BEGIN);
+  Tuple *data = dict_find(iter, base + MK_BG_IMG_DATA);
+  Tuple *end = dict_find(iter, base + MK_BG_IMG_END);
+  bool changed = false;
+  if (begin && begin->length >= 11) {
+    const uint8_t *b = begin->value->data;
+    if (b[10] != MARKER_DL_SLOT) return false;
+    uint32_t stamp = (uint32_t)b[0] | ((uint32_t)b[1] << 8) | ((uint32_t)b[2] << 16) | ((uint32_t)b[3] << 24);
+    uint16_t chunks = (uint16_t)(b[4] | (b[5] << 8));
+    if (stamp == 0 && chunks == 0) {
+      marker_download_clear();
+      changed = true;
+    } else {
+      marker_download_begin(stamp, chunks, (uint16_t)(b[6] | (b[7] << 8)), (uint16_t)(b[8] | (b[9] << 8)));
+    }
+  } else if (!marker_download_active() || (!data && !end)) {
+    return false;
+  }
+  if (data) {
+    Tuple *index = dict_find(iter, base + MK_BG_IMG_INDEX);
+    if (index) marker_download_write(index->value->uint16, data->value->data, data->length);
+  }
+  if (end && end->length >= 4) {
+    const uint8_t *e = end->value->data;
+    const bool saved = marker_download_commit((uint32_t)e[0] | ((uint32_t)e[1] << 8) | ((uint32_t)e[2] << 16) | ((uint32_t)e[3] << 24));
+    changed = true;
+    status_label_set(saved ? "Index image saved" : "Index image failed", STATUS_WARNING_COLOR, false);
+  }
+  if (changed && s_data_applied) s_data_applied(COMMS_CHANGE_NONE, s_data_context);
+  return true;
+}
+
 static void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
   // Sound preview from the settings page: { sound id, volume }. Plays it and changes nothing else.
@@ -207,6 +246,7 @@ static void inbox_received_handler(DictionaryIterator *iter, void *context) {
     beep_play(preview->value->data[0], preview->value->data[1]);
     return;
   }
+  if (handle_marker_image_message(iter)) return;
   if (handle_bg_image_message(iter)) return;
   WatchData *d = s_data;
   CommsChangeFlags changes = comms_decoder_apply(iter, d);

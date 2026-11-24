@@ -31,7 +31,8 @@ function beepSelectHtml(id, list, selected) {
   return '    <div style="display:flex; gap:8px; align-items:center;">' +
     '<select id="' + id + '" style="flex:1; min-width:0;">' + beepOptions.optionsHtml(list, sel) + '</select>' +
     '<button type="button" class="secondary-btn" style="width:auto; margin:0; padding:8px 14px;" onclick="previewBeep(\'' + id + '\')">&#9654; Play</button></div>' +
-    '    <div class="help" id="beepStatus-' + id + '" style="display:none;"></div>';
+    '    <div class="help" id="beepStatus-' + id + '" style="display:none;"></div>' +
+    '    <div class="help">&#128263; While Quiet Time is on, the watch plays no sounds at all: neither this preview nor the hourly or Bluetooth beeps. Turn Quiet Time off to hear them.</div>';
 }
 var colorRoleButtonGroupHtml = configTemplate.colorRoleButtonGroupHtml;
 
@@ -114,6 +115,8 @@ var textMarkerModalHtml = configMarkers.textMarkerModalHtml;
 var schemeColorOptionsHtml = require('./config/config-colors').schemeColorOptionsHtml;
 
 var configBackground = require('./config/config-background');
+var configDownloaded = require('./config/config-downloaded');
+var configMarkerPopup = require('./config/config-marker-popup');
 var configBattery = require('./config/config-battery');
 var configPlugins = require('./config/config-plugins');
 var configBorder = require('./config/config-border');
@@ -173,6 +176,15 @@ function buildConfigHtml(current) {
   var markerStyleNum = configState.markerStyleNum;
   var isBitmapMarkerStyle = configState.isBitmapMarkerStyle;
   var bitmapCornerOverride = configState.bitmapCornerOverride;
+  var indexMarginTables = require('./data/index-margins');
+  var indexMarginStored = (current.indexMargins || []).map(function (v) { return parseInt(v, 10); });
+  var indexMarginFallback = indexMarginTables.forStyle(3) || [40, 40, 40, 40];
+  var indexMarginInit = [0, 1, 2, 3].map(function (i) { return isNaN(indexMarginStored[i]) ? indexMarginFallback[i] : indexMarginStored[i]; });
+  var indexMarginTouched = indexMarginStored.length === 4 && indexMarginStored.every(function (v) { return !isNaN(v); });
+  function indexMarginSliderHtml(label, id, value) {
+    return '<div style="margin:4px 0 0 28px;"><label for="' + id + '">' + label + ' <span class="val" id="' + id + 'Val">' + value + 'px</span></label>' +
+      '<input type="range" id="' + id + '" min="0" max="120" step="1" value="' + value + '" oninput="onIndexMarginInput(this)"></div>';
+  }
   var edgeAvail = configState.edgeAvail;
   var initialColors = configState.initialColors;
   var initialNightColors = configState.initialNightColors;
@@ -598,6 +610,8 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 '  .slot-middle-right-l1 { right: 6px; top: calc(50% - 15px); transform: translateY(-50%); }' +
 '  .slot-middle-right-l2 { right: 6px; top: calc(50% + 15px); transform: translateY(-50%); }' +
     configBackground.backgroundCss() +
+    configDownloaded.downloadedCss() +
+    configMarkerPopup.popupCss() +
     configBorder.borderCss() +
 '</style></head>' +
 '<body>' +
@@ -726,9 +740,7 @@ configBattery.modalHtml() +
 '  </div>' +
 '</div>' +
 
-customMarkerModalHtml('hour', 'Edit hour indices', 20) +
-customMarkerModalHtml('sec', 'Edit seconds indices', 10) +
-textMarkerModalHtml(current) +
+configMarkerPopup.popupHtml(current) +
 configBackground.backgroundModalHtml() +
 
 handEditorModalHtml('hour', 'Edit hour hand') +
@@ -741,19 +753,6 @@ handEditorModalHtml('sec', 'Edit second hand') +
 '    <div class="modal-scroll-body">' +
 '      <div class="style-picker-grid" id="handStyleGrid"></div>' +
 '      <button type="button" class="style-picker-custom-btn" onclick="chooseHandStyleCustom()">Custom</button>' +
-'    </div>' +
-'  </div>' +
-'</div>' +
-
-'<div class="modal-overlay" id="markerStyleModal" onclick="if (event.target === this) closeMarkerStyleModal();">' +
-'  <div class="modal-box">' +
-'    <div class="modal-title">Hour/seconds indices style</div>' +
-'    <div class="modal-scroll-body">' +
-'      <div class="style-picker-grid" id="markerStyleGrid"></div>' +
-'    </div>' +
-'    <div style="flex: 0 0 auto;">' +
-'      <button type="button" class="style-picker-custom-btn" onclick="chooseMarkerStyleCustom()">Custom</button>' +
-'      <button type="button" class="style-picker-custom-btn style-picker-none-btn" onclick="chooseMarkerStyle(\'0\')">None</button>' +
 '    </div>' +
 '  </div>' +
 '</div>' +
@@ -960,6 +959,7 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="marker-edit-btn" id="markerStyleTriggerBtn" style="margin-top:8px;" onclick="openMarkerStyleModal()">Indices style: <span id="markerStyleTriggerLabel"></span> &rsaquo;</button>' +
 '      <select id="bigAnalogMarkerStyle" style="display:none;" onchange="onMarkerStyleChange()">' +
 '        <option value="10"' + (current.bigAnalogMarkerStyle === '10' ? ' selected' : '') + '>Minimal (thin hour indices only)</option>' +
+'        <option value="20"' + (current.bigAnalogMarkerStyle === '20' ? ' selected' : '') + '>Downloaded</option>' +
 '        <option value="9"' + (current.bigAnalogMarkerStyle === '9' ? ' selected' : '') + '>Classy</option>' +
 '        <option value="0"' + (current.bigAnalogMarkerStyle === '0' ? ' selected' : '') + '>None</option>' +
 '        <option value="1"' + (current.bigAnalogMarkerStyle === '1' ? ' selected' : '') + '>Braun</option>' +
@@ -980,12 +980,9 @@ configPresetSchedule.modalHtml +
 '        <input type="checkbox" id="bitmapMarkerInvert" ' + (current.bitmapMarkerInvert && !platform.bw ? 'checked' : '') + ' onchange="updatePreview()">' +
 '        <label for="bitmapMarkerInvert" style="margin:0;">Inverted blend (markers turn black or white for contrast with the background)</label>' +
 '      </div>' +
-'      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face. Custom lets you edit them.</div>' +
+'      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face, or design your own.</div>' +
 
-'      <div id="customMarkerSection" style="' + (current.bigAnalogMarkerStyle === '8' ? '' : 'display:none;') + '">' +
-'        <button type="button" class="marker-edit-btn" onclick="openCustomMarkerEditor(\'hour\')">Edit hour indices: <span id="cmHourStatusLabel"></span> &rsaquo;</button>' +
-'        <button type="button" class="marker-edit-btn" onclick="openCustomMarkerEditor(\'sec\')">Edit seconds indices: <span id="cmSecStatusLabel"></span> &rsaquo;</button>' +
-'        <button type="button" class="marker-edit-btn" onclick="openTextMarkerEditor()">Numerals: <span id="numeralsStatusLabel"></span> &rsaquo;</button>' +
+'      <div id="customMarkerSection" style="display:none;">' +
           customMarkerHiddenInputsHtml(current) +
 '      </div>' +
 '      </div>' +
@@ -1034,6 +1031,19 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bitmapCornerOverride\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bitmapCornerOverride" style="display:none;">Allows complications to use areas that may overlap some bitmap marker designs.</div>' +
+
+'    <div class="checkbox-row" style="margin-top:12px;">' +
+'      <input type="checkbox" id="indexMarginAuto" ' + (current.indexMarginAuto === false ? '' : 'checked') + ' onchange="onIndexMarginAutoChange()">' +
+'      <label for="indexMarginAuto" style="margin:0;">Automatic complications spacing from indices</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-indexMargin\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-indexMargin" style="display:none;">How much room the complications leave at the top, bottom, left and right of the screen for the indices. Automatic uses the values that belong to the chosen indices (downloaded indices bring their own). Untick it to set them by hand; the sliders start from the current indices\' values and your settings are remembered for this watch only.</div>' +
+'    <div id="indexMarginSliders" style="' + (current.indexMarginAuto === false ? '' : 'display:none;') + '">' +
+indexMarginSliderHtml('Top', 'indexMarginTop', indexMarginInit[0]) +
+indexMarginSliderHtml('Bottom', 'indexMarginBottom', indexMarginInit[1]) +
+indexMarginSliderHtml('Left', 'indexMarginLeft', indexMarginInit[2]) +
+indexMarginSliderHtml('Right', 'indexMarginRight', indexMarginInit[3]) +
+'    </div>' +
 
 '    <div class="field-label-row"><label for="cornerFont">Font</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-cornerFont\')">?</button></div>' +
 
@@ -2080,6 +2090,8 @@ fontManagerSource +
 require('./config/config-preview') +
 
 configBackground.backgroundScript(current) +
+configDownloaded.downloadedScript(current) +
+configMarkerPopup.popupScript(current) +
 configBorder.borderScript() +
 
 'var CONTENT_SELECT_IDS = ["cornerTL", "cornerTR", "cornerBL", "cornerBR", ' +
@@ -2452,10 +2464,10 @@ configPlugins.pluginScript(current, platform.suffix) +
 '  updatePreview();' +
 '}' +
 'function onMarkerStyleChange() {' +
+'  indexMarginTrackStyle();' +
 '  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
 '  applyMarkerStylePresetToCustom(val);' +
 '  refreshEditButtonLabels();' +
-'  document.getElementById("customMarkerSection").style.display = (val === "8") ? "" : "none";' +
 '  var isBitmap = isBitmapMarkerStyleId(parseInt(val, 10));' +
 '  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
 '  document.getElementById("bitmapMarkerInvertRow").style.display = (isBitmap && ' + (platform.bw ? 'false' : 'true') + ') ? "" : "none";' +
@@ -2487,6 +2499,36 @@ configPlugins.pluginScript(current, platform.suffix) +
 '    document.getElementById("middleRightLine1Shake").value = "0";' +
 '    document.getElementById("middleRightLine2Shake").value = "0";' +
 '  }' +
+'}' +
+'var INDEX_MARGIN_TABLE = ' + JSON.stringify(indexMarginTables.current) + ';' +
+'var indexMarginLastStyle = ' + JSON.stringify(String(current.lastIndexStyle || '3')) + ';' +
+'var indexMarginTouched = ' + (indexMarginTouched ? 'true' : 'false') + ';' +
+'var INDEX_MARGIN_IDS = ["indexMarginTop", "indexMarginBottom", "indexMarginLeft", "indexMarginRight"];' +
+// The values that belong to the chosen indices: the table, the downloaded set\'s metadata, else the last table style\'s.
+'function indexMarginPreset() {' +
+'  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
+'  if (INDEX_MARGIN_TABLE[val]) return INDEX_MARGIN_TABLE[val];' +
+'  if (val === "20" && dlCurrent && dlCurrent.meta && dlCurrent.meta.margins) return dlCurrent.meta.margins;' +
+'  return INDEX_MARGIN_TABLE[indexMarginLastStyle] || INDEX_MARGIN_TABLE["3"] || [40, 40, 40, 40];' +
+'}' +
+'function indexMarginTrackStyle() {' +
+'  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
+'  if (INDEX_MARGIN_TABLE[val]) indexMarginLastStyle = val;' +
+'}' +
+'function indexMarginSet(values) {' +
+'  INDEX_MARGIN_IDS.forEach(function (id, i) {' +
+'    document.getElementById(id).value = values[i];' +
+'    document.getElementById(id + "Val").textContent = values[i] + "px";' +
+'  });' +
+'}' +
+'function onIndexMarginInput(el) {' +
+'  indexMarginTouched = true;' +
+'  document.getElementById(el.id + "Val").textContent = el.value + "px";' +
+'}' +
+'function onIndexMarginAutoChange() {' +
+'  var auto = document.getElementById("indexMarginAuto").checked;' +
+'  document.getElementById("indexMarginSliders").style.display = auto ? "none" : "";' +
+'  if (!auto && !indexMarginTouched) indexMarginSet(indexMarginPreset());' +
 '}' +
 'function onBitmapCornerOverrideChange() {' +
 '  clearGrayedSlotsIfUnavailable();' +
@@ -2612,10 +2654,6 @@ configPlugins.pluginScript(current, platform.suffix) +
 '  document.getElementById(p + "OuterBorder").min = document.getElementById(p + "InnerBorder").value;' +
 '  updateCustomMarkerValLabels(kind);' +
 '  updateCustomMarkerRowVisibility(kind);' +
-'  document.getElementById("customMarkerModal-" + kind).className = "modal-overlay open";' +
-'}' +
-'function closeCustomMarkerEditor(kind) {' +
-'  document.getElementById("customMarkerModal-" + kind).className = "modal-overlay";' +
 '}' +
 'function saveCustomMarkerEditor(kind) {' +
 '  var hp = cmHiddenPrefix(kind), p = cmPopupPrefix(kind);' +
@@ -2628,7 +2666,6 @@ configPlugins.pluginScript(current, platform.suffix) +
 '    if (isNone && f === "Thickness") { hidden.value = "0"; return; }' +
 '    hidden.value = (CM_CHECKBOX_FIELDS.indexOf(f) !== -1) ? String(popupEl.checked) : popupEl.value;' +
 '  });' +
-'  closeCustomMarkerEditor(kind);' +
 '  refreshEditButtonLabels();' +
 '  updatePreview();' +
 '}' +
@@ -2688,12 +2725,7 @@ configPlugins.pluginScript(current, platform.suffix) +
 '    "Shows I, II, III... instead of 1, 2, 3... -- independent of the font above.";' +
 '  updatePreview();' +
 '}' +
-'function openTextMarkerEditor() {' +
-'  document.getElementById("textMarkerModal").className = "modal-overlay open";' +
-'}' +
-'function closeTextMarkerEditor() {' +
-'  document.getElementById("textMarkerModal").className = "modal-overlay";' +
-'}' +
+
 'function openCenterCircleEditor() {' +
 '  document.getElementById("centerCircleModal").className = "modal-overlay open";' +
 '}' +
@@ -2837,12 +2869,14 @@ configPlugins.pluginScript(current, platform.suffix) +
 '  var bmp = MARKER_BITMAP_STYLES.concat(MARKER_VARIANT_STYLES).filter(function (s) { return s.value === val; })[0];' +
 '  var img = null, isBitmap = false;' +
 '  if (bmp) { img = MARKER_PREVIEW_IMAGES[val]; isBitmap = true; }' +
+'  else if (val === "20") { img = MARKER_PREVIEW_IMAGES["20"] || null; isBitmap = true; }' +
+'  else if (val === "8") { img = msGenImage(); }' +
 '  else {' +
 '    var preset = MARKER_PRESET_STYLES.filter(function (s) { return s.value === val; })[0];' +
 '    if (preset) img = MARKER_PRESET_IMAGES[preset.image];' +
 '  }' +
 '  setPreviewThumbnail("subsecpreview-indices", img ? (\'<img class="\' + "bitmap-marker-img" + \'" src="\' + img + \'" alt="">\') : "");' +
-'  var title = MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom";' +
+'  var title = val === "8" ? msCurrentName() : (MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom");' +
 '  setSubsubheaderText("indices", val === "0" ? "No indices" : title + " indices");' +
 '}' +
 
@@ -2855,58 +2889,18 @@ configPlugins.pluginScript(current, platform.suffix) +
 '];' +
 'var MARKER_VARIANT_STYLES = ' + JSON.stringify(MARKER_VARIANT_STYLES) + ';' +
 'var MARKER_PRESET_STYLES = [' +
-'  { value: "9", title: "Classy", image: "classy" },' +
 '  { value: "10", title: "Minimal", image: "minimal" },' +
+'  { value: "9", title: "Classy", image: "classy" },' +
 '  { value: "1", title: "Braun", image: "braun" },' +
 '  { value: "2", title: "Swiss", image: "swiss" }' +
 '];' +
-'var MARKER_STYLE_TITLES = { "0": "None", "8": "Custom" };' +
+'var MARKER_STYLE_TITLES = { "0": "None", "8": "Custom", "20": "Downloaded" };' +
 'MARKER_BITMAP_STYLES.concat(MARKER_PRESET_STYLES, MARKER_VARIANT_STYLES).forEach(function (s) { MARKER_STYLE_TITLES[s.value] = s.title; });' +
 'function updateMarkerStyleButtonLabel() {' +
 '  var span = document.getElementById("markerStyleTriggerLabel");' +
 '  if (!span) return;' +
 '  var val = document.getElementById("bigAnalogMarkerStyle").value;' +
-'  span.textContent = MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom";' +
-'}' +
-'function renderMarkerStyleGrid() {' +
-'  var grid = document.getElementById("markerStyleGrid");' +
-'  if (!grid) return;' +
-'  var html = "";' +
-'  MARKER_BITMAP_STYLES.forEach(function (s) {' +
-'    var img = MARKER_PREVIEW_IMAGES[s.value];' +
-'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
-'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
-'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
-'  });' +
-'  MARKER_PRESET_STYLES.forEach(function (s) {' +
-'    var img = MARKER_PRESET_IMAGES[s.image];' +
-'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
-'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
-'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
-'  });' +
-'  MARKER_VARIANT_STYLES.forEach(function (s) {' +
-'    var img = MARKER_PREVIEW_IMAGES[s.value];' +
-'    html += \'<button type="button" class="style-picker-btn" onclick="chooseMarkerStyle(\\\'\' + s.value + \'\\\')">\' +' +
-'      (img ? \'<img class="bitmap-marker-img" src="\' + img + \'" alt="\' + s.title + \'">\' : \'<span class="style-picker-btn-empty">\' + s.title + "</span>") +' +
-'      \'<span class="style-picker-btn-cap">\' + s.title + "</span></button>";' +
-'  });' +
-'  grid.innerHTML = html;' +
-'}' +
-'function openMarkerStyleModal() {' +
-'  document.getElementById("markerStyleModal").className = "modal-overlay open";' +
-'}' +
-'function closeMarkerStyleModal() {' +
-'  document.getElementById("markerStyleModal").className = "modal-overlay";' +
-'}' +
-'function chooseMarkerStyle(value) {' +
-'  document.getElementById("bigAnalogMarkerStyle").value = value;' +
-'  onMarkerStyleChange();' +
-'  closeMarkerStyleModal();' +
-'}' +
-'function chooseMarkerStyleCustom() {' +
-'  document.getElementById("bigAnalogMarkerStyle").value = "8";' +
-'  onMarkerStyleChange();' +
-'  closeMarkerStyleModal();' +
+'  span.textContent = val === "8" ? msCurrentName() : (MARKER_STYLE_TITLES.hasOwnProperty(val) ? MARKER_STYLE_TITLES[val] : "Custom");' +
 '}' +
 'function onShadowAngleInput() {' +
 '  var el = document.getElementById("shadowAngle");' +
@@ -2971,6 +2965,10 @@ configPlugins.pluginScript(current, platform.suffix) +
 '    }' +
 '    if (el.type === "checkbox") el.checked = !!obj[id]; else el.value = obj[id];' +
 '  });' +
+'  if (obj.indexMarginAuto === undefined) document.getElementById("indexMarginAuto").checked = true;' +
+'  indexMarginTouched = obj.indexMarginTop !== undefined;' +
+'  if (obj.indexMarginTop !== undefined) indexMarginSet([obj.indexMarginTop, obj.indexMarginBottom, obj.indexMarginLeft, obj.indexMarginRight]);' +
+'  onIndexMarginAutoChange();' +
 '  startupAnimSync();' +
 '  selectVerticalOption("bgAnimModeGroup", "bgAnimMode", document.getElementById("bgAnimMode").value);' +
 '  selectVerticalOption("shakeAnimModeGroup", "shakeAnimMode", document.getElementById("shakeAnimMode").value);' +
@@ -3223,6 +3221,7 @@ configPresetSchedule.clientJs(current.scheduleKnownIds) +
 '  return "Off";' +
 '}' +
 'function refreshEditButtonLabels() {' +
+'  if (typeof msEditChanged === "function") msEditChanged();' +
 '  ["hour", "min", "sec"].forEach(function (kind) {' +
 '    var el = document.getElementById(heHiddenPrefix(kind) + "Style");' +
 '    var span = document.getElementById("hand" + kind.charAt(0).toUpperCase() + kind.slice(1) + "StatusLabel");' +

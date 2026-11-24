@@ -141,6 +141,11 @@ void feature_layout_recompute(FeaturesState *state) {
     if (right_reach > dyn_right_inset) dyn_right_inset = right_reach;
   }
 
+  if (d->index_margins[0]) { // set by hand, or by the metadata of a downloaded index
+    dyn_upper_offset = d->index_margins[1]; dyn_bottom_shift = d->index_margins[2];
+    dyn_left_inset = d->index_margins[3]; dyn_right_inset = d->index_margins[4];
+  }
+
   {
     bool has_line2 = primitive_sequence_enabled(d->edge_line_primitive_ids[1]);
     int16_t line1_offset = has_line2 ? dyn_upper_offset : dyn_upper_offset + CORNER_ROW_H / 2;

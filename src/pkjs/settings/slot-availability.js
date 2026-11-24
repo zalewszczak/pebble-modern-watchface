@@ -10,7 +10,7 @@
 // lines, and cornersGrayed means the four corner complications are not allowed.
 function computeSlotAvailability(markerStyle, override, env) {
   var style = markerStyle;
-  var bitmap = (style >= 3 && style <= 7) || (style >= 11 && style <= 19);
+  var bitmap = (style >= 3 && style <= 7) || (style >= 11 && style <= 20);
   var avail;
   if (env.round) return { upper: true, bottom: true, left: true, right: true, cornersGrayed: true };
   if (env.bw) {

@@ -88,7 +88,7 @@ var MARKER_STYLE_CUSTOM = 8;
 var MARKER_STYLE_DEFAULT = 3;
 function storedMarkerStyleId() {
   var id = parseInt(getSetting('CONFIG_BIG_ANALOG_MARKER_STYLE', String(MARKER_STYLE_DEFAULT)), 10);
-  if (isNaN(id) || id < 0 || id > 19) id = MARKER_STYLE_DEFAULT;
+  if (isNaN(id) || id < 0 || id > 20) id = MARKER_STYLE_DEFAULT;
   return id;
 }
 function activeMarkerPresetFields() {
@@ -100,6 +100,25 @@ function bigAnalogMarkerStyleCode() {
 }
 function bitmapMarkerInvertCode() { return getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true' ? 1 : 0; }
 function bitmapMarkerTransparentCode() { return getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true' ? 1 : 0; }
+
+// Complication spacing around the indices as the watch gets it: [active, top, bottom, left, right]. Active when set
+// by hand, or when the downloaded indices come with margins of their own (else the last bitmap indices style's).
+function indexMarginsBytes() {
+  var manual = getSetting('CONFIG_INDEX_MARGIN_AUTO', 'true') === 'false';
+  var clamp = function (v, d) { var n = parseInt(v, 10); return isNaN(n) ? d : Math.max(0, Math.min(255, n)); };
+  if (manual) {
+    var fallback = require('../data/index-margins').forStyle(3) || [40, 40, 40, 40];
+    return [1, clamp(getSetting('CONFIG_INDEX_MARGIN_TOP', ''), fallback[0]), clamp(getSetting('CONFIG_INDEX_MARGIN_BOTTOM', ''), fallback[1]),
+      clamp(getSetting('CONFIG_INDEX_MARGIN_LEFT', ''), fallback[2]), clamp(getSetting('CONFIG_INDEX_MARGIN_RIGHT', ''), fallback[3])];
+  }
+  if (storedMarkerStyleId() === 20) {
+    var cur = require('../bg-image/marker-image-sync').current();
+    var m = cur && cur.meta && cur.meta.margins;
+    if (!m) { var t = require('../data/index-margins'); m = t.forStyle(parseInt(getSetting('CONFIG_LAST_INDEX_STYLE', '3'), 10)) || t.forStyle(3); }
+    if (m) return [1, m[0], m[1], m[2], m[3]];
+  }
+  return [0, 0, 0, 0, 0];
+}
 
 function drawFeaturesBeneathHandsCode() { return getSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'false') === 'true' ? 1 : 0; }
 
@@ -478,6 +497,7 @@ function shakeOnlyMaskCode() {
 }
 
 module.exports = {
+  indexMarginsBytes: indexMarginsBytes,
   shakeOnlyMaskCode: shakeOnlyMaskCode,
   edgeCustomPrimsStrings: edgeCustomPrimsStrings,
   EDGE_CUSTOM_PRIMS_SLOTS: EDGE_CUSTOM_PRIMS_SLOTS,

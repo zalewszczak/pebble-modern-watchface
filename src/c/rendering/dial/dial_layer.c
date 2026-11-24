@@ -1,3 +1,4 @@
+#include "./marker_download.h"
 #include "./dial_layer.h"
 #include "./dial_animation.h"
 #include "./marker_layer.h"
@@ -63,6 +64,7 @@ static uint32_t dial_static_signature(const WatchData *d, GSize size,
   h = sig_mix(h, ((uint32_t)d->marker_text.hour_mask << 16) | d->marker_text.second_mask);
   // Custom background image (selection, or the uploaded image's stamp).
   h = sig_mix(h, bg_image_signature(d));
+  h = sig_mix(h, d->big_analog_marker_style == MARKER_STYLE_DOWNLOADED ? marker_download_stamp() : 0);
   h = sig_mix(h, d->bg_translucent ? 1u : 0u);
   // Weather border (colours already fold in the current hour and the forecast). The "no data yet" /
   // "fetching" placeholders are not part of the cache: they are drawn over it (see dial_update_proc).
@@ -123,7 +125,7 @@ static void dial_draw_cached(Layer *layer, GContext *ctx, DialState *state, GRec
                              const WeatherBorderLook *border_in, bool border_on) {
   const WeatherBorderLook border = *border_in;
   // The launch animation moves the indices every frame, so it cannot use the normal cache.
-  bool animating = state->anim_active && d->bg_anim_mode >= 1;
+  bool animating = state->anim_active; // also replays after a style change, whatever the launch setting
   if (animating) {
     dial_draw_animation_frame(layer, ctx, state, bounds, origin, d, bg, main_color, accent_color, &border, border_on);
     return;

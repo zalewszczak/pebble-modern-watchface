@@ -122,6 +122,11 @@ typedef struct {
   // Swiss/Classy/None presets are resolved into ring + text values first.)
   uint8_t big_analog_marker_style;
 
+  // Complication spacing around the indices, sent by the phone: [0] = 1 when the values replace the automatic ones (a
+  // manual setting, or the metadata of a downloaded index), then top, bottom, left, right in pixels.
+  uint8_t index_margins[5];
+  uint32_t marker_apply_tick; // changes whenever the user applies an indices style in the settings: the watch plays the build-up animation
+
   bool bitmap_marker_transparent; // draw the bitmap marker with a translucent tint.
   bool bitmap_marker_invert;      // blend the bitmap marker into the background as a black/white contrast colour.
 

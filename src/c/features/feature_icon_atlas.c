@@ -2,6 +2,7 @@
 #include "./feature_icon_assets.h"
 #include "./primitives/startup_flip.h"
 #include "../rendering/render_math.h"
+#include <stdlib.h>
 
 #define CELL_H PL_ICON_DRAW
 #define SLIDE_MS 1400       // length of the slide (ease-out, so the last part is slow)
@@ -118,14 +119,86 @@ void icon_atlas_draw(GContext *ctx, GPoint pos, uint8_t cell, IconAnim *anim, ui
   }
 }
 
+#ifdef PBL_COLOR
+static GPoint s_origin; // screen position of the layer being painted
+
+// Slide state of a position that shows a code-drawn icon: it slides in only at start-up ("animate complications"),
+// when its position is seen for the first time. Returns the part of the way still to go, 1000 .. 0.
+int16_t icon_atlas_blank_left(IconAnim *a) {
+  if (a->cell != ICON_ANIM_BLANK) {
+    bool startup = a->cell == 0 && startup_flip_active();
+    a->cell = ICON_ANIM_BLANK;
+    a->from = startup ? ICON_ANIM_BLANK : 0;
+    a->start = s_now;
+  }
+  if (a->from != ICON_ANIM_BLANK) return 0;
+  uint16_t elapsed = (uint16_t)(s_now - a->start);
+  if (elapsed >= SLIDE_MS) { a->from = 0; return 0; }
+  s_sliding = true;
+  return (int16_t)(1000 - render_math_ease_out_1000((int32_t)elapsed * 1000 / SLIDE_MS));
+}
+
+// The framebuffer pixel at screen (x, y), NULL when outside the screen (round screens have shorter rows).
+static uint8_t *fb_px(GBitmap *fb, int16_t x, int16_t y) {
+  if (y < 0 || y >= gbitmap_get_bounds(fb).size.h) return NULL;
+  GBitmapDataRowInfo ri = gbitmap_get_data_row_info(fb, y);
+  return (x < ri.min_x || x > ri.max_x) ? NULL : &ri.data[x];
+}
+
+uint8_t *icon_slide_capture(GContext *ctx, GRect r) {
+  uint8_t *bg = malloc((size_t)r.size.w * r.size.h);
+  if (!bg) return NULL;
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+  if (!fb) { free(bg); return NULL; }
+  for (int16_t y = 0; y < r.size.h; y++) {
+    for (int16_t x = 0; x < r.size.w; x++) {
+      uint8_t *p = fb_px(fb, s_origin.x + r.origin.x + x, s_origin.y + r.origin.y + y);
+      bg[y * r.size.w + x] = p ? *p : 0;
+    }
+  }
+  graphics_release_frame_buffer(ctx, fb);
+  return bg;
+}
+
+void icon_slide_apply(GContext *ctx, GRect r, uint8_t *bg, int16_t left) {
+  GBitmap *fb = graphics_capture_frame_buffer(ctx);
+  if (fb) {
+    int16_t shift = (int16_t)(r.size.h * left / 1000);
+    int16_t ox = s_origin.x + r.origin.x, oy = s_origin.y + r.origin.y;
+    // Bottom row first: every row takes its pixels from a row above it, which is still untouched. A pixel the icon
+    // drew (it differs from the background behind it) moves down by `shift`; everything else is the background.
+    for (int16_t y = r.size.h - 1; y >= 0; y--) {
+      int16_t sy = y - shift;
+      for (int16_t x = 0; x < r.size.w; x++) {
+        uint8_t *d = fb_px(fb, ox + x, oy + y);
+        if (!d) continue;
+        uint8_t out = bg[y * r.size.w + x];
+        if (sy >= 0) {
+          uint8_t *s = fb_px(fb, ox + x, oy + sy);
+          if (s && *s != bg[sy * r.size.w + x]) out = *s;
+        }
+        *d = out;
+      }
+    }
+    graphics_release_frame_buffer(ctx, fb);
+  }
+  free(bg);
+}
+#endif
+
 static void slide_frame(void *context) {
   s_timer = NULL;
   layer_mark_dirty((Layer *)context);
 }
 
-void icon_atlas_begin_paint(void) {
+void icon_atlas_begin_paint(Layer *layer) {
   s_now = clock_ms16();
   s_sliding = false;
+#ifdef PBL_COLOR
+  s_origin = layer_convert_point_to_screen(layer, GPointZero);
+#else
+  (void)layer;
+#endif
 }
 
 void icon_atlas_end_paint(Layer *layer) {

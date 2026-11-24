@@ -13,6 +13,7 @@ var sendFlatDict = messageEncoder.sendFlatDict;
 var buildFullKeysetDict = messageEncoder.buildFullKeysetDict;
 var messageQueue = require('./comms/message-queue');
 var bgImageSync = require('./bg-image/bg-image-sync');
+var markerImageSync = require('./bg-image/marker-image-sync');
 var pluginBg = require('./bg-image/plugin-bg');
 var enqueueFlatDict = messageQueue.enqueueFlatDict;
 var refreshManager = require('./refresh-manager');
@@ -86,6 +87,7 @@ Pebble.addEventListener('appmessage', function (e) {
   if (e && e.payload && e.payload.REQUEST_UPDATE) {
     refreshAndSend(false, true);
     bgImageSync.syncIfNeeded();
+    try { markerImageSync.syncIfNeeded(); } catch (err) { console.log('modern: downloaded index sync failed - ' + err.message); }
   }
   if (e && e.payload && e.payload.BATTERY_SAVER_PHASE !== undefined) {
     refreshManager.setBatterySaverPhase(e.payload.BATTERY_SAVER_PHASE);
@@ -161,9 +163,17 @@ function buildCurrent() {
     borderWeatherShake: getSetting('CONFIG_BORDER_WEATHER_SHAKE', 'false') === 'true',
     borderWeatherSemi: getSetting('CONFIG_BORDER_WEATHER_SEMI', 'false') === 'true',
     bgSlots: bgImageSync.getSlots(),
+    dlIndex: markerImageSync.current(),
+    dlLibrary: markerImageSync.library(),
+    markerApplyTick: getSetting('CONFIG_MARKER_APPLY_TICK', '0'),
+    userMarkerPresets: (function () { try { var a = JSON.parse(getSetting('CONFIG_USER_MARKER_PRESETS', '[]')); return Array.isArray(a) ? a : []; } catch (e) { return []; } })(),
     bitmapMarkerTransparent: getSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', 'false') === 'true',
     bitmapMarkerInvert: getSetting('CONFIG_BITMAP_MARKER_INVERT', 'false') === 'true',
     bitmapCornerOverride: getSetting('CONFIG_BITMAP_CORNER_OVERRIDE', 'false') === 'true',
+    indexMarginAuto: getSetting('CONFIG_INDEX_MARGIN_AUTO', 'true') !== 'false',
+    indexMargins: [getSetting('CONFIG_INDEX_MARGIN_TOP', ''), getSetting('CONFIG_INDEX_MARGIN_BOTTOM', ''),
+      getSetting('CONFIG_INDEX_MARGIN_LEFT', ''), getSetting('CONFIG_INDEX_MARGIN_RIGHT', '')],
+    lastIndexStyle: getSetting('CONFIG_LAST_INDEX_STYLE', '3'),
     drawFeaturesBeneathHands: getSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', 'false') === 'true',
     customHourStyle: getSetting('CONFIG_CUSTOM_HOUR_STYLE', '0'),
     customHourThickness: getSetting('CONFIG_CUSTOM_HOUR_THICKNESS', '3'),
@@ -465,9 +475,21 @@ function applySettingsObject(settings) {
   setSetting('CONFIG_BORDER_WEATHER_SEMI', settings.CONFIG_BORDER_WEATHER_SEMI ? 'true' : 'false');
   setSetting('CONFIG_BORDER_WEATHER_PX', String(Math.max(2, Math.min(40, parseInt(settings.CONFIG_BORDER_WEATHER_PX, 10) || 8))));
   bgImageSync.applySlotUpdates(settings.CONFIG_BG_SLOT_UPDATES);
+  markerImageSync.applyLibraryOps(settings.CONFIG_DL_LIBRARY_OPS);
+  markerImageSync.applyUpdate(settings.CONFIG_DL_INDEX_UPDATE);
+  if (settings.CONFIG_MARKER_APPLY_TICK !== undefined) setSetting('CONFIG_MARKER_APPLY_TICK', String(parseInt(settings.CONFIG_MARKER_APPLY_TICK, 10) || 0));
+  if (Array.isArray(settings.CONFIG_USER_MARKER_PRESETS)) setSetting('CONFIG_USER_MARKER_PRESETS', JSON.stringify(settings.CONFIG_USER_MARKER_PRESETS.slice(0, 24)));
   setSetting('CONFIG_BITMAP_MARKER_TRANSPARENT', settings.CONFIG_BITMAP_MARKER_TRANSPARENT ? 'true' : 'false');
   setSetting('CONFIG_BITMAP_MARKER_INVERT', settings.CONFIG_BITMAP_MARKER_INVERT ? 'true' : 'false');
   setSetting('CONFIG_BITMAP_CORNER_OVERRIDE', settings.CONFIG_BITMAP_CORNER_OVERRIDE ? 'true' : 'false');
+  setSetting('CONFIG_INDEX_MARGIN_AUTO', settings.CONFIG_INDEX_MARGIN_AUTO === false ? 'false' : 'true');
+  setSetting('CONFIG_INDEX_MARGIN_TOP', String(settings.CONFIG_INDEX_MARGIN_TOP === undefined ? '' : settings.CONFIG_INDEX_MARGIN_TOP));
+  setSetting('CONFIG_INDEX_MARGIN_BOTTOM', String(settings.CONFIG_INDEX_MARGIN_BOTTOM === undefined ? '' : settings.CONFIG_INDEX_MARGIN_BOTTOM));
+  setSetting('CONFIG_INDEX_MARGIN_LEFT', String(settings.CONFIG_INDEX_MARGIN_LEFT === undefined ? '' : settings.CONFIG_INDEX_MARGIN_LEFT));
+  setSetting('CONFIG_INDEX_MARGIN_RIGHT', String(settings.CONFIG_INDEX_MARGIN_RIGHT === undefined ? '' : settings.CONFIG_INDEX_MARGIN_RIGHT));
+  if (settings.CONFIG_BIG_ANALOG_MARKER_STYLE !== undefined && require('./data/index-margins').forStyle(parseInt(settings.CONFIG_BIG_ANALOG_MARKER_STYLE, 10))) {
+    setSetting('CONFIG_LAST_INDEX_STYLE', String(parseInt(settings.CONFIG_BIG_ANALOG_MARKER_STYLE, 10)));
+  }
   setSetting('CONFIG_DRAW_FEATURES_BENEATH_HANDS', settings.CONFIG_DRAW_FEATURES_BENEATH_HANDS ? 'true' : 'false');
   setSetting('CONFIG_CUSTOM_HOUR_STYLE', settings.CONFIG_CUSTOM_HOUR_STYLE || '0');
   setSetting('CONFIG_CUSTOM_HOUR_THICKNESS', settings.CONFIG_CUSTOM_HOUR_THICKNESS || '3');
@@ -629,6 +651,7 @@ function applySettingsObject(settings) {
   sendFlatDict({});
   pluginBg.apply();
   bgImageSync.syncIfNeeded();
+  try { markerImageSync.syncIfNeeded(); } catch (err) { console.log('modern: downloaded index sync failed - ' + err.message); }
 
   scheduleRefresh();
   // Changing the weather source must show its data now, not after the next scheduled fetch: force

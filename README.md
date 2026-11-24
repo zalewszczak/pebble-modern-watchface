@@ -247,3 +247,29 @@ See `round_support.md` for the full plan and status.
 ## Icon atlases
 
 Complication icons (all three icon styles, weather, bell, Quiet Time, Bluetooth, sleep, sky...) live in one atlas strip per style (`resources/{common,legacy}/images/atlas_<style>.png`) instead of one resource each. The single PNGs in `resources/*/images/<style>/` are still the editable art: after changing one, run `python3 scripts/generate-icon-atlas.py` (also part of `node scripts/generate-all.js`) and rebuild. New icons: add the PNG to every style folder, append its name to `CELLS` in the script, use `ICON_CELL_<NAME>` in `feature_icons.c`. Changing an icon on the watch slides the new one in through `feature_icon_atlas.c`.
+
+## Indices style popup
+One popup with a one-line tab row: NONE, BITMAP, CUSTOM (Minimal, Classy, Braun, Swiss, the user's own saved designs and a
+"design your own" tile), EDIT (pinned preview, expandable hour/seconds/numerals editors, "Save to CUSTOM"), MORE (GitHub indices) and UPLOAD
+(the user's PNGs). The first four tabs apply instantly (no Save/Cancel); MORE/UPLOAD stage a pick and send it with "Send selected to watch". Saved designs live on the phone
+(`CONFIG_USER_MARKER_PRESETS`). Applying a procedural style bumps `CONFIG_MARKER_APPLY_TICK`, which makes the watch replay the
+hour/seconds indices animation. Code: `src/pkjs/config/config-marker-popup.js`.
+
+## Downloaded indices
+Indices style "Downloaded" (id 20) shows a 1-bit index image picked in the settings page from the repository folder
+`resources/extras/{round,square,legacy}/indices` (gabbro, emery, B&W). The page converts the PNG (alpha >= 128 = ink) to a
+GBitmap 1BitPalette mask, the phone (`src/pkjs/bg-image/marker-image-sync.js`) stores it per platform and sends it as
+slot 11 of the BG_IMG messages; the watch (`src/c/rendering/dial/marker_download.c`) keeps it in persistent storage and
+draws it like the built-in index bitmaps. Only add new files to the folder (the picked one is remembered by file name).
+If the watch app's storage is wiped, open the popup and save again to resend.
+
+## Complications spacing
+`INDEX_MARGINS` (message key, 5 bytes: active, top, bottom, left, right) overrides the automatic spacing around the indices
+(`feature_layout.c`). The settings page's "Automatic complications spacing from indices" checkbox and four sliders
+(`indexMargin*`, part of My styles, stored per platform) set it by hand; with "Downloaded" indices the margins come from
+`indices.json` in the GitHub folder (see `resources/extras/README.md`), else from the last bitmap indices style used.
+`src/pkjs/data/index-margins.js` mirrors the C table (a test keeps them equal).
+
+The Downloaded popup also has "Your indices": PNGs the user uploads (exactly the screen size, white on transparent, no
+semi-transparency). They are checked and converted on the settings page, kept in the phone's storage (`DL_LIBRARY`,
+max 12, per platform, `marker-image-sync.js`) and only the selected one is sent to the watch.

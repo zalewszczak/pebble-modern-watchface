@@ -36,7 +36,7 @@ function deriveConfigState(current) {
   }
 
   var markerStyleNum = parseInt(current.bigAnalogMarkerStyle || '3', 10);
-  var isBitmapMarkerStyle = (markerStyleNum >= 3 && markerStyleNum <= 7) || (markerStyleNum >= 11 && markerStyleNum <= 19);
+  var isBitmapMarkerStyle = (markerStyleNum >= 3 && markerStyleNum <= 7) || (markerStyleNum >= 11 && markerStyleNum <= 20);
   if (markerStyleNum >= 11) markerStyleNum = 7;
   var bitmapCornerOverride = !!current.bitmapCornerOverride;
   var rawMarkerStyle = parseInt(current.bigAnalogMarkerStyle || '3', 10);

@@ -253,7 +253,7 @@ function estimateBatteryUsage(s, env) {
   if (startupMode & 1) add('startup_hands', 'Startup hand animation', K.STARTUP_HANDS,
       'The hands sweep in for 1.4 s at 25 frames per second.', STAR_LAUNCH);
   var markerStyle = parseInt(s.CONFIG_BIG_ANALOG_MARKER_STYLE, 10);
-  var bitmapMarker = (markerStyle >= 3 && markerStyle <= 7) || (markerStyle >= 11 && markerStyle <= 19);
+  var bitmapMarker = (markerStyle >= 3 && markerStyle <= 7) || (markerStyle >= 11 && markerStyle <= 20);
   var idxAnim = parseInt(s.CONFIG_BG_ANIM_MODE, 10);
   if ((idxAnim === 1 || idxAnim === 2) && !bitmapMarker) add('startup_index', 'Startup index animation', K.STARTUP_INDEX,
       'The indices animate in for 1.4 s at 25 frames per second.', STAR_LAUNCH);

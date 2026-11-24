@@ -15,7 +15,7 @@ static void features_layer_update_proc(Layer *layer, GContext *ctx) {
   GFont font = feature_controller_font(state->data->corner_font);
   int16_t font_h = font_lookup_height(state->data->corner_font);
   int16_t font_offset = font_lookup_y_offset(state->data->corner_font);
-  icon_atlas_begin_paint();
+  icon_atlas_begin_paint(layer);
   for (int i = 0; i < FEATURES_MAX_SLOTS; i++) {
     feature_render_draw_slot(ctx, bounds, &state->slots[i], state->icon_anim[i], font, font_h, font_offset,
                              state->data->outline_style, state->data->icon_style,

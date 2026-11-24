@@ -195,6 +195,14 @@ static void comms_data_applied(CommsChangeFlags changes, void *context) {
 
   if (changes & COMMS_CHANGE_LAYOUT) layout_controller_apply();
   if (layout_controller_dial_layer()) dial_layer_set_data(layout_controller_dial_layer(), &s_data);
+  // The user applied an indices style in the settings: build the drawn indices up like the launch animation does.
+  static uint32_t s_last_apply_tick;
+  static bool s_have_apply_tick;
+  if (s_have_apply_tick && s_data.marker_apply_tick != s_last_apply_tick && layout_controller_dial_layer()) {
+    dial_animation_replay(&s_data, layout_controller_dial_layer());
+  }
+  s_last_apply_tick = s_data.marker_apply_tick;
+  s_have_apply_tick = true;
   if (layout_controller_bg_progress_layer()) layer_mark_dirty(layout_controller_bg_progress_layer());
   if (layout_controller_hands_layer()) layer_mark_dirty(layout_controller_hands_layer());
   if (layout_controller_features_layer() && (changes & COMMS_CHANGE_FEATURES)) {

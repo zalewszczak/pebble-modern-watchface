@@ -48,6 +48,8 @@
             "air-quality-api.open-meteo.com",
             "services.swpc.noaa.gov",
             "celestrak.org",
+            "api.github.com",
+            "raw.githubusercontent.com",
             "nominatim.openstreetmap.org",
             "fonts.googleapis.com",
             "fonts.gstatic.com",
@@ -112,7 +114,9 @@
       "MEDIA_INFO",
       "PHONE_SLOTS",
       "MEDIA_ART",
-      "BEEP_PREVIEW"
+      "BEEP_PREVIEW",
+      "INDEX_MARGINS",
+      "MARKER_APPLY_TICK"
     ],
     "resources": {
       "media": [

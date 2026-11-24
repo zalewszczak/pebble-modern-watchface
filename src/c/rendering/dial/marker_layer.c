@@ -1,5 +1,6 @@
 #include "./marker_layer.h"
 #include "../render_math.h"
+#include "../../platform/platform_bw.h"
 #include "./marker_bitmap.h"
 #include "./marker_text.h"
 #include <string.h>
@@ -229,6 +230,12 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
                               const WatchData *d, GColor main_color, GColor accent_color, GColor bg_color,
                               MarkerDrawPart part, bool anim_active, int32_t anim_progress_1000, bool draw_debug) {
   uint8_t marker_style = d->big_analog_marker_style;
+
+  if (marker_style == MARKER_STYLE_DOWNLOADED) { // drawn straight from storage, no bitmap
+    marker_bitmap_release(&state->bitmap, &state->bitmap_style, &state->bitmap_tinted);
+    marker_download_draw(ctx, screen, PBL_IF_BW_ELSE(bw_color(main_color), main_color));
+    return;
+  }
 
   bool is_bitmap_style = marker_style_is_bitmap(marker_style);
 

@@ -23,10 +23,22 @@ void icon_atlas_set_blank(IconAnim *anim);
 
 // Per paint of the complications layer: begin before the first icon, end after the last. `end` frees the atlases
 // (they are only kept for the duration of one paint) and, while an icon is sliding, schedules the next paint of `layer`.
-void icon_atlas_begin_paint(void);
+void icon_atlas_begin_paint(Layer *layer);
 void icon_atlas_end_paint(Layer *layer);
 // Stops the animation timer (layer going away).
 void icon_atlas_deinit(void);
+
+#ifdef PBL_COLOR
+// Start-up slide for icons that are drawn by code (battery, moon, compass...; colour watches only, the black-and-white
+// ones are size-limited and just show them). Around the normal drawing call:
+//   left = icon_atlas_blank_left(anim);                // 1000 -> 0 during the slide, 0 = nothing to do
+//   bg = left ? icon_slide_capture(ctx, r) : NULL;     // copy the pixels behind the icon (r in layer coordinates)
+//   ...draw the icon as usual...
+//   if (bg) icon_slide_apply(ctx, r, bg, left);        // move what the icon drew up from below; frees bg
+int16_t icon_atlas_blank_left(IconAnim *anim);
+uint8_t *icon_slide_capture(GContext *ctx, GRect r);
+void icon_slide_apply(GContext *ctx, GRect r, uint8_t *bg, int16_t left);
+#endif
 
 // Draws atlas icon `cell` at `pos`, w x h pixels (h = PL_ICON_DRAW), in icon style `style` (0 simple, 1 hollow, 2 full
 // color; tinted with `color` except full color), with the outline pass when outline_style != 0. `anim` (may be NULL)
