@@ -1,11 +1,11 @@
-// "Hour/seconds indices style" popup: one popup with a tab selector (None / Bitmaps / Procedural / Edit / More / Upload).
+// "Hour/seconds indices style" popup: one popup with a tab selector (None / Preloaded / Procedural / Edit / More / Upload).
 // The browser code is written as a normal function and injected into the page as text (see popupScript()).
 var platform = require('../platform');
 var configDownloaded = require('./config-downloaded');
 var configMarkers = require('./config-markers');
 
 var TABS = [
-  ['none', 'NONE'], ['bitmaps', 'BITMAP'], ['procedural', 'CUSTOM'],
+  ['none', 'NONE'], ['bitmaps', 'PRELOADED'], ['procedural', 'CUSTOM'],
   ['edit', 'EDIT'], ['more', 'MORE'], ['upload', 'UPLOAD']
 ];
 
@@ -17,11 +17,11 @@ function popupCss() {
   return '' +
 '  #markerStyleModal .modal-box { height: 90vh; max-height: 90vh; }' +
 '  .ms-tabs { flex-wrap: nowrap; flex: 0 0 auto; margin-bottom: 4px; }' +
-'  .ms-tabs .mode-btn { flex: 1 1 0; min-width: 0; padding: 9px 0; font-size: 11px; letter-spacing: 0; }' +
+'  .ms-tabs .mode-btn { flex: 1 1 auto; min-width: 0; padding: 9px 3px; font-size: 11px; letter-spacing: 0; white-space: nowrap; }' +
 '  .ms-tabs .mode-btn.active { background: #ff9200; color: #fff; }' +
 '  .ms-title-row { display: flex; align-items: center; justify-content: center; position: relative; }' +
 '  .modal-box { position: relative; }' +
-'  .modal-x { position: absolute; top: 6px; left: 6px; z-index: 5; width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%; background: rgba(128,128,128,.25); color: var(--text-strong); font-size: 20px; line-height: 30px; text-align: center; cursor: pointer; }' +
+'  .modal-x { position: absolute; top: 6px; right: 6px; z-index: 5; width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%; background: rgba(128,128,128,.25); color: var(--text-strong); font-size: 20px; line-height: 30px; text-align: center; cursor: pointer; }' +
 '  .modal-confirm-btn:disabled { opacity: .45; }' +
 '  .ms-acc-body { display: none; padding: 4px 2px 8px; }' +
 '  .ms-acc-body.open { display: block; }' +

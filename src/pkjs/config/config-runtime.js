@@ -250,6 +250,7 @@ module.exports =
 'function save(forceRefresh) {' +
 '  var settings = collectSettings(forceRefresh);' +
 '  if (LIVE.active) { liveSend(settings, true); return; }' +
+'  if (typeof CL_SEEN_PENDING === "string" && CL_SEEN_PENDING) settings.CONFIG_CHANGELOG_SEEN = CL_SEEN_PENDING;' +
 '  var returnTo = getQueryParam("return_to", "pebblejs://close#");' +
 '  document.location = returnTo + encodeURIComponent(JSON.stringify(settings));' +
 '}' +

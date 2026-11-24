@@ -1,4 +1,6 @@
 var configPage = require('./config-page');
+var changelogState = require('./settings/changelog-state');
+var CHANGELOG = require('./data/changelog');
 var servicelog = require('./servicelog');
 
 require('./settings/settings-migration');
@@ -343,7 +345,8 @@ function buildCurrent() {
     pluginCatalogue: pluginManager.readCatalogue(),
     preferences: preferences.snapshot(),
     pluginSlots: pluginManager.getSlots(),
-    weatherSource: getSetting('CONFIG_WEATHER_SOURCE', 'plugin')
+    weatherSource: getSetting('CONFIG_WEATHER_SOURCE', 'plugin'),
+    changelogSeen: changelogState.seenForPage(CHANGELOG[0].version, firstRun.pending())
   };
 }
 
@@ -407,6 +410,8 @@ function applySettingsObject(settings) {
     }
     return;
   }
+
+  if (settings.CONFIG_CHANGELOG_SEEN) changelogState.markSeen(String(settings.CONFIG_CHANGELOG_SEEN));
 
   firstRun.markDone();
   var weatherSourceBefore = getSetting('CONFIG_WEATHER_SOURCE', 'plugin');

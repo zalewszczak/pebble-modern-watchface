@@ -31,6 +31,10 @@ function install(buildPage, applySettings, pluginManager, preferences) {
           applySettings(msg.payload || {});
           reply({ ok: true });
           break;
+        case 'changelog':
+          require('../settings/changelog-state').markSeen(String(msg.version || ''));
+          reply({ ok: true });
+          break;
         case 'plugins':
           reply({ catalogue: pluginManager.readCatalogue() });
           break;

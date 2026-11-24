@@ -77,6 +77,10 @@ Configure hourly vibration reminders, including interval, pattern, time window, 
 
 Developer tools include a custom test date/time, drawing diagnostics, font preview import, recent raw message inspection, editable raw data overrides, and a view of the current settings keyset. These controls are intended for development and troubleshooting.
 
+## Release notes (NEW! / NEWS button)
+
+The settings top bar has a **NEW!** (grey **NEWS** once read) button between About and Battery usage. It pulses orange after an update until the release notes are opened once; every version newer than the last one opened gets a highlight dot. The notes live in `src/pkjs/data/changelog.js` (newest first, a few words per bullet): when you bump `version` in `package.json`, add a matching entry on top (`tests/pkjs/changelog.test.js` checks that they agree). The last-opened version is stored in phone `localStorage` (`CHANGELOG_SEEN_VERSION`, see `src/pkjs/settings/changelog-state.js`); UI is in `src/pkjs/config/config-changelog.js`.
+
 ## Project structure
 
 ```text

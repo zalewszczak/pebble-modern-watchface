@@ -118,6 +118,8 @@ var configBackground = require('./config/config-background');
 var configDownloaded = require('./config/config-downloaded');
 var configMarkerPopup = require('./config/config-marker-popup');
 var configBattery = require('./config/config-battery');
+var configChangelog = require('./config/config-changelog');
+var CHANGELOG = require('./data/changelog');
 var configPlugins = require('./config/config-plugins');
 var configBorder = require('./config/config-border');
 var configHands = require('./config/config-hands');
@@ -323,6 +325,7 @@ configPresetSchedule.css +
 '  @media (prefers-color-scheme: dark) { .about-btn-logo { color: #fff; } }' +
 '  .about-btn:active { background: var(--border-light); transform: scale(0.96); }' +
 configBattery.css(!(platform.bw || current.liveMode)) +
+configChangelog.css() +
 '  .donate-btn { padding: 6px 10px; font-size: 13px; font-weight: 700; color: #6b5a72; background: linear-gradient(135deg, #ffd6e0, #ffe8c2, #eaf6c8, #c8ecec, #d6d6f5, #ffd6e0); background-size: 300% 300%; animation: donateGradientShift 18s ease-in-out infinite; border: none; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }' +
 '  @keyframes donateGradientShift { 0% { background-position: 0% 50%; } 25% { background-position: 50% 100%; } 50% { background-position: 100% 50%; } 75% { background-position: 50% 0%; } 100% { background-position: 0% 50%; } }' +
 '  .donate-btn:active { filter: brightness(0.94); }' +
@@ -629,6 +632,7 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 (current.liveMode ? '' : '      <button type="button" class="back-btn" onclick="goBack()">&lsaquo; Back</button>') +
 '      <button type="button" class="donate-btn" onclick="openDonateModal()">&#9825; Donate</button>' +
 '      <button type="button" class="about-btn" id="aboutButton" onclick="openAboutModal(this)" aria-label="About Modern" title="About Modern">' + aboutLogoMarkup('about-btn-logo', ' aria-hidden="true" focusable="false"') + '</button>' +
+'      ' + configChangelog.buttonHtml(configChangelog.changelogNewCount(CHANGELOG, current.changelogSeen)) +
 '      ' + configBattery.buttonHtml(platform.bw || current.liveMode) +
 '    </div>' +
 (current.liveMode ? '' : '    <div class="top-bar-title">Modern Watchface' + (platform.bw ? '' : ' Preview') + '</div>') +
@@ -656,6 +660,7 @@ configBattery.css(!(platform.bw || current.liveMode)) +
 '</div>' +
 
 configBattery.modalHtml() +
+configChangelog.modalHtml() +
 
 '<div class="modal-overlay" id="slotEditModal" onclick="if (event.target === this) closeSlotEditor();">' +
 '  <div class="modal-box">' +
@@ -2119,6 +2124,7 @@ configBorder.borderScript() +
 pluginSlotRemap.remapPresetPluginSlots.toString().replace(/<\//g, '<\\/') + ';' +
 configPlugins.pluginScript(current, platform.suffix) +
 '\n' + configBattery.script(platform, primitiveTransportSequences) + '\n' +
+'\n' + configChangelog.script(CHANGELOG, current.changelogSeen, current.liveMode) + '\n' +
 'var COMPOSER_MAX = ' + (platform.bw ? 8 : 10) + ';' +
 '\n' + composerClientSource + '\n' +
 'function primitiveDecompositionText(contentId, forPreview) {' +
