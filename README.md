@@ -251,7 +251,7 @@ Complication icons (all three icon styles, weather, bell, Quiet Time, Bluetooth,
 ## Indices style popup
 One popup with a one-line tab row: NONE, BITMAP, CUSTOM (Minimal, Classy, Braun, Swiss, the user's own saved designs and a
 "design your own" tile), EDIT (pinned preview, expandable hour/seconds/numerals editors, "Save to CUSTOM"), MORE (GitHub indices) and UPLOAD
-(the user's PNGs). The first four tabs apply instantly (no Save/Cancel); MORE/UPLOAD stage a pick and send it with "Send selected to watch". Saved designs live on the phone
+(the user's PNGs). The first four tabs apply instantly (no Save/Cancel; EDIT only switches the watch to the custom indices once something is changed); MORE/UPLOAD stage a pick and send it with "Send selected to watch" (disabled until one is selected). Every popup has an X at the top left that dismisses it without saving. Saved designs live on the phone
 (`CONFIG_USER_MARKER_PRESETS`). Applying a procedural style bumps `CONFIG_MARKER_APPLY_TICK`, which makes the watch replay the
 hour/seconds indices animation. Code: `src/pkjs/config/config-marker-popup.js`.
 

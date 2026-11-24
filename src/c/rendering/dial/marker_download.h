@@ -17,4 +17,4 @@ void marker_download_abort(void);
 // Identifies the stored image (0 = none); changes whenever it does.
 uint32_t marker_download_stamp(void);
 // Draws the stored image (nothing when there is none) centred in `bounds`, in `color`, without allocating memory.
-void marker_download_draw(GContext *ctx, GRect bounds, GColor color);
+void marker_download_draw(GContext *ctx, GRect bounds, GColor color, bool translucent);

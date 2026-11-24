@@ -972,15 +972,15 @@ configPresetSchedule.modalHtml +
 '        <option value="8"' + (current.bigAnalogMarkerStyle === '8' ? ' selected' : '') + '>Custom</option>' +
         MARKER_VARIANT_STYLES.map(function (s) { return '<option value="' + s.value + '"' + (current.bigAnalogMarkerStyle === s.value ? ' selected' : '') + '>' + s.title + '</option>'; }).join('') +
 '      </select>' +
-'      <div class="checkbox-row" id="bitmapMarkerTransparentRow" style="margin-top:12px;' + (isBitmapMarkerStyle ? '' : ' display:none;') + '">' +
+'      <div class="checkbox-row" id="bitmapMarkerTransparentRow" style="margin-top:12px;">' +
 '        <input type="checkbox" id="bitmapMarkerTransparent" ' + (current.bitmapMarkerTransparent ? 'checked' : '') + ' onchange="onBitmapMarkerTransparentChange()">' +
 '        <label for="bitmapMarkerTransparent" style="margin:0;">Semi transparent markers (see the background through them)</label>' +
 '      </div>' +
-'      <div class="checkbox-row" id="bitmapMarkerInvertRow" style="margin-top:8px;' + (isBitmapMarkerStyle && !platform.bw ? '' : ' display:none;') + '">' +
+'      <div class="checkbox-row" id="bitmapMarkerInvertRow" style="margin-top:8px;">' +
 '        <input type="checkbox" id="bitmapMarkerInvert" ' + (current.bitmapMarkerInvert && !platform.bw ? 'checked' : '') + ' onchange="updatePreview()">' +
 '        <label for="bitmapMarkerInvert" style="margin:0;">Inverted blend (markers turn black or white for contrast with the background)</label>' +
 '      </div>' +
-'      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face, or design your own.</div>' +
+'      <div class="help" id="help-indicesStyle" style="display:none;">Choose the hour/second markers around the analog face, or design your own. Greyed-out options do not work with the selected indices: semi transparent needs indices (not none), and inverted blend only works with bitmap indices on colour watches.</div>' +
 
 '      <div id="customMarkerSection" style="display:none;">' +
           customMarkerHiddenInputsHtml(current) +
@@ -1031,19 +1031,6 @@ configPresetSchedule.modalHtml +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-bitmapCornerOverride\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-bitmapCornerOverride" style="display:none;">Allows complications to use areas that may overlap some bitmap marker designs.</div>' +
-
-'    <div class="checkbox-row" style="margin-top:12px;">' +
-'      <input type="checkbox" id="indexMarginAuto" ' + (current.indexMarginAuto === false ? '' : 'checked') + ' onchange="onIndexMarginAutoChange()">' +
-'      <label for="indexMarginAuto" style="margin:0;">Automatic complications spacing from indices</label>' +
-'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-indexMargin\')">?</button>' +
-'    </div>' +
-'    <div class="help" id="help-indexMargin" style="display:none;">How much room the complications leave at the top, bottom, left and right of the screen for the indices. Automatic uses the values that belong to the chosen indices (downloaded indices bring their own). Untick it to set them by hand; the sliders start from the current indices\' values and your settings are remembered for this watch only.</div>' +
-'    <div id="indexMarginSliders" style="' + (current.indexMarginAuto === false ? '' : 'display:none;') + '">' +
-indexMarginSliderHtml('Top', 'indexMarginTop', indexMarginInit[0]) +
-indexMarginSliderHtml('Bottom', 'indexMarginBottom', indexMarginInit[1]) +
-indexMarginSliderHtml('Left', 'indexMarginLeft', indexMarginInit[2]) +
-indexMarginSliderHtml('Right', 'indexMarginRight', indexMarginInit[3]) +
-'    </div>' +
 
 '    <div class="field-label-row"><label for="cornerFont">Font</label><button type="button" class="help-btn" onclick="toggleHelp(\'help-cornerFont\')">?</button></div>' +
 
@@ -1141,6 +1128,19 @@ indexMarginSliderHtml('Right', 'indexMarginRight', indexMarginInit[3]) +
 '      <button type="button" class="help-btn" onclick="toggleHelp(\'help-drawFeaturesBeneathHands\')">?</button>' +
 '    </div>' +
 '    <div class="help" id="help-drawFeaturesBeneathHands" style="display:none;">In Analog mode, draws complication text underneath the hands instead of on top.</div>' +
+'    <div class="checkbox-row" style="margin-top:12px;">' +
+'      <input type="checkbox" id="indexMarginAuto" ' + (current.indexMarginAuto === false ? '' : 'checked') + ' onchange="onIndexMarginAutoChange()">' +
+'      <label for="indexMarginAuto" style="margin:0;">Automatic complications spacing from indices</label>' +
+'      <button type="button" class="help-btn" onclick="toggleHelp(\'help-indexMargin\')">?</button>' +
+'    </div>' +
+'    <div class="help" id="help-indexMargin" style="display:none;">How much room the complications leave at the top, bottom, left and right of the screen for the indices. Automatic uses the values that belong to the chosen indices (downloaded indices bring their own). Untick it to set them by hand; the sliders start from the current indices\' values and your settings are remembered for this watch only.</div>' +
+'    <div id="indexMarginSliders" style="' + (current.indexMarginAuto === false ? '' : 'display:none;') + '">' +
+indexMarginSliderHtml('Top', 'indexMarginTop', indexMarginInit[0]) +
+indexMarginSliderHtml('Bottom', 'indexMarginBottom', indexMarginInit[1]) +
+indexMarginSliderHtml('Left', 'indexMarginLeft', indexMarginInit[2]) +
+indexMarginSliderHtml('Right', 'indexMarginRight', indexMarginInit[3]) +
+'    </div>' +
+
 '    <div class="field-label-row" style="margin-top:12px;"><button type="button" class="secondary-btn" id="loadPrefFeaturesBtn" onclick="loadPreferredFeatures()">Load user preferences</button><button type="button" class="help-btn" onclick="toggleHelp(\'help-loadPrefFeatures\')">?</button></div>' +
 '    <div class="help" id="help-loadPrefFeatures" style="display:none;">Fills Upper-middle line 2, Bottom-middle line 1 and the first line on the left and on the right with the readings you chose in the Pebble app (Settings &rarr; Plugins &rarr; Complications), in that order. They replace what those four slots show now; the change is only kept when you save.</div>' +
 '    <div class="help" id="prefFeaturesStatus" style="display:none;"></div>' +
@@ -2469,8 +2469,14 @@ configPlugins.pluginScript(current, platform.suffix) +
 '  applyMarkerStylePresetToCustom(val);' +
 '  refreshEditButtonLabels();' +
 '  var isBitmap = isBitmapMarkerStyleId(parseInt(val, 10));' +
-'  document.getElementById("bitmapMarkerTransparentRow").style.display = isBitmap ? "" : "none";' +
-'  document.getElementById("bitmapMarkerInvertRow").style.display = (isBitmap && ' + (platform.bw ? 'false' : 'true') + ') ? "" : "none";' +
+'  var mkNone = val === "0", mkDl = val === "20";' +
+'  var tOk = !mkNone && !(' + (platform.bw ? 'true' : 'false') + ' && isBitmap && !mkDl);' +
+'  var iOk = isBitmap && !mkDl && ' + (platform.bw ? 'false' : 'true') + ';' +
+'  [["bitmapMarkerTransparent", tOk], ["bitmapMarkerInvert", iOk]].forEach(function (p) {' +
+'    var cb = document.getElementById(p[0]);' +
+'    cb.disabled = !p[1];' +
+'    document.getElementById(p[0] + "Row").style.opacity = p[1] ? "" : "0.45";' +
+'  });' +
 '  document.getElementById("bitmapCornerOverrideRow").style.display = (isBitmap && val !== "5") ? "" : "none";' +
 '  updateMarkerStyleButtonLabel();' +
 '  clearGrayedSlotsIfUnavailable();' +
@@ -2910,7 +2916,7 @@ configPlugins.pluginScript(current, platform.suffix) +
 '}' +
 'var PRESET_SCOPE_IDS = ["section-style", "section-colors", "section-corners", "section-animation"];' +
 // Style controls that live in popups outside those sections (so the scan above never sees them).
-'var PRESET_EXTRA_IDS = ["markerTextTarget", "markerTextFont", "markerTextRoman", "markerTextOffset",' +
+'var PRESET_EXTRA_IDS = ["markerTextTarget", "markerTextFont", "markerTextRoman", "markerTextOffset", "markerTextHourMask", "markerTextSecMask",' +
 '  "centerCircleRadius", "centerCircleColor", "centerCircleOutline", "shadowTranslucent", "shadowAngle"];' +
 'function collectStyleCornersJson() {' +
 '  var obj = {};' +

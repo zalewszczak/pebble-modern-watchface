@@ -20,7 +20,9 @@ function popupCss() {
 '  .ms-tabs .mode-btn { flex: 1 1 0; min-width: 0; padding: 9px 0; font-size: 11px; letter-spacing: 0; }' +
 '  .ms-tabs .mode-btn.active { background: #ff9200; color: #fff; }' +
 '  .ms-title-row { display: flex; align-items: center; justify-content: center; position: relative; }' +
-'  .ms-close { position: absolute; right: 0; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 24px; line-height: 1; color: var(--text-strong); padding: 4px 8px; cursor: pointer; }' +
+'  .modal-box { position: relative; }' +
+'  .modal-x { position: absolute; top: 6px; left: 6px; z-index: 5; width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%; background: rgba(128,128,128,.25); color: var(--text-strong); font-size: 20px; line-height: 30px; text-align: center; cursor: pointer; }' +
+'  .modal-confirm-btn:disabled { opacity: .45; }' +
 '  .ms-acc-body { display: none; padding: 4px 2px 8px; }' +
 '  .ms-acc-body.open { display: block; }' +
 '  .ms-view { display: none; padding-bottom: 6px; }' +
@@ -45,7 +47,7 @@ function popupHtml(current) {
   return '' +
 '<div class="modal-overlay" id="markerStyleModal" onclick="if (event.target === this) closeMarkerStyleModal();">' +
 '  <div class="modal-box">' +
-'    <div class="modal-title ms-title-row">Hour/seconds indices style<button type="button" class="ms-close" onclick="closeMarkerStyleModal()" aria-label="Close">&times;</button></div>' +
+'    <div class="modal-title ms-title-row">Hour/seconds indices style</div>' +
 '    <div class="mode-btn-group ms-tabs" id="msTabs">' + tabs + '</div>' +
 '    <div id="msPinned" style="display:none; flex:0 0 auto;">' + configDownloaded.pinnedHtml() + '</div>' +
 '    <div id="msEditPinned" style="display:none; flex:0 0 auto;"><div class="ms-edit-preview"><div class="ms-edit-preview-box"><img id="msEditImg" alt=""></div></div></div>' +
@@ -59,7 +61,7 @@ function popupHtml(current) {
 '        <button type="button" class="marker-edit-btn" onclick="msAcc(\'sec\')">Seconds indices: <span id="cmSecStatusLabel"></span> <span class="ms-arrow" id="msArrow-sec">&#9656;</span></button>' +
 '        <div class="ms-acc-body" id="msAcc-sec" oninput="cmLive(\'sec\')" onchange="cmLive(\'sec\')" onclick="setTimeout(function () { cmLive(\'sec\'); }, 0)">' + configMarkers.customMarkerBodyHtml('sec', 10) + '</div>' +
 '        <button type="button" class="marker-edit-btn" onclick="msAcc(\'text\')">Numerals: <span id="numeralsStatusLabel"></span> <span class="ms-arrow" id="msArrow-text">&#9656;</span></button>' +
-'        <div class="ms-acc-body" id="msAcc-text" oninput="setTimeout(msEditChanged, 0)" onchange="setTimeout(msEditChanged, 0)" onclick="setTimeout(msEditChanged, 0)">' + configMarkers.textMarkerBodyHtml(current) + '</div>' +
+'        <div class="ms-acc-body" id="msAcc-text" oninput="setTimeout(msTouched, 0)" onchange="setTimeout(msTouched, 0)" onclick="setTimeout(msTouched, 0)">' + configMarkers.textMarkerBodyHtml(current) + '</div>' +
 '        <div class="ms-save-row"><input type="text" id="msPresetName" maxlength="24" placeholder="Name"><button type="button" class="secondary-btn" onclick="msSavePreset()">Save to CUSTOM</button></div>' +
 '        <div class="ms-note" id="msPresetNote"></div>' +
 '      </div>' +
@@ -72,7 +74,6 @@ function popupHtml(current) {
 '        <button type="button" class="secondary-btn" onclick="dlToggleRequirements()">REQUIREMENTS</button>' +
 '      </div>' +
 '      <button type="button" class="modal-confirm-btn" id="msSaveBtn" onclick="msSave()">Send selected to watch</button>' +
-'      <button type="button" class="modal-cancel-btn" onclick="closeMarkerStyleModal()">Cancel</button>' +
 '    </div>' +
 '  </div>' +
 '</div>';
@@ -82,6 +83,7 @@ function popupHtml(current) {
 function browserCode() {
   var msTab = 'none';
   var msStage = { style: '3', user: null };
+  var msSnap = '';
   var markerApplyTick = MS_TICK;
   var userMarkerPresets = MS_PRESETS;
 
@@ -186,8 +188,8 @@ function browserCode() {
     document.getElementById('msEditPinned').style.display = (tab === 'edit') ? '' : 'none';
     document.getElementById('msFooter').style.display = dl ? '' : 'none';
     document.getElementById('msUploadRow').style.display = (tab === 'upload') ? '' : 'none';
-    document.getElementById('msSaveBtn').textContent = dl ? 'Send selected to watch' : 'Save';
-    if (tab === 'edit') { openCustomMarkerEditor('hour'); openCustomMarkerEditor('sec'); refreshEditButtonLabels(); msRefreshEdit(); }
+    msUpdateSend();
+    if (tab === 'edit') { openCustomMarkerEditor('hour'); openCustomMarkerEditor('sec'); msRefreshMarkGrids(); refreshEditButtonLabels(); msSnap = JSON.stringify(msFieldsNow()); msRefreshEdit(); }
     if (tab === 'bitmaps' || tab === 'procedural') msRenderGrids();
     if (dl) {
       dlOpenViews();
@@ -202,8 +204,48 @@ function browserCode() {
     if (tab === 'edit' && msVal(cmHiddenPrefix('hour') + 'Thickness') === '0' && msVal(cmHiddenPrefix('sec') + 'Thickness') === '0') applyMarkerStylePresetToCustom('10');
     msShow(tab);
     if (tab === 'none') { msStage = { style: '0', user: null }; chooseMarkerStyle('0', true); }
-    if (tab === 'edit') { msStage = { style: '8', user: null }; chooseMarkerStyle('8', true); msRefreshEdit(); }
   }
+  // the first real change in EDIT switches the watch to the custom indices; just looking changes nothing
+  function msTouched() {
+    var now = JSON.stringify(msFieldsNow());
+    if (now === msSnap) return;
+    msSnap = now;
+    if (msVal('bigAnalogMarkerStyle') !== '8') chooseMarkerStyle('8', true);
+    msEditChanged();
+  }
+  function msUpdateSend() {
+    var b = document.getElementById('msSaveBtn');
+    if (b) b.disabled = !dlPick;
+  }
+  function msRefreshMarkGrids() {
+    [['hour', 'markerTextHourMask'], ['sec', 'markerTextSecMask']].forEach(function (k) {
+      var mask = parseInt(msVal(k[1]), 10) || 0;
+      for (var i = 0; i < 12; i++) {
+        var b = document.getElementById('markBtn-' + k[0] + '-' + i);
+        if (b) b.className = 'mark-btn' + ((mask & (1 << i)) ? ' active' : '');
+      }
+    });
+  }
+  function msInstallCloseButtons() {
+    var ov = document.querySelectorAll('.modal-overlay');
+    for (var i = 0; i < ov.length; i++) {
+      var box = ov[i].querySelector('.modal-box');
+      if (!box || box.querySelector('.modal-x')) continue;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'modal-x'; b.setAttribute('aria-label', 'Close'); b.innerHTML = '&times;';
+      b.onclick = function (e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        var o = this.parentNode;
+        while (o && (!o.className || o.className.indexOf('modal-overlay') < 0)) o = o.parentNode;
+        if (!o) return;
+        if (o.onclick) o.onclick.call(o, { target: o });
+        if (o.className.indexOf('open') >= 0) o.className = 'modal-overlay';
+      };
+      box.insertBefore(b, box.firstChild);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', msInstallCloseButtons);
+  else msInstallCloseButtons();
   function msAcc(name) {
     ['hour', 'sec', 'text'].forEach(function (n) {
       var body = document.getElementById('msAcc-' + n);
@@ -214,7 +256,7 @@ function browserCode() {
   }
   function cmLive(kind) {
     saveCustomMarkerEditor(kind);
-    msEditChanged();
+    msTouched();
   }
 
   function msRefreshEdit() {
@@ -249,7 +291,7 @@ function browserCode() {
     userMarkerPresets.push(p);
     MARKER_STYLE_PRESET_FIELDS['u:' + p.id] = p.fields;
     nameEl.value = '';
-    msStage = { style: '8', user: p.id };
+    msStage = msCurrentStage();
     msShow('procedural');
     document.getElementById('msEditPinned').style.display = 'none';
   }
@@ -262,7 +304,7 @@ function browserCode() {
   }
 
   function msSave() {
-    if (dlPick) saveDlIndices(); else closeMarkerStyleModal();
+    if (dlPick) saveDlIndices();
   }
 
   function openMarkerStyleModal() {

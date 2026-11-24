@@ -268,6 +268,7 @@ function downloadedScript(current) {
 '  return h;' +
 '}' +
 'function dlRenderPinned() {' +
+'  if (typeof msUpdateSend === "function") msUpdateSend();' +
 '  var img = document.getElementById("dlPinnedImg"), txt = document.getElementById("dlPinnedText"), lab = document.getElementById("dlPinnedLabel");' +
 '  if (!img) return;' +
 '  var data = dlUpdate ? (dlUpdate.clear ? null : dlUpdate) : dlCurrent;' +

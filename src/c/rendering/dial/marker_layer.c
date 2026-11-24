@@ -233,7 +233,7 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
 
   if (marker_style == MARKER_STYLE_DOWNLOADED) { // drawn straight from storage, no bitmap
     marker_bitmap_release(&state->bitmap, &state->bitmap_style, &state->bitmap_tinted);
-    marker_download_draw(ctx, screen, PBL_IF_BW_ELSE(bw_color(main_color), main_color));
+    marker_download_draw(ctx, screen, PBL_IF_BW_ELSE(bw_color(main_color), main_color), d->bitmap_marker_transparent);
     return;
   }
 
@@ -261,16 +261,20 @@ void marker_layer_draw(GContext *ctx, MarkerLayerState *state, GPoint center, GR
   }
 
   if (part == MARKER_DRAW_BASE_BARE) return; // the second ring is built up by the animation frames
+  // The shared "semi transparent" option also applies to the drawn rings (on top of each ring's own setting).
+  MarkerRingConfig second_cfg = d->custom_second_marker;
+  MarkerRingConfig hour_cfg_local = d->custom_hour_marker;
+  if (d->bitmap_marker_transparent) { second_cfg.translucent = true; hour_cfg_local.translucent = true; }
   if (part != MARKER_DRAW_HOUR) {
     // Second ring first so the hour ring's marks draw on top at shared positions.
-    draw_marker_ring(ctx, center, screen, &d->custom_second_marker, 60, 5, main_color, accent_color, bg_color, false, 0,
+    draw_marker_ring(ctx, center, screen, &second_cfg, 60, 5, main_color, accent_color, bg_color, false, 0,
                      d->custom_second_marker_inner_thickness, part == MARKER_DRAW_HOUR_BUILD ? anim_progress_1000 : -1);
   }
   if (part == MARKER_DRAW_BASE) return;
 
-  const MarkerRingConfig *hour_cfg = &d->custom_hour_marker;
+  const MarkerRingConfig *hour_cfg = &hour_cfg_local;
   draw_marker_ring(ctx, center, screen, hour_cfg, 12, 0, main_color, accent_color, bg_color, anim_active, anim_progress_1000,
                    d->custom_hour_marker_inner_thickness, -1);
 
-  marker_text_draw(ctx, center, screen, &state->text_font_slot, &d->marker_text, hour_cfg, &d->custom_second_marker, main_color, draw_debug);
+  marker_text_draw(ctx, center, screen, &state->text_font_slot, &d->marker_text, hour_cfg, &second_cfg, main_color, draw_debug);
 }

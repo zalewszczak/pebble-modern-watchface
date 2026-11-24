@@ -64,12 +64,32 @@ bool marker_download_commit(uint32_t stamp) {
 
 // Draws the image centred in `bounds` as runs of 1-pixel-high rectangles, straight from persistent storage through a
 // small buffer: no bitmap is ever allocated (the colour watches have little heap to spare for a full-screen picture).
-void marker_download_draw(GContext *ctx, GRect bounds, GColor color) {
+// One run of ink. `half`: the semi-transparent option -- a checkerboard on 1-bit screens, 50% alpha on colour ones.
+static void fill_run(GContext *ctx, int16_t x, int16_t y, int16_t w, bool half) {
+#if defined(PBL_BW)
+  if (half) {
+    for (int16_t i = 0; i < w; i++) {
+      if (((x + i + y) & 1) == 0) graphics_fill_rect(ctx, GRect(x + i, y, 1, 1), 0, GCornerNone);
+    }
+    return;
+  }
+#endif
+  (void)half;
+  graphics_fill_rect(ctx, GRect(x, y, w, 1), 0, GCornerNone);
+}
+
+void marker_download_draw(GContext *ctx, GRect bounds, GColor color, bool translucent) {
   load();
   if (!s_hdr.stamp) return;
   const uint32_t stride = stride_of(s_hdr.w), total = stride * s_hdr.h;
   const int16_t ox = bounds.origin.x + (bounds.size.w - (int16_t)s_hdr.w) / 2;
   const int16_t oy = bounds.origin.y + (bounds.size.h - (int16_t)s_hdr.h) / 2;
+#if !defined(PBL_BW)
+  if (translucent) {
+    color.argb = (uint8_t)(0x80 | (color.argb & 0x3F));
+    graphics_context_set_compositing_mode(ctx, GCompOpSet);
+  }
+#endif
   graphics_context_set_fill_color(ctx, color);
   uint8_t buf[CHUNK_BYTES];
   int16_t run_start = -1;
@@ -89,7 +109,7 @@ void marker_download_draw(GContext *ctx, GRect bounds, GColor color) {
         if (ink && run_start < 0) run_start = x;
         if (run_start >= 0 && (!ink || x == (int16_t)s_hdr.w - 1)) {
           const int16_t end = ink ? x + 1 : x;
-          graphics_fill_rect(ctx, GRect(ox + run_start, oy + y, end - run_start, 1), 0, GCornerNone);
+          fill_run(ctx, ox + run_start, oy + y, end - run_start, translucent);
           run_start = -1;
         }
       }

@@ -13,6 +13,8 @@
 static GBitmap *s_atlas[3];
 static AppTimer *s_timer;
 static bool s_sliding;      // an icon slid during the current paint, so another paint is needed
+#define STAGGER_MS 200      // start-up: every further icon starts this much later than the one before
+static uint8_t s_stagger;   // how many icons were scheduled in this start-up so far
 static uint16_t s_now;      // millisecond clock (mod 65536) of the current paint
 
 // 0 simple, 1 hollow, 2 full color. Full color art only exists on the colour watches (simple there).
@@ -73,12 +75,13 @@ static IconWindow track(IconAnim *a, uint8_t cell) {
     if (prev == 0 && !startup_flip_active()) { a->from = 0; return win; }
     a->from = (prev == 0 || prev == ICON_ANIM_BLANK) ? ICON_ANIM_BLANK : (uint8_t)(slide_origin(prev - 1, cell) + 1);
     a->start = s_now;
+    if (prev == 0) a->start = (uint16_t)(s_now + (uint16_t)(s_stagger++) * STAGGER_MS); // start-up: staggered
   }
   if (!a->from) return win;
-  uint16_t elapsed = (uint16_t)(s_now - a->start);
-  if (elapsed >= SLIDE_MS) { a->from = 0; return win; }
+  int16_t waited = (int16_t)(s_now - a->start); // negative while the staggered start has not come yet
+  if (waited >= SLIDE_MS) { a->from = 0; return win; }
   s_sliding = true;
-  int32_t left = 1000 - render_math_ease_out_1000((int32_t)elapsed * 1000 / SLIDE_MS); // 1000 .. 0
+  int32_t left = waited <= 0 ? 1000 : 1000 - render_math_ease_out_1000((int32_t)waited * 1000 / SLIDE_MS); // 1000 .. 0
   if (a->from == ICON_ANIM_BLANK) {
     win.shift = (int16_t)(CELL_H * left / 1000);
   } else {
@@ -129,13 +132,14 @@ int16_t icon_atlas_blank_left(IconAnim *a) {
     bool startup = a->cell == 0 && startup_flip_active();
     a->cell = ICON_ANIM_BLANK;
     a->from = startup ? ICON_ANIM_BLANK : 0;
-    a->start = s_now;
+    a->start = startup ? (uint16_t)(s_now + (uint16_t)(s_stagger++) * STAGGER_MS) : s_now;
   }
   if (a->from != ICON_ANIM_BLANK) return 0;
-  uint16_t elapsed = (uint16_t)(s_now - a->start);
-  if (elapsed >= SLIDE_MS) { a->from = 0; return 0; }
+  int16_t waited = (int16_t)(s_now - a->start);
+  if (waited >= SLIDE_MS) { a->from = 0; return 0; }
   s_sliding = true;
-  return (int16_t)(1000 - render_math_ease_out_1000((int32_t)elapsed * 1000 / SLIDE_MS));
+  if (waited <= 0) return 1000;
+  return (int16_t)(1000 - render_math_ease_out_1000((int32_t)waited * 1000 / SLIDE_MS));
 }
 
 // The framebuffer pixel at screen (x, y), NULL when outside the screen (round screens have shorter rows).
@@ -194,6 +198,7 @@ static void slide_frame(void *context) {
 void icon_atlas_begin_paint(Layer *layer) {
   s_now = clock_ms16();
   s_sliding = false;
+  if (!startup_flip_active()) s_stagger = 0;
 #ifdef PBL_COLOR
   s_origin = layer_convert_point_to_screen(layer, GPointZero);
 #else

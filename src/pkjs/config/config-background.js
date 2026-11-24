@@ -229,7 +229,7 @@ function backgroundSectionHtml(current) {
 (platform.bw ? '' :
 '      <div class="mode-btn-group" id="bgKindGroup">' +
 '        <button type="button" class="mode-btn' + (parseSource(current).charAt(0) === 'p' ? ' active' : '') + '" onclick="bgSetKind(\'p\')">PRELOADED</button>' +
-'        <button type="button" class="mode-btn' + (parseSource(current).charAt(0) === 'u' ? ' active' : '') + '" onclick="bgSetKind(\'u\')">CUSTOM</button>' +
+'        <button type="button" class="mode-btn' + (parseSource(current).charAt(0) === 'u' ? ' active' : '') + '" onclick="bgSetKind(\'u\')">MY IMAGES</button>' +
 '      </div>' +
 '      <div id="bgPresetBox"' + (parseSource(current).charAt(0) === 'p' ? '' : ' style="display:none;"') + '>' + presetHtml + '</div>') +
 '    <div id="bgCustomBox"' + (!platform.bw && parseSource(current).charAt(0) === 'p' ? ' style="display:none;"' : '') + '>' +
