@@ -4,6 +4,9 @@
 // identical to package.json -- tests/pkjs/changelog.test.js checks that) and add short bullets while you work.
 // Keep every bullet to a few words. The version at index 0 is what the NEW! button pulses for.
 module.exports = [
+  { version: '4.0.9', items: [
+    'TBD'
+  ] },
   { version: '4.0.8', items: [
     'Battery usage estimate button',
     'Smarter data update triggers',
