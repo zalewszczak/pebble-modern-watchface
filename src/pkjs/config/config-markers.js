@@ -124,12 +124,6 @@ function customMarkerBodyHtml(kind, thicknessMax) {
       colorRoleButtonGroupHtml(p + 'ColorGroup', p + 'Color', '0', false) +
 '    <div class="help">Sets the color of this marker ring independently from the other ring.</div>' +
 
-'    <label style="margin-top:12px;">Presets</label>' +
-'    <div class="preset-btn-row">' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'minimal\')">Minimal</button>' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'braun\')">Small</button>' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'swiss\')">Big</button>' +
-'    </div>' +
 '    <button type="button" class="marker-edit-btn" style="margin-top:8px;" onclick="copyMarkerConfig(\'' + kind + '\')">Copy from ' + (kind === 'hour' ? 'seconds' : 'hour') + ' indices</button>' +
 
 '    </div>'
@@ -223,12 +217,6 @@ function customMarkerModalHtml(kind, title, thicknessMax) {
       colorRoleButtonGroupHtml(p + 'ColorGroup', p + 'Color', '0', false) +
 '    <div class="help">Sets the color of this marker ring independently from the other ring.</div>' +
 
-'    <label style="margin-top:12px;">Presets</label>' +
-'    <div class="preset-btn-row">' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'minimal\')">Minimal</button>' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'braun\')">Small</button>' +
-'      <button type="button" onclick="applyMarkerPreset(\'' + kind + '\', \'swiss\')">Big</button>' +
-'    </div>' +
 '    <button type="button" class="marker-edit-btn" style="margin-top:8px;" onclick="copyMarkerConfig(\'' + kind + '\')">Copy from ' + (kind === 'hour' ? 'seconds' : 'hour') + ' indices</button>' +
 
 '    </div>' +

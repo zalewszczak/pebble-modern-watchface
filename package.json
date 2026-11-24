@@ -41,6 +41,16 @@
     "usesPermissions": [
       "Location",
       {
+        "name": "Calendar",
+        "reason": "To show your upcoming events in complications and the border ring",
+        "required": false
+      },
+      {
+        "name": "ReadMusic",
+        "reason": "To show the playing track and its progress in complications",
+        "required": false
+      },
+      {
         "name": "Internet",
         "parameters": {
           "domains": [

@@ -21,7 +21,8 @@ function popupCss() {
 '  .ms-tabs .mode-btn.active { background: #ff9200; color: #fff; }' +
 '  .ms-title-row { display: flex; align-items: center; justify-content: center; position: relative; }' +
 '  .modal-box { position: relative; }' +
-'  .modal-x { position: absolute; top: 6px; right: 6px; z-index: 5; width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%; background: rgba(128,128,128,.25); color: var(--text-strong); font-size: 20px; line-height: 30px; text-align: center; cursor: pointer; }' +
+'  .modal-x { position: absolute; top: 6px; right: 6px; z-index: 5; width: 30px; height: 30px; padding: 0; border: none; border-radius: 50%; background: rgba(128,128,128,.25); color: var(--text-strong); display: flex; align-items: center; justify-content: center; line-height: 0; cursor: pointer; }' +
+'  .modal-x svg { display: block; width: 12px; height: 12px; pointer-events: none; }' +
 '  .modal-confirm-btn:disabled { opacity: .45; }' +
 '  .ms-acc-body { display: none; padding: 4px 2px 8px; }' +
 '  .ms-acc-body.open { display: block; }' +
@@ -29,9 +30,10 @@ function popupCss() {
 '  .ms-view.open { display: block; }' +
 '  .ms-design-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--text-strong); }' +
 '  .ms-design-tile .style-picker-btn-cap { position: static; }' +
-'  .ms-edit-preview { display: flex; justify-content: center; margin: 6px 0 2px; }' +
-'  .ms-edit-preview-box { width: 40%; aspect-ratio: ' + platform.w + ' / ' + platform.h + '; background: #2a2a2e; overflow: hidden; border-radius: ' + (platform.round ? '50%' : '8px') + '; }' +
-'  .ms-edit-preview-box img { width: 100%; height: 100%; display: block; filter: invert(1); }' +
+'  .ms-edit-preview { display: flex; justify-content: center; box-sizing: border-box; margin: 6px 0 8px; padding: 10px; background: var(--btn-bg); border: 1px solid var(--border); border-radius: 10px; }' +
+'  .ms-edit-preview-box { width: 40%; aspect-ratio: ' + platform.w + ' / ' + platform.h + '; overflow: hidden; border: 1px solid var(--border); box-sizing: border-box; border-radius: ' + (platform.round ? '50%' : '8px') + '; }' +
+'  .ms-edit-preview-box img { width: 100%; height: 100%; display: block; }' +
+'  @media (prefers-color-scheme: dark) { .ms-edit-preview-box img { filter: invert(1); } }' +
 '  .ms-save-row { display: flex; gap: 8px; margin-top: 12px; }' +
 '  .ms-save-row input { flex: 1 1 auto; min-width: 0; margin: 0; }' +
 '  .ms-save-row .secondary-btn { flex: 0 0 auto; width: auto; margin-top: 0; padding: 10px 14px; }' +
@@ -52,7 +54,7 @@ function popupHtml(current) {
 '    <div id="msPinned" style="display:none; flex:0 0 auto;">' + configDownloaded.pinnedHtml() + '</div>' +
 '    <div id="msEditPinned" style="display:none; flex:0 0 auto;"><div class="ms-edit-preview"><div class="ms-edit-preview-box"><img id="msEditImg" alt=""></div></div></div>' +
 '    <div class="modal-scroll-body" id="msBody">' +
-'      <div class="ms-view" id="msView-none"><div class="ms-note">No hour or seconds indices will be drawn. Press Save to apply.</div></div>' +
+'      <div class="ms-view" id="msView-none"><div class="ms-note" id="msNoneNote"></div></div>' +
 '      <div class="ms-view" id="msView-bitmaps"><div class="style-picker-grid" id="msGrid-bitmaps"></div></div>' +
 '      <div class="ms-view" id="msView-procedural"><div class="style-picker-grid" id="msGrid-procedural"></div></div>' +
 '      <div class="ms-view" id="msView-edit">' +
@@ -74,6 +76,8 @@ function popupHtml(current) {
 '        <button type="button" class="secondary-btn" onclick="dlToggleRequirements()">REQUIREMENTS</button>' +
 '      </div>' +
 '      <button type="button" class="modal-confirm-btn" id="msSaveBtn" onclick="msSave()">Send selected to watch</button>' +
+'      <button type="button" class="modal-confirm-btn" id="msApplyBtn" style="display:none;" onclick="msApplyEdit()">Apply</button>' +
+'      <button type="button" class="modal-confirm-btn" id="msDisableBtn" style="display:none;" onclick="msDisable()">Disable indices</button>' +
 '    </div>' +
 '  </div>' +
 '</div>';
@@ -186,7 +190,11 @@ function browserCode() {
     var dl = (tab === 'more' || tab === 'upload');
     document.getElementById('msPinned').style.display = dl ? '' : 'none';
     document.getElementById('msEditPinned').style.display = (tab === 'edit') ? '' : 'none';
-    document.getElementById('msFooter').style.display = dl ? '' : 'none';
+    document.getElementById('msFooter').style.display = (dl || tab === 'edit' || tab === 'none') ? '' : 'none';
+    document.getElementById('msSaveBtn').style.display = dl ? '' : 'none';
+    document.getElementById('msApplyBtn').style.display = (tab === 'edit') ? '' : 'none';
+    document.getElementById('msDisableBtn').style.display = (tab === 'none') ? '' : 'none';
+    if (tab === 'none') msRefreshNone();
     document.getElementById('msUploadRow').style.display = (tab === 'upload') ? '' : 'none';
     msUpdateSend();
     if (tab === 'edit') { openCustomMarkerEditor('hour'); openCustomMarkerEditor('sec'); msRefreshMarkGrids(); refreshEditButtonLabels(); msSnap = JSON.stringify(msFieldsNow()); msRefreshEdit(); }
@@ -198,12 +206,39 @@ function browserCode() {
     document.getElementById('msBody').scrollTop = 0;
   }
 
-  // tab click: the first four tabs apply their choice to the watch immediately
+  // tab click: only switches the view; NONE needs its "Disable indices" button, EDIT its "Apply" button
   function msTabClick(tab) {
     // an empty custom design would show a blank preview: start from Minimal instead
     if (tab === 'edit' && msVal(cmHiddenPrefix('hour') + 'Thickness') === '0' && msVal(cmHiddenPrefix('sec') + 'Thickness') === '0') applyMarkerStylePresetToCustom('10');
     msShow(tab);
-    if (tab === 'none') { msStage = { style: '0', user: null }; chooseMarkerStyle('0', true); }
+  }
+  function msRefreshNone() {
+    var off = msVal('bigAnalogMarkerStyle') === '0';
+    var note = document.getElementById('msNoneNote');
+    if (note) note.textContent = off ? 'Hour and seconds indices are disabled.' : 'Press "Disable indices" to stop drawing hour and seconds indices.';
+    var b = document.getElementById('msDisableBtn');
+    if (b) { b.disabled = off; b.textContent = 'Disable indices'; }
+  }
+  function msFlash(id, text, back) {
+    var b = document.getElementById(id);
+    if (!b) return;
+    b.textContent = text;
+    setTimeout(function () { if (b) b.textContent = back; }, 1400);
+  }
+  // NONE tab button: the only way to switch the indices off
+  function msDisable() {
+    msStage = { style: '0', user: null };
+    chooseMarkerStyle('0', true);
+    msRefreshNone();
+    var b = document.getElementById('msDisableBtn');
+    if (b) b.textContent = 'Indices disabled';
+  }
+  // EDIT tab button: use the indices as they are now, without having to change a value first
+  function msApplyEdit() {
+    msSnap = JSON.stringify(msFieldsNow());
+    chooseMarkerStyle('8', true);
+    msStage = msCurrentStage();
+    msFlash('msApplyBtn', 'Applied', 'Apply');
   }
   // the first real change in EDIT switches the watch to the custom indices; just looking changes nothing
   function msTouched() {
@@ -232,7 +267,7 @@ function browserCode() {
       var box = ov[i].querySelector('.modal-box');
       if (!box || box.querySelector('.modal-x')) continue;
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'modal-x'; b.setAttribute('aria-label', 'Close'); b.innerHTML = '&times;';
+      b.type = 'button'; b.className = 'modal-x'; b.setAttribute('aria-label', 'Close'); b.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M2 2l8 8M10 2l-8 8"/></svg>';
       b.onclick = function (e) {
         if (e && e.stopPropagation) e.stopPropagation();
         var o = this.parentNode;
