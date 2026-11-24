@@ -13,6 +13,7 @@ module.exports = [
     'Rain outlook complication',
     'Chime icon complication',
     'Multi-line plugin text complication',
+    'Hourly chimes with volume and preview',
     'Chime when Bluetooth is lost',
     'Complications startup animation',
     'Seconds indices animation',
